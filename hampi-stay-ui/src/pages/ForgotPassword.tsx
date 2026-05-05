@@ -37,8 +37,8 @@ export function ForgotPassword() {
       {/* Left Panel: Cinematic Image */}
       <div className="relative w-full md:w-1/2 h-[40vh] md:h-screen overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=2070&auto=format&fit=crop"
-          alt="Hampi Dawn"
+          src="/hampi-dawn.png"
+          alt="Ethereal Hampi Landscape at Dawn"
           className="absolute inset-0 w-full h-full object-cover scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />

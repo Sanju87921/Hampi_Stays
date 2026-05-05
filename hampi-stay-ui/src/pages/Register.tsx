@@ -316,8 +316,8 @@ export function Register() {
         style={{ background: "linear-gradient(160deg, #1a2340 0%, #0B132B 60%, #0B132B 100%)" }}
       >
         <img
-          src="https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=2070&auto=format&fit=crop"
-          alt="Luxury Resort at Hampi"
+          src="/hampi-temple.png"
+          alt="Majestic Virupaksha Temple, Hampi"
           className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
             (e.target as HTMLImageElement).src =

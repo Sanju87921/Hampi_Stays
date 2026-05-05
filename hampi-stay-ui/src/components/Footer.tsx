@@ -9,14 +9,14 @@ export function Footer() {
       
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Top brand strip */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-16 pb-12 border-b border-sand-200/80">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10 mb-20 pb-16 border-b border-sand-200/80">
           <Link to="/" className="inline-block group relative">
             {/* Subtle aura behind the full logo */}
             <div className="absolute inset-0 bg-gold-500/10 blur-[40px] rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
             <img 
               src="/logo-full.png" 
               alt="HampiStays Luxury Heritage" 
-              className="relative z-10 w-56 md:w-64 h-auto object-contain transition-transform duration-700 ease-[0.16,1,0.3,1] group-hover:scale-[1.02] drop-shadow-2xl opacity-90 group-hover:opacity-100"
+              className="relative z-10 w-72 md:w-80 h-auto object-contain transition-transform duration-700 ease-[0.16,1,0.3,1] group-hover:scale-[1.05] drop-shadow-2xl opacity-90 group-hover:opacity-100"
             />
           </Link>
           <div className="max-w-md md:text-right">

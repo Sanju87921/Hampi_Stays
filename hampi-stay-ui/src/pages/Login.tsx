@@ -29,8 +29,8 @@ export function Login() {
       {/* Left Panel: Cinematic Image */}
       <div className="relative w-full md:w-1/2 h-[40vh] md:h-screen overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=2070&auto=format&fit=crop"
-          alt="Hampi Sunset"
+          src="/hampi-lotus.png"
+          alt="Elegant Lotus Mahal, Hampi"
           className="absolute inset-0 w-full h-full object-cover scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
