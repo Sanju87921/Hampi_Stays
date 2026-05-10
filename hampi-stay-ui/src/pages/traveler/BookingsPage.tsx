@@ -10,7 +10,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
-import type { Booking } from "../../types/booking";
+import { Booking } from "../../types/booking";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 
 
 export function BookingsPage() {
@@ -96,52 +99,90 @@ export function BookingsPage() {
     }
   };
 
-  const handleDownloadInvoice = (booking: Booking) => {
+  const handleDownloadInvoice = async (booking: Booking) => {
+    const doc = new jsPDF();
     const safeRef = booking.referenceNumber || "HS-STAY";
-    const filename = `HampiStays_Invoice_${safeRef}.txt`;
-
-    const content = `
-HAMPISTAYS — OFFICIAL BOOKING INVOICE
-======================================
-Reference: ${safeRef}
-Issued On: ${new Date().toLocaleDateString("en-IN")}
-
-GUEST INFORMATION
------------------
-Name: ${user?.name}
-Email: ${user?.email}
-
-STAY DETAILS
-------------
-Resort: ${booking.resort?.name}
-Location: ${booking.resort?.locationArea}, Hampi
-Check-in: ${new Date(booking.checkIn).toLocaleDateString("en-IN")}
-Check-out: ${new Date(booking.checkOut).toLocaleDateString("en-IN")}
-Guests: ${booking.guests} Adults
-Nights: ${Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24))}
-
-PAYMENT SUMMARY
----------------
-Total Amount: ₹${booking.totalPrice?.toLocaleString("en-IN")}
-Payment Status: PAID
-Tax (GST 12%): Included
-
-======================================
-Thank you for your journey with us.
-For support: concierge@hampistays.com
-    `.trim();
     
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    }, 100);
+    // Brand Colors
+    const navy: [number, number, number] = [10, 15, 30];
+    const gold: [number, number, number] = [184, 134, 11];
+
+    // 1. Header
+    doc.setFillColor(navy[0], navy[1], navy[2]);
+    doc.rect(0, 0, 210, 50, 'F');
+    doc.setFillColor(gold[0], gold[1], gold[2]);
+    doc.rect(0, 50, 210, 2, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("serif", "bold");
+    doc.setFontSize(26);
+    doc.text("HAMPISTAYS", 20, 30);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 200, 200);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("BOOKING INVOICE", 140, 25);
+    doc.setFont("helvetica", "normal");
+    doc.text(`REF: ${safeRef}`, 140, 31);
+    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 37);
+
+    // 2. Main Info
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.setFontSize(14);
+    doc.setFont("serif", "bold");
+    doc.text("GUEST INFORMATION", 20, 70);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Primary Guest: ${user?.name}`, 20, 78);
+    doc.text(`Email: ${user?.email}`, 20, 83);
+    doc.text(`Status: ${booking.status}`, 20, 88);
+
+    doc.setFontSize(14);
+    doc.setFont("serif", "bold");
+    doc.text("STAY DETAILS", 110, 70);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Resort: ${booking.resort?.name}`, 110, 78);
+    doc.text(`Location: ${booking.resort?.locationArea}`, 110, 83);
+    doc.text(`Date: ${new Date(booking.checkIn).toLocaleDateString("en-IN")} - ${new Date(booking.checkOut).toLocaleDateString("en-IN")}`, 110, 88);
+
+    // 3. Table
+    autoTable(doc, {
+      startY: 100,
+      head: [['Description', 'Amount']],
+      body: [
+        ['Accommodation Charges', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
+        ['GST & Service Fee (12%)', 'Included'],
+        ['Total Amount Paid', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
+      ],
+      headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold' },
+      theme: 'grid',
+      margin: { left: 20, right: 20 }
+    });
+
+    // 4. QR Code
+    const tableFinalY = (doc as any).lastAutoTable.finalY;
+    try {
+      const qrData = `Ref: ${safeRef} | Guest: ${user?.name}`;
+      const qrCode = await QRCode.toDataURL(qrData);
+      doc.addImage(qrCode, 'PNG', 140, tableFinalY + 10, 40, 40);
+      doc.setFontSize(10);
+      doc.text("Scan for Check-in", 140, tableFinalY + 55);
+    } catch (e) { console.error(e); }
+
+    // 5. Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Thank you for your journey with us. help@hampistays.com", 105, 285, { align: 'center' });
+
+    doc.save(`HampiStays_Invoice_${safeRef}.pdf`);
   };
 
   return (
