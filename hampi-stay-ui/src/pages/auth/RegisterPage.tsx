@@ -23,8 +23,16 @@ export function RegisterPage() {
   useEffect(() => {
     fetch("/api/settings")
       .then(res => res.json())
-      .then(data => setGuideServiceEnabled(data.guideServiceEnabled))
-      .catch(err => console.error(err));
+      .then(data => {
+        if (data && typeof data.guideServiceEnabled !== 'undefined') {
+          setGuideServiceEnabled(data.guideServiceEnabled);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch settings:", err);
+        // Keep default true if fetch fails to avoid locking out guides
+        setGuideServiceEnabled(true);
+      });
   }, []);
   
   const hampiImages = [
