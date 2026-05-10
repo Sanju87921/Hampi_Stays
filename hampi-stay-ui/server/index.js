@@ -363,12 +363,19 @@ app.get('/api/resorts/:resortId/reviews', async (req, res) => {
 
 app.patch('/api/users/:id', async (req, res) => {
   try {
-    const { name, email, phone, avatar, location, idType, idNumber, idImage, kycStatus } = req.body;
+    const { name, email, phone, avatar, location, idType, idNumber, idImage, kycStatus, role } = req.body;
     const user = await prisma.user.update({
       where: { id: req.params.id },
       data: { 
-        name, email, phone, avatar, location, 
-        idType, idNumber, idImage, 
+        name, 
+        email: email?.toLowerCase(), 
+        phone, 
+        avatar, 
+        location, 
+        idType, 
+        idNumber, 
+        idImage, 
+        role,
         kycStatus: kycStatus || (idImage ? 'PENDING' : undefined)
       }
     });
@@ -376,6 +383,23 @@ app.patch('/api/users/:id', async (req, res) => {
     res.json(safeUser);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    // Delete dependent data first
+    await prisma.booking.deleteMany({ where: { userId: req.params.id } });
+    await prisma.wishlist.deleteMany({ where: { userId: req.params.id } });
+    await prisma.review.deleteMany({ where: { userId: req.params.id } });
+    
+    await prisma.user.delete({
+      where: { id: req.params.id }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete User Error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 

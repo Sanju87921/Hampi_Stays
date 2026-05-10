@@ -28,6 +28,8 @@ export function AdminDashboard() {
   const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
   const [securityData, setSecurityData] = useState<{ logs: any[], activeSessions: number }>({ logs: [], activeSessions: 0 });
   const [flaggedReviews, setFlaggedReviews] = useState<any[]>([]);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [isSavingUser, setIsSavingUser] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -157,6 +159,46 @@ export function AdminDashboard() {
 
   const handleSystemTask = (task: AdminTab) => {
     setActiveTab(task);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSavingUser(true);
+    try {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingUser)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+        setEditingUser(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update user");
+    } finally {
+      setIsSavingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!window.confirm(`CRITICAL: Are you sure you want to delete ${userName}? This will remove all their data, bookings, and platform access permanently. This cannot be undone.`)) return;
+    
+    setProcessingId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+      if (res.ok) {
+        setAllUsers(prev => prev.filter(u => u.id !== userId));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete user");
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const renderOverview = () => (
@@ -913,17 +955,20 @@ export function AdminDashboard() {
                 </td>
                 <td className="px-8 py-6">
                   <div className="flex gap-2">
-                    <Button variant="outline" className="h-8 px-4 text-xs rounded-full">Edit</Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-8 px-4 text-xs rounded-full"
+                      onClick={() => setEditingUser(user)}
+                    >
+                      Edit
+                    </Button>
                     <Button 
                       variant="outline" 
                       className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => {
-                        if (window.confirm(`Are you sure you want to suspend ${user.name}? They will lose all platform access.`)) {
-                          // Logic for suspension
-                        }
-                      }}
+                      onClick={() => handleDeleteUser(user.id, user.name)}
+                      isLoading={processingId === user.id}
                     >
-                      Suspend
+                      Delete
                     </Button>
                   </div>
                 </td>
@@ -1277,6 +1322,82 @@ export function AdminDashboard() {
           </motion.div>
         )}
       </div>
+
+      {/* EDIT USER MODAL */}
+      <AnimatePresence>
+        {editingUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingUser(null)}
+              className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-luxury p-10 border border-sand-100"
+            >
+              <h3 className="text-2xl font-serif font-bold text-navy-950 mb-8">Edit Platform User</h3>
+              <form onSubmit={handleUpdateUser} className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Full Name</label>
+                    <input 
+                      type="text" 
+                      value={editingUser.name}
+                      onChange={e => setEditingUser({...editingUser, name: e.target.value})}
+                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Email Address</label>
+                    <input 
+                      type="email" 
+                      value={editingUser.email}
+                      onChange={e => setEditingUser({...editingUser, email: e.target.value})}
+                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Platform Role</label>
+                    <select 
+                      value={editingUser.role}
+                      onChange={e => setEditingUser({...editingUser, role: e.target.value})}
+                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                    >
+                      <option value="TRAVELLER">Traveler</option>
+                      <option value="RESORT_OWNER">Resort Owner</option>
+                      <option value="GUIDE">Local Expert (Guide)</option>
+                      <option value="ADMIN">System Administrator</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 h-14 rounded-2xl"
+                    type="button"
+                    onClick={() => setEditingUser(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 h-14 bg-navy-950 text-white rounded-2xl shadow-luxury"
+                    type="submit"
+                    isLoading={isSavingUser}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
