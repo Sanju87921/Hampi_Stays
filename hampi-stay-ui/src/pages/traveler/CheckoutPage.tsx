@@ -82,6 +82,10 @@ export function CheckoutPage() {
     setIsProcessing(true);
     try {
       // 1. Initialize Cashfree
+      if (!window.Cashfree) {
+        throw new Error("Payment system (Cashfree) failed to load. Please refresh the page.");
+      }
+
       const cashfree = window.Cashfree({
         mode: "sandbox", // Use "production" for real payments
       });
@@ -109,20 +113,22 @@ export function CheckoutPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create booking");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create booking on server.");
+      }
+      
       const booking = await response.json();
 
       if (!booking.paymentSessionId) {
-        throw new Error("Could not initialize payment session. Please try again.");
+        throw new Error("Payment Gateway Error: Could not initialize session. Check if CASHFREE_ keys are set in Railway.");
       }
 
       // 3. Launch Cashfree Checkout
-      let checkoutOptions = {
+      await cashfree.checkout({
         paymentSessionId: booking.paymentSessionId,
-        redirectTarget: "_self", // "modal" is also an option
-      };
-
-      cashfree.checkout(checkoutOptions);
+        redirectTarget: "_self",
+      });
 
     } catch (err: any) {
       console.error("Payment error:", err);
