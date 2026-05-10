@@ -21,6 +21,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             type={inputType}
             className={cn(
               "peer w-full h-14 bg-sand-50/80 backdrop-blur-sm border-2 border-sand-200 rounded-xl px-4 pt-4 pb-1 text-navy-950 placeholder-transparent outline-none transition-all duration-300 focus:border-gold-500 focus:bg-white shadow-sm hover:border-sand-300",
+              "disabled:cursor-not-allowed disabled:bg-sand-100/50 disabled:border-sand-200/50 disabled:text-navy-950/50",
               error && "border-red-500 focus:border-red-500",
               isPassword && "pr-12",
               className

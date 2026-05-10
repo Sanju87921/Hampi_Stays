@@ -9,6 +9,11 @@ interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
+  location?: string;
+  idType?: string;
+  idNumber?: string;
+  idImage?: string;
+  kycStatus?: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "REJECTED";
 }
 
 interface AuthContextType {
@@ -17,22 +22,32 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   loginWithGoogle: (credential: string) => Promise<any>;
   loginWithApple: (response: any) => Promise<any>;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<any>;
+  register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
+  updateUser: (updatedUser: User) => void;
   logout: () => void;
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean, view?: "login" | "register") => void;
+  authModalView: "login" | "register";
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [showAuthModal, _setShowAuthModal] = useState(false);
+  const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
 
   useEffect(() => {
-    // Force logout on every application start/refresh
-    sessionStorage.removeItem("hampi-user");
-    sessionStorage.removeItem("hampi-token");
-    localStorage.removeItem("hampi-user");
-    localStorage.removeItem("hampi-token");
+    const savedUser = sessionStorage.getItem("hampi-user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
   }, []);
+
+  const setShowAuthModal = (show: boolean, view: "login" | "register" = "login") => {
+    setAuthModalView(view);
+    _setShowAuthModal(show);
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -48,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
       sessionStorage.setItem("hampi-token", data.token);
+      _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
       console.error(error);
@@ -69,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
       sessionStorage.setItem("hampi-token", data.token);
+      _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
       console.error(error);
@@ -93,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
       sessionStorage.setItem("hampi-token", data.token);
+      _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
       console.error(error);
@@ -100,12 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: UserRole) => {
+  const register = async (name: string, email: string, phone: string, password: string, role: UserRole) => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, phone, password, role }),
       });
       
       const data = await response.json();
@@ -114,11 +132,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
       sessionStorage.setItem("hampi-token", data.token);
+      _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
       console.error(error);
       throw error;
     }
+  };
+
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    sessionStorage.setItem("hampi-user", JSON.stringify(updatedUser));
   };
 
   const logout = () => {
@@ -128,7 +152,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, loginWithApple, logout, register }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      login, 
+      loginWithGoogle, 
+      loginWithApple, 
+      logout, 
+      register, 
+      updateUser,
+      showAuthModal,
+      setShowAuthModal,
+      authModalView
+    }}>
       {children}
     </AuthContext.Provider>
   );

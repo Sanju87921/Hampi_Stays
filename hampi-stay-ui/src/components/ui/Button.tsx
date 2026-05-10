@@ -1,7 +1,9 @@
 import { forwardRef } from "react";
 import { cn } from "../../utils/cn";
+import { motion } from "framer-motion";
+import type { HTMLMotionProps } from "framer-motion";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
   variant?: "primary" | "secondary" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
@@ -23,8 +25,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     return (
-      <button
+      <motion.button
         ref={ref}
+        whileTap={{ scale: 0.96 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
         disabled={isLoading || props.disabled}
         className={cn(
           "inline-flex items-center justify-center rounded-full transition-all duration-500 ease-[0.16,1,0.3,1] focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-sand-50 disabled:opacity-70 disabled:cursor-not-allowed",
@@ -42,7 +46,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           children
         )}
-      </button>
+      </motion.button>
     );
   }
 );

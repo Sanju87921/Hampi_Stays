@@ -18,7 +18,7 @@ export function SortBar({ sort, onSortChange, view, onViewChange, total }: SortB
   ];
 
   return (
-    <div className="bg-white rounded-3xl border border-sand-200 p-2 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm mb-6">
+    <div className="bg-white rounded-3xl border border-sand-200 p-3 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm mb-6">
       <div className="flex items-center gap-4 px-4 py-2">
         <span className="text-sm font-bold text-navy-950">
           {total} <span className="text-navy-950/40">Sanctuaries found</span>

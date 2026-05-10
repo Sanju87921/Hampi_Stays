@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Compass, Landmark, 
-  ArrowRight, Sparkles, X
-} from "lucide-react";
+import { Compass, Landmark, ArrowRight, Sparkles, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 

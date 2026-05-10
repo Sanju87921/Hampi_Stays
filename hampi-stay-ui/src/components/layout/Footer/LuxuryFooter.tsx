@@ -10,11 +10,15 @@ export function LuxuryFooter() {
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Top Area: Brand & Newsletter */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center mb-24">
-          <div className="lg:col-span-5">
-            <Link to="/" className="inline-block mb-8 group">
-              <img src="/logo-full.png" alt="HampiStays" className="h-28 md:h-32 w-auto object-contain transition-transform duration-700 group-hover:scale-105" />
+          <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left">
+            <Link to="/" className="inline-block mb-10 group">
+              <img 
+                src="/logo-full.png" 
+                alt="HampiStays" 
+                className="h-44 md:h-40 w-auto object-contain transition-transform duration-700 group-hover:scale-105" 
+              />
             </Link>
-            <p className="text-navy-950/70 text-lg font-serif italic leading-relaxed max-w-md">
+            <p className="text-navy-950/70 text-lg md:text-xl font-serif italic leading-relaxed max-w-md mx-auto lg:mx-0">
               "Where the whispers of history meet the embrace of modern luxury. Experience Hampi through a different lens."
             </p>
           </div>

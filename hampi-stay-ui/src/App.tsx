@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from "rea
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
+import { MobileDock } from "./components/layout/MobileDock";
+import { AuthModal } from "./components/auth/AuthModal";
 
 // Public Pages
 import { LandingPage } from "./pages/public/LandingPage";
@@ -61,6 +63,7 @@ const MainLayout = () => {
         <Outlet />
       </main>
       <Footer />
+      <MobileDock />
     </div>
   );
 };
@@ -167,6 +170,7 @@ function App() {
   return (
     <Router>
       <AnimatedRoutes />
+      <AuthModal />
     </Router>
   );
 }

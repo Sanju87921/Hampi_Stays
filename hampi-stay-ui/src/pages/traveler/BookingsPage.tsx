@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
-  Star, XCircle
+  Star, XCircle, ChevronRight, Sparkles,
+  Navigation, CheckCircle2, History
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -21,16 +22,22 @@ export function BookingsPage() {
   const fetchBookings = async () => {
     if (!user) return;
     try {
+      setIsLoading(true);
       const response = await fetch(`http://localhost:5000/api/users/${user.id}/bookings`);
-      if (response.ok) setBookings(await response.json());
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch bookings:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchBookings(); }, [user]);
+  useEffect(() => {
+    fetchBookings();
+  }, [user]);
 
   const now = new Date();
   const upcoming = bookings.filter(b => new Date(b.checkIn) >= now && b.status !== "CANCELLED");
@@ -39,6 +46,12 @@ export function BookingsPage() {
 
   const tabData = { upcoming, completed, cancelled };
   const displayBookings = tabData[activeTab];
+
+  // Helper to calculate days until stay
+  const getDaysUntil = (checkIn: string) => {
+    const diff = new Date(checkIn).getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
 
   const handleCancel = async (bookingId: string) => {
     if (!confirm("Are you sure you want to cancel this booking? This cannot be undone.")) return;
@@ -61,205 +74,363 @@ export function BookingsPage() {
 
   const handleReview = async (resortId: string) => {
     try {
-      await fetch("http://localhost:5000/api/reviews", {
+      const response = await fetch("http://localhost:5000/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id, resortId, ...reviewData }),
+        body: JSON.stringify({ 
+          userId: user?.id, 
+          resortId, 
+          rating: reviewData.rating, 
+          comment: reviewData.comment 
+        }),
       });
-      setShowReview(null);
-      setReviewData({ rating: 5, comment: "" });
-      alert("Review submitted! Thank you.");
+      if (response.ok) {
+        setShowReview(null);
+        setReviewData({ rating: 5, comment: "" });
+        // In a real app, we'd update the booking record to show it's reviewed
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleDownloadInvoice = (booking: any) => {
+    const safeRef = booking.referenceNumber || "HS-STAY";
+    const filename = `HampiStays_Invoice_${safeRef}.txt`;
+
     const content = `
-HAMPISTAYS — BOOKING INVOICE
-================================
-Booking Reference: ${booking.referenceNumber}
-Date Issued: ${new Date().toLocaleDateString("en-IN")}
+HAMPISTAYS — OFFICIAL BOOKING INVOICE
+======================================
+Reference: ${safeRef}
+Issued On: ${new Date().toLocaleDateString("en-IN")}
 
-GUEST: ${user?.name}
+GUEST INFORMATION
+-----------------
+Name: ${user?.name}
+Email: ${user?.email}
 
-BOOKING DETAILS
+STAY DETAILS
+------------
 Resort: ${booking.resort?.name}
+Location: ${booking.resort?.locationArea}, Hampi
 Check-in: ${new Date(booking.checkIn).toLocaleDateString("en-IN")}
 Check-out: ${new Date(booking.checkOut).toLocaleDateString("en-IN")}
-Guests: ${booking.guests}
-Status: ${booking.status}
+Guests: ${booking.guests} Adults
+Nights: ${Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24))}
 
-PAYMENT
-Total: ₹${booking.totalPrice?.toLocaleString("en-IN")}
-GST: Included (12%)
+PAYMENT SUMMARY
+---------------
+Total Amount: ₹${booking.totalPrice?.toLocaleString("en-IN")}
+Payment Status: PAID
+Tax (GST 12%): Included
 
-Thank you for choosing HampiStays.
+======================================
+Thank you for your journey with us.
+For support: concierge@hampistays.com
     `.trim();
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Invoice_${booking.referenceNumber}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
   };
 
   return (
-    <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
-      <div className="container mx-auto px-4 max-w-5xl">
-        <header className="mb-10">
-          <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">My Bookings</h1>
-          <p className="text-navy-950/50">Manage your upcoming, completed, and past Hampi adventures.</p>
-        </header>
+    <div className="min-h-screen bg-sand-50/30 pt-20 pb-24">
+      {/* Cinematic Hero Section */}
+      <section className="relative h-[35vh] flex items-center mb-12 overflow-hidden bg-navy-950">
+        <div className="absolute inset-0 opacity-40">
+          <img 
+            src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
+            className="w-full h-full object-cover"
+            alt="Hampi landscape"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-sand-50/30 to-transparent" />
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-5 h-5 text-gold-400" />
+              <span className="text-xs font-bold text-gold-400 uppercase tracking-[0.3em]">Your Journey Collection</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-4">
+              My <span className="italic text-gold-400 font-normal">Hampi</span> Escapes
+            </h1>
+            <p className="text-white/60 text-lg max-w-xl font-light">
+              Relive your memories and prepare for your next immersive stay in the heart of the ruins.
+            </p>
+          </motion.div>
+        </div>
+      </section>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 p-1.5 bg-white rounded-2xl border border-sand-100 shadow-sm w-fit">
-          {(["upcoming", "completed", "cancelled"] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={cn("px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all",
-                activeTab === tab ? "bg-navy-950 text-white shadow" : "text-navy-950/40 hover:text-navy-950")}>
-              {tab} ({tabData[tab].length})
-            </button>
-          ))}
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Navigation Tabs */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-sand-100 shadow-sm w-fit">
+            {(["upcoming", "completed", "cancelled"] as const).map(tab => (
+              <button 
+                key={tab} 
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "px-8 py-3 rounded-xl text-sm font-bold capitalize transition-all flex items-center gap-2",
+                  activeTab === tab 
+                    ? "bg-navy-950 text-white shadow-xl scale-105" 
+                    : "text-navy-950/40 hover:text-navy-950"
+                )}
+              >
+                {tab === 'upcoming' && <Calendar className="w-4 h-4" />}
+                {tab === 'completed' && <CheckCircle2 className="w-4 h-4" />}
+                {tab === 'cancelled' && <History className="w-4 h-4" />}
+                {tab}
+                <span className={cn(
+                  "ml-1 px-1.5 py-0.5 rounded-md text-[10px]",
+                  activeTab === tab ? "bg-white/20" : "bg-sand-100"
+                )}>
+                  {tabData[tab].length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <Link to="/resorts" className="text-sm font-bold text-navy-950 hover:text-gold-600 flex items-center gap-2 group transition-colors">
+            Book another stay
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
 
+        {/* Content Area */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-navy-950/40 font-medium animate-pulse">Retrieving your itineraries...</p>
           </div>
         ) : displayBookings.length > 0 ? (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-8">
             {displayBookings.map((booking, i) => (
-              <motion.div key={booking.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+              <motion.div 
+                key={booking.id} 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-[2.5rem] border border-sand-100 overflow-hidden shadow-sm flex flex-col md:flex-row">
-                <div className="w-full md:w-64 h-48 md:h-auto overflow-hidden shrink-0 relative">
-                  <img src={booking.resort?.images?.[0]} alt={booking.resort?.name} className="w-full h-full object-cover" />
-                  {booking.status === "CANCELLED" && (
-                    <div className="absolute inset-0 bg-navy-950/50 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold uppercase tracking-widest">Cancelled</span>
+                className="group relative bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 flex flex-col lg:flex-row"
+              >
+                {/* Photo Section */}
+                <div className="w-full lg:w-96 h-64 lg:h-auto overflow-hidden shrink-0 relative">
+                  <img 
+                    src={booking.resort?.images?.[0] || 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000'} 
+                    alt={booking.resort?.name} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent opacity-60" />
+                  
+                  {/* Status Badge Over Image */}
+                  <div className="absolute top-6 left-6">
+                    <span className={cn(
+                      "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/20 text-white",
+                      booking.status === "CONFIRMED" ? "bg-emerald-500/80" :
+                      booking.status === "CANCELLED" ? "bg-red-500/80" :
+                      "bg-gold-500/80"
+                    )}>
+                      {booking.status}
+                    </span>
+                  </div>
+
+                  {activeTab === 'upcoming' && (
+                    <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                      <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-1">Your journey starts in</p>
+                      <p className="text-white text-xl font-serif font-bold">
+                        {getDaysUntil(booking.checkIn) <= 0 ? "Today!" : `${getDaysUntil(booking.checkIn)} Days`}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div className="p-8 flex-grow">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border",
-                          booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
-                          booking.status === "CANCELLED" ? "bg-red-50 text-red-600 border-red-100" :
-                          "bg-gold-50 text-gold-700 border-gold-100")}>
-                          {booking.status}
-                        </span>
-                        <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
-                          Ref: {booking.referenceNumber}
-                        </span>
+                {/* Info Section */}
+                <div className="p-8 lg:p-12 flex-grow flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 text-gold-600">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="text-xs font-bold uppercase tracking-wider">{booking.resort?.locationArea}, Hampi</span>
+                        </div>
+                        <h3 className="text-3xl font-serif font-bold text-navy-950 mb-2">{booking.resort?.name}</h3>
+                        <p className="text-navy-950/50 text-sm font-medium">Booking Ref: <span className="font-mono text-gold-600 font-bold">{booking.referenceNumber}</span></p>
                       </div>
-                      <h3 className="text-2xl font-bold text-navy-950 mb-1">{booking.resort?.name}</h3>
-                      <p className="text-sm text-gold-600 font-medium italic">{booking.resort?.locationArea}, Hampi</p>
+                      <div className="text-left md:text-right p-6 bg-sand-50 rounded-3xl border border-sand-100 min-w-[160px]">
+                        <p className="text-2xl font-serif font-bold text-navy-950">₹{booking.totalPrice?.toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Total Investment</p>
+                      </div>
                     </div>
-                    <div className="text-left md:text-right">
-                      <p className="text-2xl font-bold text-navy-950">₹{booking.totalPrice?.toLocaleString()}</p>
-                      <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Total Paid</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
+                          <Calendar className="w-5 h-5 text-navy-950" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Check-in</p>
+                          <p className="font-bold text-navy-950">{new Date(booking.checkIn).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
+                          <Clock className="w-5 h-5 text-navy-950" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Check-out</p>
+                          <p className="font-bold text-navy-950">{new Date(booking.checkOut).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
+                          <Navigation className="w-5 h-5 text-navy-950" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Resort Type</p>
+                          <p className="font-bold text-navy-950">{booking.resort?.type || 'Eco-Luxury'}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 p-5 bg-sand-50 rounded-2xl border border-sand-100 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gold-500 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Check-in</p>
-                        <p className="font-bold text-navy-950">{new Date(booking.checkIn).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gold-500 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Check-out</p>
-                        <p className="font-bold text-navy-950">{new Date(booking.checkOut).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gold-500 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Guests</p>
-                        <p className="font-bold text-navy-950">{booking.guests} Adults</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <Button size="sm" variant="outline" className="px-5 rounded-xl gap-2" onClick={() => handleDownloadInvoice(booking)}>
-                      <Download className="w-4 h-4" /> Invoice
-                    </Button>
-
-                    {activeTab === "upcoming" && (
-                      <Button size="sm" variant="outline" className="px-5 rounded-xl gap-2 border-red-200 text-red-600 bg-red-50/30 hover:bg-red-50"
-                        isLoading={cancellingId === booking.id}
-                        onClick={() => handleCancel(booking.id)}>
-                        <XCircle className="w-4 h-4" /> Cancel Booking
+                  <div className="flex flex-wrap items-center justify-between gap-6 pt-8 border-t border-sand-100">
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" className="px-6 rounded-2xl gap-2 border-sand-200 hover:bg-sand-50" onClick={() => handleDownloadInvoice(booking)}>
+                        <Download className="w-4 h-4" /> Get Invoice
                       </Button>
-                    )}
+                      
+                      {activeTab === "upcoming" && (
+                        <Button 
+                          variant="outline" 
+                          className="px-6 rounded-2xl gap-2 border-red-100 text-red-600 bg-red-50/30 hover:bg-red-50 hover:border-red-200"
+                          isLoading={cancellingId === booking.id}
+                          onClick={() => handleCancel(booking.id)}
+                        >
+                          <XCircle className="w-4 h-4" /> Cancel
+                        </Button>
+                      )}
 
-                    {activeTab === "completed" && (
-                      <Button size="sm" className="px-5 rounded-xl gap-2 bg-gold-50 text-gold-700 border border-gold-200 hover:bg-gold-100 shadow-none"
-                        onClick={() => setShowReview(booking.resortId)}>
-                        <Star className="w-4 h-4" /> Write Review
-                      </Button>
-                    )}
+                      {activeTab === "completed" && (
+                        <Button 
+                          className="px-8 rounded-2xl gap-2 bg-gold-500 text-navy-950 shadow-gold"
+                          onClick={() => setShowReview(booking.resortId)}
+                        >
+                          <Star className="w-4 h-4 fill-current" /> Share Feedback
+                        </Button>
+                      )}
+                    </div>
+
+                    <Link to={`/resorts/${booking.resort?.slug}`} className="text-sm font-bold text-gold-600 hover:text-gold-700 flex items-center gap-2">
+                      View Details
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[3rem] p-20 text-center border border-sand-100 shadow-sm max-w-2xl mx-auto">
-            <div className="w-20 h-20 bg-sand-50 rounded-full flex items-center justify-center mx-auto mb-8">
-              <Calendar className="w-10 h-10 text-navy-950/20" />
+          <div className="bg-white rounded-[4rem] p-24 text-center border border-sand-100 shadow-sm max-w-3xl mx-auto overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/5 rounded-full blur-[80px] -mr-32 -mt-32" />
+            <div className="w-24 h-24 bg-sand-50 rounded-3xl flex items-center justify-center mx-auto mb-8 transform rotate-12">
+              <Calendar className="w-12 h-12 text-navy-950/10" />
             </div>
-            <h2 className="text-2xl font-bold font-serif text-navy-950 mb-4">No {activeTab} bookings</h2>
-            <p className="text-navy-950/60 mb-10">
-              {activeTab === "upcoming" ? "Your next Hampi adventure is waiting to be booked." : "Your past bookings will appear here."}
+            <h2 className="text-3xl font-serif font-bold text-navy-950 mb-4">Your journey map is empty</h2>
+            <p className="text-navy-950/60 mb-12 text-lg max-w-md mx-auto">
+              {activeTab === "upcoming" 
+                ? "No upcoming escapes found. Every ruins visit begins with a single booking." 
+                : "Your past travels will be preserved here as memories."}
             </p>
             {activeTab === "upcoming" && (
               <Link to="/resorts">
-                <Button size="lg" className="rounded-2xl px-12 shadow-gold">Start Booking</Button>
+                <Button size="lg" className="rounded-2xl px-16 py-8 text-lg shadow-gold">Discover Resorts</Button>
               </Link>
             )}
           </div>
         )}
       </div>
 
-      {/* Review Modal */}
-      {showReview && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowReview(null)} />
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-luxury">
-            <h2 className="text-2xl font-serif font-bold text-navy-950 mb-6">Share Your Experience</h2>
-            <div className="flex gap-2 mb-6">
-              {[1,2,3,4,5].map(star => (
-                <button key={star} onClick={() => setReviewData(p => ({...p, rating: star}))}>
-                  <Star className={cn("w-8 h-8 transition-all", reviewData.rating >= star ? "fill-gold-400 text-gold-400 scale-110" : "text-sand-300")} />
-                </button>
-              ))}
-            </div>
-            <textarea
-              rows={4}
-              placeholder="What made your stay special? Share the highlights..."
-              value={reviewData.comment}
-              onChange={e => setReviewData(p => ({...p, comment: e.target.value}))}
-              className="w-full p-4 rounded-2xl border border-sand-200 bg-sand-50 text-sm resize-none outline-none focus:ring-2 focus:ring-gold-400 mb-6"
+      {/* Luxury Review Modal */}
+      <AnimatePresence>
+        {showReview && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-navy-950/60 backdrop-blur-md" 
+              onClick={() => setShowReview(null)} 
             />
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowReview(null)}>Cancel</Button>
-              <Button className="flex-1 rounded-xl shadow-gold" onClick={() => handleReview(showReview)}>Submit Review</Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white rounded-[3.5rem] p-10 md:p-14 max-w-xl w-full shadow-2xl border border-white/10 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600" />
+              
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gold-50 rounded-2xl mb-6">
+                  <Star className="w-8 h-8 text-gold-500 fill-current" />
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-navy-950 mb-3">Rate Your Escape</h2>
+                <p className="text-navy-950/50">Your feedback helps us curate the best of Hampi.</p>
+              </div>
+
+              <div className="flex justify-center gap-4 mb-10">
+                {[1,2,3,4,5].map(star => (
+                  <button 
+                    key={star} 
+                    onClick={() => setReviewData(p => ({...p, rating: star}))}
+                    className="group"
+                  >
+                    <Star 
+                      className={cn(
+                        "w-12 h-12 transition-all duration-300", 
+                        reviewData.rating >= star 
+                          ? "fill-gold-400 text-gold-400 scale-125 filter drop-shadow-gold" 
+                          : "text-sand-200 group-hover:text-gold-200"
+                      )} 
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2 mb-10">
+                <label className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest ml-1">Your Message</label>
+                <textarea
+                  rows={4}
+                  placeholder="Tell us about the service, the ruins, and your stay..."
+                  value={reviewData.comment}
+                  onChange={e => setReviewData(p => ({...p, comment: e.target.value}))}
+                  className="w-full p-6 rounded-[2rem] border border-sand-200 bg-sand-50/50 text-base resize-none outline-none focus:ring-4 focus:ring-gold-500/10 focus:border-gold-400 transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4">
+                <Button variant="outline" className="flex-1 h-16 rounded-2xl text-base" onClick={() => setShowReview(null)}>
+                  Maybe Later
+                </Button>
+                <Button className="flex-1 h-16 rounded-2xl text-base shadow-gold" onClick={() => handleReview(showReview)}>
+                  Submit Experience
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import appleSignin from 'apple-signin-auth';
 import cloudinary from 'cloudinary';
 import multer from 'multer';
 import streamifier from 'streamifier';
+import { Cashfree, CFEnvironment } from 'cashfree-pg';
 
 dotenv.config();
 
@@ -28,6 +29,13 @@ cloudinary.v2.config({
 
 const upload = multer();
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Cashfree Configuration
+const cashfree = new Cashfree(
+  process.env.CASHFREE_ENV === 'PRODUCTION' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+  process.env.CASHFREE_CLIENT_ID,
+  process.env.CASHFREE_CLIENT_SECRET
+);
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -328,10 +336,14 @@ app.get('/api/resorts/:resortId/reviews', async (req, res) => {
 
 app.patch('/api/users/:id', async (req, res) => {
   try {
-    const { name, email, phone, avatar } = req.body;
+    const { name, email, phone, avatar, location, idType, idNumber, idImage, kycStatus } = req.body;
     const user = await prisma.user.update({
       where: { id: req.params.id },
-      data: { name, email, phone, avatar }
+      data: { 
+        name, email, phone, avatar, location, 
+        idType, idNumber, idImage, 
+        kycStatus: kycStatus || (idImage ? 'PENDING' : undefined)
+      }
     });
     const { passwordHash, ...safeUser } = user;
     res.json(safeUser);
@@ -370,9 +382,10 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
 
 app.post('/api/bookings', async (req, res) => {
   try {
-    const { userId, resortId, roomId, checkIn, checkOut, guests, totalPrice, specialRequests } = req.body;
+    const { userId, resortId, roomId, checkIn, checkOut, guests, totalPrice, specialRequests, phone, customerName } = req.body;
     const referenceNumber = `HS-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
+    // 1. Create Booking in Database
     const booking = await prisma.booking.create({
       data: {
         userId, resortId, roomId,
@@ -381,36 +394,83 @@ app.post('/api/bookings', async (req, res) => {
         guests: Number(guests),
         totalPrice: Number(totalPrice),
         specialRequests,
-        referenceNumber
+        referenceNumber,
+        status: 'PENDING' // Initial status
       }
     });
 
-    // Create a booking confirmation notification
-    await prisma.notification.create({
-      data: {
-        userId,
-        title: 'Booking Confirmed!',
-        message: `Your booking (Ref: ${referenceNumber}) has been confirmed. Get ready for your Hampi escape!`,
-        type: 'booking'
-      }
+    // 2. Create Cashfree Order
+    let paymentSessionId = null;
+    try {
+      const orderRequest = {
+        order_amount: Number(totalPrice),
+        order_currency: "INR",
+        order_id: referenceNumber,
+        customer_details: {
+          customer_id: userId,
+          customer_name: customerName || "Guest",
+          customer_email: (await prisma.user.findUnique({ where: { id: userId } }))?.email || "guest@example.com",
+          customer_phone: phone || "9999999999"
+        },
+        order_meta: {
+          return_url: `http://localhost:5173/checkout/success?order_id=${referenceNumber}`
+        }
+      };
+
+      const cfResponse = await cashfree.PGCreateOrder(orderRequest);
+      paymentSessionId = cfResponse.data.payment_session_id;
+    } catch (cfError) {
+      console.error('⚠️ Cashfree Order Creation Failed:', cfError.response?.data || cfError.message);
+      // We still return the booking, but without a session ID (frontend will handle fallback)
+    }
+
+    res.status(201).json({
+      ...booking,
+      paymentSessionId
     });
-
-    // 🔔 NOTIFICATION SIMULATION (Twilio/SendGrid)
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    const resort = await prisma.resort.findUnique({ where: { id: resortId } });
-    console.log(`[NOTIFICATION] Sending SMS to ${user.phone || 'customer'}: "Your booking ${referenceNumber} at ${resort.name} is confirmed!"`);
-    console.log(`[NOTIFICATION] Sending Email to ${user.email}: "Booking Confirmation: ${resort.name} - ${referenceNumber}"`);
-
-    res.status(201).json(booking);
   } catch (error) {
     console.error('❌ BOOKING ERROR:', error);
-    if (error.code) console.error('Error Code:', error.code);
-    if (error.meta) console.error('Error Meta:', error.meta);
-    res.status(500).json({ 
-      error: 'Failed to create booking', 
-      details: error.message,
-      code: error.code 
-    });
+    res.status(500).json({ error: 'Failed to create booking' });
+  }
+});
+
+// Verify Cashfree Payment
+app.post('/api/bookings/:reference/verify-payment', async (req, res) => {
+  try {
+    const { reference } = req.params;
+    
+    // 1. Fetch Order Status from Cashfree
+    const cfResponse = await cashfree.PGOrderFetchPayments(reference);
+    const payments = cfResponse.data;
+
+    // 2. Check if any payment is successful
+    const successPayment = payments.find(p => p.payment_status === 'SUCCESS');
+
+    if (successPayment) {
+      // 3. Update Booking Status
+      const booking = await prisma.booking.update({
+        where: { referenceNumber: reference },
+        data: { status: 'CONFIRMED' },
+        include: { user: true, resort: true }
+      });
+
+      // 4. Create Success Notification
+      await prisma.notification.create({
+        data: {
+          userId: booking.userId,
+          title: 'Payment Successful!',
+          message: `Your booking at ${booking.resort.name} is confirmed. Ref: ${reference}`,
+          type: 'booking'
+        }
+      });
+
+      return res.json({ success: true, booking });
+    } else {
+      return res.status(400).json({ success: false, message: 'No successful payment found' });
+    }
+  } catch (error) {
+    console.error('❌ PAYMENT VERIFICATION ERROR:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to verify payment' });
   }
 });
 

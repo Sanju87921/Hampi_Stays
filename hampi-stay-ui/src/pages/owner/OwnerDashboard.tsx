@@ -237,10 +237,25 @@ Verified by HampiStays Partner Network.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap" onClick={() => navigate("/dashboard/inventory")}>
+            <Button 
+              variant="outline" 
+              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
+              onClick={() => navigate("/dashboard/inventory")}
+            >
               <CalIcon className="w-4 h-4 mr-2" /> Manage Pricing
             </Button>
-            <Button variant="outline" className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap">
+            <Button 
+              variant="outline" 
+              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
+              onClick={() => navigate("/dashboard/profile")}
+            >
+              <Users className="w-4 h-4 mr-2" /> My Profile
+            </Button>
+            <Button 
+              variant="outline" 
+              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
+              onClick={() => navigate("/dashboard?tab=settings")}
+            >
               <Settings className="w-4 h-4 mr-2" /> Settings
             </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>

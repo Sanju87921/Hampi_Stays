@@ -15,6 +15,7 @@ import { SortBar } from "../../components/resort/SortBar";
 import { ResortMap } from "../../components/resort/ResortMap";
 import { CompareBar } from "../../components/resort/CompareBar";
 import { SearchBar } from "../../components/resort/SearchBar";
+import { ResortGridSkeleton } from "../../components/resort/ResortSkeleton";
 import type { FilterState, SortOption, CompareItem, Resort } from "../../types/resort";
 
 const DEFAULT_FILTERS: FilterState = {
@@ -113,9 +114,8 @@ export function ResortsPage() {
 
               {/* Loading State */}
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-24">
-                  <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-navy-950/60 font-medium italic">Fetching luxury stays...</p>
+                <div className="mt-6">
+                  <ResortGridSkeleton />
                 </div>
               ) : error ? (
                 <div className="bg-red-50 p-8 rounded-3xl border border-red-100 text-center mt-6">

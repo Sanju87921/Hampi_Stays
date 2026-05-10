@@ -8,16 +8,33 @@ import { useAuth } from "../../context/AuthContext";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const currentScrollY = window.scrollY;
+      
+      // Determine if scrolled for styling
+      setIsScrolled(currentScrollY > 50);
+
+      // Smart hide/show logic
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide
+        setIsVisible(false);
+      } else {
+        // Scrolling up or at top - show
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
     };
-    window.addEventListener("scroll", handleScroll);
+    
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     fetch("/api/settings")
       .then(res => res.json())
@@ -50,6 +67,7 @@ export function Navbar() {
             { name: "Overview", path: "/dashboard" },
             { name: "Properties", path: "/dashboard?tab=properties" },
             { name: "Bookings", path: "/dashboard?tab=bookings" },
+            { name: "Profile", path: "/dashboard/profile" },
             { name: "Settings", path: "/dashboard?tab=settings" },
           ]
     : [
@@ -63,7 +81,10 @@ export function Navbar() {
   ];
 
   return (
-    <nav
+    <motion.nav
+      initial={{ y: 0 }}
+      animate={{ y: isVisible ? 0 : -100 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
         isScrolled
@@ -73,13 +94,16 @@ export function Navbar() {
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between relative">
-          {/* Logo (Left) */}
-          <Link to={user?.role === 'RESORT_OWNER' ? "/dashboard" : "/"} className="flex items-center group z-10">
+          {/* Logo (Centered on mobile, Left on desktop) */}
+          <Link 
+            to={user?.role === 'RESORT_OWNER' ? "/dashboard" : "/"} 
+            className="flex items-center group z-10 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0"
+          >
             <img 
               src="/logo-full.png" 
               alt="HampiStays" 
               className={cn(
-                "h-16 md:h-[5.5rem] w-auto object-contain transition-all duration-500",
+                "h-20 md:h-[5.5rem] w-auto object-contain transition-all duration-500",
                 !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
               )}
             />
@@ -136,29 +160,28 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
+                <button
+                  onClick={() => setShowAuthModal(true, "login")}
                   className={cn(
                     "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
                     isScrolled ? "text-navy-900" : "text-white"
                   )}
                 >
                   Log in
-                </Link>
-                <Link to="/register">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className={cn(
-                      "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
-                      isScrolled 
-                        ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
-                        : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
-                    )}
-                  >
-                    Book Now
-                  </Button>
-                </Link>
+                </button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAuthModal(true, "register")}
+                  className={cn(
+                    "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
+                    isScrolled 
+                      ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
+                      : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
+                  )}
+                >
+                  Book Now
+                </Button>
               </>
             )}
           </div>
@@ -198,21 +221,30 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col gap-4 mt-2">
-                <Link
-                  to="/login"
-                  className="text-center font-semibold text-navy-950 py-3 rounded-xl border border-sand-200 hover:border-gold-400 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowAuthModal(true, "login");
+                  }}
+                  className="text-center font-semibold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors"
                 >
                   Log in
-                </Link>
-                <Link to="/register" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button size="lg" className="w-full border-none transition-colors">Book Now</Button>
-                </Link>
+                </button>
+                <Button 
+                  size="lg" 
+                  className="w-full h-16 rounded-2xl border-none transition-colors"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowAuthModal(true, "register");
+                  }}
+                >
+                  Register
+                </Button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   );
 }

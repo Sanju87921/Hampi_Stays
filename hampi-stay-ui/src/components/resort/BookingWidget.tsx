@@ -12,6 +12,8 @@ interface BookingWidgetProps {
   selectedRoomId: string | null;
 }
 
+import { useAuth } from "../../context/AuthContext";
+
 export function BookingWidget({ 
   resort, 
   initialCheckIn, 
@@ -20,6 +22,7 @@ export function BookingWidget({
   selectedRoomId 
 }: BookingWidgetProps) {
   const navigate = useNavigate();
+  const { isAuthenticated, setShowAuthModal } = useAuth();
   const [checkIn, setCheckIn] = useState(initialCheckIn || "");
   const [checkOut, setCheckOut] = useState(initialCheckOut || "");
   const [adults, setAdults] = useState(initialAdults);
@@ -86,6 +89,11 @@ export function BookingWidget({
 
   const handleBook = () => {
     if (!selectedRoomId || !checkIn || !checkOut) return;
+    
+    if (!isAuthenticated) {
+      setShowAuthModal(true, "login");
+      return;
+    }
     
     navigate("/checkout", {
       state: {

@@ -9,28 +9,40 @@ export function ProfileIncompleteBanner() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      const checkStatus = async () => {
-        // Basic check for phone and avatar
-        let isIncomplete = !user.phone || !user.avatar;
+    if (!user) {
+      setIsVisible(false);
+      return;
+    }
 
-        // If guide, also check if identity info is missing or not approved
-        if (user.role === 'GUIDE') {
-          try {
-            const res = await fetch(`http://localhost:5000/api/guides/profile/${user.id}`);
-            const data = await res.json();
-            if (!data || data.status !== 'APPROVED') {
-              isIncomplete = true;
-            }
-          } catch (err) {
-            console.error("Banner: Failed to fetch guide status", err);
-          }
-        }
-        
-        setIsVisible(isIncomplete);
-      };
+    const checkIncomplete = () => {
+      // 1. Check basic profile requirements (Everyone)
+      const hasBasicInfo = !!(user.phone && user.avatar);
       
-      checkStatus();
+      // 2. Check Role-Specific Requirements
+      if (user.role === 'RESORT_OWNER') {
+        // Owners need basic info + KYC submitted (PENDING or VERIFIED)
+        const hasSubmittedKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
+        return !hasBasicInfo || !hasSubmittedKYC;
+      }
+
+      if (user.role === 'GUIDE') {
+        return !hasBasicInfo;
+      }
+
+      return !hasBasicInfo;
+    };
+
+    const isIncomplete = checkIncomplete();
+    setIsVisible(isIncomplete);
+    
+    // Async check for Guides
+    if (user.role === 'GUIDE' && !isIncomplete) {
+      fetch(`http://localhost:5000/api/guides/profile/${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.status !== 'APPROVED') setIsVisible(true);
+        })
+        .catch(() => {});
     }
   }, [user]);
 
@@ -75,7 +87,7 @@ export function ProfileIncompleteBanner() {
           </div>
 
           <div className="p-6 md:pr-12 relative z-10 w-full md:w-auto">
-            <Link to={user?.role === 'RESORT_OWNER' ? "/dashboard?tab=profile" : "/dashboard/profile"}>
+            <Link to={user?.role === 'GUIDE' ? "/dashboard?tab=profile" : "/dashboard/profile"}>
               <button className="w-full md:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950 px-8 py-4 rounded-2xl font-bold transition-all shadow-gold flex items-center justify-center gap-2 group">
                 Update Profile
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

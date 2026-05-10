@@ -130,7 +130,7 @@ export function Testimonials() {
                   ))}
                 </div>
 
-                <p className="text-[#5F6B85] text-[1.0625rem] leading-[1.8] font-light tracking-[0.01em] mb-6 relative z-10 flex-1">
+                <p className="text-[#5F6B85] text-sm md:text-[1.0625rem] leading-[1.8] font-light tracking-[0.01em] mb-6 relative z-10 flex-1">
                   "{testimonial.content}"
                 </p>
 

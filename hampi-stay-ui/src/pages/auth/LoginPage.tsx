@@ -85,7 +85,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
       {/* Left Panel: Cinematic Image */}
       <div className="relative w-full md:w-1/2 h-[40vh] md:h-auto md:flex-1 overflow-hidden rounded-[15px] shadow-2xl">
         <AnimatePresence>
@@ -123,8 +123,8 @@ export function LoginPage() {
       {/* Right Panel: Glassmorphism Form */}
       <div className="relative w-full md:w-1/2 h-[60vh] md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
         {/* Ambient warm orbs */}
-        <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-gold-200/30 rounded-full blur-[120px] pointer-events-none animate-float-slow" />
-        <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-sand-300/30 rounded-full blur-[100px] pointer-events-none animate-float" />
+        <div className="absolute top-1/4 right-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-gold-200/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-float-slow" />
+        <div className="absolute bottom-1/4 left-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-sand-300/30 rounded-full blur-[70px] md:blur-[100px] pointer-events-none animate-float" />
 
         <div className="w-full max-w-md my-auto">
           <motion.div 
@@ -140,13 +140,13 @@ export function LoginPage() {
 
             <motion.div variants={itemVariant} className="flex justify-center mb-8 mt-4">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-14 w-auto object-contain drop-shadow-md" />
+                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-14 w-auto object-contain drop-shadow-md" />
               </Link>
             </motion.div>
 
             <motion.div variants={itemVariant} className="text-center mb-10">
-              <h1 className="text-3xl font-serif font-bold text-navy-950 mb-3">Welcome Back</h1>
-              <p className="text-navy-800/60 font-medium">Please enter your details to sign in.</p>
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-navy-950 mb-3">Welcome Back</h1>
+              <p className="text-xs md:text-sm text-navy-800/60 font-medium">Please enter your details to sign in.</p>
               {error && (
                 <p className={cn(
                   "text-sm font-bold mt-4 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2",

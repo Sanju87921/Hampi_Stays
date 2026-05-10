@@ -5,7 +5,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2
+  CheckCircle2, Settings
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
@@ -767,6 +767,30 @@ export function GuideDashboard() {
         </div>
 
         <ProfileIncompleteBanner />
+
+        {/* Tab Navigation */}
+        <nav className="flex items-center bg-white p-1.5 rounded-2xl border border-sand-200 shadow-sm mb-12 w-fit">
+          {[
+            { id: "overview", label: "Overview", icon: Award },
+            { id: "tours", label: "Tours", icon: MapPin },
+            { id: "bookings", label: "Bookings", icon: Calendar },
+            { id: "profile", label: "Profile", icon: Users },
+            { id: "settings", label: "Settings", icon: Settings },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+                activeTab === tab.id 
+                  ? "bg-navy-950 text-white shadow-lg" 
+                  : "text-navy-950/40 hover:text-navy-950 hover:bg-sand-50"
+              }`}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
         {/* SERVICE SHUTDOWN ALERT */}
         <AnimatePresence>

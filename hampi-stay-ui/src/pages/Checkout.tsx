@@ -22,6 +22,16 @@ export function Checkout() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refNumber, setRefNumber] = useState("");
+  
+  // Initialize Cashfree
+  const cashfree = useMemo(() => {
+    if (typeof window !== "undefined" && (window as any).Cashfree) {
+      return new (window as any).Cashfree({
+        mode: "sandbox", // Reverted to sandbox for weekend testing
+      });
+    }
+    return null;
+  }, []);
 
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(" ")[0] || "",
@@ -63,6 +73,7 @@ export function Checkout() {
     setError(null);
     
     try {
+      // 1. Create Booking & Get Payment Session
       const response = await fetch("http://localhost:5000/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,15 +85,51 @@ export function Checkout() {
           checkOut,
           guests: adults,
           totalPrice: total,
-          specialRequests: formData.specialRequests
+          specialRequests: formData.specialRequests,
+          phone: formData.phone,
+          customerName: `${formData.firstName} ${formData.lastName}`
         })
       });
 
-      if (!response.ok) throw new Error("Booking failed. Please try again.");
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Booking failed. Please try again.");
+      }
       
       const data = await response.json();
-      setRefNumber(data.referenceNumber);
-      setIsSuccess(true);
+      
+      // 2. Launch Cashfree Checkout
+      if (data.paymentSessionId && cashfree) {
+        const result = await cashfree.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: "_modal", // Opens in a premium overlay
+        });
+
+        if (result.error) {
+          throw new Error(result.error.message || "Payment cancelled or failed.");
+        }
+
+        if (result.redirect) {
+          // This handles cases where a redirect is required
+          return;
+        }
+
+        // 3. Verify Payment with Backend
+        const verifyRes = await fetch(`http://localhost:5000/api/bookings/${data.referenceNumber}/verify-payment`, {
+          method: "POST"
+        });
+
+        if (verifyRes.ok) {
+          setRefNumber(data.referenceNumber);
+          setIsSuccess(true);
+        } else {
+          throw new Error("Payment verification failed. Please contact support.");
+        }
+      } else {
+        // Fallback for testing if Cashfree is not configured on backend yet
+        setRefNumber(data.referenceNumber);
+        setIsSuccess(true);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -14,9 +14,8 @@ type UserRole = "guest" | "owner" | "guide" | null;
 
 export function RegisterPage() {
   const [role, setRole] = useState<UserRole>(null);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -47,10 +46,15 @@ export function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     terms: false,
   });
+
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [verificationMethod, setVerificationMethod] = useState<"email" | "sms" | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleNext = () => {
     if (role) setStep(2);
@@ -73,28 +77,47 @@ export function RegisterPage() {
     }
 
     setError("");
-    setIsLoading(true);
     try {
-      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
-      await register(formData.name, formData.email, formData.password, apiRole as any);
-      navigate("/dashboard");
+      // Simulate sending OTP
+      console.log("Sending OTP to:", verificationMethod === "email" ? formData.email : formData.phone);
+      setStep(4);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  const handleVerifyOtp = async () => {
+    setIsVerifying(true);
+    setError("");
+    try {
+      // Simulate OTP verification
+      const enteredOtp = otp.join("");
+      if (enteredOtp === "123456") { // Mock success code
+        const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+        await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
+        navigate("/dashboard");
+      } else {
+        throw new Error("Invalid verification code. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleStartVerification = (method: "email" | "sms") => {
+    setVerificationMethod(method);
+    setStep(4); // In a real app, this would trigger the backend to send OTP
+  };
+
   const onGoogleSuccess = async (response: any) => {
-    setIsLoading(true);
     setError("");
     try {
       await loginWithGoogle(response.credential);
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Google login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -108,7 +131,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
       {/* ── LEFT PANEL: Form ── */}
       <div className="relative w-full md:w-1/2 h-full md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
         {/* Ambient orbs */}
@@ -121,7 +144,12 @@ export function RegisterPage() {
             
             {/* Back button */}
             <button
-              onClick={() => step === 2 ? setStep(1) : window.history.back()}
+              onClick={() => {
+                if (step === 4) setStep(3);
+                else if (step === 3) setStep(2);
+                else if (step === 2) setStep(1);
+                else window.history.back();
+              }}
               className="absolute top-8 left-8 text-navy-800/40 hover:text-navy-950 transition-colors z-20"
             >
               <ArrowLeft className="w-6 h-6" />
@@ -130,7 +158,7 @@ export function RegisterPage() {
             {/* Logo */}
             <div className="flex justify-center mb-8 mt-4 relative z-20">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-14 w-auto object-contain drop-shadow-md" />
+                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-14 w-auto object-contain drop-shadow-md" />
               </Link>
             </div>
 
@@ -148,10 +176,10 @@ export function RegisterPage() {
                   exit="exit"
                 >
                   <motion.div variants={itemVariant} className="text-center mb-8">
-                    <h1 className="text-3xl font-serif font-bold text-navy-950 mb-2">
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-navy-950 mb-2">
                       Join HampiStays
                     </h1>
-                    <p className="text-navy-800/60 font-medium">
+                    <p className="text-xs md:text-sm text-navy-800/60 font-medium">
                       How would you like to use our platform?
                     </p>
                   </motion.div>
@@ -325,7 +353,7 @@ export function RegisterPage() {
                     </p>
                   </motion.div>
                 </motion.div>
-              ) : (
+              ) : step === 2 ? (
                 <motion.div
                   key="step2"
                   variants={{
@@ -367,6 +395,16 @@ export function RegisterPage() {
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
+                      }
+                      required
+                    />
+                    <Input
+                      label="Phone Number"
+                      type="tel"
+                      placeholder="+91 XXXXX XXXXX"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
                       }
                       required
                     />
@@ -418,18 +456,13 @@ export function RegisterPage() {
                     </div>
 
                     <Button
-                      type="submit"
-                      isLoading={isLoading}
-                      className={cn(
-                        "w-full h-14 text-lg mt-4",
-                        role === "guest"
-                          ? "bg-gold-500 hover:bg-gold-400 text-navy-950"
-                          : role === "owner"
-                          ? "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950"
-                          : "bg-navy-900 hover:bg-navy-950 text-white"
-                      )}
+                      onClick={() => {
+                        if (formData.password !== formData.confirmPassword) return setError("Passwords do not match");
+                        if (!formData.terms) return setError("You must agree to the terms");
+                        setStep(3);
+                      }}
                     >
-                      Create Account
+                      Continue to Verification
                     </Button>
                   </motion.form>
 
@@ -466,6 +499,127 @@ export function RegisterPage() {
                       </Link>
                     </p>
                   </motion.div>
+                </motion.div>
+              ) : step === 3 ? (
+                <motion.div
+                  key="step3"
+                  variants={{
+                    hidden: { opacity: 0, scale: 0.95 },
+                    show: { opacity: 1, scale: 1, transition: { duration: 0.4 } },
+                    exit: { opacity: 0, scale: 0.95, transition: { duration: 0.3 } }
+                  }}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Security Verification</h2>
+                    <p className="text-navy-800/60 text-sm font-medium">Select your preferred method to verify your identity.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => handleStartVerification("email")}
+                      className="w-full p-6 rounded-3xl border border-sand-200 bg-white/50 hover:bg-white hover:border-gold-300 transition-all flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gold-50 text-gold-600 flex items-center justify-center">
+                          <Check className="w-6 h-6" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-navy-950">Email Verification</p>
+                          <p className="text-xs text-navy-800/40">{formData.email}</p>
+                        </div>
+                      </div>
+                      <ArrowLeft className="w-5 h-5 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+
+                    <button
+                      onClick={() => handleStartVerification("sms")}
+                      className="w-full p-6 rounded-3xl border border-sand-200 bg-white/50 hover:bg-white hover:border-gold-300 transition-all flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-navy-50 text-navy-600 flex items-center justify-center">
+                          <Check className="w-6 h-6" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-navy-950">SMS Verification</p>
+                          <p className="text-xs text-navy-800/40">{formData.phone}</p>
+                        </div>
+                      </div>
+                      <ArrowLeft className="w-5 h-5 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="step4"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+                    exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
+                  }}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gold-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-gold-600">
+                      <Key className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Verify your {verificationMethod === 'email' ? 'Email' : 'Mobile'}</h2>
+                    <p className="text-navy-800/60 text-sm font-medium">
+                      Enter the 6-digit code sent to your {verificationMethod === 'email' ? 'inbox' : 'device'}.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between gap-2 md:gap-3">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        id={`otp-${index}`}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/[^0-9]/.test(value)) return;
+                          const newOtp = [...otp];
+                          newOtp[index] = value;
+                          setOtp(newOtp);
+                          
+                          // Auto focus next
+                          if (value && index < 5) {
+                            document.getElementById(`otp-${index + 1}`)?.focus();
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Backspace" && !otp[index] && index > 0) {
+                            document.getElementById(`otp-${index - 1}`)?.focus();
+                          }
+                        }}
+                        className="w-full h-14 md:h-16 text-center text-xl font-bold bg-white border-2 border-sand-200 rounded-2xl focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 outline-none transition-all text-navy-950"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    <Button
+                      onClick={handleVerifyOtp}
+                      isLoading={isVerifying}
+                      className="w-full h-14 rounded-2xl bg-navy-950 text-white shadow-luxury"
+                    >
+                      Verify & Finish
+                    </Button>
+                    <button 
+                      onClick={() => setStep(3)}
+                      className="w-full text-center text-sm font-bold text-navy-800/40 hover:text-navy-950 transition-colors"
+                    >
+                      Resend code in 45s
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

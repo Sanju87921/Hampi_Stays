@@ -99,7 +99,7 @@ export function SearchBar() {
   return (
     <div ref={wrapperRef} className="relative">
       {/* Main Bar */}
-      <div className="bg-white/90 backdrop-blur-xl rounded-full shadow-luxury p-2 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-2 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white/95">
+      <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-luxury p-3 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-3 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white/95">
 
         {/* Location */}
         <button
@@ -180,42 +180,49 @@ export function SearchBar() {
 
       {/* Location Dropdown */}
       {activePanel === "location" && (
-        <div className="absolute top-full left-0 mt-3 bg-white rounded-3xl shadow-luxury border border-sand-100 p-4 w-80 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="relative mb-3">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-500" />
+        <div className="absolute top-full left-0 mt-3 bg-white rounded-[2rem] shadow-luxury border border-sand-100 p-6 w-full md:w-96 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="relative mb-6">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gold-500">
+              <MapPin className="w-4 h-4" />
+            </div>
             <input
               autoFocus
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where in Hampi?"
-              className="w-full pl-9 pr-8 py-2.5 bg-sand-50 border border-sand-200 rounded-xl text-navy-950 placeholder:text-navy-800/40 text-sm font-medium outline-none focus:border-gold-400 transition-colors"
+              className="w-full pl-11 pr-10 py-3.5 bg-sand-50/50 border border-sand-200 rounded-2xl text-navy-950 placeholder:text-navy-950/30 text-sm font-semibold outline-none focus:border-gold-400 focus:ring-4 focus:ring-gold-500/5 transition-all"
             />
             {location && (
               <button
                 type="button"
                 onClick={() => setLocation("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-800/40 hover:text-navy-950/60"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-sand-100 rounded-full text-navy-950/20 hover:text-navy-950 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <p className="text-[10px] font-bold text-navy-800/40 uppercase tracking-widest px-1 mb-2">
-            Suggestions
-          </p>
-          <div className="max-h-60 overflow-y-auto custom-scrollbar">
-            {suggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => { setLocation(s); setActivePanel("dates"); }}
-                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-sand-50 transition-colors text-navy-950 font-medium text-sm"
-              >
-                <MapPin className="w-4 h-4 text-gold-400" />
-                {s}
-              </button>
-            ))}
+          
+          <div className="px-1">
+            <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em] mb-4 text-center">
+              Suggestions
+            </p>
+            <div className="space-y-1 max-h-72 overflow-y-auto no-scrollbar">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => { setLocation(s); setActivePanel("dates"); }}
+                  className="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-sand-50 transition-all group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-sand-50 flex items-center justify-center text-navy-950/20 group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-navy-950 group-hover:text-gold-600 transition-colors">{s}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

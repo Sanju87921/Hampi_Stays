@@ -157,30 +157,34 @@ export function ResortFilters({ filters, onChange, maxPrice, isOpen, onClose }: 
   );
 
   if (onClose) {
-    // Mobile Version
+    // Mobile Version (Bottom Sheet)
     return (
       <AnimatePresence>
         {isOpen && (
-          <>
+          <div className="fixed inset-0 z-[100] lg:hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 bg-navy-950/40 backdrop-blur-sm z-[100] lg:hidden"
+              className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-[101] p-4 lg:hidden"
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
             >
-              <div className="h-full">
+              {/* Grab Handle */}
+              <div className="w-full flex justify-center p-4">
+                <div className="w-12 h-1.5 bg-sand-200 rounded-full" />
+              </div>
+              <div className="flex-grow overflow-hidden">
                 {content}
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     );

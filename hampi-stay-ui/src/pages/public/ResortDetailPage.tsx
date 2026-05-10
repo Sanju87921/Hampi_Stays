@@ -9,11 +9,12 @@ import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Star, MapPin, CheckCircle, XCircle,
-  Wifi, Coffee, Car, Dumbbell, Waves,
+  Wifi, Coffee, Car, Dumbbell, Waves, Share2, Heart
 } from "lucide-react";
 import { BookingWidget } from "../../components/resort/BookingWidget";
 import { AttractionsGuide } from "../../components/resort/AttractionsGuide";
 import { ResortMap } from "../../components/resort/ResortMap";
+import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import type { Resort } from "../../types/resort";
 
@@ -49,7 +50,7 @@ export function ResortDetailPage() {
           location: {
             area: data.locationArea,
             district: "Hampi",
-            distanceFromCenterKm: 5, 
+            distanceFromCenterKm: 5,
             lat: data.locationLat,
             lng: data.locationLng
           },
@@ -134,18 +135,49 @@ export function ResortDetailPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="flex items-center gap-2 text-navy-950/50 mb-2">
-                <MapPin className="w-4 h-4 text-gold-500" />
-                <span className="text-sm font-medium">
-                  {resort.location?.area || (resort as any).locationArea || "Hampi"}, Hampi — {resort.location?.distanceFromCenterKm || 5} km from city centre
-                </span>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div>
+                  <div className="flex items-center gap-2 text-navy-950/50 mb-2">
+                    <MapPin className="w-4 h-4 text-gold-500" />
+                    <span className="text-sm font-medium">
+                      {resort.location?.area || (resort as any).locationArea || "Hampi"}, Hampi — {resort.location?.distanceFromCenterKm || 5} km from city centre
+                    </span>
+                  </div>
+
+                  <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-3 leading-tight">
+                    {resort.name}
+                  </h1>
+
+                  <p className="text-lg text-gold-600 font-medium italic mb-2">{resort.tagline}</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: resort.name,
+                            text: resort.tagline,
+                            url: window.location.href,
+                          });
+                        } catch (err) {
+                          console.log("Share failed", err);
+                        }
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert("Link copied to clipboard!");
+                      }
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand-200 text-navy-950 font-bold text-sm hover:bg-sand-50 transition-all shadow-sm active:scale-95"
+                  >
+                    <Share2 className="w-4 h-4" /> Share
+                  </button>
+                  <button className="p-3 rounded-2xl bg-white border border-sand-200 text-navy-950 hover:text-red-500 transition-all shadow-sm active:scale-95">
+                    <Heart className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-3 leading-tight">
-                {resort.name}
-              </h1>
-
-              <p className="text-lg text-gold-600 font-medium italic mb-4">{resort.tagline}</p>
 
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex items-center gap-1.5">
@@ -198,13 +230,20 @@ export function ResortDetailPage() {
                       key={room.id}
                       className={cn(
                         "group p-5 rounded-[2rem] border-2 transition-all duration-300 flex flex-col md:flex-row gap-6",
-                        isSelected 
-                          ? "bg-gold-50/50 border-gold-500 shadow-luxury" 
+                        isSelected
+                          ? "bg-gold-50/50 border-gold-500 shadow-luxury"
                           : "bg-white border-sand-100 hover:border-gold-300"
                       )}
                     >
-                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0">
-                        <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0 bg-sand-100">
+                        <img
+                          src={room.images?.[0] || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1000'}
+                          alt={room.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1000';
+                          }}
+                        />
                       </div>
                       <div className="flex-grow">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -297,6 +336,29 @@ export function ResortDetailPage() {
             </div>
           </aside>
         </div>
+      </div>
+
+      {/* Mobile Sticky Booking Bar */}
+      <div className="md:hidden fixed bottom-24 left-0 right-0 z-40 px-4 pointer-events-none">
+        <motion.div
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          className="bg-white/90 backdrop-blur-xl border border-sand-200 rounded-3xl p-4 shadow-luxury flex items-center justify-between pointer-events-auto"
+        >
+          <div>
+            <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Starting from</p>
+            <p className="text-xl font-serif font-bold text-navy-950">₹{resort.pricePerNight?.toLocaleString()}<span className="text-xs font-sans font-normal text-navy-950/50">/night</span></p>
+          </div>
+          <Button
+            className="px-8 rounded-2xl shadow-gold"
+            onClick={() => {
+              const el = document.getElementById('rooms');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Check Availability
+          </Button>
+        </motion.div>
       </div>
     </div>
   );
