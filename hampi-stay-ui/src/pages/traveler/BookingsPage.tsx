@@ -1,16 +1,15 @@
-import { useState, useEffect } from "react";
-import { useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
   Star, XCircle, ChevronRight, Sparkles,
-  Navigation, CheckCircle2, History, CheckCircle
+  Navigation, CheckCircle2, History
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
-import { Booking } from "../../types/booking";
+import type { Booking } from "../../types/booking";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
