@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import hpp from 'hpp';
+import mongoSanitize from 'express-mongo-sanitize';
 import { body, validationResult } from 'express-validator';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hampi_luxury_secret_key_2026';
@@ -87,11 +89,12 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com", "https://accounts.google.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://images.unsplash.com"],
-      connectSrc: ["'self'", "https://api.razorpay.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com"],
+      connectSrc: ["'self'", "https://api.razorpay.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      frameSrc: ["'self'", "https://accounts.google.com", "https://api.razorpay.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
@@ -99,8 +102,13 @@ export const securityHeaders = helmet({
   crossOriginEmbedderPolicy: false, // For Cloudinary/Unsplash images
 });
 
-// Sanitize Request is removed due to Express 5 compatibility issues with direct query modification.
-// Sanitization is now handled by individual route validators.
+/**
+ * Parameter Pollution & Sanitization
+ */
+export const sanitizeRequest = [
+  mongoSanitize(),
+  hpp(),
+];
 
 /**
  * Validation Error Handler

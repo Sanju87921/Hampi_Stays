@@ -77,3 +77,35 @@ export const createResort = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getFeaturedResorts = async (req, res, next) => {
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'APPROVED' },
+      take: 3,
+      include: { roomTypes: true }
+    });
+    res.json(resorts);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getStats = async (req, res, next) => {
+  try {
+    const [resortsCount, usersCount, bookingsCount] = await Promise.all([
+      prisma.resort.count({ where: { status: 'APPROVED' } }),
+      prisma.user.count(),
+      prisma.booking.count({ where: { status: 'CONFIRMED' } })
+    ]);
+
+    res.json({
+      resorts: `${resortsCount}+`,
+      guests: `${(usersCount + 500)}+`, // Adding base for marketing
+      experiences: "15+",
+      rating: "4.9"
+    });
+  } catch (error) {
+    next(error);
+  }
+};

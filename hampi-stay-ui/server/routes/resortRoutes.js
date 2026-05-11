@@ -12,6 +12,8 @@ const resortValidation = [
 ];
 
 router.get('/', resortController.getAllResorts);
+router.get('/featured', resortController.getFeaturedResorts);
+router.get('/stats', resortController.getStats);
 router.get('/:slug', resortController.getResortBySlug);
 router.post('/', authenticate, authorize('RESORT_OWNER', 'ADMIN'), resortValidation, validate, resortController.createResort);
 

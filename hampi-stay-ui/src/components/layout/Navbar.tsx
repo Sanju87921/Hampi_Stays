@@ -113,7 +113,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav (Center) */}
-          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-10">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path;
               return (
@@ -121,15 +121,17 @@ export function Navbar() {
                   key={link.name}
                   to={link.path}
                   className={cn(
-                    "relative text-[13px] uppercase tracking-[0.15em] font-semibold transition-colors duration-300 group py-2",
-                    isScrolled ? "text-navy-900 hover:text-gold-600" : "text-white/90 hover:text-gold-400"
+                    "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
+                    isScrolled 
+                      ? "text-navy-950 hover:text-gold-600" 
+                      : "text-white hover:text-gold-400"
                   )}
                 >
-                  {link.name}
+                  <span className="relative z-10">{link.name}</span>
                   <span 
                     className={cn(
-                      "absolute bottom-0 left-0 w-full h-[2px] rounded-full transform origin-left transition-transform duration-300 ease-out",
-                      isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+                      "absolute -bottom-1 left-0 w-full h-[1.5px] rounded-full transform origin-right transition-transform duration-500 ease-out",
+                      isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left",
                       isScrolled ? "bg-gold-500" : "bg-gold-400"
                     )}
                   />
@@ -141,14 +143,14 @@ export function Navbar() {
           {/* Right Side (Desktop Actions & Mobile Toggle) */}
           <div className="flex-1 flex justify-end items-center gap-5 z-10">
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-5">
+            <div className="hidden md:flex items-center gap-6">
               {isAuthenticated ? (
-                <>
+                <div className="flex items-center gap-6">
                   <Link
                     to="/dashboard"
                     className={cn(
-                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:text-gold-500",
-                      isScrolled ? "text-navy-900" : "text-gold-400"
+                      "text-[12px] uppercase tracking-[0.15em] font-bold transition-all duration-300 hover:text-gold-500",
+                      isScrolled ? "text-navy-950" : "text-gold-400"
                     )}
                   >
                     Dashboard
@@ -156,39 +158,40 @@ export function Navbar() {
                   <button
                     onClick={logout}
                     className={cn(
-                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
-                      isScrolled ? "text-navy-900" : "text-white"
+                      "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
+                      isScrolled 
+                        ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" 
+                        : "border-white/20 text-white hover:bg-white/10"
                     )}
                   >
                     Logout
                   </button>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="flex items-center gap-6">
                   <Link
                     to="/login"
                     className={cn(
-                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
-                      isScrolled ? "text-navy-900" : "text-white"
+                      "text-[12px] uppercase tracking-[0.15em] font-bold transition-all duration-300 hover:opacity-70",
+                      isScrolled ? "text-navy-950" : "text-white"
                     )}
                   >
                     Log in
                   </Link>
-                  <Link to="/register">
+                  <Link to="/resorts">
                     <Button
                       variant="primary"
-                      size="sm"
                       className={cn(
-                        "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
+                        "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
                         isScrolled 
-                          ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
-                          : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
+                          ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 shadow-2xl shadow-navy-950/20" 
+                          : "bg-gold-500 text-navy-950 hover:bg-white hover:text-navy-950 shadow-2xl shadow-gold-500/20"
                       )}
                     >
                       Book Now
                     </Button>
                   </Link>
-                </>
+                </div>
               )}
             </div>
 

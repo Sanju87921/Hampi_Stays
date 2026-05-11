@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Middleware
-import { securityHeaders, globalLimiter } from './middleware/security.js';
+import { securityHeaders, globalLimiter, sanitizeRequest } from './middleware/security.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Routes
@@ -37,7 +37,7 @@ app.use('/api', globalLimiter);
 // 2. Body Parsers & Sanitization
 app.use(express.json({ limit: '10mb' })); // Reduced limit for safety
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-// app.use(sanitizeRequest); // Removed for Express 5 compatibility
+app.use(sanitizeRequest);
 
 // 3. CORS Configuration
 app.use(cors({
@@ -61,6 +61,15 @@ app.use('/api/upload', uploadRoutes);
 
 
 
+
+// Global Data Routes
+import * as resortController from './controllers/resortController.js';
+app.get('/api/stats', resortController.getStats);
+app.get('/api/settings', (req, res) => res.json({ 
+  guideServiceEnabled: true,
+  maintenanceMode: false,
+  siteName: "HampiStays"
+}));
 
 // Health Check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
