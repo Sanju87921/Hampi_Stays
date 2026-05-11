@@ -48,6 +48,7 @@ export function TravelerDashboard() {
 
     // Real-time sync listener
     const handleWishlistUpdate = () => {
+      if (!user) return;
       fetch(`/api/users/${user.id}/wishlist`)
         .then(res => res.json())
         .then(data => setWishlist(data))
