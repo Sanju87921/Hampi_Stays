@@ -704,6 +704,20 @@ app.get('/api/resorts/:resortId/reviews', async (req, res) => {
 // PROFILE & NOTIFICATION ROUTES
 // ============================================================
 
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const { passwordHash, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
 app.patch('/api/users/:id', async (req, res) => {
   try {
     const { name, email, phone, avatar, location, idType, idNumber, idImage, kycStatus, role } = req.body;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Camera, ShieldCheck, Check, Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -32,6 +32,34 @@ export function ProfilePage() {
   });
   const { updateUser } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Fetch latest user data on mount to ensure fresh state
+  useEffect(() => {
+    const fetchLatestUser = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/${user.id}`);
+        if (response.ok) {
+          const freshUser = await response.json();
+          updateUser(freshUser);
+          setFormData({
+            name: freshUser.name || "",
+            email: freshUser.email || "",
+            phone: freshUser.phone || "",
+            avatar: freshUser.avatar || "",
+            location: freshUser.location || "Hampi, Karnataka",
+            idType: freshUser.idType || "",
+            idNumber: freshUser.idNumber || "",
+            idImage: freshUser.idImage || "",
+            kycStatus: freshUser.kycStatus || "NOT_SUBMITTED"
+          });
+        }
+      } catch (err) {
+        console.error("Failed to refresh user data:", err);
+      }
+    };
+    fetchLatestUser();
+  }, [user?.id]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
