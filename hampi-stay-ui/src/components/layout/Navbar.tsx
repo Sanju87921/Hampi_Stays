@@ -93,17 +93,20 @@ export function Navbar() {
       )}
     >
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between relative">
-          {/* Logo (Centered on mobile, Left on desktop) */}
+        <div className="flex items-center justify-between">
+          {/* Mobile Left Spacer (to help center logo) */}
+          <div className="flex-1 md:hidden" />
+
+          {/* Logo */}
           <Link 
             to={user?.role === 'RESORT_OWNER' ? "/dashboard" : "/"} 
-            className="flex items-center group z-10 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0"
+            className="flex items-center justify-center md:justify-start flex-1 md:flex-none z-10"
           >
             <img 
               src="/logo-full.png" 
               alt="HampiStays" 
               className={cn(
-                "h-16 md:h-20 w-auto object-contain transition-all duration-500",
+                "h-14 md:h-20 w-auto object-contain transition-all duration-500",
                 !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
               )}
             />
@@ -135,69 +138,72 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Desktop Actions (Right) */}
-          <div className="hidden md:flex items-center gap-5 z-10">
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className={cn(
-                    "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:text-gold-500",
-                    isScrolled ? "text-navy-900" : "text-gold-400"
-                  )}
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={logout}
-                  className={cn(
-                    "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
-                    isScrolled ? "text-navy-900" : "text-white"
-                  )}
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className={cn(
-                    "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
-                    isScrolled ? "text-navy-900" : "text-white"
-                  )}
-                >
-                  Log in
-                </Link>
-                <Link to="/register">
-                  <Button
-                    variant="primary"
-                    size="sm"
+          {/* Right Side (Desktop Actions & Mobile Toggle) */}
+          <div className="flex-1 flex justify-end items-center gap-5 z-10">
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-5">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
                     className={cn(
-                      "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
-                      isScrolled 
-                        ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
-                        : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
+                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:text-gold-500",
+                      isScrolled ? "text-navy-900" : "text-gold-400"
                     )}
                   >
-                    Book Now
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className={cn(
+                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
+                      isScrolled ? "text-navy-900" : "text-white"
+                    )}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className={cn(
+                      "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
+                      isScrolled ? "text-navy-900" : "text-white"
+                    )}
+                  >
+                    Log in
+                  </Link>
+                  <Link to="/register">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className={cn(
+                        "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
+                        isScrolled 
+                          ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
+                          : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
+                      )}
+                    >
+                      Book Now
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X className={cn("w-6 h-6", isScrolled ? "text-navy-950" : "text-white")} />
-            ) : (
-              <Menu className={cn("w-6 h-6", isScrolled ? "text-navy-950" : "text-white")} />
-            )}
-          </button>
+            {/* Mobile Menu Toggle */}
+            <button
+              className="md:hidden p-2 -mr-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X className={cn("w-6 h-6", isScrolled ? "text-navy-950" : "text-white")} />
+              ) : (
+                <Menu className={cn("w-6 h-6", isScrolled ? "text-navy-950" : "text-white")} />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
