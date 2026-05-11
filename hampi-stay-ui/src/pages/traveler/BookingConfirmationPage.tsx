@@ -31,147 +31,138 @@ export function BookingConfirmationPage() {
     // Brand Colors
     const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
     const gold: [number, number, number] = [184, 134, 11]; // #B8860B
+    const lightGold: [number, number, number] = [212, 175, 55]; // #D4AF37
     const sand: [number, number, number] = [245, 245, 240]; // #F5F5F0
     
-    // --- 1. PREMIUM HEADER ---
-    doc.setFillColor(navy[0], navy[1], navy[2]);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Page Dimensions
+    const pageWidth = 210;
+    const pageHeight = 297;
+
+    // --- 1. FULL PAGE LUXURY FRAME ---
+    doc.setDrawColor(gold[0], gold[1], gold[2]);
+    doc.setLineWidth(0.5);
+    doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // Main border
+    doc.setLineWidth(0.1);
+    doc.rect(7, 7, pageWidth - 14, pageHeight - 14); // Inner accent line
     
-    // Branding
+    // --- 2. HEADER SECTION (COMPACT & MODERN) ---
+    doc.setFillColor(navy[0], navy[1], navy[2]);
+    doc.rect(7.1, 7.1, pageWidth - 14.2, 35, 'F');
+    
     doc.setTextColor(255, 255, 255);
     doc.setFont("times", "bold");
-    doc.setFontSize(28);
+    doc.setFontSize(26);
     doc.text("HAMPISTAYS", 15, 22);
     
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(180, 180, 180);
     doc.text("LUXURY ECO-HOSPITALITY | HAMPI, INDIA", 15, 28);
 
-    // Confirmation Header
-    doc.setTextColor(gold[0], gold[1], gold[2]);
+    doc.setTextColor(lightGold[0], lightGold[1], lightGold[2]);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("OFFICIAL CONFIRMATION", 195, 18, { align: 'right' });
+    doc.setFontSize(9);
+    doc.text("BOOKING CONFIRMATION", pageWidth - 15, 20, { align: 'right' });
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(`Ref: ${safeRef}`, 195, 24, { align: 'right' });
-    doc.text(`Date: ${issueDate}`, 195, 29, { align: 'right' });
+    doc.setFontSize(8);
+    doc.text(`REFERENCE: ${safeRef}`, pageWidth - 15, 26, { align: 'right' });
+    doc.text(`ISSUED: ${issueDate}`, pageWidth - 15, 31, { align: 'right' });
 
-    // --- 2. LUXURY BORDER & TITLE ---
-    doc.setDrawColor(gold[0], gold[1], gold[2]);
-    doc.setLineWidth(0.5);
-    doc.line(15, 50, 195, 50); // Top divider
-
+    // --- 3. GUEST & RESORT OVERVIEW (SIDE-BY-SIDE) ---
+    let currentY = 50;
+    
+    // Left: Guest Info
     doc.setTextColor(navy[0], navy[1], navy[2]);
     doc.setFont("times", "bolditalic");
-    doc.setFontSize(18);
-    doc.text("Your Royal Retreat is Confirmed", 105, 62, { align: 'center' });
-
-    // --- 3. TWO-COLUMN DETAILS SECTION ---
-    let currentY = 75;
-    
-    // Column 1: Guest & Booking
-    doc.setFillColor(sand[0], sand[1], sand[2]);
-    doc.rect(15, currentY, 85, 35, 'F');
-    
-    doc.setFontSize(8);
+    doc.setFontSize(16);
+    doc.text("Welcome to your sanctuary,", 15, currentY);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(gold[0], gold[1], gold[2]);
-    doc.text("GUEST & BOOKING", 20, currentY + 8);
+    doc.setFontSize(20);
+    const cleanGuestName = (guestName || "Valued Guest").replace(/_/g, ' ');
+    doc.text(cleanGuestName, 15, currentY + 10);
     
+    // Right: Resort Summary Card
+    doc.setFillColor(sand[0], sand[1], sand[2]);
+    doc.roundedRect(120, currentY - 8, 75, 25, 3, 3, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(gold[0], gold[1], gold[2]);
+    doc.text("YOUR DESTINATION", 125, currentY);
     doc.setTextColor(navy[0], navy[1], navy[2]);
     doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    const cleanGuestName = guestName.replace(/_/g, ' ');
-    doc.text(cleanGuestName, 20, currentY + 16);
-    
+    doc.text(resortName, 125, currentY + 7);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(`Status: ${booking.status.toUpperCase()}`, 20, currentY + 22);
-    doc.text(`Reference: ${safeRef}`, 20, currentY + 28);
-
-    // Column 2: Accommodation
-    doc.setFillColor(sand[0], sand[1], sand[2]);
-    doc.rect(110, currentY, 85, 35, 'F');
-    
     doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(gold[0], gold[1], gold[2]);
-    doc.text("ACCOMMODATION", 115, currentY + 8);
-    
-    doc.setTextColor(navy[0], navy[1], navy[2]);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text(resortName, 115, currentY + 16);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(roomName, 115, currentY + 22);
-    doc.text(`${nights} Night(s) Stay`, 115, currentY + 28);
+    doc.text(roomName, 125, currentY + 12);
 
-    // --- 4. STAY SUMMARY TABLE ---
-    currentY += 45;
-    autoTable(doc, {
-      startY: currentY,
-      head: [['CHECK-IN', 'CHECK-OUT', 'GUESTS', 'TOTAL PAID']],
-      body: [[
-        `${new Date(booking.checkIn).toLocaleDateString("en-GB")}\n14:00 PM`,
-        `${new Date(booking.checkOut).toLocaleDateString("en-GB")}\n11:00 AM`,
-        `${booking.guests} Adult(s)`,
-        `INR ${grandTotal?.toLocaleString("en-IN")}`
-      ]],
-      theme: 'plain',
-      styles: { fontSize: 10, cellPadding: 6, halign: 'center' },
-      headStyles: { 
-        fillColor: [240, 240, 240], 
-        textColor: navy, 
-        fontStyle: 'bold', 
-        fontSize: 8,
-        lineWidth: 0.1,
-        lineColor: [200, 200, 200]
-      },
-      bodyStyles: { 
-        textColor: navy,
-        fontStyle: 'bold',
-        fontSize: 11
-      },
-      margin: { left: 15, right: 15 },
+    // --- 4. THE STAY DETAILS (THREE-COLUMN GRID) ---
+    currentY += 35;
+    doc.setDrawColor(240, 240, 240);
+    doc.line(15, currentY - 5, 195, currentY - 5);
+
+    const detailCols = [
+      { label: "CHECK-IN", val: new Date(booking.checkIn).toLocaleDateString("en-GB"), sub: "From 14:00 PM" },
+      { label: "CHECK-OUT", val: new Date(booking.checkOut).toLocaleDateString("en-GB"), sub: "Until 11:00 AM" },
+      { label: "ACCOMMODATION", val: `${nights} Night(s)`, sub: `${booking.guests} Adult Guest(s)` }
+    ];
+
+    detailCols.forEach((col, i) => {
+      const x = 15 + (i * 65);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.text(col.label, x, currentY);
+      doc.setFontSize(11);
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.text(col.val, x, currentY + 7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(col.sub, x, currentY + 12);
     });
 
-    // --- 5. IMPORTANT INFO & QR (SIDE-BY-SIDE) ---
-    currentY = (doc as any).lastAutoTable.finalY + 15;
+    // --- 5. FINANCIAL SUMMARY (MINIMALIST) ---
+    currentY += 30;
+    doc.setFillColor(navy[0], navy[1], navy[2]);
+    doc.rect(15, currentY, 180, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("TOTAL AMOUNT PAID", 25, currentY + 12);
+    doc.setFontSize(14);
+    doc.setTextColor(lightGold[0], lightGold[1], lightGold[2]);
+    doc.text(`INR ${grandTotal?.toLocaleString("en-IN")}`, 185, currentY + 13, { align: 'right' });
 
-    // Background for this section
-    doc.setDrawColor(230, 230, 230);
-    doc.rect(15, currentY, 180, 55);
+    // --- 6. ESSENTIAL INFO & QR (INTEGRATED) ---
+    currentY += 35;
+    
+    // Vertical separator
+    doc.setDrawColor(gold[0], gold[1], gold[2]);
+    doc.setLineWidth(0.2);
+    doc.line(130, currentY, 130, currentY + 60);
 
-    // Left: Instructions
-    doc.setFont("times", "bold");
-    doc.setFontSize(11);
+    // Instructions
     doc.setTextColor(navy[0], navy[1], navy[2]);
-    doc.text("Essential Information", 22, currentY + 10);
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    doc.text("Essential Information", 15, currentY);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
     const infoPoints = [
-      "• Present a valid Govt ID (Aadhar/Passport) at check-in.",
-      "• Cancellation: Free up to 48 hours prior to arrival.",
-      "• HampiStays is a plastic-free sanctuary.",
-      "• Standard Check-in 2 PM | Check-out 11 AM."
+      "• Present this document & Govt ID (Aadhar/Passport) at check-in.",
+      "• Cancellation is free up to 48 hours prior to arrival.",
+      "• HampiStays is a plastic-free, sustainable heritage sanctuary.",
+      "• Digital Check-in is available via the QR code provided.",
+      "• For assistance: +91 99000 88000 | help@hampistays.com"
     ];
     infoPoints.forEach((point, i) => {
-      doc.text(point, 22, currentY + 18 + (i * 6));
+      doc.text(point, 15, currentY + 10 + (i * 7));
     });
 
-    // Right: QR Code
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(gold[0], gold[1], gold[2]);
-    doc.text("SCAN TO VERIFY", 165, currentY + 10, { align: 'center' });
-    
+    // QR Code Section
     try {
       const qrUrl = `${window.location.origin}/dashboard/bookings`;
       const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { 
@@ -180,26 +171,28 @@ export function BookingConfirmationPage() {
         color: { dark: '#0A0F1E', light: '#FFFFFF' },
         errorCorrectionLevel: 'H'
       });
-      doc.addImage(qrCodeDataUrl, 'PNG', 150, currentY + 13, 30, 30);
-    } catch (err) {
-      console.error("QR Generation failed", err);
-    }
+      doc.addImage(qrCodeDataUrl, 'PNG', 145, currentY + 5, 40, 40);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.text("SCAN TO VERIFY STAY", 165, currentY + 52, { align: 'center' });
+    } catch (err) { console.error(err); }
 
-    // --- 6. LUXURY FOOTER ---
-    const footerY = 270;
+    // --- 7. LUXURY FOOTER (PINNED) ---
+    const footerY = 275;
     doc.setDrawColor(gold[0], gold[1], gold[2]);
-    doc.setLineWidth(0.1);
-    doc.line(40, footerY, 170, footerY);
+    doc.setLineWidth(0.3);
+    doc.line(60, footerY, 150, footerY);
 
     doc.setTextColor(navy[0], navy[1], navy[2]);
     doc.setFont("times", "italic");
     doc.setFontSize(10);
-    doc.text("We look forward to welcoming you to the heart of Hampi's heritage.", 105, footerY + 8, { align: 'center' });
+    doc.text("Timeless Heritage. Sustainable Luxury.", 105, footerY + 8, { align: 'center' });
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
+    doc.text("HampiStays Luxury Collection | Main Road, Hampi, Karnataka 583239", 105, footerY + 14, { align: 'center' });
 
     doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
   };
