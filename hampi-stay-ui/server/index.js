@@ -217,7 +217,19 @@ app.post('/api/auth/apple', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage
+      }
     });
   } catch (error) {
     console.error('Apple Auth Error:', error);
@@ -259,7 +271,19 @@ app.post('/api/auth/google', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage
+      }
     });
   } catch (error) {
     console.error('Google Auth Error:', error);
@@ -336,6 +360,7 @@ app.post('/api/auth/register', async (req, res) => {
           name,
           passwordHash,
           role: role || 'TRAVELLER',
+          kycStatus: 'NOT_SUBMITTED'
         },
       });
 
@@ -591,13 +616,16 @@ app.get('/api/admin/otp-logs', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { password } = req.body;
-    const email = req.body.email.toLowerCase();
+    const { password, email: rawEmail } = req.body;
+    if (!rawEmail || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    const email = rawEmail.toLowerCase();
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       console.log(`Login failed: User ${email} not found`);
-      return res.status(404).json({ error: 'new_traveler_detected' });
+      return res.status(404).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -610,9 +638,22 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage
+      }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Server error during login' });
   }
 });
