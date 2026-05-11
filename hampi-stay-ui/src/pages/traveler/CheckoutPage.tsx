@@ -116,7 +116,7 @@ export function CheckoutPage() {
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${bookingData.resortName}`,
-          image: "https://hampistays.com/logo.png",
+          image: "https://images.unsplash.com/photo-1620601438257-23f46f3a8b4b?w=200&h=200&fit=crop",
           order_id: booking.razorpayOrderId,
           handler: async function (response: any) {
             // Verify Payment
