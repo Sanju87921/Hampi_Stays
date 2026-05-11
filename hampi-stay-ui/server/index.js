@@ -480,10 +480,18 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-// Verify Razorpay Payment
 app.post('/api/bookings/:reference/verify-payment', async (req, res) => {
   try {
     const { reference } = req.params;
+    console.log("--- New Verification Request ---");
+    console.log("Headers:", req.headers);
+    console.log("Body exists:", !!req.body);
+
+    if (!req.body) {
+      console.error("❌ req.body is undefined!");
+      return res.status(400).json({ error: "Missing request body" });
+    }
+
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
     // 1. Verify Signature
