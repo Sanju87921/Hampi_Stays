@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize'; // Works for JSON objects in general
 import { body, validationResult } from 'express-validator';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hampi_luxury_secret_key_2026';
@@ -100,12 +99,8 @@ export const securityHeaders = helmet({
   crossOriginEmbedderPolicy: false, // For Cloudinary/Unsplash images
 });
 
-/**
- * Parameter Pollution & Sanitization
- */
-export const sanitizeRequest = [
-  mongoSanitize(), // Prevent NoSQL-style injection
-];
+// Sanitize Request is removed due to Express 5 compatibility issues with direct query modification.
+// Sanitization is now handled by individual route validators.
 
 /**
  * Validation Error Handler

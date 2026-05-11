@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Middleware
-import { securityHeaders, globalLimiter, sanitizeRequest } from './middleware/security.js';
+import { securityHeaders, globalLimiter } from './middleware/security.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Routes
@@ -37,7 +37,7 @@ app.use('/api', globalLimiter);
 // 2. Body Parsers & Sanitization
 app.use(express.json({ limit: '10mb' })); // Reduced limit for safety
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(sanitizeRequest);
+// app.use(sanitizeRequest); // Removed for Express 5 compatibility
 
 // 3. CORS Configuration
 app.use(cors({
