@@ -118,7 +118,7 @@ export function FeaturedResorts() {
               >
                 {/* Image */}
                 <img
-                  src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000"}
+                  src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=800"}
                   alt={resort.name}
                   loading="lazy"
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110 opacity-90 group-hover:opacity-100"

@@ -110,7 +110,7 @@ export function Experiences() {
               className="group relative rounded-[2.5rem] overflow-hidden shadow-md hover:shadow-luxury transition-all duration-700 hover:-translate-y-2 h-[500px]"
             >
               <img
-                src={exp.image || "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop"}
+                src={exp.image || "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=75&w=800&auto=format&fit=crop"}
                 alt={exp.title}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110"

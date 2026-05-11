@@ -11,13 +11,13 @@ export function Hero() {
   const isAdmin = user?.role === "ADMIN";
 
   const hampiImages = [
-    "/images/hero.png", // Luxury Resort Hero
-    "/images/hampi-1.png", // Stone Chariot
-    "/images/hampi-2.png", // Virupaksha Temple
-    "/images/hampi-3.png", // Hampi Boulders View
-    "/images/hampi-4.png", // Lotus Mahal
-    "/images/hampi-5.png", // Anjanadri Hill (Hanuman Birthplace)
-    "/images/hampi-6.png"  // Tungabhadra River
+    "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=1200", // Luxury Resort Hero
+    "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=75&w=1200", // Stone Chariot
+    "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?auto=format&fit=crop&q=75&w=1200", // Virupaksha Temple
+    "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=75&w=1200", // Hampi Boulders View
+    "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=75&w=1200", // Lotus Mahal
+    "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=75&w=1200", // Duplicate placeholder for variety
+    "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=1200"  // Twilight view
   ];
 
   const imageLabels = [
@@ -67,6 +67,7 @@ export function Hero() {
               transition={{ duration: 1.5 }}
               alt={imageLabels[currentImageIndex]}
               className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
             />
           </AnimatePresence>
           
