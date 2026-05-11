@@ -61,6 +61,28 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * OTP Send Rate Limiter (Prevent SMS/Email flood)
+ */
+export const otpSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 OTP requests per hour
+  message: { error: 'Too many verification codes requested. Please try again after an hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * OTP Verify Rate Limiter (Prevent brute-force)
+ */
+export const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 verification attempts per 15 mins
+  message: { error: 'Too many failed attempts. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * Security Headers Configuration (Helmet)
  */
 export const securityHeaders = helmet({
