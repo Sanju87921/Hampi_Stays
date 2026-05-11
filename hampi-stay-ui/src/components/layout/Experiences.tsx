@@ -27,6 +27,8 @@ export function Experiences() {
     fetchExperiences();
   }, []);
 
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
   // Fallback data if no real experiences exist yet
   const fallbackExperiences = [
     {
@@ -45,7 +47,7 @@ export function Experiences() {
       description: "Join a private tour led by a field archaeologist to explore hidden royal enclosures.",
       price: 3500,
       meetingPoint: "Vittala Temple Gate",
-      image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?q=80&w=2070&auto=format&fit=crop"
+      image: "/images/hampi-4.png"
     },
     {
       id: "f3",
@@ -54,7 +56,7 @@ export function Experiences() {
       description: "Trek to the summit of Matanga Hill for a breathtaking 360° dawn panorama.",
       price: 1800,
       meetingPoint: "Hampi Island",
-      image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?q=80&w=2070&auto=format&fit=crop"
+      image: "/images/hampi-5.png"
     }
   ];
 
@@ -110,9 +112,10 @@ export function Experiences() {
               className="group relative rounded-[2.5rem] overflow-hidden shadow-md hover:shadow-luxury transition-all duration-700 hover:-translate-y-2 h-[500px]"
             >
               <img
-                src={exp.image || "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=75&w=800&auto=format&fit=crop"}
+                src={imgErrors[exp.id] ? "/images/hampi-3.png" : (exp.image || "/images/hampi-3.png")}
                 alt={exp.title}
                 loading="lazy"
+                onError={() => setImgErrors(prev => ({ ...prev, [exp.id]: true }))}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy-950/95 via-navy-950/40 to-transparent" />

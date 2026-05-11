@@ -68,25 +68,25 @@ const team = [
     name: "Arjun Varma",
     role: "Co-Founder & CEO",
     desc: "Former ITC Hotels executive. Fell in love with Hampi during a solo backpacking trip and never left.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+    image: "https://ui-avatars.com/api/?name=Arjun+Varma&background=0A0F1E&color=fff",
   },
   {
     name: "Priya Deshmukh",
     role: "Co-Founder & COO",
     desc: "Heritage conservation architect turned entrepreneur. Led UNESCO restoration projects across Karnataka.",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400",
+    image: "https://ui-avatars.com/api/?name=Priya+Deshmukh&background=D4AF37&color=fff",
   },
   {
     name: "Karthik Reddy",
     role: "Head of Partnerships",
     desc: "Born in Hospet, raised in Hampi. Knows every resort owner, every hidden temple, and every sunset spot.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400",
+    image: "https://ui-avatars.com/api/?name=Karthik+Reddy&background=0A0F1E&color=fff",
   },
   {
     name: "Meera Iyer",
     role: "Head of Guest Experience",
     desc: "10 years at Taj Hotels. Designs bespoke itineraries that transform trips into life-changing experiences.",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=400",
+    image: "https://ui-avatars.com/api/?name=Meera+Iyer&background=D4AF37&color=fff",
   },
 ];
 
@@ -178,7 +178,7 @@ export function OurStoryPage() {
           >
             <div className="relative rounded-[2rem] overflow-hidden aspect-[4/5] shadow-luxury">
               <img
-                src="https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=2070&auto=format&fit=crop"
+                src="/images/hampi-2.png"
                 alt="Hampi Landscape"
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -452,7 +452,7 @@ export function OurStoryPage() {
             >
               <div className="absolute -inset-4 bg-gold-500/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <img 
-                src="https://images.unsplash.com/photo-1581488613801-68d36242d412?auto=format&fit=crop&q=80&w=1000" 
+                src="/images/hampi-6.png" 
                 alt="Conservation efforts" 
                 className="relative rounded-[2rem] shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
               />

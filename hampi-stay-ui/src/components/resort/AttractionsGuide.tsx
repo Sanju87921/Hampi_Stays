@@ -19,9 +19,12 @@ export function AttractionsGuide({ attractions }: AttractionsGuideProps) {
           >
             <div className="w-20 h-20 rounded-2xl bg-sand-100 flex-shrink-0 overflow-hidden">
               <img 
-                src={`https://images.unsplash.com/photo-1590050752117-23aae2968b20?auto=format&fit=crop&q=80&w=200`} 
+                src={place.imageUrl || "/images/hampi-1.png"} 
                 alt={place.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/images/hampi-1.png";
+                }}
               />
             </div>
             <div className="flex-grow">

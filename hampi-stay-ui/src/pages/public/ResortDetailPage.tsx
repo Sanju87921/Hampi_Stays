@@ -34,6 +34,7 @@ export function ResortDetailPage() {
   const [resort, setResort] = useState<Resort | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchResort = async () => {
@@ -106,9 +107,10 @@ export function ResortDetailPage() {
             onClick={() => setGalleryIdx(0)}
           >
             <img
-              src={images[galleryIdx] ?? images[0]}
+              src={imgErrors['main'] ? "/images/hampi-1.png" : (images[galleryIdx] ?? images[0])}
               alt={resort.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+              onError={() => setImgErrors(prev => ({ ...prev, ['main']: true }))}
             />
           </div>
           {images.slice(1, 5).map((img: string, i: number) => (
@@ -118,9 +120,10 @@ export function ResortDetailPage() {
               onClick={() => setGalleryIdx(i + 1)}
             >
               <img
-                src={img}
+                src={imgErrors[`gallery-${i}`] ? "/images/hampi-2.png" : img}
                 alt={`${resort.name} photo ${i + 2}`}
                 className={`w-full h-full object-cover hover:scale-105 transition-transform duration-700 ${galleryIdx === i + 1 ? "ring-4 ring-gold-500" : ""}`}
+                onError={() => setImgErrors(prev => ({ ...prev, [`gallery-${i}`]: true }))}
               />
             </div>
           ))}
@@ -241,7 +244,7 @@ export function ResortDetailPage() {
                           alt={room.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1000';
+                            (e.target as HTMLImageElement).src = '/images/hampi-1.png';
                           }}
                         />
                       </div>

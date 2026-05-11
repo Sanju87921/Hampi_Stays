@@ -11,13 +11,13 @@ export function Hero() {
   const isAdmin = user?.role === "ADMIN";
 
   const hampiImages = [
-    "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=1200", // Luxury Resort Hero
-    "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=75&w=1200", // Stone Chariot
-    "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?auto=format&fit=crop&q=75&w=1200", // Virupaksha Temple
-    "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=75&w=1200", // Hampi Boulders View
-    "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=75&w=1200", // Lotus Mahal
-    "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=75&w=1200", // Duplicate placeholder for variety
-    "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=1200"  // Twilight view
+    "/images/hero.png",
+    "/images/hampi-1.png",
+    "/images/hampi-2.png",
+    "/images/hampi-3.png",
+    "/images/hampi-4.png",
+    "/images/hampi-5.png",
+    "/images/hampi-6.png"
   ];
 
   const imageLabels = [

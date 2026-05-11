@@ -754,7 +754,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva. Its towering gopuram (gateway) is visible from miles away and has survived centuries of change.",
       timing: "6:00 AM - 8:00 PM",
       fee: "₹50 (Indians) / ₹500 (Foreigners)",
-      image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-1.png",
       highlights: ["Inverted shadow of the gopuram", "Ancient inscriptions", "Live temple elephant 'Lakshmi'"]
     },
     {
@@ -764,7 +764,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       description: "The pinnacle of Vijayanagara architecture. Home to the legendary Stone Chariot and the musical pillars that produce melodic notes when tapped.",
       timing: "8:30 AM - 5:30 PM",
       fee: "Included in Hampi Heritage ticket",
-      image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-2.png",
       highlights: ["The Stone Chariot", "Musical Pillars", "Elaborate carvings of Maha Mantapa"]
     },
     {
@@ -774,7 +774,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       description: "The highest point in Hampi, offering unparalleled panoramic views of the entire heritage site. It's the most popular spot for sunrise and sunset.",
       timing: "Open 24/7 (Recommended: Sunrise/Sunset)",
       fee: "Free",
-      image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-3.png",
       highlights: ["360-degree panorama", "Veerabhadra Temple at summit", "Breathtaking sunset views"]
     },
     {
@@ -784,7 +784,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       description: "Part of the Zenana Enclosure, this two-storied pavilion is a unique blend of Indo-Islamic architecture, designed to resemble a lotus bud.",
       timing: "8:30 AM - 5:30 PM",
       fee: "Included in Hampi Heritage ticket",
-      image: "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-4.png",
       highlights: ["Indo-Islamic design", "Water cooling system", "Grand Elephant Stables nearby"]
     }
   ];
@@ -797,7 +797,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       x: 75,
       y: 35,
       description: "The architectural pinnacle of Hampi, famous for its musical pillars and the iconic stone chariot.",
-      image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-1.png",
       recommendedTours: ["Vittala Musical Pillars Deep-Dive", "Stone Chariot Photography"],
       nearbyResort: "Evolve Back Kamlapura"
     },
@@ -808,7 +808,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       x: 25,
       y: 40,
       description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva, with a towering 50-meter gopuram.",
-      image: "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-2.png",
       recommendedTours: ["Main Bazaar Walk", "Sacred Center Sunrise Tour"],
       nearbyResort: "Hampi Heritage Resort"
     },
@@ -819,7 +819,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       x: 45,
       y: 45,
       description: "The highest point in Hampi offering a breathtaking 360-degree view of the entire landscape.",
-      image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-3.png",
       recommendedTours: ["Sunrise Trek", "Bouldering Adventure"],
       nearbyResort: "Whispering Rocks"
     },
@@ -830,7 +830,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       x: 35,
       y: 65,
       description: "An elegant two-story pavilion showcasing a unique blend of Indo-Islamic architecture.",
-      image: "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-4.png",
       recommendedTours: ["Royal Enclosure Walk", "Women of Vijayanagara Tour"],
       nearbyResort: "Heritage Resort Hampi"
     },
@@ -841,7 +841,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       x: 30,
       y: 35,
       description: "Once a bustling trade center for diamonds and spices, now a row of ancient stone pavilions.",
-      image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
+      image: "/images/hampi-5.png",
       recommendedTours: ["Forgotten Village Cycle Tour", "Bazaar Street Stories"],
       nearbyResort: "The Hyatt Place"
     }

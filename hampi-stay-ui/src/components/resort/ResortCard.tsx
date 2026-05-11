@@ -127,7 +127,7 @@ export function ResortCard({
         {/* Image */}
         <Link to={`/resorts/${resort.slug}`} className="relative aspect-[4/3] overflow-hidden block" style={{ transform: "translateZ(30px)" }}>
           <img
-            src={imgError ? "https://images.unsplash.com/photo-1542314831-c6a4d14d8c53?q=80&w=800" : resort.images[0]}
+            src={imgError ? "/images/hampi-1.png" : resort.images[0]}
             alt={resort.name}
             loading="lazy"
             onError={() => setImgError(true)}

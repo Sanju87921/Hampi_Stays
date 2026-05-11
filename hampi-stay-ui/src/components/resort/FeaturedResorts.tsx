@@ -9,6 +9,7 @@ export function FeaturedResorts() {
   const [resorts, setResorts] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchFeatured = async () => {
@@ -118,9 +119,10 @@ export function FeaturedResorts() {
               >
                 {/* Image */}
                 <img
-                  src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=800"}
+                  src={imgErrors[resort.id] ? "/images/hampi-1.png" : (resort.images?.[0] || "/images/hampi-1.png")}
                   alt={resort.name}
                   loading="lazy"
+                  onError={() => setImgErrors(prev => ({ ...prev, [resort.id]: true }))}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110 opacity-90 group-hover:opacity-100"
                 />
                 

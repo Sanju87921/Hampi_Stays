@@ -1,8 +1,5 @@
-// This is your Prisma schema file.
-// Learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
@@ -11,147 +8,112 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================
-// ENUMS
-// ============================================================
-
-enum Role {
-  TRAVELLER
-  RESORT_OWNER
-  GUIDE
-  ADMIN
-  STAFF
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-// ============================================================
-// MODELS
-// ============================================================
-
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String
-  passwordHash      String
-  role              Role      @default(TRAVELLER)
-  avatar            String?
-  phone             String?
-  isEmailVerified   Boolean   @default(false)
-  isMobileVerified  Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  bookings          Booking[]
-  wishlist          Wishlist[]
-  reviews           Review[]
-  notifications     Notification[]
-  ownerProfile      ResortOwner?
-  guideProfile      GuideProfile?
-  guideBookings     GuideBooking[]
-  messages          Message[]
-  staffProfile      StaffMember?
-  otpVerifications  OtpVerification[]
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String
+  passwordHash     String
+  role             Role              @default(TRAVELLER)
+  avatar           String?
+  phone            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  isEmailVerified  Boolean           @default(false)
+  isMobileVerified Boolean           @default(false)
+  bookings         Booking[]
+  guideBookings    GuideBooking[]
+  guideProfile     GuideProfile?
+  messages         Message[]
+  notifications    Notification[]
+  otpVerifications OtpVerification[]
+  ownerProfile     ResortOwner?
+  reviews          Review[]
+  staffProfile     StaffMember?
+  wishlist         Wishlist[]
 
   @@map("users")
 }
 
 model OtpVerification {
-  id          String   @id @default(cuid())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  email       String?
-  phone       String?
-  otpHash     String
-  otpType     String   // "email" | "mobile"
-  expiresAt   DateTime
-  verified    Boolean  @default(false)
-  attempts    Int      @default(0)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String?
+  phone     String?
+  otpHash   String
+  otpType   String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("otp_verifications")
 }
 
-enum ResortStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model Resort {
-  id              String   @id @default(cuid())
-  slug            String   @unique
-  name            String
-  tagline         String
-  description     String
-  type            String   // luxury, eco, etc.
-  category        String?  // Heritage, Nature, Riverside, etc.
-  locationArea    String
-  locationLat     Float
-  locationLng     Float
-  images          String[]
-  amenities       String[]
-  rating          Float    @default(0)
-  reviewCount     Int      @default(0)
-  pricePerNight   Float    // Starting price
-  isFeatured      Boolean  @default(false)
-  isVerified      Boolean  @default(false)
-  status          ResortStatus @default(PENDING)
-  commissionRate  Float    @default(7.0)
-  houseRules      String[]
-  mealPackages    Json?    // Array of { name, price, description }
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  ownerId         String
-  owner           ResortOwner @relation(fields: [ownerId], references: [id])
-  roomTypes       Room[]
-  bookings        Booking[]
-  wishlist        Wishlist[]
-  reviews         Review[]
-  discountCodes   DiscountCode[]
-  staff           StaffMember[]
-  invitations     Invitation[]
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  name           String
+  tagline        String
+  description    String
+  type           String
+  locationArea   String
+  locationLat    Float
+  locationLng    Float
+  images         String[]
+  amenities      String[]
+  rating         Float          @default(0)
+  reviewCount    Int            @default(0)
+  pricePerNight  Float
+  isFeatured     Boolean        @default(false)
+  isVerified     Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  ownerId        String
+  category       String?
+  houseRules     String[]
+  mealPackages   Json?
+  status         ResortStatus   @default(PENDING)
+  commissionRate Float          @default(7.0)
+  bookings       Booking[]
+  discountCodes  DiscountCode[]
+  invitations    Invitation[]
+  owner          ResortOwner    @relation(fields: [ownerId], references: [id])
+  reviews        Review[]
+  roomTypes      Room[]
+  staff          StaffMember[]
+  wishlist       Wishlist[]
 
   @@map("resorts")
 }
 
 model Room {
-  id              String   @id @default(cuid())
-  name            String
-  description     String
-  pricePerNight   Float
-  capacity        Int
-  amenities       String[]
-  images          String[]
-  availableCount  Int
-  minNights       Int      @default(1)
-  maxNights       Int      @default(30)
-
-  // Relations
-  resortId        String
-  resort          Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
-  priceOverrides  RoomPriceOverride[]
-  blockings       RoomBlocking[]
-  bookings        Booking[]
+  id             String              @id @default(cuid())
+  name           String
+  description    String
+  pricePerNight  Float
+  capacity       Int
+  amenities      String[]
+  images         String[]
+  availableCount Int
+  resortId       String
+  maxNights      Int                 @default(30)
+  minNights      Int                 @default(1)
+  bookings       Booking[]
+  blockings      RoomBlocking[]
+  priceOverrides RoomPriceOverride[]
+  resort         Resort              @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
 }
 
 model RoomPriceOverride {
-  id            String   @id @default(cuid())
-  date          DateTime
-  price         Float
-  minNights     Int?
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  date      DateTime
+  price     Float
+  minNights Int?
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, date])
   @@map("room_price_overrides")
@@ -164,60 +126,55 @@ model SystemSettings {
 }
 
 model RoomBlocking {
-  id            String   @id @default(cuid())
-  date          DateTime
-  reason        String?  // Maintenance, Personal, etc.
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id     String   @id @default(cuid())
+  date   DateTime
+  reason String?
+  roomId String
+  room   Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, date])
   @@map("room_blockings")
 }
 
 model DiscountCode {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  percentage    Float?
-  flatAmount    Float?
-  minBookingAmt Float?
-  validFrom     DateTime
-  validUntil    DateTime
-  maxUses       Int?
-  usedCount     Int      @default(0)
-  
-  // Deal Logic
-  isEarlyBird   Boolean  @default(false)
+  id               String   @id @default(cuid())
+  code             String   @unique
+  percentage       Float?
+  flatAmount       Float?
+  minBookingAmt    Float?
+  validFrom        DateTime
+  validUntil       DateTime
+  maxUses          Int?
+  usedCount        Int      @default(0)
+  isEarlyBird      Boolean  @default(false)
   minDaysInAdvance Int?
-  isLastMinute  Boolean  @default(false)
+  isLastMinute     Boolean  @default(false)
   maxDaysInAdvance Int?
-
-  resortId      String
-  resort        Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  resortId         String
+  resort           Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
   @@map("discount_codes")
 }
 
 model Booking {
-  id               String        @id @default(cuid())
-  checkIn          DateTime
-  checkOut         DateTime
-  guests           Int
-  totalPrice       Float
-  status           BookingStatus @default(PENDING)
-  specialRequests  String?
-  referenceNumber  String        @unique
-  commissionRate   Float         @default(7.0)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  // Relations
-  userId           String
-  user             User          @relation(fields: [userId], references: [id])
-  resortId         String
-  resort           Resort        @relation(fields: [resortId], references: [id])
-  roomId           String?       // Optional link to specific room type
-  room             Room?         @relation(fields: [roomId], references: [id])
-  messages         Message[]
+  id              String        @id @default(cuid())
+  checkIn         DateTime
+  checkOut        DateTime
+  guests          Int
+  totalPrice      Float
+  status          BookingStatus @default(PENDING)
+  specialRequests String?
+  referenceNumber String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  resortId        String
+  roomId          String?
+  commissionRate  Float         @default(7.0)
+  resort          Resort        @relation(fields: [resortId], references: [id])
+  room            Room?         @relation(fields: [roomId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
+  messages        Message[]
 
   @@map("bookings")
 }
@@ -225,12 +182,10 @@ model Booking {
 model Wishlist {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
-  // Relations
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resortId  String
   resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, resortId])
   @@map("wishlist")
@@ -242,12 +197,10 @@ model Review {
   comment   String?
   images    String[]
   createdAt DateTime @default(now())
-
-  // Relations
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resortId  String
   resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }
@@ -256,11 +209,9 @@ model Notification {
   id        String   @id @default(cuid())
   title     String
   message   String
-  type      String   // info, booking, alert
+  type      String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  // Relations
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -268,88 +219,77 @@ model Notification {
 }
 
 model ResortOwner {
-  id              String   @id @default(cuid())
-  businessName    String?
-  gstNumber       String?
-  isVerified      Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resorts         Resort[]
+  id           String   @id @default(cuid())
+  businessName String?
+  gstNumber    String?
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resorts      Resort[]
 
   @@map("resort_owners")
 }
 
 model GuideProfile {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   bio             String
-  specialties     String[] // Architecture, History, Bouldering, etc.
+  specialties     String[]
   languages       String[]
   pricePerDay     Float
   pricePerHour    Float
   yearsExperience Int
-  
-  // Verification Details
-  idType          String?  // Aadhar, PAN, Voter ID
-  idNumber        String?
-  idImage         String?  // Document scan URL
-  status          ResortStatus @default(PENDING)
-  
-  isVerified      Boolean  @default(false) // For ASI certification
-  isActive        Boolean  @default(true)  // For toggling profile visibility
-  rating          Float    @default(0)
-  reviewCount     Int      @default(0)
+  isVerified      Boolean        @default(false)
+  rating          Float          @default(0)
+  reviewCount     Int            @default(0)
   images          String[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings        GuideBooking[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String         @unique
+  idImage         String?
+  idNumber        String?
+  idType          String?
+  isActive        Boolean        @default(true)
+  status          ResortStatus   @default(PENDING)
   experiences     Experience[]
+  bookings        GuideBooking[]
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("guide_profiles")
 }
 
 model GuideBooking {
-  id               String        @id @default(cuid())
-  date             DateTime
-  durationHours    Int
-  totalPrice       Float
-  status           BookingStatus @default(PENDING)
-  meetingPoint     String
-  specialRequests  String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  // Relations
-  userId           String
-  user             User          @relation(fields: [userId], references: [id])
-  guideId          String
-  guide            GuideProfile  @relation(fields: [guideId], references: [id])
+  id              String        @id @default(cuid())
+  date            DateTime
+  durationHours   Int
+  totalPrice      Float
+  status          BookingStatus @default(PENDING)
+  meetingPoint    String
+  specialRequests String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  guideId         String
+  guide           GuideProfile  @relation(fields: [guideId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
 
   @@map("guide_bookings")
 }
 
 model Experience {
-  id              String   @id @default(cuid())
-  title           String
-  description     String
-  price           Float
-  durationHours   Int
-  images          String[]
-  meetingPoint    String
-  includes        String[] // e.g. ["Water", "Lunch", "Tickets"]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  guideId         String
-  guide           GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  title         String
+  description   String
+  price         Float
+  durationHours Int
+  images        String[]
+  meetingPoint  String
+  includes      String[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  guideId       String
+  guide         GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@map("experiences")
 }
@@ -358,33 +298,56 @@ model Message {
   id        String   @id @default(cuid())
   text      String
   senderId  String
-  sender    User     @relation(fields: [senderId], references: [id])
   bookingId String
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id])
 
   @@map("messages")
 }
 
 model StaffMember {
   id        String   @id @default(cuid())
-  role      String   // MANAGER, RECEPTIONIST, HOUSEKEEPING
+  role      String
   resortId  String
-  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
   userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("staff_members")
 }
 
 model Invitation {
   id        String   @id @default(cuid())
   email     String
-  role      String   // MANAGER, RECEPTIONIST, HOUSEKEEPING
+  role      String
   resortId  String
-  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
   code      String   @unique
-  status    String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
   @@map("invitations")
+}
+
+enum Role {
+  TRAVELLER
+  RESORT_OWNER
+  ADMIN
+  GUIDE
+  STAFF
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum ResortStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

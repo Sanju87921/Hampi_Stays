@@ -21,6 +21,8 @@ export function DiscoveryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
+  const [bgError, setBgError] = useState(false);
+  const [poiErrors, setPoiErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchPOI = async () => {
@@ -46,9 +48,10 @@ export function DiscoveryPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-navy-950 via-transparent to-navy-950 z-10" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent opacity-50" />
         <img 
-          src="https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop" 
+          src={bgError ? "/images/hero.png" : "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop"} 
           className="w-full h-full object-cover opacity-30 scale-110 animate-slow-zoom blur-sm"
           alt="Hampi Background"
+          onError={() => setBgError(true)}
         />
       </div>
 
@@ -174,7 +177,11 @@ export function DiscoveryPage() {
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-8 scrollbar-hide">
                   <div className="relative h-64 -mx-8 -mt-8 mb-8 overflow-hidden">
-                    <img src={selectedPOI.image} className="w-full h-full object-cover" />
+                    <img 
+                      src={poiErrors[selectedPOI.id] ? "/images/hampi-3.png" : selectedPOI.image} 
+                      className="w-full h-full object-cover" 
+                      onError={() => setPoiErrors(prev => ({ ...prev, [selectedPOI.id]: true }))}
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
                     <div className="absolute bottom-6 left-8">
                        <span className="px-3 py-1 bg-gold-500 text-navy-950 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">

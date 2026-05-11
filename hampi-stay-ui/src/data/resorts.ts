@@ -26,16 +26,11 @@ export const RESORTS: Resort[] = [
       distanceFromCenterKm: 4.2,
     },
     images: [
-      // Tungabhadra River aerial with ancient city — Hampi landscape
-      "https://images.unsplash.com/photo-1636903684031-e187417f3e77?auto=format&fit=crop&q=80&w=2000",
-      // Virupaksha Temple Tower
-      "https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=2000",
-      // Coracle ride on Tungabhadra
-      "https://images.unsplash.com/flagged/photo-1582271542392-c4ca315c0663?auto=format&fit=crop&q=80&w=2000",
-      // Ancient stone pillars
-      "https://images.unsplash.com/photo-1708668984945-309e431c61f0?auto=format&fit=crop&q=80&w=2000",
-      // Hampi boulders landscape
-      "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
+      "/images/hampi-1.png",
+      "/images/hampi-2.png",
+      "/images/hampi-3.png",
+      "/images/hampi-4.png",
+      "/images/hampi-5.png",
     ],
     amenities: ["Pool", "Spa", "Restaurant", "Bar", "WiFi", "Air Conditioning", "Airport Transfer", "Yoga"],
     rating: 4.9,
@@ -49,7 +44,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 31000,
         capacity: 2,
         amenities: ["Pool", "Air Conditioning", "WiFi"],
-        images: ["https://images.unsplash.com/photo-1636903684031-e187417f3e77?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-1.png"],
         availableCount: 5,
       },
       {
@@ -59,7 +54,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 47000,
         capacity: 4,
         amenities: ["Pool", "Spa", "Air Conditioning", "WiFi", "Airport Transfer"],
-        images: ["https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-2.png"],
         availableCount: 2,
       },
     ],
@@ -73,9 +68,9 @@ export const RESORTS: Resort[] = [
       maxNights: 30,
     },
     nearbyAttractions: [
-      { name: "Virupaksha Temple", type: "temple", distanceKm: 4.5, description: "The most sacred and oldest active temple in Hampi, dedicated to Lord Shiva. A UNESCO World Heritage Site.", imageUrl: "https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=1280" },
+      { name: "Virupaksha Temple", type: "temple", distanceKm: 4.5, description: "The most sacred and oldest active temple in Hampi, dedicated to Lord Shiva. A UNESCO World Heritage Site.", imageUrl: "/images/hampi-3.png" },
       { name: "Hampi Bazaar", type: "market", distanceKm: 4.8, description: "A vibrant ancient bazaar street lined with stalls selling traditional crafts, spices, and souvenirs." },
-      { name: "Vittala Temple & Stone Chariot", type: "temple", distanceKm: 5.9, description: "Famous for its iconic stone chariot and musical pillars that produce harmonic sounds when tapped.", imageUrl: "https://images.unsplash.com/photo-1722934804353-0d9f6a55ab5e?auto=format&fit=crop&q=80&w=1280" },
+      { name: "Vittala Temple & Stone Chariot", type: "temple", distanceKm: 5.9, description: "Famous for its iconic stone chariot and musical pillars that produce harmonic sounds when tapped.", imageUrl: "/images/hampi-4.png" },
       { name: "Tungabhadra River", type: "activity", distanceKm: 3.2, description: "Take a traditional coracle boat ride on the sacred river at sunset. A truly magical experience." },
       { name: "Matanga Hill", type: "viewpoint", distanceKm: 5.1, description: "A must-do sunrise trek offering a 360° panoramic view of the entire Hampi landscape." },
     ],
@@ -100,12 +95,9 @@ export const RESORTS: Resort[] = [
       distanceFromCenterKm: 2.1,
     },
     images: [
-      // Hampi boulders and river landscape
-      "https://images.unsplash.com/photo-1581488613801-68d36242d412?auto=format&fit=crop&q=80&w=2000",
-      // Hampi landscape with ruins
-      "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
-      // Coracle on Tungabhadra
-      "https://images.unsplash.com/flagged/photo-1582271542392-c4ca315c0663?auto=format&fit=crop&q=80&w=2000",
+      "/images/hampi-5.png",
+      "/images/hampi-6.png",
+      "/images/experience.png",
     ],
     amenities: ["River View", "Spa", "Yoga", "Organic Food", "WiFi", "Cycling", "Guided Tours"],
     rating: 4.8,
@@ -119,7 +111,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 9500,
         capacity: 2,
         amenities: ["WiFi", "River View"],
-        images: ["https://images.unsplash.com/photo-1581488613801-68d36242d412?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-5.png"],
         availableCount: 8,
       },
       {
@@ -129,7 +121,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 15000,
         capacity: 3,
         amenities: ["WiFi", "River View", "Spa"],
-        images: ["https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-6.png"],
         availableCount: 3,
       },
     ],
@@ -168,12 +160,9 @@ export const RESORTS: Resort[] = [
       distanceFromCenterKm: 3.5,
     },
     images: [
-      // Virupaksha Temple — the landmark of Hampi
-      "https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=2000",
-      // Lotus Mahal ancient palace architecture
-      "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
-      // Aerial view of Hampi with river
-      "https://images.unsplash.com/photo-1636903684031-e187417f3e77?auto=format&fit=crop&q=80&w=2000",
+      "/images/hampi-1.png",
+      "/images/hampi-4.png",
+      "/images/hampi-3.png",
     ],
     amenities: ["Heritage View", "Organic Food", "Guided Tours", "WiFi", "Campfire", "Cycling", "Restaurant"],
     rating: 4.6,
@@ -187,7 +176,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 7500,
         capacity: 2,
         amenities: ["WiFi", "Heritage View"],
-        images: ["https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-1.png"],
         availableCount: 10,
       },
       {
@@ -197,7 +186,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 14000,
         capacity: 3,
         amenities: ["WiFi", "Heritage View", "Restaurant"],
-        images: ["https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-4.png"],
         availableCount: 4,
       },
     ],
@@ -211,7 +200,7 @@ export const RESORTS: Resort[] = [
       maxNights: 14,
     },
     nearbyAttractions: [
-      { name: "Lotus Mahal", type: "ruins", distanceKm: 1.2, description: "A beautiful two-storey pavilion that was part of the royal enclosure of the Vijayanagara Empire.", imageUrl: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=1280" },
+      { name: "Lotus Mahal", type: "ruins", distanceKm: 1.2, description: "A beautiful two-storey pavilion that was part of the royal enclosure of the Vijayanagara Empire.", imageUrl: "/images/hampi-3.png" },
       { name: "Elephant Stables", type: "ruins", distanceKm: 1.3, description: "An imposing series of domed chambers that once housed the royal war elephants." },
       { name: "Queen's Bath", type: "ruins", distanceKm: 2.1, description: "An ornate bathing complex with Indo-Islamic architectural elements built for the royal family." },
     ],
@@ -236,12 +225,9 @@ export const RESORTS: Resort[] = [
       distanceFromCenterKm: 4.0,
     },
     images: [
-      // Sule Bazaar ancient ruins
-      "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?auto=format&fit=crop&q=80&w=2000",
-      // Hampi boulder landscape
-      "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
-      // Tungabhadra river bank
-      "https://images.unsplash.com/photo-1581488613801-68d36242d412?auto=format&fit=crop&q=80&w=2000",
+      "/images/hampi-5.png",
+      "/images/hampi-2.png",
+      "/images/hampi-1.png",
     ],
     amenities: ["Rooftop", "WiFi", "Restaurant", "Parking", "Air Conditioning"],
     rating: 4.2,
@@ -255,7 +241,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 3500,
         capacity: 2,
         amenities: ["WiFi", "Air Conditioning"],
-        images: ["https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-5.png"],
         availableCount: 15,
       },
       {
@@ -265,7 +251,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 5000,
         capacity: 2,
         amenities: ["WiFi", "Air Conditioning", "Rooftop"],
-        images: ["https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-2.png"],
         availableCount: 5,
       },
     ],
@@ -303,12 +289,9 @@ export const RESORTS: Resort[] = [
       distanceFromCenterKm: 0.8,
     },
     images: [
-      // Stone chariot at Vittala temple
-      "https://images.unsplash.com/photo-1722934804353-0d9f6a55ab5e?auto=format&fit=crop&q=80&w=2000",
-      // Temple architecture
-      "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=2000",
-      // Lotus Mahal heritage architecture
-      "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
+      "/images/hampi-6.png",
+      "/images/hampi-3.png",
+      "/images/hampi-4.png",
     ],
     amenities: ["Rooftop", "Heritage View", "Restaurant", "Guided Tours", "WiFi"],
     rating: 4.7,
@@ -322,7 +305,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 11000,
         capacity: 2,
         amenities: ["WiFi", "Heritage View"],
-        images: ["https://images.unsplash.com/photo-1722934804353-0d9f6a55ab5e?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-6.png"],
         availableCount: 6,
       },
       {
@@ -332,7 +315,7 @@ export const RESORTS: Resort[] = [
         pricePerNight: 18000,
         capacity: 2,
         amenities: ["WiFi", "Heritage View", "Rooftop", "Restaurant"],
-        images: ["https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&q=80&w=2000"],
+        images: ["/images/hampi-3.png"],
         availableCount: 2,
       },
     ],
@@ -346,9 +329,9 @@ export const RESORTS: Resort[] = [
       maxNights: 21,
     },
     nearbyAttractions: [
-      { name: "Virupaksha Temple", type: "temple", distanceKm: 0.9, description: "Walk to the heart of Hampi's spiritual life — the magnificent 7th-century Virupaksha Temple.", imageUrl: "https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=1280" },
+      { name: "Virupaksha Temple", type: "temple", distanceKm: 0.9, description: "Walk to the heart of Hampi's spiritual life — the magnificent 7th-century Virupaksha Temple.", imageUrl: "/images/hampi-1.png" },
       { name: "Hemakuta Hill", type: "viewpoint", distanceKm: 1.1, description: "A collection of early Jain temples and a spectacular sunrise/sunset viewpoint above the bazaar." },
-      { name: "Vittala Temple", type: "temple", distanceKm: 3.2, description: "The famed stone chariot and musical pillars — the icon of Hampi.", imageUrl: "https://images.unsplash.com/photo-1722934804353-0d9f6a55ab5e?auto=format&fit=crop&q=80&w=1280" },
+      { name: "Vittala Temple", type: "temple", distanceKm: 3.2, description: "The famed stone chariot and musical pillars — the icon of Hampi.", imageUrl: "/images/hampi-2.png" },
     ],
     isFeatured: true,
     isVerified: true,

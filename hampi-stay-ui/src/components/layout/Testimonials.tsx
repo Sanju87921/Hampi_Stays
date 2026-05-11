@@ -9,40 +9,37 @@ const testimonials = [
     content:
       "Waking up in an eco-cottage built between Hampi's ancient boulders, with the Tungabhadra murmuring outside — it felt like time travel. The guided temple walk at sunrise was worth every rupee. Truly India's hidden gem.",
     // Indian woman portrait
-    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=150&auto=format&fit=crop&facepad=3",
+    avatar: "https://ui-avatars.com/api/?name=Priya+Raghavan&background=D4AF37&color=fff",
     rating: 5,
     stay: "Evolve Back Kamalapura Palace",
   },
   {
     id: 2,
-    name: "Arjun Mehta",
+    name: "Vikram Malhotra",
     role: "Architecture Photographer · Bengaluru",
     content:
-      "As an architecture photographer, I've shot heritage sites across India. But Hampi is something else entirely. HampiStays organized a private access session at Vittala Temple before tourist hours — absolutely impossible to get otherwise.",
-    // Indian man portrait
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop&facepad=3",
+      "The level of curation here is unmatched. Every resort listed feels like a secret find. Their heritage walk was the highlight of our trip.",
+    avatar: "https://ui-avatars.com/api/?name=Vikram+Malhotra&background=0A0F1E&color=fff",
     rating: 5,
     stay: "Hampi Boutique Villa",
   },
   {
     id: 3,
-    name: "Sophie & Mark Laurent",
-    role: "Honeymooners · Lyon, France",
+    name: "Elena Petrov",
+    role: "Honeymooners · Berlin, Germany",
     content:
-      "We chose HampiStays for our honeymoon after reading about the coracle rides and boulder landscapes. The reality exceeded every expectation. The Boulders Resort cottage felt like our own private world.",
-    // International couple style portrait
-    avatar: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=150&auto=format&fit=crop&facepad=3",
+      "Seamless booking and impeccable service. The concierge helped us arrange a private sunrise breakfast at Matanga Hill. Simply magical.",
+    avatar: "https://ui-avatars.com/api/?name=Elena+Petrov&background=D4AF37&color=fff",
     rating: 5,
     stay: "Hampi's Boulders Resort & Spa",
   },
   {
     id: 4,
-    name: "Kavitha Nair",
-    role: "Yoga Retreat Organiser · Kochi",
+    name: "Ananya Rao",
+    role: "Yoga Retreat Organiser · Bangalore",
     content:
-      "I've brought 3 different retreat groups to HampiStays. Every time, the team customizes the experience — private yoga on Hemakuta Hill, community cooking with local families, silent meditation in the ruins. Unmatched.",
-    // South Indian woman portrait
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150&auto=format&fit=crop&facepad=3",
+      "I've been to Hampi four times, but this was the first time I felt I truly saw its soul. The boutique stay they recommended was stunning.",
+    avatar: "https://ui-avatars.com/api/?name=Ananya+Rao&background=0A0F1E&color=fff",
     rating: 5,
     stay: "Heritage Resort Hampi",
   },
