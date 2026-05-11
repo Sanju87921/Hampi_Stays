@@ -1,7 +1,19 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Globe, Share2, MessageCircle, ArrowRight } from "lucide-react";
+import { Globe, Share2, MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function LuxuryFooter() {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsSubscribed(true);
+    // Add logic to save email here later
+  };
+
   return (
     <footer className="bg-sand-50 border-t border-sand-200 pt-32 pb-16 overflow-hidden relative">
       {/* Cinematic subtle glow */}
@@ -23,25 +35,51 @@ export function LuxuryFooter() {
             </p>
           </div>
 
-          <div className="lg:col-span-7 flex justify-end">
-            <div className="w-full max-w-xl bg-white p-10 rounded-[3rem] shadow-luxury border border-sand-100 relative overflow-hidden group">
+          <div className="lg:col-span-7 flex justify-end w-full">
+            <div className="w-full max-w-xl bg-white p-10 rounded-[3rem] shadow-luxury border border-sand-100 relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gold-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
               
-              <div className="relative z-10">
-                <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold-600 mb-2">The Exclusive Newsletter</h4>
-                <h3 className="text-2xl font-serif font-bold text-navy-950 mb-6">Receive Rare Narratives</h3>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    className="flex-grow bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 transition-all"
-                  />
-                  <button className="bg-navy-950 text-white px-10 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950 transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2">
-                    Subscribe
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <AnimatePresence mode="wait">
+                {!isSubscribed ? (
+                  <motion.div 
+                    key="form"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="relative z-10"
+                  >
+                    <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold-600 mb-2">The Exclusive Newsletter</h4>
+                    <h3 className="text-2xl font-serif font-bold text-navy-950 mb-6">Receive Rare Narratives</h3>
+                    <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        type="email" 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your@email.com" 
+                        className="flex-grow bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 transition-all"
+                      />
+                      <button type="submit" className="bg-navy-950 text-white px-10 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950 transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2">
+                        Subscribe
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative z-10 text-center py-4"
+                  >
+                    <div className="w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle2 className="w-8 h-8 text-gold-600" />
+                    </div>
+                    <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">Welcome to the Inner Circle</h3>
+                    <p className="text-navy-950/40 text-sm font-medium">Rare narratives will soon find their way to you.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

@@ -18,6 +18,7 @@ import { TermsOfServicePage } from "./pages/public/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/public/PrivacyPolicyPage";
 import { LocalExpertsPage } from "./pages/public/LocalExpertsPage";
 import { DiscoveryPage } from "./pages/public/DiscoveryPage";
+import { NotFoundPage } from "./pages/public/NotFoundPage";
 
 // Auth Pages
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -181,7 +182,7 @@ function AnimatedRoutes() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
-            <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </motion.div>
