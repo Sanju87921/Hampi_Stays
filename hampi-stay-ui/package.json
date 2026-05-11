@@ -16,7 +16,6 @@
   "engines": {
     "node": ">=20.0.0"
   },
-
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@react-oauth/google": "^0.13.5",
@@ -31,10 +30,13 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.1",
+    "express-validator": "^7.3.2",
     "framer-motion": "^12.38.0",
     "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",

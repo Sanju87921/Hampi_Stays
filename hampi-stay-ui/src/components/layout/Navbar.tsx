@@ -88,8 +88,8 @@ export function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
         isScrolled
-          ? "bg-sand-50/90 backdrop-blur-2xl border-b border-sand-200/60 shadow-sm py-1.5"
-          : "bg-gradient-to-b from-navy-950/80 via-navy-950/30 to-transparent py-3.5 md:py-[1.15rem]"
+          ? "bg-sand-50/90 backdrop-blur-2xl border-b border-sand-200/60 shadow-sm py-2 md:py-1.5"
+          : "bg-gradient-to-b from-navy-950/80 via-navy-950/30 to-transparent py-4 md:py-[1.15rem]"
       )}
     >
       <div className="container mx-auto px-4 md:px-6">
@@ -106,7 +106,7 @@ export function Navbar() {
               src="/logo-full.png" 
               alt="HampiStays" 
               className={cn(
-                "h-14 md:h-20 w-auto object-contain transition-all duration-500",
+                "h-20 w-auto object-contain transition-all duration-500",
                 !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
               )}
             />
@@ -216,7 +216,15 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="absolute top-full left-0 right-0 bg-sand-50/95 backdrop-blur-2xl shadow-luxury border-t border-sand-200/50 flex flex-col md:hidden overflow-hidden"
           >
-            <div className="py-6 px-6 flex flex-col gap-6">
+            <div className="py-8 px-6 flex flex-col gap-6">
+              <Link 
+                to="/" 
+                className="mb-4 self-center"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <img src="/logo-full.png" alt="HampiStays" className="h-28 w-auto object-contain" />
+              </Link>
+
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
