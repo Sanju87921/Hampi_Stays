@@ -44,7 +44,7 @@ export function ProfilePage() {
     };
 
     try {
-      const response = await fetch(`/api/users/${user?.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/${user?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submissionData)
@@ -123,7 +123,7 @@ export function ProfilePage() {
                         const uploadData = new FormData();
                         uploadData.append('image', file);
                         try {
-                          const res = await fetch('/api/upload', { 
+                          const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload`, { 
                             method: 'POST', 
                             body: uploadData 
                           });
@@ -310,7 +310,7 @@ export function ProfilePage() {
                             const uploadData = new FormData();
                             uploadData.append('image', file);
                             try {
-                              const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+                              const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload`, { method: 'POST', body: uploadData });
                               const data = await res.json();
                               setFormData(prev => ({...prev, idImage: data.url}));
                             } catch { alert("Failed to upload document."); }

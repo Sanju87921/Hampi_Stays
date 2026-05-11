@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useLocation, Navigate } from "react-router-dom";
+import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck, CreditCard, Lock,
@@ -28,15 +28,12 @@ const PAYMENT_METHODS = [
   { id: "netbanking", label: "Net Banking", sub: "All major banks" },
 ];
 
-declare global {
-  interface Window {
-    Cashfree: any;
-  }
-}
+
 
 export function CheckoutPage() {
   const location = useLocation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currency, setCurrency] = useState<"INR" | "USD">("INR");
@@ -81,23 +78,13 @@ export function CheckoutPage() {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      // 1. Initialize Cashfree
-      const cfWindow = window as any;
-      if (!cfWindow.Cashfree) {
-        throw new Error("Payment system (Cashfree) failed to load. Please refresh the page or check your connection.");
-      }
-
-      const cashfree = cfWindow.Cashfree({
-        mode: "sandbox", // Use "production" for real payments
-      });
-
       const allRequests = [
         ...selectedRequests.map(id => SPECIAL_REQUEST_OPTIONS.find(o => o.id === id)?.label || id),
         specialNote,
       ].filter(Boolean).join("; ");
 
-      // 2. Create Order on Backend
-      const response = await fetch("/api/bookings", {
+      // 1. Create Booking on Backend
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,17 +108,58 @@ export function CheckoutPage() {
       
       const booking = await response.json();
 
-      if (!booking.paymentSessionId) {
-        throw new Error("Payment Gateway Error: Could not initialize session. Check if CASHFREE_ keys are set in Railway.");
+      // 2. Launch Razorpay Checkout
+      if (booking.razorpayOrderId) {
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Use env variable
+          amount: Math.round(grandTotal * 100),
+          currency: "INR",
+          name: "HampiStays Luxury",
+          description: `Booking for ${bookingData.resortName}`,
+          image: "https://hampistays.com/logo.png",
+          order_id: booking.razorpayOrderId,
+          handler: async function (response: any) {
+            // Verify Payment
+            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/${booking.referenceNumber}/verify-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            if (verifyRes.ok) {
+              navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          },
+          prefill: {
+            name: guestInfo.name,
+            email: guestInfo.email,
+            contact: guestInfo.phone
+          },
+          theme: {
+            color: "#0c0a09"
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        // Fallback if Razorpay is not configured (Test Mode)
+        navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
       }
 
-      // 3. Launch Cashfree Checkout
-      await cashfree.checkout({
-        paymentSessionId: booking.paymentSessionId,
-        redirectTarget: "_self",
-      });
-
     } catch (err: any) {
+      console.error("Payment error:", err);
+      alert(err.message || "Something went wrong. Please check your connection.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
       console.error("Payment error:", err);
       alert(err.message || "Something went wrong. Please check your connection.");
     } finally {

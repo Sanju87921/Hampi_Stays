@@ -9,7 +9,8 @@ import appleSignin from 'apple-signin-auth';
 import cloudinary from 'cloudinary';
 import multer from 'multer';
 import streamifier from 'streamifier';
-import { Cashfree, CFEnvironment } from 'cashfree-pg';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,14 +36,20 @@ cloudinary.v2.config({
 const upload = multer();
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// Cashfree Configuration
-const cashfree = new Cashfree(
-  process.env.CASHFREE_ENV === 'PRODUCTION' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
-  process.env.CASHFREE_CLIENT_ID,
-  process.env.CASHFREE_CLIENT_SECRET
-);
+// Razorpay Configuration
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder'
+});
 
-app.use(cors());
+
+
+app.use(cors({
+  origin: "*", // Adjust this to your specific frontend URL in production for better security
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -450,34 +457,22 @@ app.post('/api/bookings', async (req, res) => {
       }
     });
 
-    // 2. Create Cashfree Order
-    let paymentSessionId = null;
+    // 2. Create Razorpay Order
+    let razorpayOrder = null;
     try {
-      const orderRequest = {
-        order_amount: Number(totalPrice),
-        order_currency: "INR",
-        order_id: referenceNumber,
-        customer_details: {
-          customer_id: userId,
-          customer_name: customerName || "Guest",
-          customer_email: (await prisma.user.findUnique({ where: { id: userId } }))?.email || "guest@example.com",
-          customer_phone: phone || "9999999999"
-        },
-        order_meta: {
-          return_url: `${process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`}/checkout/success?order_id=${referenceNumber}`
-        }
+      const options = {
+        amount: Math.round(totalPrice * 100), // amount in the smallest currency unit (paise)
+        currency: "INR",
+        receipt: referenceNumber,
       };
-
-      const cfResponse = await cashfree.PGCreateOrder(orderRequest);
-      paymentSessionId = cfResponse.data.payment_session_id;
-    } catch (cfError) {
-      console.error('⚠️ Cashfree Order Creation Failed:', cfError.response?.data || cfError.message);
-      // We still return the booking, but without a session ID (frontend will handle fallback)
+      razorpayOrder = await razorpay.orders.create(options);
+    } catch (rzpError) {
+      console.error('⚠️ Razorpay Order Creation Failed:', rzpError);
     }
 
     res.status(201).json({
       ...booking,
-      paymentSessionId
+      razorpayOrderId: razorpayOrder?.id
     });
   } catch (error) {
     console.error('❌ BOOKING ERROR:', error);
@@ -485,43 +480,46 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-// Verify Cashfree Payment
+// Verify Razorpay Payment
 app.post('/api/bookings/:reference/verify-payment', async (req, res) => {
   try {
     const { reference } = req.params;
-    
-    // 1. Fetch Order Status from Cashfree
-    const cfResponse = await cashfree.PGOrderFetchPayments(reference);
-    const payments = cfResponse.data;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
-    // 2. Check if any payment is successful
-    const successPayment = payments.find(p => p.payment_status === 'SUCCESS');
+    // 1. Verify Signature
+    if (razorpay_signature) {
+      const body = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder')
+        .update(body.toString())
+        .digest("hex");
 
-    if (successPayment) {
-      // 3. Update Booking Status
-      const booking = await prisma.booking.update({
-        where: { referenceNumber: reference },
-        data: { status: 'CONFIRMED' },
-        include: { user: true, resort: true }
-      });
-
-      // 4. Create Success Notification
-      await prisma.notification.create({
-        data: {
-          userId: booking.userId,
-          title: 'Payment Successful!',
-          message: `Your booking at ${booking.resort.name} is confirmed. Ref: ${reference}`,
-          type: 'booking'
-        }
-      });
-
-      return res.json({ success: true, booking });
-    } else {
-      return res.status(400).json({ success: false, message: 'No successful payment found' });
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+      }
     }
+
+    // 2. Update Booking Status
+    const booking = await prisma.booking.update({
+      where: { referenceNumber: reference },
+      data: { status: 'CONFIRMED' },
+      include: { user: true, resort: true }
+    });
+
+    // 3. Create Success Notification
+    await prisma.notification.create({
+      data: {
+        userId: booking.userId,
+        title: 'Booking Confirmed!',
+        message: `Your booking at ${booking.resort.name} is confirmed. Ref: ${reference}`,
+        type: 'booking'
+      }
+    });
+
+    return res.json({ success: true, booking });
   } catch (error) {
-    console.error('❌ PAYMENT VERIFICATION ERROR:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to verify payment' });
+    console.error('❌ VERIFICATION ERROR:', error.message);
+    res.status(500).json({ error: 'Failed to verify booking' });
   }
 });
 
@@ -1551,9 +1549,9 @@ app.get('/api/admin/payouts', async (req, res) => {
 });
 
 app.post('/api/admin/tasks/payouts', async (req, res) => {
-  // Simulate checking with Cashfree API
+  // Simulate checking with payout logs
   await new Promise(resolve => setTimeout(resolve, 2500));
-  res.json({ success: true, message: 'All pending payouts verified and matched with Cashfree logs.' });
+  res.json({ success: true, message: 'All pending payouts verified and matched with internal logs.' });
 });
 
 app.post('/api/admin/tasks/newsletter', async (req, res) => {

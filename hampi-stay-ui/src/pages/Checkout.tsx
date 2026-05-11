@@ -23,15 +23,7 @@ export function Checkout() {
   const [error, setError] = useState<string | null>(null);
   const [refNumber, setRefNumber] = useState("");
   
-  // Initialize Cashfree
-  const cashfree = useMemo(() => {
-    if (typeof window !== "undefined" && (window as any).Cashfree) {
-      return new (window as any).Cashfree({
-        mode: "sandbox", // Reverted to sandbox for weekend testing
-      });
-    }
-    return null;
-  }, []);
+
 
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(" ")[0] || "",
@@ -74,7 +66,7 @@ export function Checkout() {
     
     try {
       // 1. Create Booking & Get Payment Session
-      const response = await fetch("/api/bookings", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,35 +90,49 @@ export function Checkout() {
       
       const data = await response.json();
       
-      // 2. Launch Cashfree Checkout
-      if (data.paymentSessionId && cashfree) {
-        const result = await cashfree.checkout({
-          paymentSessionId: data.paymentSessionId,
-          redirectTarget: "_modal", // Opens in a premium overlay
-        });
+      // 2. Launch Razorpay Checkout
+      if (data.razorpayOrderId) {
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Use env variable
+          amount: Math.round(total * 100),
+          currency: "INR",
+          name: "HampiStays Luxury",
+          description: `Booking for ${resort.name}`,
+          image: "https://hampistays.com/logo.png",
+          order_id: data.razorpayOrderId,
+          handler: async function (response: any) {
+            // Verify Payment
+            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/${data.referenceNumber}/verify-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
 
-        if (result.error) {
-          throw new Error(result.error.message || "Payment cancelled or failed.");
-        }
+            if (verifyRes.ok) {
+              setRefNumber(data.referenceNumber);
+              setIsSuccess(true);
+            } else {
+              setError("Payment verification failed. Please contact support.");
+            }
+          },
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phone
+          },
+          theme: {
+            color: "#0c0a09"
+          }
+        };
 
-        if (result.redirect) {
-          // This handles cases where a redirect is required
-          return;
-        }
-
-        // 3. Verify Payment with Backend
-        const verifyRes = await fetch(`/api/bookings/${data.referenceNumber}/verify-payment`, {
-          method: "POST"
-        });
-
-        if (verifyRes.ok) {
-          setRefNumber(data.referenceNumber);
-          setIsSuccess(true);
-        } else {
-          throw new Error("Payment verification failed. Please contact support.");
-        }
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
       } else {
-        // Fallback for testing if Cashfree is not configured on backend yet
+        // Fallback for testing
         setRefNumber(data.referenceNumber);
         setIsSuccess(true);
       }

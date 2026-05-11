@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../config/api";
 
 type UserRole = "TRAVELLER" | "RESORT_OWNER" | "GUIDE" | "ADMIN";
 
@@ -51,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -73,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = async (credential: string) => {
     try {
-      const response = await fetch('/api/auth/google', {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential }),
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithApple = async (appleResponse: any) => {
     try {
-      const response = await fetch('/api/auth/apple', {
+      const response = await fetch(`${API_BASE_URL}/auth/apple`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, phone: string, password: string, role: UserRole) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, phone, password, role }),

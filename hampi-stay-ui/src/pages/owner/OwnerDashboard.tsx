@@ -651,7 +651,7 @@ export function OwnerDashboard() {
                                           }
                                         }
                                       } catch(err) {
-                                        alert("Network error: Make sure your backend server is running on port 5000!");
+                                        alert("Network error: Please check your connection or server status.");
                                       }
                                     };
                                     reader.readAsDataURL(file);
@@ -697,7 +697,7 @@ export function OwnerDashboard() {
                                   }
                                 }
                               } catch(err) {
-                                alert("Network error: Make sure your backend server is running on port 5000!");
+                                alert("Network error: Please check your connection or server status.");
                               } finally {
                                 setIsUpdatingResortPhotos(false);
                               }
