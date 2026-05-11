@@ -9,7 +9,7 @@ import {
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -41,15 +41,23 @@ export function AdminDashboard() {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    if (activeTab === 'security') {
+    if (activeTab === 'security' || activeTab === 'otp-logs' || activeTab === 'overview') {
       interval = setInterval(async () => {
         try {
-          const res = await fetch("/api/admin/security/stats");
-          if (res.ok) setSecurityData(await res.json());
+          if (activeTab === 'security') {
+            const res = await fetch("/api/admin/security/stats");
+            if (res.ok) setSecurityData(await res.json());
+          } else if (activeTab === 'otp-logs') {
+            const res = await fetch("/api/admin/otp-logs");
+            if (res.ok) setOtpLogs(await res.json());
+          } else if (activeTab === 'overview') {
+            const res = await fetch("/api/admin/stats");
+            if (res.ok) setStats(await res.json());
+          }
         } catch (err) {
-          console.error("Security poll failed", err);
+          console.error("Real-time poll failed", err);
         }
-      }, 10000); // Poll every 10 seconds
+      }, 5000); // Poll every 5 seconds for "Real-time" feel
     }
     return () => clearInterval(interval);
   }, [activeTab]);
@@ -207,6 +215,29 @@ export function AdminDashboard() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (!allBookings.length) return;
+    const headers = ["Reference", "Guest", "Resort", "Check-In", "Check-Out", "Total", "Status"];
+    const rows = allBookings.map(b => [
+      b.referenceNumber,
+      b.user?.name,
+      b.resort?.name,
+      new Date(b.checkIn).toLocaleDateString(),
+      new Date(b.checkOut).toLocaleDateString(),
+      b.totalPrice,
+      b.status
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `HampiStays_Bookings_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleUpdateCommission = async (resortId: string) => {
     setIsSavingCommission(true);
     try {
@@ -307,7 +338,7 @@ export function AdminDashboard() {
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold text-navy-950">Recent Activity</h3>
-            <Button variant="outline" className="text-xs h-8 px-4 rounded-full">View All</Button>
+            <Button variant="outline" onClick={() => setActiveTab('bookings')} className="text-xs h-8 px-4 rounded-full transition-all hover:bg-navy-950 hover:text-white">View All</Button>
           </div>
           <div className="space-y-6">
             {[1, 2, 3].map((_, i) => (
@@ -451,7 +482,7 @@ export function AdminDashboard() {
                             setEditingCommissionId(resort.id);
                             setNewCommissionRate(resort.commissionRate || 7.0);
                           }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-gold-400 uppercase tracking-widest"
+                          className="transition-opacity text-[10px] font-bold text-gold-400 uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded hover:bg-white/20"
                         >
                           Edit
                         </button>
@@ -1046,7 +1077,7 @@ export function AdminDashboard() {
     <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
       <div className="p-8 border-b border-sand-100 flex items-center justify-between">
         <h3 className="text-xl font-bold text-navy-950">Global Bookings</h3>
-        <Button variant="outline" className="gap-2 rounded-xl">
+        <Button variant="outline" onClick={handleExportCSV} className="gap-2 rounded-xl hover:bg-navy-950 hover:text-white transition-all">
           <Download className="w-4 h-4" />
           Export CSV
         </Button>
@@ -1410,6 +1441,73 @@ export function AdminDashboard() {
     </div>
   );
 
+  const renderCommissions = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-10 border border-sand-200 shadow-sm">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h3 className="text-2xl font-bold text-navy-950">Platform Commissions</h3>
+            <p className="text-sm text-navy-950/40">Manage global revenue splits and partner fee structures.</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="bg-gold-50 border border-gold-200 p-4 rounded-2xl">
+              <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest">Global Average</p>
+              <p className="text-xl font-bold text-navy-950">{(activeResorts.reduce((acc, r) => acc + (r.commissionRate || 7), 0) / (activeResorts.length || 1)).toFixed(1)}%</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {activeResorts.map(resort => (
+            <div key={resort.id} className="p-6 rounded-2xl border border-sand-100 bg-sand-50/30 flex items-center justify-between hover:bg-sand-50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl overflow-hidden border border-sand-200">
+                  <img src={resort.images?.[0] || ""} className="w-full h-full object-cover" alt="" />
+                </div>
+                <div>
+                  <p className="font-bold text-navy-950">{resort.name}</p>
+                  <p className="text-xs text-navy-950/40 uppercase font-bold tracking-widest">{resort.locationArea}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-8">
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Current Rate</p>
+                  {editingCommissionId === resort.id ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input 
+                        type="number" 
+                        autoFocus
+                        value={newCommissionRate}
+                        onChange={(e) => setNewCommissionRate(parseFloat(e.target.value))}
+                        className="w-16 h-10 bg-white border-2 border-gold-500 rounded-lg px-2 text-sm font-bold outline-none"
+                      />
+                      <button onClick={() => handleUpdateCommission(resort.id)} className="w-10 h-10 bg-navy-950 text-white rounded-lg flex items-center justify-center">
+                        {isSavingCommission ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xl font-bold text-navy-950 mt-1">{resort.commissionRate || 7.0}%</p>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingCommissionId(resort.id);
+                    setNewCommissionRate(resort.commissionRate || 7.0);
+                  }}
+                  className="rounded-xl border-sand-200 text-xs h-10"
+                >
+                  Change Rate
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -1420,6 +1518,16 @@ export function AdminDashboard() {
               <span className="text-xs font-bold uppercase tracking-widest">Administrator Portal</span>
             </div>
             <h1 className="text-4xl font-serif font-bold text-navy-950">Command Center</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Live: Real-time Status Syncing</span>
+              <button 
+                onClick={fetchInitialData}
+                className="ml-4 text-[10px] font-bold text-navy-950/40 hover:text-gold-600 uppercase tracking-widest border-b border-transparent hover:border-gold-600 transition-all"
+              >
+                Sync Now
+              </button>
+            </div>
           </div>
 
           {/* Sub Navigation */}
@@ -1430,6 +1538,7 @@ export function AdminDashboard() {
               { id: "guides", label: "Guides", icon: Award },
               { id: "users", label: "Users", icon: Users },
               { id: "bookings", label: "Bookings", icon: CalendarDays },
+              { id: "commissions", label: "Commissions", icon: TrendingUp },
               { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
             ].map((tab) => (
               <button
@@ -1469,6 +1578,7 @@ export function AdminDashboard() {
             {activeTab === "security" && renderSecurity()}
             {activeTab === "otp-logs" && renderOtpLogs()}
             {activeTab === "reviews" && renderReviews()}
+            {activeTab === "commissions" && renderCommissions()}
           </motion.div>
         )}
       </div>
