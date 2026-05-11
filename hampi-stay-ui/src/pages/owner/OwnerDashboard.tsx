@@ -115,6 +115,8 @@ export function OwnerDashboard() {
         body: JSON.stringify({ url: photoUrl })
       });
       fetchResorts();
+    } catch (error) {
+      console.error(error);
     }
   };
 
