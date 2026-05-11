@@ -273,7 +273,7 @@ export function CheckoutPage() {
 
                   {/* Multi-currency toggle */}
                   <div className="p-6 rounded-3xl border border-sand-100 bg-sand-50">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <Globe className="w-5 h-5 text-gold-600" />
                         <div>
@@ -281,10 +281,10 @@ export function CheckoutPage() {
                           <p className="text-xs text-navy-950/40">Payment will be charged in INR</p>
                         </div>
                       </div>
-                      <div className="flex rounded-xl overflow-hidden border border-sand-200">
+                      <div className="flex w-full sm:w-auto rounded-xl overflow-hidden border border-sand-200">
                         {(["INR", "USD"] as const).map(c => (
                           <button key={c} onClick={() => setCurrency(c)}
-                            className={cn("px-4 py-2 text-sm font-bold transition-all",
+                            className={cn("flex-1 sm:flex-none px-6 py-2 text-sm font-bold transition-all",
                               currency === c ? "bg-navy-950 text-white" : "bg-white text-navy-950/40 hover:text-navy-950")}>
                             {c}
                           </button>
@@ -293,9 +293,9 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
-                    <Button variant="outline" className="rounded-xl" onClick={() => setStep(1)}>Back</Button>
-                    <Button className="px-12 shadow-gold" onClick={() => setStep(3)}>Continue to Payment</Button>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                    <Button variant="outline" className="w-full sm:w-auto rounded-xl h-14" onClick={() => setStep(1)}>Back</Button>
+                    <Button className="w-full sm:flex-1 px-12 shadow-gold h-14" onClick={() => setStep(3)}>Continue to Payment</Button>
                   </div>
                 </motion.div>
               )}
@@ -356,11 +356,11 @@ export function CheckoutPage() {
                     </motion.div>
                   )}
 
-                  <div className="flex flex-col md:flex-row items-center gap-4">
-                    <Button size="lg" className="w-full md:w-auto px-12 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
+                  <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+                    <Button size="lg" className="w-full sm:w-auto px-12 h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
                       Pay {fmt(grandTotal)}
                     </Button>
-                    <button onClick={() => setStep(2)} className="text-sm font-bold text-navy-950/40 hover:text-navy-950 transition-colors">
+                    <button onClick={() => setStep(2)} className="text-sm font-bold text-navy-950/40 hover:text-navy-950 transition-colors py-2">
                       Back to Add-ons
                     </button>
                   </div>

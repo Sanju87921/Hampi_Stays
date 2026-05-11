@@ -26,67 +26,64 @@ export function BookingConfirmationPage() {
   const handleDownloadInvoice = async () => {
     const doc = new jsPDF();
     
-    // Brand Colors
+    // Exact Brand Color Palette from Screenshot
     const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
     const gold: [number, number, number] = [184, 134, 11]; // #B8860B
+    const sand: [number, number, number] = [252, 250, 245]; // #FCFAF5
 
-    // 1. Header with Brand Identity
+    // 1. Header with Brand Identity (High-Fidelity)
     doc.setFillColor(navy[0], navy[1], navy[2]);
-    doc.rect(0, 0, 210, 50, 'F');
+    doc.rect(0, 0, 210, 60, 'F');
     
-    // Decorative Gold Line
+    // Decorative Gold Line (The Signature Stripe)
     doc.setFillColor(gold[0], gold[1], gold[2]);
-    doc.rect(0, 50, 210, 2, 'F');
+    doc.rect(0, 60, 210, 3, 'F');
 
-    // Logo Representation (Text + Icon)
+    // Logo & Tagline
     doc.setTextColor(255, 255, 255);
     doc.setFont("serif", "bold");
-    doc.setFontSize(26);
-    doc.text("HAMPISTAYS", 20, 30);
+    doc.setFontSize(32);
+    doc.text("HAMPISTAYS", 20, 35);
     
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 200, 200);
-    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+    doc.setTextColor(180, 180, 180);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 45);
 
-    // 2. Invoice Meta Info
+    // Invoice Meta Info (Right Aligned)
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("BOOKING CONFIRMATION", 140, 25);
+    doc.text("BOOKING CONFIRMATION", 140, 30);
     doc.setFont("helvetica", "normal");
-    doc.text(`REF: ${booking.referenceNumber}`, 140, 31);
-    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 37);
+    doc.text(`REF: ${booking.referenceNumber}`, 140, 37);
+    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 44);
 
-    // 3. Main Content
+    // 2. Main Body Content
     doc.setTextColor(navy[0], navy[1], navy[2]);
     
-    // Section: Guest Information
-    doc.setFontSize(14);
+    // Section Headers
+    doc.setFontSize(16);
     doc.setFont("serif", "bold");
-    doc.text("GUEST INFORMATION", 20, 70);
+    doc.text("GUEST INFORMATION", 20, 85);
+    doc.text("STAY DETAILS", 110, 85);
     
-    doc.setFontSize(10);
+    // Details (Guest)
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     const cleanGuestName = guestName.replace(/_/g, ' ');
-    doc.text(`Primary Guest: ${cleanGuestName}`, 20, 78);
-    doc.text(`Booking Status: ${booking.status.toUpperCase()}`, 20, 83);
-    doc.text(`Transaction ID: TXN-${booking.id.substring(0, 10).toUpperCase()}`, 20, 88);
+    doc.text(`Primary Guest: ${cleanGuestName}`, 20, 95);
+    doc.text(`Booking Status: ${booking.status.toUpperCase()}`, 20, 102);
+    doc.text(`Transaction ID: TXN-${booking.id.substring(0, 10).toUpperCase()}`, 20, 109);
 
-    // Section: Resort Information
-    doc.setFontSize(14);
-    doc.setFont("serif", "bold");
-    doc.text("STAY DETAILS", 110, 70);
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Resort: ${resortName}`, 110, 78);
-    doc.text(`Accommodation: ${roomName}`, 110, 83);
-    doc.text(`Duration: ${nights} Nights`, 110, 88);
+    // Details (Stay)
+    doc.text(`Resort: ${resortName}`, 110, 95);
+    doc.text(`Accommodation: ${roomName}`, 110, 102);
+    doc.text(`Duration: ${nights} Nights`, 110, 109);
 
-    // 4. Booking Itemized Table
+    // 3. Itemized Data Table (Luxury Theme)
     autoTable(doc, {
-      startY: 100,
+      startY: 125,
       head: [['Description', 'Details']],
       body: [
         ['Check-in Date', new Date(booking.checkIn).toLocaleDateString("en-IN") + " (14:00 PM)"],
@@ -99,76 +96,75 @@ export function BookingConfirmationPage() {
         fillColor: navy, 
         textColor: [255, 255, 255], 
         fontStyle: 'bold',
-        fontSize: 11,
-        halign: 'center'
+        fontSize: 12,
+        halign: 'center',
+        cellPadding: 8
       },
       bodyStyles: { 
-        fontSize: 10,
-        cellPadding: 6
+        fontSize: 11,
+        cellPadding: 10,
+        textColor: [60, 60, 60]
       },
       columnStyles: {
-        0: { fontStyle: 'bold', textColor: [80, 80, 80], cellWidth: 60 },
+        0: { fontStyle: 'bold', textColor: navy, cellWidth: 70 },
         1: { halign: 'left' }
       },
-      alternateRowStyles: { fillColor: [252, 250, 245] },
+      alternateRowStyles: { fillColor: sand },
       margin: { left: 20, right: 20 },
-      theme: 'grid'
+      theme: 'grid',
+      styles: { lineColor: [230, 230, 230], lineWidth: 0.1 }
     });
 
-    // 5. QR Code for Check-in
+    // 4. Verification & Policy Section
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tableFinalY = (doc as any).lastAutoTable.finalY;
+    const finalY = (doc as any).lastAutoTable.finalY + 25;
     
+    // Policy Left Side
     doc.setFont("serif", "bold");
-    doc.setFontSize(12);
-    doc.text("CHECK-IN VERIFICATION", 140, tableFinalY + 20);
-    
-    try {
-      const qrData = `Verification: ${booking.referenceNumber} | Guest: ${cleanGuestName} | Resort: ${resortName}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-        margin: 2,
-        width: 150,
-        color: {
-          dark: '#0A0F1E',
-          light: '#FFFFFF'
-        }
-      });
-      doc.addImage(qrCodeDataUrl, 'PNG', 140, tableFinalY + 24, 40, 40);
-    } catch (err) {
-      console.error("QR Generation failed", err);
-    }
-
-    // 6. Policy & Assistance
-    const policyY = tableFinalY + 20;
-
-    doc.setFont("serif", "bold");
-    doc.setFontSize(12);
-    doc.text("IMPORTANT INFORMATION", 20, policyY);
+    doc.setFontSize(14);
+    doc.text("IMPORTANT INFORMATION", 20, finalY);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(120, 120, 120);
     const policies = [
-      "• Please present a valid Government ID (Aadhar/Passport) at the time of check-in.",
+      "• Please present a valid Government ID (Aadhar/Passport) at check-in.",
       "• Cancellation Policy: Free cancellation up to 48 hours prior to arrival.",
       "• Standard check-in is 2:00 PM and check-out is 11:00 AM.",
       "• HampiStays is a plastic-free sanctuary. We appreciate your cooperation."
     ];
-    policies.forEach((p, i) => doc.text(p, 20, policyY + 8 + (i * 5)));
+    policies.forEach((p, i) => doc.text(p, 20, finalY + 10 + (i * 6)));
 
-    // 7. Footer
-    doc.setFillColor(245, 245, 245);
+    // QR Code Right Side
+    doc.setFont("serif", "bold");
+    doc.setFontSize(14);
+    doc.text("CHECK-IN VERIFICATION", 140, finalY);
+    
+    try {
+      const qrData = `Verification: ${booking.referenceNumber} | Guest: ${cleanGuestName} | Resort: ${resortName}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+        margin: 1,
+        width: 150,
+        color: { dark: '#0A0F1E', light: '#FFFFFF' }
+      });
+      doc.addImage(qrCodeDataUrl, 'PNG', 140, finalY + 5, 45, 45);
+    } catch (err) {
+      console.error("QR Generation failed", err);
+    }
+
+    // 5. Elegant Footer
+    doc.setFillColor(248, 248, 248);
     doc.rect(0, 270, 210, 27, 'F');
     
     doc.setFont("serif", "italic");
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setTextColor(navy[0], navy[1], navy[2]);
     doc.text("Thank you for choosing HampiStays. We look forward to hosting you.", 105, 280, { align: 'center' });
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text("HampiStays Headquarters: Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, 286, { align: 'center' });
+    doc.setTextColor(160, 160, 160);
+    doc.text("HampiStays Headquarters: Main Road, Kamalapura, Hampi, Karnataka 583239 | help@hampistays.com", 105, 287, { align: 'center' });
 
     doc.save(`HampiStays_Confirmation_${booking.referenceNumber}.pdf`);
   };

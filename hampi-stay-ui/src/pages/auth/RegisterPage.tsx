@@ -159,7 +159,7 @@ export function RegisterPage() {
 
         <div className="w-full max-w-md my-auto relative z-10">
           {/* Card */}
-          <div className="w-full bg-sand-100/90 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-luxury border border-sand-200/50 relative overflow-hidden">
+          <div className="w-full bg-sand-100/90 backdrop-blur-2xl p-6 sm:p-8 md:p-12 rounded-[2.5rem] shadow-luxury border border-sand-200/50 relative">
             
             {/* Back button */}
             <button
