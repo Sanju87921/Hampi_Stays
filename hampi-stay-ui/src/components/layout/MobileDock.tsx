@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export function MobileDock() {
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, setShowAuthModal } = useAuth();
   
   // Only show for Travelers or Unauthenticated users (public)
   const isOwner = user?.role === "RESORT_OWNER";
@@ -32,10 +32,18 @@ export function MobileDock() {
           const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
           const Icon = item.icon;
 
+          const handleClick = (e: React.MouseEvent) => {
+            if (!isAuthenticated && (item.label === "Bookings" || item.label === "Profile")) {
+              e.preventDefault();
+              setShowAuthModal(true, "login");
+            }
+          };
+
           return (
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleClick}
               className="relative flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-300"
             >
               {isActive && (

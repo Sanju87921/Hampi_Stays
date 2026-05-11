@@ -42,10 +42,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("hampi-user");
-    if (savedUser) {
+    const token = localStorage.getItem("hampi-token");
+    
+    if (savedUser && token) {
+      // Set local state immediately for fast load
       setUser(JSON.parse(savedUser));
+      
+      // Verify with backend in background to ensure session is still valid
+      fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) {
+          // Token expired or invalid
+          logout();
+        } else {
+          return res.json();
+        }
+      })
+      .then(data => {
+        if (data && data.user) {
+          setUser(data.user);
+          localStorage.setItem("hampi-user", JSON.stringify(data.user));
+        }
+      })
+      .catch(() => {
+        // Network error, keep local user for offline/temporary access
+        console.warn("Session verification failed. Operating in offline mode.");
+      })
+      .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const setShowAuthModal = (show: boolean, view: "login" | "register" = "login") => {

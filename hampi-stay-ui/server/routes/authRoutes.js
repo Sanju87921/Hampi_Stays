@@ -1,7 +1,7 @@
 import express from 'express';
 import * as authController from '../controllers/authController.js';
 import * as otpController from '../controllers/otpController.js';
-import { authLimiter, otpSendLimiter, otpVerifyLimiter, validate } from '../middleware/security.js';
+import { authenticate, authLimiter, otpSendLimiter, otpVerifyLimiter, validate } from '../middleware/security.js';
 import { body } from 'express-validator';
 
 const router = express.Router();
@@ -25,6 +25,7 @@ router.post('/login', authLimiter, loginValidation, validate, authController.log
 router.post('/google', authLimiter, authController.googleAuth);
 router.post('/apple', authLimiter, authController.appleAuth);
 router.post('/check-email', authController.checkEmail);
+router.get('/me', authenticate, authController.getMe);
 
 // OTP Routes
 router.post('/send-email-otp', otpSendLimiter, otpController.sendEmailOtp);

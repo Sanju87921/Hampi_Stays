@@ -222,3 +222,29 @@ export const checkEmail = async (req, res, next) => {
     next(error);
   }
 };
+export const getMe = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED',
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

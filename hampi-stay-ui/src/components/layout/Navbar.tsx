@@ -12,7 +12,7 @@ export function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
 
   useEffect(() => {
@@ -178,19 +178,24 @@ export function Navbar() {
                   >
                     Log in
                   </Link>
-                  <Link to="/resorts">
-                    <Button
-                      variant="primary"
-                      className={cn(
-                        "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
-                        isScrolled 
-                          ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 shadow-2xl shadow-navy-950/20" 
-                          : "bg-gold-500 text-navy-950 hover:bg-white hover:text-navy-950 shadow-2xl shadow-gold-500/20"
-                      )}
-                    >
-                      Book Now
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="primary"
+                    className={cn(
+                      "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
+                      isScrolled 
+                        ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 shadow-2xl shadow-navy-950/20" 
+                        : "bg-gold-500 text-navy-950 hover:bg-white hover:text-navy-950 shadow-2xl shadow-gold-500/20"
+                    )}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        window.location.href = "/resorts";
+                      } else {
+                        setShowAuthModal(true, "login");
+                      }
+                    }}
+                  >
+                    Book Now
+                  </Button>
                 </div>
               )}
             </div>
@@ -222,10 +227,16 @@ export function Navbar() {
             <div className="py-8 px-6 flex flex-col gap-6">
               <Link 
                 to="/" 
-                className="mb-4 self-center"
+                className="mb-4 self-center flex flex-col items-center gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <img src="/logo-full.png" alt="HampiStays" className="h-28 w-auto object-contain" />
+                {isAuthenticated && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Secure Session</span>
+                  </div>
+                )}
               </Link>
 
               {navLinks.map((link) => (
