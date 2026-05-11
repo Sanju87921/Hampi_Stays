@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "../ui/Button";
+import { Link } from "react-router-dom";
 
 export function CTASection() {
   return (
@@ -8,11 +9,11 @@ export function CTASection() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
         style={{
-          backgroundImage: "url('/images/cta-bg.png')",
+          backgroundImage: "url('https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=75&w=1920')",
         }}
       />
       {/* Dark overlay for the background */}
-      <div className="absolute inset-0 bg-navy-950/60" />
+      <div className="absolute inset-0 bg-navy-950/70 backdrop-blur-[2px]" />
 
       <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
         <motion.div
@@ -36,16 +37,20 @@ export function CTASection() {
             <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 leading-tight">
               Begin Your Royal Retreat
             </h2>
-            <p className="text-editorial-dark mb-12">
+            <p className="text-sand-100/60 mb-12 text-lg max-w-2xl mx-auto">
               Join our exclusive membership for early access to seasonal packages and bespoke experiences tailored perfectly for your desires.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Button size="lg" className="w-full sm:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950 border-none shadow-gold hover:-translate-y-1 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
-                Explore Packages
-              </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 hover:border-gold-400/40 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
-                Contact Concierge
-              </Button>
+              <Link to="/resorts" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 border-none shadow-gold hover:-translate-y-1 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
+                  Explore Packages
+                </Button>
+              </Link>
+              <Link to="/contact" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 hover:border-gold-400/40 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
+                  Contact Concierge
+                </Button>
+              </Link>
             </div>
           </div>
         </motion.div>

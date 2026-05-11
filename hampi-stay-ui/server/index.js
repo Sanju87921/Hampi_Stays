@@ -441,7 +441,7 @@ app.get('/api/users/:userId/wishlist', async (req, res) => {
       where: { userId: req.params.userId },
       include: { resort: true }
     }) : [];
-    res.json(wishlist.map((w: any) => w.resort || w));
+    res.json(wishlist.map((w) => w.resort || w));
   } catch (error) {
     res.json([]);
   }
