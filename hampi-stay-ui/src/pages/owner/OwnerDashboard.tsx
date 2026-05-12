@@ -14,7 +14,7 @@ import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncomple
 import { apiClient } from "../../utils/apiClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 
 export function OwnerDashboard() {
   const { user } = useAuth();
@@ -65,6 +65,10 @@ export function OwnerDashboard() {
 
   useEffect(() => {
     fetchResorts();
+    
+    // Command Center Pulse: Refresh owner data every 30 seconds for real-time operations
+    const pulse = setInterval(fetchResorts, 30000);
+    return () => clearInterval(pulse);
   }, [user]);
 
   const resort = resorts[activeResortIdx];
@@ -106,7 +110,7 @@ export function OwnerDashboard() {
 
   const handleDeletePhoto = async (resortId: string, photoUrl: string) => {
     try {
-      await apiClient.delete(`/resorts/${resortId}/photos`, { body: { url: photoUrl } });
+      await apiClient.delete(`/resorts/${resortId}/photos`, { url: photoUrl });
       fetchResorts();
     } catch (error) {
       console.error(error);
@@ -114,6 +118,7 @@ export function OwnerDashboard() {
   };
 
   const handleDownloadInvoice = async (booking: any) => {
+    if (!resort || !booking) return;
     const doc = new jsPDF();
     const safeRef = booking.referenceNumber || `HS-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
     const issueDate = new Date().toLocaleDateString("en-GB");

@@ -39,11 +39,27 @@ export function BookingsPage() {
 
   useEffect(() => {
     fetchBookings();
+    
+    // Pulse: Refresh bookings every 30 seconds for real-time status updates
+    const pulse = setInterval(fetchBookings, 30000);
+    return () => clearInterval(pulse);
   }, [fetchBookings]);
-
+ 
   const now = new Date();
-  const upcoming = bookings.filter(b => new Date(b.checkIn) >= now && b.status !== "CANCELLED");
-  const completed = bookings.filter(b => new Date(b.checkOut) < now && b.status !== "CANCELLED");
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const upcoming = bookings.filter(b => {
+    const checkInDate = new Date(b.checkIn);
+    const checkInStart = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate());
+    return checkInStart >= startOfToday && b.status !== "CANCELLED";
+  });
+  
+  const completed = bookings.filter(b => {
+    const checkOutDate = new Date(b.checkOut);
+    const checkOutStart = new Date(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate());
+    return checkOutStart < startOfToday && b.status !== "CANCELLED";
+  });
+
   const cancelled = bookings.filter(b => b.status === "CANCELLED");
 
   const tabData = { upcoming, completed, cancelled };

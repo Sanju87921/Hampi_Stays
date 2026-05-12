@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 
 export function InventoryPage() {
   const { user } = useAuth();
@@ -31,8 +32,7 @@ export function InventoryPage() {
       return;
     }
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/owners/${user.id}/resorts`);
-      const data = await response.json();
+      const data = await apiClient.get<any[]>(`/owners/${user.id}/resorts`);
       setResorts(data);
     } catch (error) {
       console.error(error);
@@ -41,7 +41,12 @@ export function InventoryPage() {
     }
   };
 
-  useEffect(() => { fetchResorts(); }, [user]);
+  useEffect(() => {
+    fetchResorts();
+    // Pulse: Refresh inventory every 30 seconds for real-time synchronization
+    const pulse = setInterval(fetchResorts, 30000);
+    return () => clearInterval(pulse);
+  }, [user]);
 
   const resort = resorts[activeResortIdx];
   const room = resort?.roomTypes?.[activeRoomIdx];
@@ -70,14 +75,10 @@ export function InventoryPage() {
     if (!room || selectedDates.length === 0 || !overridePrice) return;
     setIsSaving(true);
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/rooms/${room.id}/price-overrides`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dates: selectedDates,
-          price: parseFloat(overridePrice),
-          minNights: minNights ? parseInt(minNights) : null
-        })
+      await apiClient.post(`/rooms/${room.id}/price-overrides`, {
+        dates: selectedDates,
+        price: parseFloat(overridePrice),
+        minNights: minNights ? parseInt(minNights) : null
       });
       alert("Pricing & Rules updated successfully!");
       setSelectedDates([]);
@@ -95,13 +96,9 @@ export function InventoryPage() {
     if (!room || selectedDates.length === 0) return;
     setIsSaving(true);
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/rooms/${room.id}/blockings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dates: selectedDates,
-          reason: blockReason
-        })
+      await apiClient.post(`/rooms/${room.id}/blockings`, {
+        dates: selectedDates,
+        reason: blockReason
       });
       alert("Dates blocked successfully!");
       setSelectedDates([]);
@@ -125,20 +122,16 @@ export function InventoryPage() {
     if (!resort) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/${resort.id}/discount-codes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDiscount)
+      await apiClient.post(`/resorts/${resort.id}/discount-codes`, newDiscount);
+      alert("Discount code created!");
+      setShowDiscounts(false);
+      setNewDiscount({ 
+        code: "", percentage: "", flatAmount: "", validFrom: "", validUntil: "", maxUses: "",
+        isEarlyBird: false, minDaysInAdvance: "", isLastMinute: false, maxDaysInAdvance: ""
       });
-      if (res.ok) {
-        alert("Discount code created!");
-        setShowDiscounts(false);
-        setNewDiscount({ 
-          code: "", percentage: "", flatAmount: "", validFrom: "", validUntil: "", maxUses: "",
-          isEarlyBird: false, minDaysInAdvance: "", isLastMinute: false, maxDaysInAdvance: ""
-        });
-        fetchResorts();
-      }
+      fetchResorts();
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }

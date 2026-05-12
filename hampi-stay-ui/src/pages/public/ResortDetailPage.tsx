@@ -38,10 +38,10 @@ export function ResortDetailPage() {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const fetchResort = async () => {
+    const fetchResort = async (silent = false) => {
       if (!slug) return;
       try {
-        setIsLoading(true);
+        if (!silent) setIsLoading(true);
         const data = await apiClient.get<any>(`/resorts/${slug}`);
 
         // Normalize backend schema to frontend types
@@ -65,13 +65,17 @@ export function ResortDetailPage() {
         };
         setResort(normalized);
       } catch (err: any) {
-        setError(err.message);
+        if (!silent) setError(err.message);
       } finally {
-        setIsLoading(false);
+        if (!silent) setIsLoading(false);
       }
     };
 
     fetchResort();
+    
+    // Discovery Pulse: Refresh resort data every 60 seconds for live availability
+    const pulse = setInterval(() => fetchResort(true), 60000);
+    return () => clearInterval(pulse);
   }, [slug]);
 
   if (isLoading) return (

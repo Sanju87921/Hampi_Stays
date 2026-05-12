@@ -91,5 +91,5 @@ export const apiClient = {
   post: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'POST', body: JSON.stringify(body) }),
   put: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'PUT', body: JSON.stringify(body) }),
   patch: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(url: string, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE' }),
+  delete: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE', ...(body && { body: JSON.stringify(body) }) }),
 };

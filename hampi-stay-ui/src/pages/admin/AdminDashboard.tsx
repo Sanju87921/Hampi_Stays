@@ -42,23 +42,44 @@ export function AdminDashboard() {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    if (activeTab === 'security' || activeTab === 'otp-logs' || activeTab === 'overview') {
+    const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties'];
+    
+    if (pollTabs.includes(activeTab)) {
+      // Pulse: Fast 10s refresh for admin command center
       interval = setInterval(async () => {
         try {
-          if (activeTab === 'security') {
-            const data = await apiClient.get<any>('/admin/security/stats');
-            setSecurityData(data);
-          } else if (activeTab === 'otp-logs') {
-            const data = await apiClient.get<any[]>('/admin/otp-logs');
-            setOtpLogs(data);
-          } else if (activeTab === 'overview') {
-            const data = await apiClient.get<any>('/admin/stats');
-            setStats(data);
+          switch (activeTab) {
+            case 'security':
+              const secData = await apiClient.get<any>('/admin/security/stats');
+              setSecurityData(secData);
+              break;
+            case 'otp-logs':
+              const logs = await apiClient.get<any[]>('/admin/otp-logs');
+              setOtpLogs(logs);
+              break;
+            case 'overview':
+              const st = await apiClient.get<any>('/admin/stats');
+              setStats(st);
+              break;
+            case 'payouts':
+              const po = await apiClient.get<any[]>('/admin/payouts');
+              setPendingPayouts(po);
+              break;
+            case 'bookings':
+              const bk = await apiClient.get<any[]>('/admin/bookings/all');
+              setAllBookings(bk);
+              break;
+            case 'properties':
+              const pr = await apiClient.get<any[]>('/admin/resorts/pending');
+              const ar = await apiClient.get<any[]>('/admin/resorts/active');
+              setPendingResorts(pr);
+              setActiveResorts(ar);
+              break;
           }
         } catch (err) {
-          console.error("Real-time poll failed", err);
+          console.error("Admin pulse failed", err);
         }
-      }, 5000); // Poll every 5 seconds for "Real-time" feel
+      }, 10000); // 10s for balanced real-time feel
     }
     return () => clearInterval(interval);
   }, [activeTab]);
