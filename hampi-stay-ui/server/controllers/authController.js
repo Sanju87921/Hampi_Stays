@@ -113,7 +113,9 @@ export const login = async (req, res, next) => {
 
 export const googleAuth = async (req, res, next) => {
   try {
-    const { credential } = req.body;
+    const { credential, role } = req.body;
+    
+    // Verify Google ID Token
     const ticket = await client.verifyIdToken({
       idToken: credential,
       audience: GOOGLE_CLIENT_ID,
@@ -121,20 +123,47 @@ export const googleAuth = async (req, res, next) => {
     const payload = ticket.getPayload();
     if (!payload) return res.status(400).json({ error: 'Invalid token' });
 
-    const { email, name, picture: avatar } = payload;
-    const userEmail = email.toLowerCase();
+    const userEmail = payload.email?.toLowerCase();
+    if (!userEmail) return res.status(400).json({ error: 'Email not found in Google response' });
 
     let user = await prisma.user.findUnique({ where: { email: userEmail } });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: userEmail,
-          name: name || 'Google Traveler',
-          passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
-          role: 'TRAVELLER',
-          avatar
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: userEmail,
+            name: payload.name || 'Google Traveler',
+            passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+            role: role || 'TRAVELLER',
+            avatar: payload.picture
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: {
+              userId: newUser.id,
+              businessName: `${newUser.name}'s Portfolio`,
+            },
+          });
         }
+
+        if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            },
+          });
+        }
+
+        return newUser;
       });
     }
 
@@ -163,7 +192,7 @@ export const googleAuth = async (req, res, next) => {
 
 export const appleAuth = async (req, res, next) => {
   try {
-    const { id_token, user: userDetails } = req.body;
+    const { id_token, user: userDetails, role } = req.body;
     const { sub: appleId, email } = await appleSignin.verifyIdToken(id_token, {
       audience: APPLE_CLIENT_ID,
     });
@@ -174,13 +203,40 @@ export const appleAuth = async (req, res, next) => {
     if (!user) {
       const name = userDetails ? `${userDetails.name.firstName} ${userDetails.name.lastName}` : 'Apple Traveler';
       
-      user = await prisma.user.create({
-        data: {
-          email: userEmail,
-          name: name,
-          passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
-          role: 'TRAVELLER'
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: userEmail,
+            name: name,
+            passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+            role: role || 'TRAVELLER'
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: {
+              userId: newUser.id,
+              businessName: `${newUser.name}'s Portfolio`,
+            },
+          });
         }
+
+        if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            },
+          });
+        }
+
+        return newUser;
       });
     }
 

@@ -23,8 +23,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<any>;
-  loginWithGoogle: (credential: string) => Promise<any>;
-  loginWithApple: (response: any) => Promise<any>;
+  loginWithGoogle: (credential: string, role?: UserRole) => Promise<any>;
+  loginWithApple: (response: any, role?: UserRole) => Promise<any>;
   register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
   updateUser: (updatedUser: User) => void;
   logout: () => void;
@@ -79,8 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
-  const loginWithGoogle = async (credential: string) => {
-    const data = await apiClient.post<any>('/auth/google', { credential });
+  const loginWithGoogle = async (credential: string, role?: UserRole) => {
+    const data = await apiClient.post<any>('/auth/google', { credential, role });
     setUser(data.user);
     localStorage.setItem("hampi-user", JSON.stringify(data.user));
     localStorage.setItem("hampi-token", data.token);
@@ -88,10 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
-  const loginWithApple = async (appleResponse: any) => {
+  const loginWithApple = async (appleResponse: any, role?: UserRole) => {
     const data = await apiClient.post<any>('/auth/apple', {
       id_token: appleResponse.authorization.id_token,
-      user: appleResponse.user
+      user: appleResponse.user,
+      role
     });
     setUser(data.user);
     localStorage.setItem("hampi-user", JSON.stringify(data.user));

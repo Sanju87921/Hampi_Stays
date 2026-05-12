@@ -179,7 +179,8 @@ export function RegisterPage() {
   const onGoogleSuccess = async (response: any) => {
     setError("");
     try {
-      await loginWithGoogle(response.credential);
+      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+      await loginWithGoogle(response.credential, apiRole as any);
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Google login failed. Please try again.");
