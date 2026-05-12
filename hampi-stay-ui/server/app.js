@@ -81,9 +81,7 @@ app.use('/api/upload', uploadRoutes);
 
 // Global Data Routes
 import * as resortController from './controllers/resortController.js';
-import { cleanDatabase } from './controllers/systemController.js';
 
-app.post('/api/system/clean-database', cleanDatabase);
 app.get('/api/stats', resortController.getStats);
 app.get('/api/settings', (req, res) => res.json({ 
   guideServiceEnabled: true,

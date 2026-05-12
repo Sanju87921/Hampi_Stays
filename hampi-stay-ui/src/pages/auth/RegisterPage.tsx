@@ -99,6 +99,7 @@ export function RegisterPage() {
     if (!formData.terms) return setError("You must agree to the terms");
     setError("");
     try {
+      setIsVerifying(true);
       const response = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,9 +107,17 @@ export function RegisterPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Validation failed');
-      setStep(3);
+      
+      // Perform immediate registration instead of moving to Step 3
+      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+      await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
+      
+      setVerifiedSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 1200);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -522,8 +531,8 @@ export function RegisterPage() {
                       </label>
                     </div>
 
-                    <Button type="submit">
-                      Continue to Verification
+                    <Button type="submit" isLoading={isVerifying}>
+                      Complete Registration
                     </Button>
                   </motion.form>
 
