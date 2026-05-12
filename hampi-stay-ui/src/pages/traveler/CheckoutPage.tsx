@@ -110,7 +110,7 @@ export function CheckoutPage() {
       // 3. Launch Razorpay Checkout
       if (booking.orderId) {
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_5NnZlF1U0T2z8E",
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           name: "HampiStays Luxury",
