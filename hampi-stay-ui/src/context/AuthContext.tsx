@@ -62,20 +62,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("hampi-token");
     
     if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
-      
-      apiClient.get<{ user: User }>('/auth/me')
-        .then(data => {
-          if (data && data.user) {
-            setUser(data.user);
-            localStorage.setItem("hampi-user", JSON.stringify(data.user));
-          }
-        })
-        .catch((err) => {
-          console.warn("Session verification failed:", err.message);
-          if (err.status === 401) logout();
-        })
-        .finally(() => setIsLoading(false));
+      try {
+        setUser(JSON.parse(savedUser));
+        
+        apiClient.get<{ user: User }>('/auth/me')
+          .then(data => {
+            if (data && data.user) {
+              setUser(data.user);
+              localStorage.setItem("hampi-user", JSON.stringify(data.user));
+            }
+          })
+          .catch((err) => {
+            console.warn("Session verification failed:", err.message);
+            if (err.status === 401) logout();
+          })
+          .finally(() => setIsLoading(false));
+      } catch (e) {
+        console.error("Failed to parse saved user:", e);
+        logout();
+        setIsLoading(false);
+      }
     } else {
       setIsLoading(false);
     }
@@ -90,17 +96,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const data = await apiClient.post<any>('/auth/login', { email, password });
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      
+      // Atomic storage update
       localStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      
+      // Immediate state update
       setUser(data.user);
+      setIsLoading(false); // Set loading to false immediately on success
       _setShowAuthModal(false);
+      
       return data;
     } catch (err) {
       setIsLoading(false);
       throw err;
-    } finally {
-      // We don't set isLoading(false) here because we want the ProtectedRoute 
-      // to stay in loading state until the next render cycle picks up the user.
     }
   };
 
@@ -108,9 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const data = await apiClient.post<any>('/auth/google', { credential, role });
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
       localStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
       setUser(data.user);
+      setIsLoading(false);
       _setShowAuthModal(false);
       return data;
     } catch (err) {
@@ -120,25 +130,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithApple = async (appleResponse: any, role?: UserRole) => {
-    const data = await apiClient.post<any>('/auth/apple', {
-      id_token: appleResponse.authorization.id_token,
-      user: appleResponse.user,
-      role
-    });
-    setUser(data.user);
-    localStorage.setItem("hampi-user", JSON.stringify(data.user));
-    localStorage.setItem("hampi-token", data.token);
-    _setShowAuthModal(false);
-    return data;
+    setIsLoading(true);
+    try {
+      const data = await apiClient.post<any>('/auth/apple', {
+        id_token: appleResponse.authorization.id_token,
+        user: appleResponse.user,
+        role
+      });
+      localStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      setUser(data.user);
+      setIsLoading(false);
+      _setShowAuthModal(false);
+      return data;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
   };
 
   const register = async (name: string, email: string, phone: string, password: string, role: UserRole) => {
-    const data = await apiClient.post<any>('/auth/register', { name, email, phone, password, role });
-    setUser(data.user);
-    localStorage.setItem("hampi-user", JSON.stringify(data.user));
-    localStorage.setItem("hampi-token", data.token);
-    _setShowAuthModal(false);
-    return data;
+    setIsLoading(true);
+    try {
+      const data = await apiClient.post<any>('/auth/register', { name, email, phone, password, role });
+      localStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      setUser(data.user);
+      setIsLoading(false);
+      _setShowAuthModal(false);
+      return data;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
   };
 
   const updateUser = (updatedUser: User) => {
