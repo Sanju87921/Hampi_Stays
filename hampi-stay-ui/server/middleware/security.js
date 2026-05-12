@@ -92,7 +92,12 @@ export const securityHeaders = helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com", "https://accounts.google.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com"],
-      connectSrc: ["'self'", "https://api.razorpay.com", "https://accounts.google.com"],
+      connectSrc: [
+        "'self'", 
+        "https://api.razorpay.com", 
+        "https://accounts.google.com",
+        "https://newhampistays-production-54fa.up.railway.app"
+      ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       frameSrc: ["'self'", "https://accounts.google.com", "https://api.razorpay.com"],
       objectSrc: ["'none'"],
