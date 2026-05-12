@@ -218,7 +218,7 @@ export function BookingWidget({
       </Button>
 
       <p className="text-center text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mt-6">
-        No payment required today
+        Secure Payment via Razorpay
       </p>
     </div>
   );

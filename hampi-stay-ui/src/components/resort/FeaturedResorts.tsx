@@ -14,8 +14,7 @@ export function FeaturedResorts() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/featured`);
-        const data = await response.json();
+        const data = await apiClient.get<any[]>('/resorts/featured');
         if (Array.isArray(data)) {
           setResorts(data);
         } else {
@@ -176,9 +175,9 @@ export function FeaturedResorts() {
                     </span>
                   </div>
 
-                  {/* Hidden CTA that slides up */}
-                  <div className="overflow-hidden">
-                    <div className="transform translate-y-[120%] group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1] delay-200">
+                  {/* CTA Area - Slide up on hover, always visible on mobile */}
+                  <div className="overflow-hidden mt-auto">
+                    <div className="transform translate-y-[120%] lg:group-hover:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1] delay-200 lg:translate-y-[120%] translate-y-0">
                       <Link to={`/resorts/${resort.slug}`} className="block w-full">
                         <Button
                           variant="primary"

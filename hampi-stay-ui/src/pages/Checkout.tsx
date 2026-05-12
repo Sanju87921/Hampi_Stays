@@ -10,7 +10,7 @@ import {
 import { getResortById } from "../data/resorts";
 import { Button } from "../components/ui/Button";
 import { format, parseISO, differenceInDays } from "date-fns";
-
+import { apiClient } from "../utils/apiClient";
 import { useAuth } from "../context/AuthContext";
 
 export function Checkout() {
@@ -22,6 +22,8 @@ export function Checkout() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refNumber, setRefNumber] = useState("");
+  const [addInsurance, setAddInsurance] = useState(false);
+  const [airportPickup, setAirportPickup] = useState(false);
   
 
 
@@ -52,7 +54,9 @@ export function Checkout() {
   const nights = Math.max(1, differenceInDays(parseISO(checkOut), parseISO(checkIn)));
   const subtotal = room.pricePerNight * nights;
   const taxes = Math.round(subtotal * 0.12);
-  const total = subtotal + taxes;
+  const insuranceCost = addInsurance ? Math.round(subtotal * 0.02) : 0;
+  const pickupCost = airportPickup ? 1500 : 0;
+  const grandTotal = subtotal + taxes + insuranceCost + pickupCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,56 +70,45 @@ export function Checkout() {
     
     try {
       // 1. Create Booking & Get Payment Session
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          resortId: resort.id,
-          roomId: room.id,
-          checkIn,
-          checkOut,
-          guests: adults,
-          totalPrice: total,
-          specialRequests: formData.specialRequests,
-          phone: formData.phone,
-          customerName: `${formData.firstName} ${formData.lastName}`
-        })
+      const bookingData = await apiClient.post<any>('/bookings', {
+        userId: user.id,
+        resortId: resort.id,
+        roomId: room.id,
+        checkIn,
+        checkOut,
+        guests: adults,
+        totalPrice: grandTotal,
+        specialRequests: formData.specialRequests,
+        phone: formData.phone,
+        customerName: `${formData.firstName} ${formData.lastName}`,
+        addInsurance,
+        airportPickup
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Booking failed. Please try again.");
-      }
-      
-      const data = await response.json();
-      
       // 2. Launch Razorpay Checkout
-      if (data.razorpayOrderId) {
+      if (bookingData.orderId) {
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Use env variable
-          amount: Math.round(total * 100),
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: Math.round(grandTotal * 100),
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${resort.name}`,
-          image: "https://hampistays.com/logo.png",
-          order_id: data.razorpayOrderId,
+          image: "/logo-full.png",
+          order_id: bookingData.orderId,
           handler: async function (response: any) {
-            // Verify Payment
-            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/${data.referenceNumber}/verify-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
+            try {
+              // Verify Payment
+              await apiClient.post(`/bookings/${bookingData.referenceNumber}/verify-payment`, {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
+                razorpay_signature: response.razorpay_signature,
+                referenceNumber: bookingData.referenceNumber
+              });
 
-            if (verifyRes.ok) {
-              setRefNumber(data.referenceNumber);
+              setRefNumber(bookingData.referenceNumber);
               setIsSuccess(true);
-            } else {
+            } catch (err) {
+              console.error("Verification error:", err);
               setError("Payment verification failed. Please contact support.");
             }
           },
@@ -125,19 +118,17 @@ export function Checkout() {
             contact: formData.phone
           },
           theme: {
-            color: "#0c0a09"
+            color: "#0A0F1E"
           }
         };
 
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
       } else {
-        // Fallback for testing
-        setRefNumber(data.referenceNumber);
-        setIsSuccess(true);
+        throw new Error("Payment gateway failed to initialize. Please try again.");
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -316,10 +307,56 @@ export function Checkout() {
                 </div>
               </div>
 
+              <div className="space-y-4 mb-8">
+                <div 
+                  onClick={() => setAddInsurance(!addInsurance)}
+                  className={cn(
+                    "p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between",
+                    addInsurance ? "border-gold-500 bg-gold-50/30" : "border-sand-100 bg-white hover:border-sand-200"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+                      addInsurance ? "bg-gold-500 border-gold-500 text-white" : "border-sand-300"
+                    )}>
+                      {addInsurance && <CheckCircle className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-navy-950">Travel Insurance</p>
+                      <p className="text-xs text-navy-950/50">Comprehensive coverage for your peace of mind</p>
+                    </div>
+                  </div>
+                  <p className="font-bold text-navy-950">₹{insuranceCost.toLocaleString()}</p>
+                </div>
+
+                <div 
+                  onClick={() => setAirportPickup(!airportPickup)}
+                  className={cn(
+                    "p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between",
+                    airportPickup ? "border-gold-500 bg-gold-50/30" : "border-sand-100 bg-white hover:border-sand-200"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+                      airportPickup ? "bg-gold-500 border-gold-500 text-white" : "border-sand-300"
+                    )}>
+                      {airportPickup && <CheckCircle className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-navy-950">VIP Airport Pickup</p>
+                      <p className="text-xs text-navy-950/50">Luxury transport from Hubballi/Jindal airport</p>
+                    </div>
+                  </div>
+                  <p className="font-bold text-navy-950">₹{pickupCost.toLocaleString()}</p>
+                </div>
+              </div>
+
               <div className="flex items-start gap-4 p-5 bg-navy-50 rounded-2xl border border-navy-100">
                 <Info className="w-5 h-5 text-navy-700 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-navy-900 leading-relaxed">
-                  By clicking "Confirm Booking", you agree to the <Link to="/terms" className="text-gold-600 font-bold hover:underline">Terms of Service</Link> and the resort's cancellation policy. Your payment is secured via 256-bit SSL encryption.
+                  By clicking "Confirm & Pay", you agree to the <Link to="/terms" className="text-gold-600 font-bold hover:underline">Terms of Service</Link> and the resort's cancellation policy. Your payment is secured via 256-bit SSL encryption.
                 </p>
               </div>
             </section>
@@ -391,9 +428,21 @@ export function Checkout() {
                     <span>Luxury Tax & Fees (12%)</span>
                     <span className="font-bold text-navy-950">₹{taxes.toLocaleString("en-IN")}</span>
                   </div>
+                  {addInsurance && (
+                    <div className="flex justify-between text-sm text-navy-950/70">
+                      <span>Travel Insurance</span>
+                      <span className="font-bold text-navy-950">₹{insuranceCost.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
+                  {airportPickup && (
+                    <div className="flex justify-between text-sm text-navy-950/70">
+                      <span>VIP Airport Pickup</span>
+                      <span className="font-bold text-navy-950">₹{pickupCost.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
                   <div className="pt-4 border-t border-sand-100 flex justify-between items-center">
                     <span className="text-lg font-bold text-navy-950">Total Amount</span>
-                    <span className="text-3xl font-serif font-bold text-navy-950">₹{total.toLocaleString("en-IN")}</span>
+                    <span className="text-3xl font-serif font-bold text-navy-950">₹{grandTotal.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 
