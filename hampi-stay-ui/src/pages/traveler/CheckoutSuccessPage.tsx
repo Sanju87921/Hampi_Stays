@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 import { useAuth } from "../../context/AuthContext";
+import type { Booking } from "../../types/booking";
 
 export function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
@@ -11,7 +12,7 @@ export function CheckoutSuccessPage() {
   const { user } = useAuth();
   const orderId = searchParams.get("order_id");
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
-  const [booking, setBooking] = useState<any>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {

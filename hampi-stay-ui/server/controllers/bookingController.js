@@ -12,7 +12,7 @@ export const getBookingByReference = async (req, res, next) => {
     const { reference } = req.params;
     const booking = await prisma.booking.findUnique({
       where: { referenceNumber: reference },
-      include: { resort: true, user: true }
+      include: { resort: true, user: true, room: true }
     });
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
     res.json(booking);

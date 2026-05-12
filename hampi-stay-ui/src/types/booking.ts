@@ -6,7 +6,7 @@ export interface Booking {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'CHECKED_IN' | 'PAID';
   referenceNumber: string;
   createdAt: string;
   resort?: {

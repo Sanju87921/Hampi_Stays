@@ -27,7 +27,7 @@ export function BookingsPage() {
   const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      const data = await apiClient.get<Booking[]>(`/users/${user.id}/bookings`);
+      const data = await apiClient.get<Booking[]>(`/users/bookings`);
       setBookings(data);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
