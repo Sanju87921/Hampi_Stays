@@ -645,15 +645,11 @@ export function OwnerDashboard() {
               onClick={async () => {
                 if (window.confirm("Are you sure you want to permanently delete this resort and all its data? This cannot be undone.")) {
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/${resort.id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                      setActiveResortIdx(0);
-                      fetchResorts();
-                    } else {
-                      alert("Failed to delete resort.");
-                    }
+                    await apiClient.delete(`/resorts/${resort.id}`);
+                    setActiveResortIdx(0);
+                    fetchResorts();
                   } catch (err) {
-                    alert("Network error.");
+                    alert("Failed to delete resort.");
                   }
                 }
               }}
@@ -819,11 +815,7 @@ export function OwnerDashboard() {
                                       onClick={async () => {
                                         if (window.confirm("Delete this room photo?")) {
                                           try {
-                                            await fetch(`/api/rooms/${room.id}/photos`, {
-                                              method: "DELETE",
-                                              headers: { "Content-Type": "application/json" },
-                                              body: JSON.stringify({ url: img })
-                                            });
+                                            await apiClient.delete(`/rooms/${room.id}/photos`, { data: { url: img } });
                                             fetchResorts();
                                           } catch (err) { alert("Error deleting photo"); }
                                         }
@@ -841,22 +833,14 @@ export function OwnerDashboard() {
                                     const reader = new FileReader();
                                     reader.onloadend = async () => {
                                       try {
-                                        const r1 = await fetch(`/api/rooms/${room.id}/photos`, {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ url: reader.result as string })
-                                        });
-                                        if (r1.ok) {
-                                          fetchResorts();
+                                        await apiClient.post(`/rooms/${room.id}/photos`, { url: reader.result as string });
+                                        fetchResorts();
+                                      } catch(err: any) {
+                                        if (err.message?.includes('413')) {
+                                          alert("Image is too large! Please use a smaller image.");
                                         } else {
-                                          if (r1.status === 413) {
-                                            alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image.");
-                                          } else {
-                                            alert("Failed to upload room photo. Server returned status: " + r1.status);
-                                          }
+                                          alert("Failed to upload room photo.");
                                         }
-                                      } catch(err) {
-                                        alert("Network error: Please check your connection or server status.");
                                       }
                                     };
                                     reader.readAsDataURL(file);
@@ -887,22 +871,14 @@ export function OwnerDashboard() {
                             const reader = new FileReader();
                             reader.onloadend = async () => {
                               try {
-                                const res = await fetch(`/api/resorts/${resort.id}/photos`, {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ url: reader.result as string })
-                                });
-                                if (res.ok) {
-                                  fetchResorts();
+                                await apiClient.post(`/resorts/${resort.id}/photos`, { url: reader.result as string });
+                                fetchResorts();
+                              } catch(err: any) {
+                                if (err.message?.includes('413')) {
+                                  alert("Image is too large! Please use a smaller image (under 100kb).");
                                 } else {
-                                  if (res.status === 413) {
-                                    alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image (under 100kb).");
-                                  } else {
-                                    alert("Failed to upload image. Server returned status: " + res.status);
-                                  }
+                                  alert("Failed to upload image.");
                                 }
-                              } catch(err) {
-                                alert("Network error: Please check your connection or server status.");
                               } finally {
                                 setIsUpdatingResortPhotos(false);
                               }
