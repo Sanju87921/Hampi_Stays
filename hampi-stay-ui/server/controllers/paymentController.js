@@ -10,7 +10,15 @@ const razorpay = new Razorpay({
 
 export const createOrder = async (req, res, next) => {
   try {
-    const { resortId, roomId, checkIn, checkOut, guests } = req.body;
+    const { 
+      resortId, 
+      roomId, 
+      checkIn, 
+      checkOut, 
+      guests, 
+      addInsurance, 
+      airportPickup 
+    } = req.body;
     
     // 1. RECALCULATE PRICE ON BACKEND (Security: Never trust frontend price)
     const resort = await prisma.resort.findUnique({ 
@@ -29,7 +37,13 @@ export const createOrder = async (req, res, next) => {
     
     if (nights <= 0) return res.status(400).json({ error: 'Invalid dates' });
 
-    const totalPrice = room.pricePerNight * nights;
+    // Precise matching with frontend logic in CheckoutPage.tsx
+    const nightsTotal = room.pricePerNight * nights;
+    const taxes = Math.round(nightsTotal * 0.12);
+    const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
+    const airportPickupCost = airportPickup ? 1500 : 0;
+    
+    const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
     const referenceNumber = `HS-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
     // 2. Create Razorpay Order

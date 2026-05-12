@@ -95,7 +95,9 @@ export function CheckoutPage() {
         totalPrice: grandTotal,
         specialRequests: allRequests,
         phone: guestInfo.phone,
-        customerName: guestInfo.name
+        customerName: guestInfo.name,
+        addInsurance,
+        airportPickup: airportPickupCost > 0
       });
 
       // 2. Load Razorpay Script dynamically if not present
