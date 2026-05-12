@@ -4,6 +4,7 @@ import { Star, MapPin, Heart, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 
 export function FeaturedResorts() {
   const [resorts, setResorts] = useState<any[]>([]);
