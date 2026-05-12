@@ -26,19 +26,27 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   // 2. Add Auth Header
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('hampi-token');
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Bearer ${token}` }),
   };
 
   // 3. Perform Fetch
+  const requestHeaders = new Headers(defaultHeaders);
+  if (headers) {
+    if (headers instanceof Headers) {
+      headers.forEach((value, key) => requestHeaders.set(key, value));
+    } else if (Array.isArray(headers)) {
+      headers.forEach(([key, value]) => requestHeaders.set(key, value));
+    } else {
+      Object.entries(headers).forEach(([key, value]) => requestHeaders.set(key, value as string));
+    }
+  }
+
   const response = await fetch(url, {
     ...rest,
-    headers: {
-      ...defaultHeaders,
-      ...headers,
-    },
+    headers: requestHeaders,
   });
 
   // 4. Handle Empty or Non-JSON Responses safely
