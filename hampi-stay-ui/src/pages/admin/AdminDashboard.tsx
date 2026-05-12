@@ -132,14 +132,8 @@ export function AdminDashboard() {
   const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
     setProcessingId(id);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/resorts/${id}/feature`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isFeatured: !currentStatus })
-      });
-      if (res.ok) {
-        setActiveResorts(prev => prev.map(r => r.id === id ? { ...r, isFeatured: !currentStatus } : r));
-      }
+      await apiClient.patch(`/admin/resorts/${id}/feature`, { isFeatured: !currentStatus });
+      setActiveResorts(prev => prev.map(r => r.id === id ? { ...r, isFeatured: !currentStatus } : r));
     } catch (err) {
       console.error(err);
     } finally {
@@ -157,30 +151,18 @@ export function AdminDashboard() {
     setIsSavingUser(true);
     try {
       const isNew = editingUser.id === 'new';
-      const endpoint = isNew 
-        ? `${import.meta.env.VITE_API_URL}/api/auth/register`
-        : `${import.meta.env.VITE_API_URL}/api/users/${editingUser.id}`;
       
-      const res = await fetch(endpoint, {
-        method: isNew ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...editingUser,
-          password: isNew ? "Hampi123!" : undefined // Default password for admin-created users
-        })
-      });
+      const userToDisplay = isNew 
+        ? await apiClient.post<any>('/auth/register', { ...editingUser, password: "Hampi123!" })
+        : await apiClient.patch<any>(`/users/${editingUser.id}`, editingUser);
       
-      if (res.ok) {
-        const result = await res.json();
-        const userToDisplay = result.user || result;
-        if (isNew) {
-          setAllUsers(prev => [userToDisplay, ...prev]);
-          alert("User created successfully! Default password is: Hampi123!");
-        } else {
-          setAllUsers(prev => prev.map(u => u.id === userToDisplay.id ? userToDisplay : u));
-        }
-        setEditingUser(null);
+      if (isNew) {
+        setAllUsers(prev => [userToDisplay, ...prev]);
+        alert("User created successfully! Default password is: Hampi123!");
+      } else {
+        setAllUsers(prev => prev.map(u => u.id === userToDisplay.id ? userToDisplay : u));
       }
+      setEditingUser(null);
     } catch (err) {
       console.error(err);
       alert("Action failed");
@@ -194,10 +176,8 @@ export function AdminDashboard() {
     
     setProcessingId(userId);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, { method: "DELETE" });
-      if (res.ok) {
-        setAllUsers(prev => prev.filter(u => u.id !== userId));
-      }
+      await apiClient.delete(`/admin/users/${userId}`);
+      setAllUsers(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       console.error(err);
       alert("Failed to delete user");
@@ -232,15 +212,9 @@ export function AdminDashboard() {
   const handleUpdateCommission = async (resortId: string) => {
     setIsSavingCommission(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/resorts/${resortId}/commission`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commissionRate: newCommissionRate })
-      });
-      if (res.ok) {
-        setActiveResorts(prev => prev.map(r => r.id === resortId ? { ...r, commissionRate: newCommissionRate } : r));
-        setEditingCommissionId(null);
-      }
+      await apiClient.patch(`/admin/resorts/${resortId}/commission`, { commissionRate: newCommissionRate });
+      setActiveResorts(prev => prev.map(r => r.id === resortId ? { ...r, commissionRate: newCommissionRate } : r));
+      setEditingCommissionId(null);
     } catch (err) {
       console.error(err);
       alert("Failed to update commission rate");
@@ -617,37 +591,15 @@ export function AdminDashboard() {
         : "CRITICAL: This will SHUT DOWN the entire Tour Guide network. It will be hidden from the website, registration, and all public areas. Continue?",
       onConfirm: async () => {
         setProcessingId('system-toggle');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/settings`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ guideServiceEnabled: nextStatus }),
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'Failed to update system settings');
-          }
-
-          const updatedSettings = await res.json();
+          const updatedSettings = await apiClient.patch<any>('/admin/settings', { guideServiceEnabled: nextStatus });
           setGuideServiceEnabled(updatedSettings.guideServiceEnabled);
           setShowConfirmModal(false);
         } catch (err: any) {
           console.error("System Toggle Error:", err);
-          if (err.name === 'AbortError') {
-            alert("Error: Server request timed out. Please check if the backend is running.");
-          } else {
-            alert(`Error: ${err.message || 'Could not connect to server'}`);
-          }
+          alert(`Error: ${err.message || 'Could not connect to server'}`);
         } finally {
           setProcessingId(null);
-          clearTimeout(timeoutId);
         }
       }
     });
@@ -657,17 +609,7 @@ export function AdminDashboard() {
   const handleGuideActiveToggle = async (profileId: string, currentStatus: boolean) => {
     setProcessingId(profileId);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/guides/${profileId}/toggle-active`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !currentStatus })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${res.status}`);
-      }
-
+      await apiClient.patch(`/admin/guides/${profileId}/toggle-active`, { isActive: !currentStatus });
       setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, isActive: !currentStatus } : g));
     } catch (err: any) {
       console.error("Guide Toggle Error:", err);
@@ -683,37 +625,15 @@ export function AdminDashboard() {
       message: `Are you sure you want to ${status ? 'activate' : 'hide'} ALL expert guides across the entire platform? This action affects all ${allGuides.length} guides.`,
       onConfirm: async () => {
         setProcessingId('system-toggle');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/guides/toggle-all`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isActive: status }),
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || `Server responded with status ${res.status}`);
-          }
-
+          await apiClient.patch('/admin/guides/toggle-all', { isActive: status });
           setAllGuides(prev => prev.map(g => ({ ...g, isActive: status })));
           setShowConfirmModal(false);
-          // Optional: Add a subtle toast or success feedback here if available
         } catch (err: any) {
           console.error("Bulk Status Error:", err);
-          if (err.name === 'AbortError') {
-            alert("Error: Request timed out. The server might be busy processing the bulk update.");
-          } else {
-            alert(`Error: ${err.message || 'Failed to update experts status'}`);
-          }
+          alert(`Error: ${err.message || 'Failed to update experts status'}`);
         } finally {
           setProcessingId(null);
-          clearTimeout(timeoutId);
         }
       }
     });
