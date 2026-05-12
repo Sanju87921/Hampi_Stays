@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN "location" TEXT,
+ADD COLUMN "idType" TEXT,
+ADD COLUMN "idNumber" TEXT,
+ADD COLUMN "idImage" TEXT,
+ADD COLUMN "kycStatus" TEXT DEFAULT 'NOT_SUBMITTED';
