@@ -36,13 +36,16 @@ export function AdminDashboard() {
   const [isSavingCommission, setIsSavingCommission] = useState(false);
   const [otpLogs, setOtpLogs] = useState<any[]>([]);
 
+  const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(7.0);
+  const [isSavingGlobalCommission, setIsSavingGlobalCommission] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties'];
+    const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions'];
     
     if (pollTabs.includes(activeTab)) {
       // Pulse: Fast 10s refresh for admin command center
@@ -70,10 +73,15 @@ export function AdminDashboard() {
               setAllBookings(bk);
               break;
             case 'properties':
+            case 'commissions':
               const pr = await apiClient.get<any[]>('/admin/resorts/pending');
               const ar = await apiClient.get<any[]>('/admin/resorts/active');
               setPendingResorts(pr);
               setActiveResorts(ar);
+              break;
+            case 'users':
+              const us = await apiClient.get<any[]>('/admin/users');
+              setAllUsers(Array.isArray(us) ? us : []);
               break;
           }
         } catch (err) {
@@ -83,6 +91,7 @@ export function AdminDashboard() {
     }
     return () => clearInterval(interval);
   }, [activeTab]);
+
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -103,7 +112,7 @@ export function AdminDashboard() {
       
       setPendingResorts(pendingRes);
       setActiveResorts(activeRes);
-      setAllUsers(usersRes);
+      setAllUsers(Array.isArray(usersRes) ? usersRes : []);
       setStats(statsRes);
       setAllBookings(bookingsRes);
       setAllGuides(guidesRes);
@@ -112,6 +121,7 @@ export function AdminDashboard() {
       setOtpLogs(otpLogsRes);
       setFlaggedReviews(reviewsRes);
       setGuideServiceEnabled(settingsRes.guideServiceEnabled);
+      setDefaultCommissionRate(settingsRes.defaultCommissionRate || 7.0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -241,6 +251,20 @@ export function AdminDashboard() {
       alert("Failed to update commission rate");
     } finally {
       setIsSavingCommission(false);
+    }
+  };
+
+  const handleUpdateGlobalCommission = async () => {
+    setIsSavingGlobalCommission(true);
+    try {
+      const updated = await apiClient.post<any>('/admin/settings', { defaultCommissionRate });
+      setDefaultCommissionRate(updated.defaultCommissionRate);
+      alert("Global default commission rate updated successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update global commission rate");
+    } finally {
+      setIsSavingGlobalCommission(false);
     }
   };
 
@@ -952,15 +976,15 @@ export function AdminDashboard() {
             </tr>
           </thead>
           <tbody className="divide-y divide-sand-100">
-            {allUsers.map((user) => (
+            {(allUsers || []).map((user) => (
               <tr key={user.id} className="hover:bg-sand-50/30 transition-colors">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gold-100 text-gold-700 rounded-full flex items-center justify-center font-bold">
-                      {user.name[0]}
+                      {user.name ? user.name[0] : '?'}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy-950">{user.name}</p>
+                      <p className="text-sm font-bold text-navy-950">{user.name || 'Unknown User'}</p>
                       <p className="text-xs text-navy-950/40">{user.email}</p>
                     </div>
                   </div>
@@ -1002,6 +1026,13 @@ export function AdminDashboard() {
                 </td>
               </tr>
             ))}
+            {(!allUsers || allUsers.length === 0) && (
+              <tr>
+                <td colSpan={5} className="px-8 py-20 text-center text-navy-950/30 italic">
+                  No users found on the platform.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1379,15 +1410,42 @@ export function AdminDashboard() {
   const renderCommissions = () => (
     <div className="space-y-8">
       <div className="bg-white rounded-[2.5rem] p-10 border border-sand-200 shadow-sm">
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
             <h3 className="text-2xl font-bold text-navy-950">Platform Commissions</h3>
             <p className="text-sm text-navy-950/40">Manage global revenue splits and partner fee structures.</p>
           </div>
-          <div className="flex gap-4">
-            <div className="bg-gold-50 border border-gold-200 p-4 rounded-2xl">
-              <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest">Global Average</p>
-              <p className="text-xl font-bold text-navy-950">{(activeResorts.reduce((acc, r) => acc + (r.commissionRate || 7), 0) / (activeResorts.length || 1)).toFixed(1)}%</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="bg-navy-950 text-white p-6 rounded-[2rem] flex items-center gap-6 shadow-xl border border-white/10">
+               <div>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Global Default Rate</p>
+                  <div className="flex items-center gap-3">
+                     <input 
+                        type="number" 
+                        value={defaultCommissionRate}
+                        onChange={(e) => setDefaultCommissionRate(parseFloat(e.target.value))}
+                        className="w-20 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xl font-bold outline-none focus:border-gold-400"
+                     />
+                     <span className="text-xl font-bold text-gold-400">%</span>
+                  </div>
+               </div>
+               <Button 
+                  onClick={handleUpdateGlobalCommission}
+                  isLoading={isSavingGlobalCommission}
+                  className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-6 rounded-2xl font-bold shadow-lg"
+               >
+                  Update Global
+               </Button>
+            </div>
+            
+            <div className="bg-sand-50 border border-sand-200 p-6 rounded-[2rem] flex items-center gap-6">
+              <div>
+                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Network Average</p>
+                <p className="text-3xl font-bold text-navy-950">{(activeResorts.reduce((acc, r) => acc + (r.commissionRate || 7), 0) / (activeResorts.length || 1)).toFixed(1)}%</p>
+              </div>
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-sand-100 shadow-sm">
+                 <TrendingUp className="w-6 h-6 text-gold-600" />
+              </div>
             </div>
           </div>
         </div>

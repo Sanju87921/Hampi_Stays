@@ -79,6 +79,7 @@ model Resort {
   category       String?
   houseRules     String[]
   mealPackages   Json?
+  verificationDocs Json?
   status         ResortStatus   @default(PENDING)
   commissionRate Float          @default(7.0)
   bookings       Booking[]
@@ -126,10 +127,12 @@ model RoomPriceOverride {
 }
 
 model SystemSettings {
-  id                  String   @id @default(cuid())
-  guideServiceEnabled Boolean  @default(true)
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  guideServiceEnabled   Boolean  @default(true)
+  defaultCommissionRate Float    @default(7.0)
+  updatedAt             DateTime @updatedAt
 }
+
 
 model RoomBlocking {
   id     String   @id @default(cuid())

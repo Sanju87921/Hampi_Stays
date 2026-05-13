@@ -39,7 +39,7 @@ export const getResortBySlug = async (req, res, next) => {
 
 export const createResort = async (req, res, next) => {
   try {
-    const { name, tagline, description, type, area, price, amenities, category, roomTypes, images } = req.body;
+    const { name, tagline, description, type, area, price, amenities, category, roomTypes, images, mealPackages, houseRules, documents } = req.body;
     const ownerId = req.user.userId; // Secure: get from token
     
     const owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
@@ -49,13 +49,16 @@ export const createResort = async (req, res, next) => {
     
     const resort = await prisma.resort.create({
       data: {
-        name, slug, tagline, description, type,
+        name, slug, tagline, description, type: type || 'luxury',
         category: category || 'Heritage',
         locationArea: area,
         locationLat: 15.3350,
         locationLng: 76.4600,
         pricePerNight: parseFloat(price) || 0,
-        amenities,
+        amenities: amenities || [],
+        houseRules: houseRules || [],
+        mealPackages: mealPackages || [],
+        verificationDocs: documents || [],
         ownerId: owner.id,
         status: 'PENDING',
         images: images || [],

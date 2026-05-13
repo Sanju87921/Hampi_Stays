@@ -80,7 +80,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     if (response.status === 401 || response.status === 403) {
       window.dispatchEvent(new CustomEvent('hampi-unauthorized'));
     }
-    throw new ApiError(data?.error || data?.message || 'An unexpected error occurred', response.status, data);
+    
+    let message = data?.error || data?.message || 'An unexpected error occurred';
+    if (response.status === 404) {
+      message = `404 Not Found: ${url}`;
+    }
+    
+    throw new ApiError(message, response.status, data);
   }
 
   return data as T;
