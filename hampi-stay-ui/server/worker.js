@@ -27,34 +27,35 @@ app.use('*', async (c, next) => {
   return corsMiddleware(c, next);
 });
 
-// Auth Middleware
+// Auth Middlewares
 const authMiddleware = async (c, next) => {
   const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  if (!authHeader?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, c.env.JWT_SECRET);
     c.set('user', decoded);
     await next();
-  } catch (err) {
-    return c.json({ error: 'Invalid token' }, 401);
-  }
+  } catch (err) { return c.json({ error: 'Invalid token' }, 401); }
+};
+
+const adminMiddleware = async (c, next) => {
+  const user = c.get('user');
+  if (user?.role !== 'ADMIN') return c.json({ error: 'Forbidden: Admin access required' }, 403);
+  await next();
 };
 
 // --- Routes ---
 
-// Health & Stats
+// Health & Public Stats
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date() }));
 
 app.get('/stats', async (c) => {
   const prisma = getPrisma(c.env);
   try {
-    const [resortsCount, usersCount, bookingsCount] = await Promise.all([
+    const [resortsCount, usersCount] = await Promise.all([
       prisma.resort.count({ where: { status: 'APPROVED' } }),
-      prisma.user.count(),
-      prisma.booking.count({ where: { status: 'CONFIRMED' } })
+      prisma.user.count()
     ]);
     return c.json({ resorts: `${resortsCount}+`, guests: `${usersCount + 500}+`, experiences: "15+", rating: "4.9" });
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -65,22 +66,16 @@ app.post('/auth/register', async (c) => {
   const prisma = getPrisma(c.env);
   const { name, email, password, role } = await c.req.json();
   const lowerEmail = email.toLowerCase();
-
   try {
     const existing = await prisma.user.findUnique({ where: { email: lowerEmail } });
     if (existing) return c.json({ error: 'Email already registered' }, 400);
-
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(password, salt);
-
     const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: { email: lowerEmail, name, passwordHash, role: role || 'TRAVELLER' }
-      });
+      const newUser = await tx.user.create({ data: { email: lowerEmail, name, passwordHash, role: role || 'TRAVELLER' } });
       if (role === 'RESORT_OWNER') await tx.resortOwner.create({ data: { userId: newUser.id, businessName: `${name}'s Portfolio` } });
       return newUser;
     });
-
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
     return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } }, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -90,14 +85,11 @@ app.post('/auth/login', async (c) => {
   const prisma = getPrisma(c.env);
   const { email, password } = await c.req.json();
   const lowerEmail = email.toLowerCase();
-
   try {
     const user = await prisma.user.findUnique({ where: { email: lowerEmail } });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return c.json({ error: 'Invalid credentials' }, 401);
-    }
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) return c.json({ error: 'Invalid credentials' }, 401);
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -107,7 +99,7 @@ app.get('/auth/me', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -120,13 +112,44 @@ app.get('/resorts', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.get('/resorts/:slug', async (c) => {
+// --- Admin Section ---
+app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
-  const slug = c.req.param('slug');
   try {
-    const resort = await prisma.resort.findUnique({ where: { slug }, include: { roomTypes: true, discountCodes: true } });
-    if (!resort) return c.json({ error: 'Resort not found' }, 404);
-    return c.json(resort);
+    const [userCount, resortCount, bookingCount, revenueData] = await Promise.all([
+      prisma.user.count(),
+      prisma.resort.count(),
+      prisma.booking.count(),
+      prisma.booking.findMany({
+        where: { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED'] } },
+        select: { totalPrice: true, commissionRate: true }
+      })
+    ]);
+
+    const totalRevenue = revenueData.reduce((sum, b) => sum + b.totalPrice, 0);
+    const platformEarnings = revenueData.reduce((sum, b) => sum + (b.totalPrice * (b.commissionRate / 100)), 0);
+
+    return c.json({
+      userCount,
+      resortCount,
+      bookingCount,
+      revenue: totalRevenue,
+      platformEarnings: platformEarnings,
+      platformRating: 4.9,
+      avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/admin/resorts/pending', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'PENDING' },
+      include: { owner: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(resorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

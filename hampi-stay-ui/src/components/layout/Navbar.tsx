@@ -190,7 +190,7 @@ export function Navbar() {
                       if (isAuthenticated) {
                         window.location.href = "/resorts";
                       } else {
-                        setShowAuthModal(true, "login");
+                        setShowAuthModal(true, "register");
                       }
                     }}
                   >
