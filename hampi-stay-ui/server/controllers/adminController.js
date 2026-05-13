@@ -172,3 +172,64 @@ export const getOtpLogs = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * System Settings
+ */
+export const updateSettings = async (req, res, next) => {
+  try {
+    const { guideServiceEnabled } = req.body;
+    
+    // Use upsert or findFirst then update to manage the single settings record
+    let settings = await prisma.systemSettings.findFirst();
+    
+    if (settings) {
+      settings = await prisma.systemSettings.update({
+        where: { id: settings.id },
+        data: { guideServiceEnabled }
+      });
+    } else {
+      settings = await prisma.systemSettings.create({
+        data: { guideServiceEnabled }
+      });
+    }
+    
+    res.json(settings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Guide Visibility Management
+ */
+export const toggleGuideActive = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+    
+    const guide = await prisma.guideProfile.update({
+      where: { id },
+      data: { isActive },
+      include: { user: true }
+    });
+    
+    res.json(guide);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleAllGuides = async (req, res, next) => {
+  try {
+    const { isActive } = req.body;
+    
+    await prisma.guideProfile.updateMany({
+      data: { isActive }
+    });
+    
+    res.json({ success: true, isActive });
+  } catch (error) {
+    next(error);
+  }
+};

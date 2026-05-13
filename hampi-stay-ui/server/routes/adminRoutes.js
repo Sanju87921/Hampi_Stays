@@ -21,11 +21,16 @@ router.get('/bookings/all', adminController.getAllBookings);
 
 // Guide Management
 router.get('/guides', adminController.getAllGuides);
+router.patch('/guides/:id/toggle-active', adminController.toggleGuideActive);
+router.patch('/guides/toggle-all', adminController.toggleAllGuides);
 
 // Financials & Security
 router.get('/payouts', adminController.getPayouts);
 router.get('/security/stats', adminController.getSecurityStats);
 router.get('/reviews/flagged', adminController.getFlaggedReviews);
 router.get('/otp-logs', adminController.getOtpLogs);
+
+// System Settings
+router.patch('/settings', adminController.updateSettings);
 
 export default router;
