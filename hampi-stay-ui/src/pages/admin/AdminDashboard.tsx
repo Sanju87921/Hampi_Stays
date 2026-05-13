@@ -249,8 +249,8 @@ export function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Revenue", value: `₹${stats?.revenue?.toLocaleString() || 0}`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Bookings", value: stats?.bookingCount || 0, icon: CalendarDays, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Net Earnings", value: `₹${stats?.platformEarnings?.toLocaleString() || 0}`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Total Bookings", value: stats?.bookingCount || 0, icon: CalendarDays, color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Total Users", value: stats?.userCount || 0, icon: Users, color: "text-gold-600", bg: "bg-gold-50" },
           { label: "Platform Rating", value: `${stats?.platformRating || 4.8}/5`, icon: Star, color: "text-amber-600", bg: "bg-amber-50" },
         ].map((stat, i) => (

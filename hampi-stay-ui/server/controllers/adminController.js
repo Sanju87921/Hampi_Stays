@@ -4,23 +4,34 @@ const prisma = new PrismaClient();
 
 export const getStats = async (req, res, next) => {
   try {
-    const [userCount, resortCount, bookingCount, totalRevenue] = await Promise.all([
+    const [userCount, resortCount, bookingCount, revenueData] = await Promise.all([
       prisma.user.count(),
       prisma.resort.count(),
       prisma.booking.count(),
-      prisma.booking.aggregate({
-        _sum: { totalPrice: true },
-        where: { status: 'CONFIRMED' }
+      prisma.booking.findMany({
+        where: {
+          status: {
+            in: ['PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED']
+          }
+        },
+        select: {
+          totalPrice: true,
+          commissionRate: true
+        }
       })
     ]);
+
+    const totalRevenue = revenueData.reduce((sum, b) => sum + b.totalPrice, 0);
+    const platformEarnings = revenueData.reduce((sum, b) => sum + (b.totalPrice * (b.commissionRate / 100)), 0);
 
     res.json({
       userCount,
       resortCount,
       bookingCount,
-      revenue: totalRevenue._sum.totalPrice || 0,
+      revenue: totalRevenue,
+      platformEarnings: platformEarnings,
       platformRating: 4.8,
-      avgBookingValue: bookingCount > 0 ? (totalRevenue._sum.totalPrice || 0) / bookingCount : 0,
+      avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0,
       cancellationRate: 4.2 // Mock for now
     });
   } catch (error) {
