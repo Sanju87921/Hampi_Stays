@@ -48,7 +48,12 @@ const LoadingFallback = () => (
       transition={{ duration: 2, repeat: Infinity }}
       className="flex flex-col items-center"
     >
-      <img src="/logo-full.png" alt="Loading" className="h-12 w-auto opacity-20 grayscale mb-4" />
+      <img 
+        src="/logo.png" 
+        alt="Loading" 
+        onError={(e) => (e.currentTarget.src = "/favicon.svg")}
+        className="h-12 w-auto opacity-20 grayscale mb-4" 
+      />
       <div className="w-48 h-0.5 bg-sand-200 overflow-hidden rounded-full">
         <motion.div
           animate={{ x: ["-100%", "100%"] }}
@@ -73,7 +78,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           animate={{ opacity: 1, scale: 1 }}
           className="relative flex flex-col items-center"
         >
-          <img src="/logo-full.png" alt="HampiStays" className="h-20 w-auto object-contain mb-8 opacity-20 grayscale" />
+          <img 
+            src="/logo.png" 
+            alt="HampiStays" 
+            onError={(e) => (e.currentTarget.src = "/favicon.svg")}
+            className="h-20 w-auto object-contain mb-8 opacity-20 grayscale" 
+          />
           <motion.div 
             animate={{ 
               rotate: 360,

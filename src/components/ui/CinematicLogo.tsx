@@ -86,8 +86,13 @@ export function CinematicLogo({ className, size = "md" }: CinematicLogoProps) {
         >
           {/* Logo Image */}
           <img 
-            src="/images/logo.png" 
+            src="/logo.png" 
             alt="HampiStays Logo"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/favicon.svg"; // Fallback to favicon if logo is missing
+              target.className = "w-12 h-12 opacity-50"; 
+            }}
             className="w-full h-full object-contain drop-shadow-2xl brightness-110"
           />
 

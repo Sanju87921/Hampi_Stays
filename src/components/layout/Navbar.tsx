@@ -97,8 +97,13 @@ export function Navbar() {
             className="flex items-center justify-center md:justify-start flex-1 md:flex-none z-10"
           >
             <img 
-              src="/logo-full.png" 
+              src="/logo.png" 
               alt="HampiStays" 
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/favicon.svg";
+                target.className = "h-8 w-auto opacity-50";
+              }}
               className={cn(
                 "h-20 w-auto object-contain transition-all duration-500",
                 !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"

@@ -25,8 +25,9 @@ export function LuxuryFooter() {
           <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left">
             <Link to="/" className="inline-block mb-10 group">
               <img 
-                src="/logo-full.png" 
+                src="/logo.png" 
                 alt="HampiStays" 
+                onError={(e) => (e.currentTarget.src = "/favicon.svg")}
                 className="h-44 md:h-40 w-auto object-contain transition-transform duration-700 group-hover:scale-105" 
               />
             </Link>
