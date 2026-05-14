@@ -19,12 +19,18 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Slide to Continu
   const [dragRange, setDragRange] = useState(230);
 
   useEffect(() => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const handleWidth = 44; // w-11
-      const padding = 12; // left-1.5 + right-1.5
-      setDragRange(containerWidth - handleWidth - padding);
-    }
+    const updateRange = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const handleWidth = 44; // w-11
+        const padding = 12; // left-1.5 + right-1.5
+        setDragRange(containerWidth - handleWidth - padding);
+      }
+    };
+
+    updateRange();
+    window.addEventListener("resize", updateRange);
+    return () => window.removeEventListener("resize", updateRange);
   }, []);
 
   // 2. Visual Transformations (Monochrome Luxury)

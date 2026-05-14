@@ -201,7 +201,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-sand-50 flex items-center justify-center p-4 md:p-6 lg:p-8">
       <div className="w-full max-w-[1400px] md:h-[800px] flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
       {/* ── LEFT PANEL: Form ── */}
-      <div className="relative w-full md:w-1/2 h-[60vh] md:h-full flex flex-col items-center p-6 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
+      <div className="relative w-full md:w-1/2 min-h-[60vh] h-auto md:h-full flex flex-col items-center p-4 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
         {/* Ambient orbs */}
         <div className="absolute top-1/3 left-0 w-[500px] h-[500px] bg-gold-200/20 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-sand-300/20 rounded-full blur-[100px] pointer-events-none" />

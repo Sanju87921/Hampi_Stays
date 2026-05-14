@@ -167,7 +167,7 @@ export function LoginPage() {
       </div>
 
       {/* Right Panel: Glassmorphism Form */}
-      <div className="relative w-full md:w-1/2 h-[60vh] md:h-full flex flex-col items-center p-6 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
+      <div className="relative w-full md:w-1/2 min-h-[60vh] h-auto md:h-full flex flex-col items-center p-4 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
         {/* Ambient warm orbs */}
         <div className="absolute top-1/4 right-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-gold-200/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-float-slow" />
         <div className="absolute bottom-1/4 left-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-sand-300/30 rounded-full blur-[70px] md:blur-[100px] pointer-events-none animate-float" />

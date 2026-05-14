@@ -64,7 +64,11 @@ export function CinematicLogo({ className, size = "md" }: CinematicLogoProps) {
 
       {/* 4. The Floating Logo Container */}
       <motion.div
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        style={{ 
+          rotateX: typeof window !== 'undefined' && window.matchMedia("(hover: hover)").matches ? rotateX : 0, 
+          rotateY: typeof window !== 'undefined' && window.matchMedia("(hover: hover)").matches ? rotateY : 0, 
+          transformStyle: "preserve-3d" 
+        }}
         initial={{ opacity: 0, y: 20, scale: 0.9, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
         transition={{ 

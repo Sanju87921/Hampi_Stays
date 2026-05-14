@@ -96,8 +96,8 @@ export const ResortCard = memo(function ResortCard({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={{
-          rotateX,
-          rotateY,
+          rotateX: typeof window !== 'undefined' && window.matchMedia("(hover: hover)").matches ? rotateX : 0,
+          rotateY: typeof window !== 'undefined' && window.matchMedia("(hover: hover)").matches ? rotateY : 0,
           transformStyle: "preserve-3d",
         }}
         className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100 flex flex-col cursor-default"
