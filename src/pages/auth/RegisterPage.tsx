@@ -8,6 +8,7 @@ import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
+import { AppleAuthButton } from "../../components/auth/AppleAuthButton";
 import { toast } from "react-hot-toast";
 import { useSystem } from "../../context/SystemContext";
 
@@ -526,9 +527,12 @@ export function RegisterPage() {
                       <div className="flex-grow border-t border-sand-200/60"></div>
                     </div>
 
-                    <div className="mt-2">
+                    <div className="flex flex-col gap-3 mt-2">
                       <GoogleAuthButton 
                         onSuccess={(cred) => onGoogleSuccess({ credential: cred })}
+                        isLoading={isVerifying}
+                      />
+                      <AppleAuthButton 
                         isLoading={isVerifying}
                       />
                     </div>
