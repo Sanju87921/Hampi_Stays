@@ -85,7 +85,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
   };
 
   return (
-    <div className="relative w-full max-w-sm mx-auto group select-none">
+    <div className="relative w-[85%] max-w-[320px] mx-auto group select-none">
       {/* Hidden button for fallback triggers */}
       <div id="hidden-google-button" className="hidden" />
 
@@ -97,26 +97,39 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         style={{ scale }}
         disabled={isLoading || isSwiped}
         className={cn(
-          "relative w-full h-14 flex items-center justify-center gap-3 bg-white border border-sand-200 rounded-[1.25rem] overflow-hidden transition-all duration-500",
-          "hover:border-gold-400/50 hover:shadow-luxury group-active:border-gold-500/50",
+          "relative w-full h-14 flex items-center justify-center gap-3 bg-[#fdfbf7] border border-gold-500/20 rounded-[1.25rem] overflow-hidden transition-all duration-500",
+          "hover:border-gold-500/40 hover:shadow-luxury group-active:border-gold-500/60",
           (isLoading || isSwiped) && "opacity-70 cursor-not-allowed"
         )}
       >
         {/* Animated Shine Effect */}
         <motion.div 
           style={{ x: shineX }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-gold-400/10 to-transparent skew-x-[-20deg] z-10 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-gold-200/20 to-transparent skew-x-[-20deg] z-10 pointer-events-none"
         />
 
         {/* Swipe Handle / Google Icon */}
         <motion.div
           drag="x"
-          dragConstraints={{ left: 0, right: 210 }}
+          dragConstraints={{ left: 0, right: 160 }}
           dragElastic={0.05}
           animate={controls}
           style={{ x }}
-          onDragEnd={handleDragEnd}
-          className="absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 bg-white rounded-2xl shadow-premium border border-sand-100 flex items-center justify-center z-30 cursor-grab active:cursor-grabbing hover:bg-sand-50 transition-colors"
+          onDragEnd={async (_, info) => {
+            if (info.offset.x > 120) {
+              setIsSwiped(true);
+              await controls.start({ x: 160, transition: { type: "spring", stiffness: 500, damping: 30 } });
+              triggerGoogleAuth();
+              
+              setTimeout(() => {
+                controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
+                setIsSwiped(false);
+              }, 2000);
+            } else {
+              controls.start({ x: 0, transition: { type: "spring", stiffness: 400, damping: 25 } });
+            }
+          }}
+          className="absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 bg-white rounded-2xl shadow-premium border border-gold-100 flex items-center justify-center z-30 cursor-grab active:cursor-grabbing hover:bg-sand-50 transition-colors"
         >
           <motion.svg viewBox="0 0 24 24" className="w-6 h-6" style={{ scale: iconScale }}>
             <path
@@ -141,7 +154,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         {/* Text */}
         <motion.span 
           style={{ opacity }}
-          className="text-[13px] font-bold text-navy-950/80 tracking-tight z-20"
+          className="text-[13px] font-bold text-navy-950 tracking-tight z-20"
         >
           {isLoading ? "Authenticating..." : text}
         </motion.span>
@@ -149,25 +162,25 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         {/* Swipe Prompt Overlay */}
         <motion.div 
           style={{ opacity: glowOpacity }}
-          className="absolute inset-0 bg-gold-500/10 pointer-events-none z-0"
+          className="absolute inset-0 bg-gold-500/5 pointer-events-none z-0"
         />
 
         {/* Subtle Dots Track */}
-        <div className="absolute left-16 right-8 h-full flex items-center justify-around opacity-20 pointer-events-none">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="w-1 h-1 rounded-full bg-navy-950/40" />
+        <div className="absolute left-16 right-8 h-full flex items-center justify-around opacity-10 pointer-events-none">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="w-1 h-1 rounded-full bg-navy-950" />
           ))}
         </div>
       </motion.button>
       
       {/* Background Track Hint */}
-      <div className="absolute inset-x-1.5 top-1.5 bottom-1.5 bg-sand-100/30 rounded-2xl -z-10 pointer-events-none border border-dashed border-sand-300/40 flex items-center justify-end pr-6">
+      <div className="absolute inset-x-1.5 top-1.5 bottom-1.5 bg-sand-50/40 rounded-2xl -z-10 pointer-events-none border border-dashed border-gold-200/30 flex items-center justify-end pr-6">
         <motion.div 
           animate={{ x: [0, 8, 0], opacity: [0.3, 0.6, 0.3] }}
           transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          className="text-[8px] font-black uppercase tracking-[0.3em] text-navy-950/20"
+          className="text-[8px] font-black uppercase tracking-[0.3em] text-gold-600/30"
         >
-          Slide to Sign In
+          Slide
         </motion.div>
       </div>
     </div>
