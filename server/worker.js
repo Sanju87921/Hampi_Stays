@@ -9,10 +9,15 @@ import jwt from 'jsonwebtoken';
 const app = new Hono({ strict: false }).basePath('/api');
 
 // --- Initialization ---
+let prismaInstance;
 const getPrisma = (env) => {
-  return new PrismaClient({
+  if (prismaInstance) return prismaInstance;
+  
+  prismaInstance = new PrismaClient({
     datasources: { db: { url: env.DATABASE_URL } },
   }).$extends(withAccelerate());
+  
+  return prismaInstance;
 };
 
 // --- Middleware ---
@@ -59,8 +64,8 @@ app.get('/stats', async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const [resortsCount, usersCount] = await Promise.all([
-      prisma.resort.count({ where: { status: 'APPROVED' } }),
-      prisma.user.count()
+      prisma.resort.count({ where: { status: 'APPROVED' }, cacheStrategy: { ttl: 300 } }),
+      prisma.user.count({ cacheStrategy: { ttl: 300 } })
     ]);
     return c.json({ resorts: `${resortsCount}+`, guests: `${usersCount + 500}+`, experiences: "15+", rating: "4.9" });
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -69,7 +74,7 @@ app.get('/stats', async (c) => {
 app.get('/settings', async (c) => {
   const prisma = getPrisma(c.env);
   try {
-    let settings = await prisma.systemSettings.findFirst();
+    let settings = await prisma.systemSettings.findFirst({ cacheStrategy: { ttl: 600 } });
     if (!settings) {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true } });
     }
@@ -125,6 +130,36 @@ app.get('/auth/me', authMiddleware, async (c) => {
 });
 
 // Resorts
+app.get('/resorts/featured', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'APPROVED', isFeatured: true },
+      take: 3,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        locationArea: true,
+        images: true,
+        rating: true,
+        pricePerNight: true,
+        category: true,
+        amenities: true
+      },
+      cacheStrategy: { swr: 300, ttl: 300 } // Edge cache for 5 mins
+    });
+
+    const optimizedResorts = resorts.map(r => ({
+      ...r,
+      images: r.images.slice(0, 1)
+    }));
+
+    return c.json(optimizedResorts);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 app.get('/resorts', async (c) => {
   const prisma = getPrisma(c.env);
   const { 
@@ -178,7 +213,8 @@ app.get('/resorts', async (c) => {
         category: true,
         isVerified: true,
         isFeatured: true,
-      }
+      },
+      cacheStrategy: { swr: 60, ttl: 60 }, // Cache at the edge for 60s
     });
 
     const optimizedResorts = resorts.map(r => ({
