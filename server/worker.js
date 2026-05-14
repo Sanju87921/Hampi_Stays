@@ -127,9 +127,64 @@ app.get('/auth/me', authMiddleware, async (c) => {
 // Resorts
 app.get('/resorts', async (c) => {
   const prisma = getPrisma(c.env);
+  const { 
+    minPrice, maxPrice, type, category, 
+    minRating, sort, search 
+  } = c.req.query();
+
   try {
-    const resorts = await prisma.resort.findMany({ where: { status: 'APPROVED' }, include: { roomTypes: true } });
-    return c.json(resorts);
+    const where = {
+      status: 'APPROVED',
+      ...(minPrice || maxPrice ? {
+        pricePerNight: {
+          ...(minPrice ? { gte: parseFloat(minPrice) } : {}),
+          ...(maxPrice ? { lte: parseFloat(maxPrice) } : {}),
+        }
+      } : {}),
+      ...(type ? { type } : {}),
+      ...(category ? { category } : {}),
+      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { locationArea: { contains: search, mode: 'insensitive' } },
+          { tagline: { contains: search, mode: 'insensitive' } }
+        ]
+      } : {})
+    };
+
+    const orderBy = {};
+    if (sort === 'price_asc') orderBy.pricePerNight = 'asc';
+    else if (sort === 'price_desc') orderBy.pricePerNight = 'desc';
+    else if (sort === 'rating') orderBy.rating = 'desc';
+    else if (sort === 'newest') orderBy.createdAt = 'desc';
+    else orderBy.reviewCount = 'desc';
+
+    const resorts = await prisma.resort.findMany({ 
+      where,
+      orderBy,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        type: true,
+        locationArea: true,
+        images: true,
+        rating: true,
+        reviewCount: true,
+        pricePerNight: true,
+        category: true,
+        isVerified: true,
+      }
+    });
+
+    const optimizedResorts = resorts.map(r => ({
+      ...r,
+      images: r.images.slice(0, 1)
+    }));
+
+    return c.json(optimizedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

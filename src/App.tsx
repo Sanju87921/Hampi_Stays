@@ -1,48 +1,68 @@
-import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from "react-router-dom";
+import React, { lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { MobileDock } from "./components/layout/MobileDock";
 import { CookieConsent } from "./components/layout/CookieConsent";
 
-// Public Pages
-import { LandingPage } from "./pages/public/LandingPage";
-import { ResortsPage } from "./pages/public/ResortsPage";
-import { ResortDetailPage } from "./pages/public/ResortDetailPage";
-import { ResortComparePage } from "./pages/public/ResortComparePage";
-import { GalleryPage } from "./pages/public/GalleryPage";
-import { ExperiencesPage } from "./pages/public/ExperiencesPage";
-import { OurStoryPage } from "./pages/public/OurStoryPage";
-import { ContactPage } from "./pages/public/ContactPage";
-import { TermsOfServicePage } from "./pages/public/TermsOfServicePage";
-import { PrivacyPolicyPage } from "./pages/public/PrivacyPolicyPage";
-import { LocalExpertsPage } from "./pages/public/LocalExpertsPage";
-import { DiscoveryPage } from "./pages/public/DiscoveryPage";
-import { CookiesPage } from "./pages/public/CookiesPage";
-import { NotFoundPage } from "./pages/public/NotFoundPage";
+// Lazy Loaded Public Pages
+const LandingPage = lazy(() => import("./pages/public/LandingPage").then(m => ({ default: m.LandingPage })));
+const ResortsPage = lazy(() => import("./pages/public/ResortsPage").then(m => ({ default: m.ResortsPage })));
+const ResortDetailPage = lazy(() => import("./pages/public/ResortDetailPage").then(m => ({ default: m.ResortDetailPage })));
+const ResortComparePage = lazy(() => import("./pages/public/ResortComparePage").then(m => ({ default: m.ResortComparePage })));
+const GalleryPage = lazy(() => import("./pages/public/GalleryPage").then(m => ({ default: m.GalleryPage })));
+const ExperiencesPage = lazy(() => import("./pages/public/ExperiencesPage").then(m => ({ default: m.ExperiencesPage })));
+const OurStoryPage = lazy(() => import("./pages/public/OurStoryPage").then(m => ({ default: m.OurStoryPage })));
+const ContactPage = lazy(() => import("./pages/public/ContactPage").then(m => ({ default: m.ContactPage })));
+const TermsOfServicePage = lazy(() => import("./pages/public/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
+const PrivacyPolicyPage = lazy(() => import("./pages/public/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
+const LocalExpertsPage = lazy(() => import("./pages/public/LocalExpertsPage").then(m => ({ default: m.LocalExpertsPage })));
+const DiscoveryPage = lazy(() => import("./pages/public/DiscoveryPage").then(m => ({ default: m.DiscoveryPage })));
+const CookiesPage = lazy(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
+const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
-// Auth Pages
-import { LoginPage } from "./pages/auth/LoginPage";
-import { RegisterPage } from "./pages/auth/RegisterPage";
-import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
+// Lazy Loaded Auth Pages
+const LoginPage = lazy(() => import("./pages/auth/LoginPage").then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage").then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
 
-// Role-based Pages
-import { CheckoutPage } from "./pages/traveler/CheckoutPage";
-import { CheckoutSuccessPage } from "./pages/traveler/CheckoutSuccessPage";
-import { BookingConfirmationPage } from "./pages/traveler/BookingConfirmationPage";
-import { BookingsPage } from "./pages/traveler/BookingsPage";
-import { WishlistPage } from "./pages/traveler/WishlistPage";
-import { ProfilePage } from "./pages/traveler/ProfilePage";
-import { NotificationsPage } from "./pages/traveler/NotificationsPage";
-import { DashboardSelector } from "./components/shared/DashboardSelector";
-import { ResortSetupPage } from "./pages/owner/ResortSetupPage";
-import { InventoryPage } from "./pages/owner/InventoryPage";
+// Lazy Loaded Role-based Pages
+const CheckoutPage = lazy(() => import("./pages/traveler/CheckoutPage").then(m => ({ default: m.CheckoutPage })));
+const CheckoutSuccessPage = lazy(() => import("./pages/traveler/CheckoutSuccessPage").then(m => ({ default: m.CheckoutSuccessPage })));
+const BookingConfirmationPage = lazy(() => import("./pages/traveler/BookingConfirmationPage").then(m => ({ default: m.BookingConfirmationPage })));
+const BookingsPage = lazy(() => import("./pages/traveler/BookingsPage").then(m => ({ default: m.BookingsPage })));
+const WishlistPage = lazy(() => import("./pages/traveler/WishlistPage").then(m => ({ default: m.WishlistPage })));
+const ProfilePage = lazy(() => import("./pages/traveler/ProfilePage").then(m => ({ default: m.ProfilePage })));
+const NotificationsPage = lazy(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
+const DashboardSelector = lazy(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
+const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
+const InventoryPage = lazy(() => import("./pages/owner/InventoryPage").then(m => ({ default: m.InventoryPage })));
+
 import { ScrollToTop } from "./components/shared/ScrollToTop";
 import { AuthModal } from "./components/auth/AuthModal";
 
 import { useAuth } from "./context/AuthContext";
 import { useSystem } from "./context/SystemContext";
-import { Navigate } from "react-router-dom";
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-sand-50">
+    <motion.div
+      animate={{ scale: [1, 1.1, 1], opacity: [0.3, 1, 0.3] }}
+      transition={{ duration: 2, repeat: Infinity }}
+      className="flex flex-col items-center"
+    >
+      <img src="/logo-full.png" alt="Loading" className="h-12 w-auto opacity-20 grayscale mb-4" />
+      <div className="w-48 h-0.5 bg-sand-200 overflow-hidden rounded-full">
+        <motion.div
+          animate={{ x: ["-100%", "100%"] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          className="w-1/2 h-full bg-gold-500"
+        />
+      </div>
+    </motion.div>
+  </div>
+);
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -126,84 +146,86 @@ function AnimatedRoutes() {
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
-        <Routes location={location}>
-          {/* Auth Routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          </Route>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes location={location}>
+            {/* Auth Routes */}
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            </Route>
 
-          {/* Main Routes (with Navbar + Footer) */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/resorts" element={<ResortsPage />} />
-            <Route path="/resorts/compare" element={<ResortComparePage />} />
-            <Route path="/resorts/:slug" element={<ResortDetailPage />} />
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/checkout/success"
-              element={
-                <ProtectedRoute>
-                  <CheckoutSuccessPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/booking-confirmation"
-              element={
-                <ProtectedRoute>
-                  <BookingConfirmationPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <DashboardSelector />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/dashboard/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
-            <Route path="/dashboard/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
-            <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-            <Route path="/dashboard/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route
-              path="/dashboard/resort-setup"
-              element={
-                <ProtectedRoute>
-                  <ResortSetupPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/inventory"
-              element={
-                <ProtectedRoute>
-                  <InventoryPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/experiences" element={<GuideRoute><ExperiencesPage /></GuideRoute>} />
-            <Route path="/about" element={<OurStoryPage />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/guide" element={<GuideRoute><LocalExpertsPage /></GuideRoute>} />
-            <Route path="/discovery" element={<GuideRoute><DiscoveryPage /></GuideRoute>} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/terms" element={<TermsOfServicePage />} />
-            <Route path="/privacy" element={<PrivacyPolicyPage />} />
-            <Route path="/cookies" element={<CookiesPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
+            {/* Main Routes (with Navbar + Footer) */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/resorts" element={<ResortsPage />} />
+              <Route path="/resorts/compare" element={<ResortComparePage />} />
+              <Route path="/resorts/:slug" element={<ResortDetailPage />} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout/success"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutSuccessPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/booking-confirmation"
+                element={
+                  <ProtectedRoute>
+                    <BookingConfirmationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <DashboardSelector />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/dashboard/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+              <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route
+                path="/dashboard/resort-setup"
+                element={
+                  <ProtectedRoute>
+                    <ResortSetupPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/inventory"
+                element={
+                  <ProtectedRoute>
+                    <InventoryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/experiences" element={<GuideRoute><ExperiencesPage /></GuideRoute>} />
+              <Route path="/about" element={<OurStoryPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/guide" element={<GuideRoute><LocalExpertsPage /></GuideRoute>} />
+              <Route path="/discovery" element={<GuideRoute><DiscoveryPage /></GuideRoute>} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/cookies" element={<CookiesPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );

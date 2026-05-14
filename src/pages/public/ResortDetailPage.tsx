@@ -4,9 +4,10 @@
 // sticky booking widget, nearby attractions.
 // ============================================================
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Star, MapPin, CheckCircle, XCircle,
@@ -38,51 +39,37 @@ export function ResortDetailPage() {
   const [searchParams] = useSearchParams();
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [resort, setResort] = useState<Resort | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const fetchResort = async (silent = false) => {
-      if (!slug) return;
-      try {
-        if (!silent) setIsLoading(true);
-        const data = await apiClient.get<any>(`/resorts/${slug}`);
-
-        // Normalize backend schema to frontend types
-        const normalized: Resort = {
-          ...data,
-          location: {
-            area: data.locationArea,
-            district: "Hampi",
-            distanceFromCenterKm: 5,
-            lat: data.locationLat,
-            lng: data.locationLng
-          },
-          policies: data.policies || {
-            checkIn: "2:00 PM",
-            checkOut: "11:00 AM",
-            minNights: 1,
-            petsAllowed: false,
-            cancellation: "Free cancellation 48h before check-in"
-          },
-          nearbyAttractions: data.nearbyAttractions || []
-        };
-        setResort(normalized);
-      } catch (err: any) {
-        if (!silent) setError(err.message);
-      } finally {
-        if (!silent) setIsLoading(false);
-      }
-    };
-
-    fetchResort();
-    
-    // Discovery Pulse: Refresh resort data every 60 seconds for live availability
-    const pulse = setInterval(() => fetchResort(true), 60000);
-    return () => clearInterval(pulse);
-  }, [slug]);
+  const { data: resort, isLoading, error } = useQuery({
+    queryKey: ['resort', slug],
+    queryFn: async () => {
+      if (!slug) throw new Error("Slug is required");
+      const data = await apiClient.get<any>(`/resorts/${slug}`);
+      
+      return {
+        ...data,
+        location: {
+          area: data.locationArea,
+          district: "Hampi",
+          distanceFromCenterKm: 5,
+          lat: data.locationLat,
+          lng: data.locationLng
+        },
+        policies: data.policies || {
+          checkIn: "2:00 PM",
+          checkOut: "11:00 AM",
+          minNights: 1,
+          petsAllowed: false,
+          cancellation: "Free cancellation 48h before check-in"
+        },
+        nearbyAttractions: data.nearbyAttractions || []
+      } as Resort;
+    },
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 2, // Revalidate detail data every 2 mins
+    refetchInterval: 1000 * 60 * 5, // Re-sync availability in background
+  });
 
   if (isLoading) return (
     <div className="min-h-screen bg-sand-50 pt-32">

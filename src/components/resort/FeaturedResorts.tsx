@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Star, MapPin, Heart, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -10,27 +11,16 @@ import { optimizeImage } from "../../utils/image";
 
 export function FeaturedResorts() {
   const { isFavorite, toggleWishlist } = useWishlist();
-  const [resorts, setResorts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const data = await apiClient.get<any[]>('/resorts/featured');
-        if (Array.isArray(data)) {
-          setResorts(data);
-        } else {
-          setResorts([]);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFeatured();
-  }, []);
+  const { data: resorts = [], isLoading } = useQuery({
+    queryKey: ['resorts', 'featured'],
+    queryFn: async () => {
+      const data = await apiClient.get<any[]>('/resorts/featured');
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 1000 * 60 * 10, // Featured properties change rarely
+  });
 
   const handleToggleFavorite = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();

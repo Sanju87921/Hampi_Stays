@@ -91,6 +91,12 @@ model Resort {
   staff          StaffMember[]
   wishlist       Wishlist[]
 
+  @@index([status])
+  @@index([pricePerNight])
+  @@index([rating])
+  @@index([type])
+  @@index([category])
+  @@index([isFeatured])
   @@map("resorts")
 }
 
@@ -185,6 +191,9 @@ model Booking {
   user            User          @relation(fields: [userId], references: [id])
   messages        Message[]
 
+  @@index([resortId])
+  @@index([userId])
+  @@index([status])
   @@map("bookings")
 }
 
@@ -211,6 +220,8 @@ model Review {
   resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([resortId])
+  @@index([userId])
   @@map("reviews")
 }
 
