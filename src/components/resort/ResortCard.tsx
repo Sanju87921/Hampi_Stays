@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Star, MapPin, Heart, Check } from "lucide-react";
 import { cn } from "../../utils/cn";
+import { PremiumIcon } from "../ui/PremiumIcon";
 import type { Resort } from "../../types/resort";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -131,10 +132,10 @@ export function ResortCard({
           </button>
 
           {/* Rating badge on hover */}
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-lg translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300" style={{ transform: "translateZ(40px)" }}>
-            <Star className="w-4 h-4 text-gold-500 fill-gold-500" />
-            <span className="text-sm font-bold text-navy-950">{resort.rating}</span>
-            <span className="text-xs text-navy-950/50 font-medium">({resort.reviewCount})</span>
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300" style={{ transform: "translateZ(40px)" }}>
+            <PremiumIcon icon={Star} variant="gold" size="sm" animate={false} />
+            <span className="text-sm font-bold text-white drop-shadow-md">{resort.rating}</span>
+            <span className="text-xs text-white/60 font-medium">({resort.reviewCount})</span>
           </div>
         </Link>
 

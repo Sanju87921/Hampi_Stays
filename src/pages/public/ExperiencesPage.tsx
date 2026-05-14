@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+import { PremiumIcon } from "../../components/ui/PremiumIcon";
 
 const EXPERIENCE_IMAGES = [
   "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
@@ -87,9 +88,7 @@ export function ExperiencesPage() {
       <div className="min-h-screen bg-sand-50 pt-40 pb-20 flex items-center justify-center">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="w-24 h-24 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-              <Compass className="w-12 h-12 text-red-400" />
-            </div>
+            <PremiumIcon icon={Compass} variant="sand" size="xl" className="mx-auto mb-8" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-6">Service <span className="text-red-500 italic">Paused</span></h1>
             <p className="text-lg text-navy-950/60 leading-relaxed mb-10">
               Our curated Hampi experiences are currently paused for seasonal maintenance. 
@@ -167,7 +166,12 @@ export function ExperiencesPage() {
                   : "bg-white text-navy-950/60 hover:bg-sand-100 shadow-sm"
               )}
             >
-              <cat.icon className={cn("w-5 h-5", selectedCategory === cat.name ? "text-gold-400" : "text-navy-950/20")} />
+              <PremiumIcon 
+                icon={cat.icon} 
+                variant={selectedCategory === cat.name ? "gold" : "sand"} 
+                size="sm" 
+                animate={false} 
+              />
               {cat.name}
             </button>
           ))}

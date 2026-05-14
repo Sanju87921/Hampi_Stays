@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Clock, IndianRupee } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
+import { PremiumIcon } from "../ui/PremiumIcon";
 
 export function Experiences() {
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -122,9 +123,9 @@ export function Experiences() {
 
               {/* Badges */}
               <div className="absolute top-8 left-8 z-20 flex flex-col gap-2">
-                <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white font-bold tracking-widest text-[10px] uppercase px-4 py-2 rounded-full border border-white/20 shadow-sm">
-                  <Clock className="w-3.5 h-3.5 text-gold-400" />
-                  {exp.durationHours} Hours
+                <span className="inline-flex items-center gap-2 group/badge">
+                  <PremiumIcon icon={Clock} variant="glass" size="sm" animate={false} />
+                  <span className="text-white font-bold tracking-widest text-[10px] uppercase">{exp.durationHours} Hours</span>
                 </span>
               </div>
 

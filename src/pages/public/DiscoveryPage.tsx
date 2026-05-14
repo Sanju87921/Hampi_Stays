@@ -5,6 +5,7 @@ import { Compass, Landmark, ArrowRight, Sparkles, X, Loader2 } from "lucide-reac
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+import { PremiumIcon } from "../../components/ui/PremiumIcon";
 
 const DISCOVERY_IMAGES = [
   "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=2070&auto=format&fit=crop",
@@ -65,9 +66,7 @@ export function DiscoveryPage() {
       <div className="min-h-screen bg-navy-950 flex items-center justify-center pt-20">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="w-24 h-24 bg-gold-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-sm border border-gold-500/20">
-              <Compass className="w-12 h-12 text-gold-500" />
-            </div>
+            <PremiumIcon icon={Compass} variant="gold" size="xl" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Discovery <span className="text-gold-400 italic">Paused</span></h1>
             <p className="text-lg text-white/60 leading-relaxed mb-10">
               Our interactive mapping project is currently undergoing data synchronization. 
@@ -100,7 +99,7 @@ export function DiscoveryPage() {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-6"
           >
-            <Compass className="w-3.5 h-3.5" /> Interactive Expedition
+            <PremiumIcon icon={Compass} size="sm" variant="gold" className="mr-2" /> Interactive Expedition
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -157,13 +156,15 @@ export function DiscoveryPage() {
                 {/* Ping Animation */}
                 <div className="absolute -inset-4 bg-gold-500/20 rounded-full animate-ping" />
                 
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl border-2 ${
-                  selectedPOI?.id === poi.id 
-                    ? "bg-gold-500 border-white text-navy-950 scale-125" 
-                    : "bg-navy-950/90 backdrop-blur-md border-gold-500/50 text-gold-500 hover:border-white hover:text-white"
-                }`}>
-                  <Landmark className="w-6 h-6" />
-                </div>
+                <PremiumIcon 
+                  icon={Landmark} 
+                  variant={selectedPOI?.id === poi.id ? "gold" : "navy"} 
+                  size="md"
+                  className={cn(
+                    "transition-all duration-500",
+                    selectedPOI?.id === poi.id ? "scale-125" : "hover:scale-110"
+                  )}
+                />
 
                 {/* Hover Label */}
                 <AnimatePresence>

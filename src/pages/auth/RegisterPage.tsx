@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
+import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
 import { toast } from "react-hot-toast";
 import { useSystem } from "../../context/SystemContext";
@@ -260,16 +261,12 @@ export function RegisterPage() {
                       )}
                     >
                       <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                            role === "guest"
-                              ? "bg-gold-100 text-gold-600"
-                              : "bg-sand-100 text-navy-800/40 group-hover:bg-gold-50 group-hover:text-gold-500"
-                          )}
-                        >
-                          <Luggage className="w-6 h-6" />
-                        </div>
+                        <PremiumIcon 
+                          icon={Luggage} 
+                          variant={role === "guest" ? "gold" : "sand"} 
+                          size="md" 
+                          animate={false} 
+                        />
                         <div>
                           <h3
                             className={cn(
@@ -305,16 +302,12 @@ export function RegisterPage() {
                       )}
                     >
                       <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                            role === "owner"
-                              ? "bg-sunset-100 text-sunset-600"
-                              : "bg-sand-100 text-navy-800/40 group-hover:bg-sunset-50 group-hover:text-sunset-500"
-                          )}
-                        >
-                          <Key className="w-6 h-6" />
-                        </div>
+                        <PremiumIcon 
+                          icon={Key} 
+                          variant={role === "owner" ? "navy" : "sand"} 
+                          size="md" 
+                          animate={false} 
+                        />
                         <div>
                           <h3
                             className={cn(

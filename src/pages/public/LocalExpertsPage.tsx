@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 
@@ -111,9 +112,7 @@ export function LocalExpertsPage() {
       <div className="min-h-screen bg-sand-50 pt-40 pb-20 flex items-center justify-center">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="w-24 h-24 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-              <X className="w-12 h-12 text-red-400" />
-            </div>
+              <PremiumIcon icon={X} variant="sand" size="xl" className="mx-auto mb-8" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-6">Service <span className="text-red-500 italic">Paused</span></h1>
             <p className="text-lg text-navy-950/60 leading-relaxed mb-10">
               The Hampi Expert Network is currently undergoing a scheduled maintenance shutdown. 
@@ -140,9 +139,7 @@ export function LocalExpertsPage() {
         <ImmersiveBackground images={EXPERT_IMAGES} interval={3000} />
         <div className="container mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-6 shadow-sm">
-              <Award className="w-3 h-3" /> Hampi Expert Network
-            </div>
+              <PremiumIcon icon={Award} variant="gold" size="sm" className="mr-2" /> Hampi Expert Network
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-navy-950 mb-6">
               Meet the <span className="text-gold-600 italic">Storytellers</span>
             </h1>

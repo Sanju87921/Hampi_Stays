@@ -3,6 +3,7 @@ import { Home, Compass, Calendar, User, Search } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { PremiumIcon } from "../ui/PremiumIcon";
 
 export function MobileDock() {
   const location = useLocation();
@@ -55,15 +56,13 @@ export function MobileDock() {
                 />
               )}
               
-              <motion.div
-                whileTap={{ scale: 0.8 }}
-                className={cn(
-                  "relative z-10 transition-colors duration-300",
-                  isActive ? "text-gold-400" : "text-white/40"
-                )}
-              >
-                <Icon className={cn("w-6 h-6", isActive && "filter drop-shadow-gold")} />
-              </motion.div>
+              <PremiumIcon 
+                icon={Icon} 
+                variant={isActive ? "gold" : "glass"} 
+                size="sm" 
+                animate={true}
+                className={cn("relative z-10", isActive && "drop-shadow-gold")}
+              />
               
               <span className={cn(
                 "text-[9px] font-bold uppercase tracking-widest mt-1 z-10 transition-colors duration-300",
