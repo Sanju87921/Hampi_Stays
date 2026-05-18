@@ -23,6 +23,7 @@ const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage").then(m => 
 const LoginPage = lazy(() => import("./pages/auth/LoginPage").then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/auth/RegisterPage").then(m => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
 
 // Lazy Loaded Role-based Pages
 const CheckoutPage = lazy(() => import("./pages/traveler/CheckoutPage").then(m => ({ default: m.CheckoutPage })));
@@ -146,6 +147,7 @@ function AnimatedRoutes() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
 
             {/* Main Routes (with Navbar + Footer) */}

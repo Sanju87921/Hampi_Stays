@@ -3,7 +3,12 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import crypto from 'crypto';
+import { Resend } from 'resend';
 import prisma from '../utils/prisma.js';
+
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@hampistays.com';
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET must be set in production');
@@ -293,6 +298,148 @@ export const getMe = async (req, res, next) => {
         location: user.location,
         kycStatus: user.kycStatus || 'NOT_SUBMITTED'
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If that email address is in our system, we have sent a password reset link to it.'
+      });
+    }
+
+    await prisma.otpVerification.deleteMany({
+      where: { email: normalizedEmail, otpType: 'password_reset' }
+    });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(token, 12);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: {
+        userId: user.id,
+        email: normalizedEmail,
+        otpHash: tokenHash,
+        otpType: 'password_reset',
+        expiresAt
+      }
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    console.log(`[PASSWORD_RESET_DEV_LINK] -> ${resetLink}`);
+
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: normalizedEmail,
+          subject: 'Reset your HampiStays Password',
+          html: `
+            <div style="font-family: 'Outfit', sans-serif; background-color: #F5F1E9; padding: 40px; color: #0A1128;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 20px; padding: 40px; border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h2 style="font-family: serif; color: #0A1128; font-size: 28px; margin: 0;">HampiStays</h2>
+                  <p style="color: #C5A059; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; font-weight: bold; margin-top: 5px;">Luxury Sanctuary stays</p>
+                </div>
+                <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Password Reset Request</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: rgba(10, 17, 40, 0.7); margin-bottom: 30px;">
+                  We received a request to reset the password for your HampiStays account. Click the premium link below to set up a new password. This link is valid for 15 minutes.
+                </p>
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <a href="${resetLink}" style="background-color: #C5A059; color: #0A1128; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(197, 160, 89, 0.2);">
+                    Reset Password
+                  </a>
+                </div>
+                <p style="font-size: 12px; color: rgba(10, 17, 40, 0.4); text-align: center;">
+                  If you didn't request this, you can safely ignore this email.
+                </p>
+              </div>
+            </div>
+          `
+        });
+      } catch (err) {
+        console.error('Failed to send reset email:', err);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'If that email address is in our system, we have sent a password reset link to it.',
+      devResetLink: process.env.NODE_ENV !== 'production' ? resetLink : undefined
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, email, password } = req.body;
+    const normalizedEmail = email.toLowerCase();
+
+    const records = await prisma.otpVerification.findMany({
+      where: {
+        email: normalizedEmail,
+        otpType: 'password_reset',
+        verified: false,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (records.length === 0) {
+      return res.status(400).json({ error: 'The password reset link is invalid or has expired. Please request a new link.' });
+    }
+
+    let matchingRecord = null;
+    for (const record of records) {
+      if (record.attempts >= 5) continue;
+      const isMatch = await bcrypt.compare(token, record.otpHash);
+      if (isMatch) {
+        matchingRecord = record;
+        break;
+      } else {
+        await prisma.otpVerification.update({
+          where: { id: record.id },
+          data: { attempts: { increment: 1 } }
+        });
+      }
+    }
+
+    if (!matchingRecord) {
+      return res.status(400).json({ error: 'The password reset link is invalid or has expired. Please request a new link.' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: normalizedEmail },
+        data: { passwordHash }
+      }),
+      prisma.otpVerification.update({
+        where: { id: matchingRecord.id },
+        data: { verified: true }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Your password has been successfully reset. You can now log in with your new password.'
     });
   } catch (error) {
     next(error);

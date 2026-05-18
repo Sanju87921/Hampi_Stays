@@ -10,7 +10,7 @@
 - ✅ Separate onboarding flows for each role
 - ✅ Role-based routing (each role gets their own dashboard/home)
 - ✅ JWT / session-based authentication
-- [ ] Forgot password & reset flow
+- ✅ Forgot password & reset flow
 - [ ] Google OAuth login
 - ✅ Form validation (Login & Register)
 - ✅ Protected routes (redirect if not logged in)
