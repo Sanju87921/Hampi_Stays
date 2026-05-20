@@ -45,7 +45,12 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate("/dashboard");
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        navigate(decodeURIComponent(redirectUrl));
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       if (err.message === "new_traveler_detected") {
         setError("✨ New to HampiStays? Join us to begin your journey.");
@@ -62,7 +67,12 @@ export function LoginPage() {
     setError("");
     try {
       await loginWithGoogle(response.credential);
-      navigate("/dashboard");
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        navigate(decodeURIComponent(redirectUrl));
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Google login failed. Please try again.");
     } finally {
@@ -274,7 +284,7 @@ export function LoginPage() {
             <motion.div variants={itemVariant} className="text-center mt-6">
               <p className="text-xs text-navy-800/60 font-medium">
                 Don't have an account?{" "}
-                <Link to="/register" className="text-gold-600 font-bold hover:text-sunset-500 transition-colors">
+                <Link to={searchParams.get("redirect") ? `/register?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : "/register"} className="text-gold-600 font-bold hover:text-sunset-500 transition-colors">
                   Sign up
                 </Link>
               </p>

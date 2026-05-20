@@ -69,6 +69,7 @@ const LoadingFallback = () => (
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
   
   if (isLoading) {
     return (
@@ -99,7 +100,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login?message=Premium Access Required" replace />;
+  return isAuthenticated ? (
+    <>{children}</>
+  ) : (
+    <Navigate to={`/login?message=Premium Access Required&redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />
+  );
 };
 
 // Layout with Navbar and Footer

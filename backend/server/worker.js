@@ -6,6 +6,10 @@ import { withAccelerate } from '@prisma/extension-accelerate';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { encrypt, decrypt, setEncryptionKey } from './utils/crypto.js';
+import { OAuth2Client } from 'google-auth-library';
+import appleSignin from 'apple-signin-auth';
+import crypto from 'crypto';
+import { Resend } from 'resend';
 
 const app = new Hono({ strict: false }).basePath('/api');
 
@@ -205,6 +209,582 @@ app.get('/auth/me', authMiddleware, async (c) => {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
     return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/forgot-password', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { email } = await c.req.json();
+  const normalizedEmail = email.toLowerCase();
+  try {
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      return c.json({
+        success: true,
+        message: 'If that email address is in our system, we have sent a password reset link to it.'
+      });
+    }
+
+    await prisma.otpVerification.deleteMany({
+      where: { email: normalizedEmail, otpType: 'password_reset' }
+    });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(token, 12);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: {
+        userId: user.id,
+        email: normalizedEmail,
+        otpHash: tokenHash,
+        otpType: 'password_reset',
+        expiresAt
+      }
+    });
+
+    const frontendUrl = c.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    console.log(`[PASSWORD_RESET_DEV_LINK] -> ${resetLink}`);
+
+    if (c.env.RESEND_API_KEY) {
+      const resend = new Resend(c.env.RESEND_API_KEY);
+      const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
+      try {
+        await resend.emails.send({
+          from: emailFrom,
+          to: normalizedEmail,
+          subject: 'Reset your HampiStays Password',
+          html: `
+            <div style="font-family: 'Outfit', sans-serif; background-color: #F5F1E9; padding: 40px; color: #0A1128;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 20px; padding: 40px; border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h2 style="font-family: serif; color: #0A1128; font-size: 28px; margin: 0;">HampiStays</h2>
+                  <p style="color: #C5A059; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; font-weight: bold; margin-top: 5px;">Luxury Sanctuary stays</p>
+                </div>
+                <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Password Reset Request</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: rgba(10, 17, 40, 0.7); margin-bottom: 30px;">
+                  We received a request to reset the password for your HampiStays account. Click the premium link below to set up a new password. This link is valid for 15 minutes.
+                </p>
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <a href="${resetLink}" style="background-color: #C5A059; color: #0A1128; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px rgba(197, 160, 89, 0.2);">
+                    Reset Password
+                  </a>
+                </div>
+                <p style="font-size: 12px; color: rgba(10, 17, 40, 0.4); text-align: center;">
+                  If you didn't request this, you can safely ignore this email.
+                </p>
+              </div>
+            </div>
+          `
+        });
+      } catch (err) {
+        console.error('Failed to send reset email:', err);
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'If that email address is in our system, we have sent a password reset link to it.',
+      devResetLink: c.env.NODE_ENV !== 'production' ? resetLink : undefined
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/reset-password', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { token, email, password } = await c.req.json();
+  const normalizedEmail = email.toLowerCase();
+  try {
+    const records = await prisma.otpVerification.findMany({
+      where: {
+        email: normalizedEmail,
+        otpType: 'password_reset',
+        verified: false,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (records.length === 0) {
+      return c.json({ error: 'The password reset link is invalid or has expired. Please request a new link.' }, 400);
+    }
+
+    let matchingRecord = null;
+    for (const record of records) {
+      if (record.attempts >= 5) continue;
+      const isMatch = await bcrypt.compare(token, record.otpHash);
+      if (isMatch) {
+        matchingRecord = record;
+        break;
+      } else {
+        await prisma.otpVerification.update({
+          where: { id: record.id },
+          data: { attempts: { increment: 1 } }
+        });
+      }
+    }
+
+    if (!matchingRecord) {
+      return c.json({ error: 'The password reset link is invalid or has expired. Please request a new link.' }, 400);
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: normalizedEmail },
+        data: { passwordHash }
+      }),
+      prisma.otpVerification.update({
+        where: { id: matchingRecord.id },
+        data: { verified: true }
+      })
+    ]);
+
+    return c.json({
+      success: true,
+      message: 'Your password has been successfully reset. You can now log in with your new password.'
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/google', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { credential, role } = await c.req.json();
+  try {
+    const googleClientId = c.env.VITE_GOOGLE_CLIENT_ID || c.env.GOOGLE_CLIENT_ID || '';
+    const oAuthClient = new OAuth2Client(googleClientId);
+    const ticket = await oAuthClient.verifyIdToken({
+      idToken: credential,
+      audience: googleClientId,
+    });
+    const payload = ticket.getPayload();
+    if (!payload) return c.json({ error: 'Invalid token' }, 400);
+
+    const userEmail = payload.email?.toLowerCase();
+    if (!userEmail) return c.json({ error: 'Email not found in Google response' }, 400);
+
+    let user = await prisma.user.findUnique({ where: { email: userEmail } });
+
+    if (!user) {
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: userEmail,
+            name: payload.name || 'Google Traveler',
+            passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+            role: role || 'TRAVELLER',
+            avatar: payload.picture
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: {
+              userId: newUser.id,
+              businessName: `${newUser.name}'s Portfolio`,
+            },
+          });
+        }
+
+        if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            },
+          });
+        }
+
+        return newUser;
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+
+    return c.json({
+      token,
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
+      }
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/apple', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { id_token, user: userDetails, role } = await c.req.json();
+  try {
+    const appleClientId = c.env.APPLE_CLIENT_ID || '';
+    const { sub: appleId, email } = await appleSignin.verifyIdToken(id_token, {
+      audience: appleClientId,
+    });
+
+    const userEmail = email.toLowerCase();
+    let user = await prisma.user.findUnique({ where: { email: userEmail } });
+
+    if (!user) {
+      const name = userDetails ? `${userDetails.name.firstName} ${userDetails.name.lastName}` : 'Apple Traveler';
+      
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: userEmail,
+            name: name,
+            passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+            role: role || 'TRAVELLER'
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: {
+              userId: newUser.id,
+              businessName: `${newUser.name}'s Portfolio`,
+            },
+          });
+        }
+
+        if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            },
+          });
+        }
+
+        return newUser;
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+
+    return c.json({
+      token,
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
+      }
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/send-otp', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { email, userId } = await c.req.json();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return c.json({ error: 'A valid email address is required.' }, 400);
+  }
+  try {
+    await prisma.otpVerification.deleteMany({
+      where: { email, otpType: 'email', verified: false }
+    });
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: { userId: userId || null, email, otpHash, otpType: 'email', expiresAt }
+    });
+
+    if (c.env.RESEND_API_KEY) {
+      const resend = new Resend(c.env.RESEND_API_KEY);
+      const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
+      await resend.emails.send({
+        from: emailFrom,
+        to: email,
+        subject: `${otp} – Your HampiStays Verification Code`,
+        html: `<h1>Your verification code is ${otp}</h1>`
+      });
+    }
+
+    return c.json({ 
+      success: true, 
+      message: `Verification code sent to ${email}`,
+      devOtp: c.env.NODE_ENV !== 'production' ? otp : undefined 
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/send-email-otp', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { email, userId } = await c.req.json();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return c.json({ error: 'A valid email address is required.' }, 400);
+  }
+  try {
+    await prisma.otpVerification.deleteMany({
+      where: { email, otpType: 'email', verified: false }
+    });
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: { userId: userId || null, email, otpHash, otpType: 'email', expiresAt }
+    });
+
+    if (c.env.RESEND_API_KEY) {
+      const resend = new Resend(c.env.RESEND_API_KEY);
+      const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
+      await resend.emails.send({
+        from: emailFrom,
+        to: email,
+        subject: `${otp} – Your HampiStays Verification Code`,
+        html: `<h1>Your verification code is ${otp}</h1>`
+      });
+    }
+
+    return c.json({ 
+      success: true, 
+      message: `Verification code sent to ${email}`,
+      devOtp: c.env.NODE_ENV !== 'production' ? otp : undefined 
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/send-mobile-otp', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { phone, userId } = await c.req.json();
+  if (!phone || !/^[6-9]\d{9}$/.test(phone.replace(/\D/g, '').slice(-10))) {
+    return c.json({ error: 'A valid 10-digit Indian mobile number is required.' }, 400);
+  }
+  const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
+  try {
+    await prisma.otpVerification.deleteMany({
+      where: { phone: normalizedPhone, otpType: 'mobile', verified: false }
+    });
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: { userId: userId || null, phone: normalizedPhone, otpHash, otpType: 'mobile', expiresAt }
+    });
+
+    if (c.env.TWILIO_ACCOUNT_SID && c.env.TWILIO_AUTH_TOKEN) {
+      try {
+        const twilio = await import('twilio');
+        const twilioClient = twilio.default(c.env.TWILIO_ACCOUNT_SID, c.env.TWILIO_AUTH_TOKEN);
+        await twilioClient.messages.create({
+          body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes.`,
+          from: c.env.TWILIO_PHONE_NUMBER,
+          to: `+91${normalizedPhone}`
+        });
+      } catch (err) {
+        console.error("Twilio send failed:", err);
+      }
+    }
+
+    return c.json({ 
+      success: true, 
+      message: `Verification code sent to +91${normalizedPhone}`,
+      devOtp: c.env.NODE_ENV !== 'production' ? otp : undefined 
+    });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/auth/verify-otp', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { otp, email, phone, otpType, userId } = await c.req.json();
+  try {
+    const whereClause = otpType === 'email' || email
+      ? { email, otpType: 'email', verified: false }
+      : { phone: phone?.replace(/\D/g, '').slice(-10), otpType: 'mobile', verified: false };
+
+    const record = await prisma.otpVerification.findFirst({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!record || new Date() > record.expiresAt || record.attempts >= 5) {
+      return c.json({ error: 'Invalid or expired OTP. Please request a new code.' }, 400);
+    }
+
+    const isValid = await bcrypt.compare(otp, record.otpHash);
+    if (!isValid) {
+      await prisma.otpVerification.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } }
+      });
+      return c.json({ error: 'Invalid code.' }, 400);
+    }
+
+    await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
+
+    const targetUserId = userId || record.userId;
+    if (targetUserId) {
+      const updateData = otpType === 'mobile' || phone ? { isMobileVerified: true } : { isEmailVerified: true };
+      await prisma.user.update({ where: { id: targetUserId }, data: updateData });
+    }
+
+    return c.json({ success: true, verified: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// --- User Profile & Dashboard ---
+app.get('/users/profile', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  try {
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+    const { passwordHash, ...safeUser } = user;
+    return c.json(safeUser);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/users/profile', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const { name, email, phone, avatar, location, idType, idNumber, idImage } = await c.req.json();
+  try {
+    const user = await prisma.user.update({
+      where: { id: payload.userId },
+      data: { 
+        name, 
+        email: email?.toLowerCase(), 
+        phone, 
+        avatar, 
+        location, 
+        idType, 
+        idNumber, 
+        idImage,
+        kycStatus: idImage ? 'PENDING' : undefined
+      }
+    });
+    const { passwordHash, ...safeUser } = user;
+    return c.json(safeUser);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/users/bookings', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  try {
+    const bookings = await prisma.booking.findMany({
+      where: { userId: payload.userId },
+      include: { resort: true, room: true },
+      orderBy: { checkIn: 'asc' }
+    });
+    return c.json(bookings);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/users/notifications', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { userId: payload.userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(notifications);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/users/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+    const { passwordHash, ...safeUser } = user;
+    return c.json(safeUser);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/users/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const payload = c.get('user');
+  if (payload.userId !== id && payload.role !== 'ADMIN') {
+    return c.json({ error: 'Unauthorized to update this profile' }, 403);
+  }
+  const { name, email, phone, avatar, location, idType, idNumber, idImage } = await c.req.json();
+  try {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { 
+        name, 
+        email: email?.toLowerCase(), 
+        phone, 
+        avatar, 
+        location, 
+        idType, 
+        idNumber, 
+        idImage,
+        kycStatus: idImage ? 'PENDING' : undefined
+      }
+    });
+    const { passwordHash, ...safeUser } = user;
+    return c.json(safeUser);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// --- Wishlist ---
+app.post('/wishlist/toggle', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const { userId, resortId } = await c.req.json();
+  if (!userId || !resortId) return c.json({ error: 'User ID and Resort ID are required' }, 400);
+  if (payload.userId !== userId) return c.json({ error: 'Unauthorized' }, 403);
+  try {
+    const existing = await prisma.wishlist.findUnique({
+      where: { userId_resortId: { userId, resortId } }
+    });
+    
+    if (existing) {
+      await prisma.wishlist.delete({ where: { id: existing.id } });
+      return c.json({ saved: false, message: 'Removed from wishlist' });
+    } else {
+      await prisma.wishlist.create({ data: { userId, resortId } });
+      return c.json({ saved: true, message: 'Added to wishlist' });
+    }
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/users/:id/wishlist', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const wishlist = await prisma.wishlist.findMany({
+      where: { userId: id },
+      include: { resort: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    const resorts = wishlist.map(item => item.resort);
+    return c.json(resorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -438,14 +1018,52 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
     const resorts = await prisma.resort.findMany({
       where: { ownerId: owner.id },
       include: { 
-        roomTypes: true, 
+        roomTypes: {
+          include: {
+            priceOverrides: true,
+            blockings: true
+          }
+        }, 
         bookings: { 
           include: { user: true, room: true },
           orderBy: { createdAt: 'desc' }
-        } 
+        },
+        discountCodes: true
       }
     });
     return c.json(resorts);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/owners/:id/stats', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.req.param('id');
+  try {
+    const owner = await prisma.resortOwner.findUnique({
+      where: { userId },
+      include: {
+        resorts: {
+          include: {
+            bookings: true
+          }
+        }
+      }
+    });
+
+    if (!owner) return c.json({ revenue: 0, bookings: 0, rating: 0 });
+
+    const resorts = owner.resorts;
+    const totalRevenue = resorts.reduce((sum, r) => 
+      sum + r.bookings.reduce((bSum, b) => bSum + (b.status !== 'CANCELLED' ? b.totalPrice : 0), 0)
+    , 0);
+    const totalBookings = resorts.reduce((sum, r) => sum + r.bookings.length, 0);
+    const avgRating = resorts.reduce((sum, r) => sum + (r.rating || 5), 0) / (resorts.length || 1);
+
+    return c.json({
+      revenue: totalRevenue,
+      bookings: totalBookings,
+      rating: Number(avgRating.toFixed(1))
+    });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -898,6 +1516,118 @@ app.get('/heritage/poi', (c) => {
       nearbyResort: "Kishkinda Heritage Resort"
     }
   ]);
+});
+
+// Local Guides
+app.get('/guides', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const guides = await prisma.guideProfile.findMany({
+      where: { isActive: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        experiences: true
+      }
+    });
+    return c.json(guides);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/guides/:id', async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const guide = await prisma.guideProfile.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          }
+        },
+        experiences: true
+      }
+    });
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+    return c.json(guide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/guides/:guideId/book', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  const { userId, date, durationHours, meetingPoint, totalPrice, specialRequests } = await c.req.json();
+  try {
+    const booking = await prisma.guideBooking.create({
+      data: {
+        guideId,
+        userId,
+        date: new Date(date),
+        durationHours,
+        meetingPoint,
+        totalPrice,
+        specialRequests,
+        status: 'PENDING'
+      }
+    });
+    return c.json(booking, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Experiences
+app.get('/experiences', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const experiences = await prisma.experience.findMany({
+      include: {
+        guide: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                avatar: true
+              }
+            }
+          }
+        }
+      }
+    });
+    return c.json(experiences);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/experiences/:id', async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const experience = await prisma.experience.findUnique({
+      where: { id },
+      include: {
+        guide: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                avatar: true
+              }
+            }
+          }
+        }
+      }
+    });
+    if (!experience) return c.json({ error: 'Experience not found' }, 404);
+    return c.json(experience);
+  } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
 // Error Handling

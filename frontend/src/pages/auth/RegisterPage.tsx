@@ -104,7 +104,9 @@ export function RegisterPage() {
       });
       
       toast.success("Account created successfully! Please login.");
-      navigate("/login");
+      const redirectUrl = searchParams.get("redirect");
+      const redirectQuery = redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : "";
+      navigate(`/login${redirectQuery}`);
     } catch (err: any) {
       setError(err.message || 'Registration failed');
       toast.error(err.message || 'Registration failed');
@@ -151,7 +153,14 @@ export function RegisterPage() {
       });
 
       setVerifiedSuccess(true);
-      setTimeout(() => navigate("/dashboard"), 1800);
+      const redirectUrl = searchParams.get("redirect");
+      setTimeout(() => {
+        if (redirectUrl) {
+          navigate(decodeURIComponent(redirectUrl));
+        } else {
+          navigate("/dashboard");
+        }
+      }, 1800);
     } catch (err: any) {
       setError(err.message || 'Verification failed');
     } finally {
@@ -164,7 +173,12 @@ export function RegisterPage() {
     try {
       const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
       await loginWithGoogle(response.credential, apiRole as any);
-      navigate("/dashboard");
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        navigate(decodeURIComponent(redirectUrl));
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Google login failed. Please try again.");
     }
@@ -394,7 +408,7 @@ export function RegisterPage() {
                     <p className="text-navy-800/60 font-medium text-sm">
                       Already have an account?{" "}
                       <Link
-                        to="/login"
+                        to={searchParams.get("redirect") ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : "/login"}
                         className="text-gold-600 font-bold hover:text-sunset-500 transition-colors"
                       >
                         Sign in
@@ -537,7 +551,7 @@ export function RegisterPage() {
                     <p className="text-navy-800/60 font-medium text-sm">
                       Already have an account?{" "}
                       <Link
-                        to="/login"
+                        to={searchParams.get("redirect") ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : "/login"}
                         className="text-gold-600 font-bold hover:text-sunset-500 transition-colors"
                       >
                         Sign in

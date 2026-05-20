@@ -72,8 +72,7 @@ export function LocalExpertsPage() {
 
   const handleBookGuide = async () => {
     if (!selectedGuide || !bookingDate || !bookingMeetingPoint) return;
-    if (!user) {
-      window.location.href = '/login';
+    if (!requireAuth()) {
       return;
     }
     setIsBooking(true);
