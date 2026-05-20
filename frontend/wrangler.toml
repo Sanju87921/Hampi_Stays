@@ -10,5 +10,5 @@ destination_dir = "dist"
 
 # Environment Variables for Build
 [vars]
-VITE_API_URL = "https://hampistays.anonymous24tr.workers.dev"
+VITE_API_URL = "https://hampistays.sanju87921.workers.dev"
 
