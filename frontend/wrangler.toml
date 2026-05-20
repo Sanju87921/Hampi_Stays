@@ -11,4 +11,5 @@ destination_dir = "dist"
 # Environment Variables for Build
 [vars]
 VITE_API_URL = "https://hampistays.sanju87921.workers.dev"
+VITE_RAZORPAY_KEY_ID = "rzp_test_Snxno5G3tcQKcs"
 
