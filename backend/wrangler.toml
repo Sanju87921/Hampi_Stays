@@ -1,5 +1,5 @@
 # Cloudflare Worker for HampiStays Backend
-name = "hampistays"
+name = "hampi-stays"
 main = "server/worker.js"
 compatibility_date = "2026-05-13"
 compatibility_flags = [ "nodejs_compat" ]
