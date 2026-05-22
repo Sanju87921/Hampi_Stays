@@ -88,10 +88,10 @@ export function Checkout() {
 
       // 2. Launch Razorpay Checkout
       if (bookingData.orderId) {
-        const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_Snxno5G3tcQKcs';
         
         if (!razorpayKey) {
-          throw new Error("Razorpay Key is missing. Please ensure VITE_RAZORPAY_KEY_ID is set in your environment variables.");
+          throw new Error("Razorpay Key is missing. Please contact support.");
         }
 
         const options = {
