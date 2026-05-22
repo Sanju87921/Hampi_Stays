@@ -1,50 +1,96 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🧹 Starting database cleanup...');
+  console.log('🧹 Starting full database cleanup...');
 
-  try {
-    // 1. Delete dependent data first
-    await prisma.booking.deleteMany();
-    await prisma.wishlist.deleteMany();
-    await prisma.review.deleteMany();
-    console.log('✅ Deleted bookings, wishlists, and reviews');
+  // Delete in correct foreign-key order
+  await prisma.message.deleteMany();
+  console.log('✅ Cleared messages');
 
-    // 2. Delete resorts and rooms
-    await prisma.room.deleteMany();
-    await prisma.resort.deleteMany();
-    console.log('✅ Deleted resorts and rooms');
+  await prisma.otpVerification.deleteMany();
+  console.log('✅ Cleared OTP verifications');
 
-    // 3. Delete resort owner profiles (except admin's profile if any)
-    const admin = await prisma.user.findUnique({ where: { email: 'admin@hampistays.com' } });
-    
-    await prisma.resortOwner.deleteMany({
-      where: {
-        NOT: {
-          userId: admin?.id || 'none'
-        }
-      }
-    });
-    console.log('✅ Deleted resort owner profiles');
+  await prisma.notification.deleteMany();
+  console.log('✅ Cleared notifications');
 
-    // 4. Delete users except the admin
-    await prisma.user.deleteMany({
-      where: {
-        NOT: {
-          email: 'admin@hampistays.com'
-        }
-      }
-    });
-    console.log('✅ Deleted all users except Admin');
+  await prisma.guideBooking.deleteMany();
+  console.log('✅ Cleared guide bookings');
 
-    console.log('\n✨ Database is now CLEAN and ready for real data! 🚀');
-  } catch (error) {
-    console.error('❌ Error during cleanup:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
+  await prisma.booking.deleteMany();
+  console.log('✅ Cleared bookings');
+
+  await prisma.wishlist.deleteMany();
+  console.log('✅ Cleared wishlist');
+
+  await prisma.review.deleteMany();
+  console.log('✅ Cleared reviews');
+
+  await prisma.roomBlocking.deleteMany();
+  console.log('✅ Cleared room blockings');
+
+  await prisma.roomPriceOverride.deleteMany();
+  console.log('✅ Cleared room price overrides');
+
+  await prisma.discountCode.deleteMany();
+  console.log('✅ Cleared discount codes');
+
+  await prisma.invitation.deleteMany();
+  console.log('✅ Cleared invitations');
+
+  await prisma.staffMember.deleteMany();
+  console.log('✅ Cleared staff members');
+
+  await prisma.experience.deleteMany();
+  console.log('✅ Cleared experiences');
+
+  await prisma.guideProfile.deleteMany();
+  console.log('✅ Cleared guide profiles');
+
+  await prisma.room.deleteMany();
+  console.log('✅ Cleared rooms');
+
+  await prisma.resort.deleteMany();
+  console.log('✅ Cleared resorts');
+
+  await prisma.resortOwner.deleteMany();
+  console.log('✅ Cleared resort owners');
+
+  await prisma.systemSettings.deleteMany();
+  console.log('✅ Cleared system settings');
+
+  await prisma.user.deleteMany();
+  console.log('✅ Cleared all users');
+
+  // Re-create system settings
+  await prisma.systemSettings.create({
+    data: { guideServiceEnabled: true }
+  });
+  console.log('✅ Re-initialized system settings');
+
+  // Re-create one clean Admin account
+  const passwordHash = await bcrypt.hash('admin123', 12);
+  await prisma.user.create({
+    data: {
+      email: 'admin@hampistays.com',
+      name: 'HampiStays Admin',
+      passwordHash,
+      role: 'ADMIN',
+    }
+  });
+  console.log('✅ Created admin account: admin@hampistays.com / admin123');
+
+  console.log('\n🎉 Database is clean and ready for real data!');
 }
 
-main();
+main()
+  .catch((e) => {
+    console.error('❌ Error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
