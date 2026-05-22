@@ -17,6 +17,18 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as QRCode from "qrcode";
 
+const downloadPdf = (doc: any, filename: string) => {
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export function OwnerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -262,7 +274,7 @@ export function OwnerDashboard() {
     doc.setFontSize(7);
     doc.text("HampiStays Partner Network | Hampi, Karnataka | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
-    doc.save(`HampiStays_Invoice_${safeRef}.pdf`);
+    downloadPdf(doc, `HampiStays_Invoice_${safeRef}.pdf`);
   };
 
   const handleDownloadConfirmation = async (booking: any) => {
@@ -424,7 +436,7 @@ export function OwnerDashboard() {
     doc.setFontSize(7);
     doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
-    doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
+    downloadPdf(doc, `HampiStays_Confirmation_${safeRef}.pdf`);
   };
 
   const fetchStaffData = async () => {

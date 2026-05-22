@@ -14,6 +14,18 @@ import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
 
 
+const downloadPdf = (doc: any, filename: string) => {
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export function BookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -336,7 +348,7 @@ export function BookingsPage() {
     doc.setTextColor(150, 150, 150);
     doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
-    doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
+    downloadPdf(doc, `HampiStays_Confirmation_${safeRef}.pdf`);
     toast.success("Itinerary downloaded!", { id: "pdf-gen" });
     } catch (err) {
       console.error("PDF Generation failed", err);
