@@ -1533,31 +1533,64 @@ app.post('/bookings', authMiddleware, async (c) => {
 app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const ref = c.req.param('ref');
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = await c.req.json();
   
+  let body;
   try {
-    // 1. Secure Signature Verification using Web Crypto API
-    const secret = c.env.RAZORPAY_KEY_SECRET;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`);
-    const key = await crypto.subtle.importKey(
-      'raw', 
-      encoder.encode(secret), 
-      { name: 'HMAC', hash: 'SHA-256' }, 
-      false, 
-      ['sign']
-    );
-    const signature = await crypto.subtle.sign('HMAC', key, data);
-    const generatedSignature = Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid request body' }, 400);
+  }
+  
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+  
+  console.log('Verify payment called:', { ref, razorpay_payment_id, razorpay_order_id, has_signature: !!razorpay_signature });
 
-    if (generatedSignature !== razorpay_signature) {
-      console.error('Signature mismatch:', { generated: generatedSignature, received: razorpay_signature });
-      return c.json({ error: 'Payment verification failed. Invalid signature.' }, 400);
+  try {
+    // 1. Signature Verification using Web Crypto API
+    const secret = c.env.RAZORPAY_KEY_SECRET;
+    
+    if (!secret) {
+      console.error('RAZORPAY_KEY_SECRET is not set!');
+      return c.json({ error: 'Payment configuration error' }, 500);
     }
 
-    // 2. Update Booking Status
+    let signatureValid = false;
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`);
+      const key = await crypto.subtle.importKey(
+        'raw', 
+        encoder.encode(secret), 
+        { name: 'HMAC', hash: 'SHA-256' }, 
+        false, 
+        ['sign']
+      );
+      const signature = await crypto.subtle.sign('HMAC', key, data);
+      const generatedSignature = Array.from(new Uint8Array(signature))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      signatureValid = (generatedSignature === razorpay_signature);
+      console.log('Signature check:', { valid: signatureValid, generated: generatedSignature?.substring(0, 10) + '...' });
+    } catch (cryptoErr) {
+      console.error('Crypto error during verification:', cryptoErr.message);
+      return c.json({ error: 'Signature verification failed: ' + cryptoErr.message }, 500);
+    }
+
+    if (!signatureValid) {
+      return c.json({ error: 'Payment verification failed. Signature mismatch.' }, 400);
+    }
+
+    // 2. Find and update booking
+    const existingBooking = await prisma.booking.findUnique({
+      where: { referenceNumber: ref }
+    });
+    
+    if (!existingBooking) {
+      console.error('Booking not found for ref:', ref);
+      return c.json({ error: `Booking not found: ${ref}` }, 404);
+    }
+
     const booking = await prisma.booking.update({
       where: { referenceNumber: ref },
       data: { status: 'PAID' },
@@ -1565,18 +1598,22 @@ app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
     });
 
     // 3. Create Notification
-    await prisma.notification.create({
-      data: {
-        userId: booking.userId,
-        title: 'Booking Confirmed!',
-        message: `Payment successful for ${booking.resort.name}. Reference: ${ref}`,
-        type: 'booking'
-      }
-    });
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: booking.userId,
+          title: 'Booking Confirmed!',
+          message: `Payment successful for ${booking.resort.name}. Reference: ${ref}`,
+          type: 'booking'
+        }
+      });
+    } catch (notifErr) {
+      console.warn('Notification creation failed (non-critical):', notifErr.message);
+    }
 
     return c.json({ success: true, booking });
   } catch (err) { 
-    console.error("Verification Error:", err.message);
+    console.error('Verification Error:', err.message, err.stack);
     return c.json({ error: err.message }, 500); 
   }
 });
