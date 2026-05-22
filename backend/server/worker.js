@@ -700,7 +700,31 @@ app.get('/users/bookings', authMiddleware, async (c) => {
   try {
     const bookings = await prisma.booking.findMany({
       where: { userId: payload.userId },
-      include: { resort: true, room: true },
+      include: {
+        resort: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            tagline: true,
+            type: true,
+            locationArea: true,
+            locationLat: true,
+            locationLng: true,
+            images: true,
+            rating: true,
+            reviewCount: true,
+            pricePerNight: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+            pricePerNight: true
+          }
+        }
+      },
       orderBy: { checkIn: 'asc' }
     });
     return c.json(bookings);
@@ -1539,9 +1563,30 @@ app.get('/bookings/reference/:ref', authMiddleware, async (c) => {
   try {
     const booking = await prisma.booking.findUnique({
       where: { referenceNumber: ref },
-      include: { 
-        resort: true,
-        room: true
+      include: {
+        resort: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            tagline: true,
+            type: true,
+            locationArea: true,
+            locationLat: true,
+            locationLng: true,
+            images: true,
+            rating: true,
+            reviewCount: true,
+            pricePerNight: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+            pricePerNight: true
+          }
+        }
       }
     });
     if (!booking) return c.json({ error: 'Booking not found' }, 404);

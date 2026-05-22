@@ -41,7 +41,31 @@ export const getBookings = async (req, res, next) => {
   try {
     const bookings = await prisma.booking.findMany({
       where: { userId: req.user.userId },
-      include: { resort: true, room: true },
+      include: {
+        resort: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            tagline: true,
+            type: true,
+            locationArea: true,
+            locationLat: true,
+            locationLng: true,
+            images: true,
+            rating: true,
+            reviewCount: true,
+            pricePerNight: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+            pricePerNight: true
+          }
+        }
+      },
       orderBy: { checkIn: 'asc' }
     });
     res.json(bookings);

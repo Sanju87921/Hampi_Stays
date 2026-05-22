@@ -11,8 +11,29 @@ export const getBookingByReference = async (req, res, next) => {
     const booking = await prisma.booking.findUnique({
       where: { referenceNumber: reference },
       include: {
-        resort: true,
-        room: true,
+        resort: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            tagline: true,
+            type: true,
+            locationArea: true,
+            locationLat: true,
+            locationLng: true,
+            images: true,
+            rating: true,
+            reviewCount: true,
+            pricePerNight: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true,
+            pricePerNight: true
+          }
+        },
         user: {
           select: {
             id: true,
