@@ -1,6 +1,8 @@
 import { X, SlidersHorizontal, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { FilterState, Amenity, ResortType } from "../../types/resort";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../utils/apiClient";
 
 interface ResortFiltersProps {
   filters: FilterState;
@@ -20,6 +22,23 @@ const AMENITY_OPTIONS: Amenity[] = [
 const TYPE_OPTIONS: ResortType[] = ["luxury", "eco", "heritage", "budget", "boutique"];
 
 export function ResortFilters({ filters, onChange, maxPrice, isOpen, onClose }: ResortFiltersProps) {
+  const { data: fetchedCategories } = useQuery({
+    queryKey: ["resort-categories"],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get<string[]>("/resorts/categories");
+        return res;
+      } catch (e) {
+        return [];
+      }
+    },
+    staleTime: 60000,
+  });
+
+  const categoriesList = fetchedCategories && fetchedCategories.length > 0
+    ? Array.from(new Set([...["Heritage", "Nature", "Riverside", "Temple View", "Boutique"], ...fetchedCategories]))
+    : ["Heritage", "Nature", "Riverside", "Temple View", "Boutique"];
+
   const content = (
     <div className="bg-white rounded-[2.5rem] border border-sand-200 p-8 shadow-sm flex flex-col h-full lg:h-auto overflow-hidden">
       <div className="flex items-center justify-between mb-8 flex-shrink-0">
@@ -91,7 +110,7 @@ export function ResortFilters({ filters, onChange, maxPrice, isOpen, onClose }: 
             Resort Categories
           </h4>
           <div className="flex flex-wrap gap-2">
-            {["Heritage", "Nature", "Riverside", "Temple View", "Boutique"].map((cat) => (
+            {categoriesList.map((cat) => (
               <button
                 key={cat}
                 type="button"

@@ -865,14 +865,7 @@ app.get('/resorts', async (c) => {
           hasEvery: categoriesQuery
         }
       } : {}),
-      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
-      ...(search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { locationArea: { contains: search, mode: 'insensitive' } },
-          { tagline: { contains: search, mode: 'insensitive' } }
-        ]
-      } : {})
+      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {})
     };
 
     const orderBy = {};
@@ -904,13 +897,36 @@ app.get('/resorts', async (c) => {
       cacheStrategy: { swr: 60, ttl: 60 }, // Cache at the edge for 60s
     });
 
-    const optimizedResorts = resorts.map(r => ({
+    let filteredResorts = resorts;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredResorts = resorts.filter(r => 
+        r.name.toLowerCase().includes(searchLower) ||
+        r.locationArea.toLowerCase().includes(searchLower) ||
+        r.tagline.toLowerCase().includes(searchLower) ||
+        (r.categories || []).some(cat => cat.toLowerCase().includes(searchLower))
+      );
+    }
+
+    const optimizedResorts = filteredResorts.map(r => ({
       ...r,
       category: r.categories[0] || null,
       images: r.images.slice(0, 1)
     }));
 
     return c.json(optimizedResorts);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/resorts/categories', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'APPROVED' },
+      select: { categories: true }
+    });
+    const categories = Array.from(new Set(resorts.flatMap(r => r.categories || [])));
+    return c.json(categories);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1002,6 +1018,16 @@ app.post('/resorts', authMiddleware, async (c) => {
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.random().toString(36).substring(2, 7);
     
+    const rawCategories = categories || (category ? [category] : []);
+    const sanitizedCategories = Array.from(
+      new Set(
+        rawCategories
+          .map(c => typeof c === 'string' ? c.trim() : '')
+          .filter(c => c.length > 0 && c.length <= 30)
+          .map(c => c.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+      )
+    );
+
     const resort = await prisma.resort.create({
       data: {
         name,
@@ -1009,7 +1035,7 @@ app.post('/resorts', authMiddleware, async (c) => {
         tagline,
         description,
         type: type || 'luxury',
-        categories: categories || (category ? [category] : []),
+        categories: sanitizedCategories,
         locationArea: area,
         locationLat: 15.3350,
         locationLng: 76.4600,

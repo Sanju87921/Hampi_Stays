@@ -19,6 +19,8 @@ export function ResortSetupPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customCategoryText, setCustomCategoryText] = useState("");
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("hampi-resort-setup-draft");
@@ -70,6 +72,34 @@ export function ResortSetupPage() {
   ];
 
   const categories = ["Heritage", "Nature", "Riverside", "Temple View", "Boutique"];
+
+  const handleAddCustomCategory = () => {
+    const trimmed = customCategoryText.trim();
+    if (!trimmed) return;
+
+    // Capitalize first letter of each word to preserve capitalization nicely
+    const formatted = trimmed
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    if (formatted.length > 30) {
+      toast.error("Category name should be 30 characters or less");
+      return;
+    }
+
+    const currentCats = formData.categories || [];
+    if (currentCats.some(c => c.toLowerCase() === formatted.toLowerCase())) {
+      toast.error("This category already exists");
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      categories: [...(prev.categories || []), formatted]
+    }));
+    setCustomCategoryText("");
+  };
 
   const handleToggleAmenity = (id: string) => {
     setFormData(prev => ({
@@ -272,13 +302,93 @@ export function ResortSetupPage() {
                                   };
                                 });
                               }}
-                              className={cn("px-8 py-3 rounded-2xl border-2 font-bold transition-all",
+                              className={cn("px-8 py-3 rounded-2xl border-2 font-bold transition-all hover:scale-[1.02]",
                                 isSelected ? "border-gold-500 bg-gold-50 text-gold-700 shadow-sm" : "border-sand-100 text-navy-950/40 hover:border-gold-200")}
                             >
                               {c}
                             </button>
                           );
                         })}
+                        {/* Custom categories */}
+                        <AnimatePresence>
+                          {(formData.categories || [])
+                            .filter(c => !categories.includes(c))
+                            .map(c => (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                key={c}
+                                className="px-8 py-3 rounded-2xl border-2 border-gold-500 bg-gold-50 text-gold-700 shadow-sm flex items-center gap-2 font-bold select-none"
+                              >
+                                <span>{c}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      categories: (prev.categories || []).filter(x => x !== c)
+                                    }));
+                                  }}
+                                  className="text-gold-500 hover:text-gold-800 transition-colors focus:outline-none ml-1"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </motion.div>
+                            ))}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Add Custom Category System */}
+                      <div className="pt-2">
+                        {!showCustomInput ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowCustomInput(true)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-gold-600 hover:text-gold-700 transition-colors uppercase tracking-widest"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add Custom Category</span>
+                          </button>
+                        ) : (
+                          <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-2 max-w-sm mt-1"
+                          >
+                            <input
+                              type="text"
+                              value={customCategoryText}
+                              onChange={e => setCustomCategoryText(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAddCustomCategory();
+                                }
+                              }}
+                              placeholder="e.g. Yoga Sanctuary"
+                              className="flex-grow bg-sand-50 border border-sand-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 outline-none transition-all text-navy-950 placeholder-navy-950/30"
+                              maxLength={30}
+                            />
+                            <Button
+                              type="button"
+                              onClick={handleAddCustomCategory}
+                              className="bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-sm"
+                            >
+                              Add
+                            </Button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowCustomInput(false);
+                                setCustomCategoryText("");
+                              }}
+                              className="text-navy-950/40 hover:text-navy-950 p-2 transition-colors"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </motion.div>
+                        )}
                       </div>
                     </div>
                   </div>

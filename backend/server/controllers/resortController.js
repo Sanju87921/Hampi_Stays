@@ -39,14 +39,7 @@ export const getAllResorts = async (req, res, next) => {
           hasEvery: categoriesQuery
         }
       } : {}),
-      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
-      ...(search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { locationArea: { contains: search, mode: 'insensitive' } },
-          { tagline: { contains: search, mode: 'insensitive' } }
-        ]
-      } : {})
+      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {})
     };
 
     const orderBy = {};
@@ -77,8 +70,19 @@ export const getAllResorts = async (req, res, next) => {
       }
     });
 
+    let filteredResorts = resorts;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredResorts = resorts.filter(r => 
+        r.name.toLowerCase().includes(searchLower) ||
+        r.locationArea.toLowerCase().includes(searchLower) ||
+        r.tagline.toLowerCase().includes(searchLower) ||
+        (r.categories || []).some(cat => cat.toLowerCase().includes(searchLower))
+      );
+    }
+
     // Post-process to only send the first image to save bandwidth
-    const optimizedResorts = resorts.map(r => ({
+    const optimizedResorts = filteredResorts.map(r => ({
       ...r,
       category: r.categories[0] || null, // fallback
       images: r.images.slice(0, 1) // Only send cover image for listing
@@ -129,10 +133,20 @@ export const createResort = async (req, res, next) => {
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + crypto.randomBytes(3).toString('hex');
     
+    const rawCategories = categories || (category ? [category] : []);
+    const sanitizedCategories = Array.from(
+      new Set(
+        rawCategories
+          .map(c => typeof c === 'string' ? c.trim() : '')
+          .filter(c => c.length > 0 && c.length <= 30)
+          .map(c => c.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+      )
+    );
+
     const resort = await prisma.resort.create({
       data: {
         name, slug, tagline, description, type: type || 'luxury',
-        categories: categories || (category ? [category] : []),
+        categories: sanitizedCategories,
         locationArea: area,
         locationLat: 15.3350,
         locationLng: 76.4600,
@@ -207,6 +221,19 @@ export const getStats = async (req, res, next) => {
       experiences: "15+",
       rating: "4.9"
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getResortCategories = async (req, res, next) => {
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'APPROVED' },
+      select: { categories: true }
+    });
+    const categories = Array.from(new Set(resorts.flatMap(r => r.categories || [])));
+    res.json(categories);
   } catch (error) {
     next(error);
   }
