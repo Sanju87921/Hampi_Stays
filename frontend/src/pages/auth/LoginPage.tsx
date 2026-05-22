@@ -17,6 +17,8 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingEmail, setOnboardingEmail] = useState("");
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,10 +54,13 @@ export function LoginPage() {
         navigate("/dashboard");
       }
     } catch (err: any) {
-      if (err.message === "new_traveler_detected") {
-        setError("✨ New to HampiStays? Join us to begin your journey.");
+      if (err.status === 404 || err.data?.code === 'USER_NOT_FOUND') {
+        setOnboardingEmail(email);
+        setShowOnboarding(true);
+      } else if (err.status === 500 || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        setError("Our servers are currently resting. Please verify your connection or try again in a moment. ⏳");
       } else {
-        setError(err.message || "Invalid email or password");
+        setError(err.message || "Incorrect password. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -299,6 +304,87 @@ export function LoginPage() {
         </div>
       </div>
       </div>
+      
+      {/* Premium Onboarding Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowOnboarding(false);
+                navigate(`/register?email=${encodeURIComponent(onboardingEmail)}`);
+              }}
+              className="absolute inset-0 bg-navy-950/60 backdrop-blur-md"
+            />
+            
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", duration: 0.6 }}
+              className="relative bg-sand-50/95 backdrop-blur-2xl w-full max-w-md rounded-[3rem] border border-sand-200/80 overflow-hidden shadow-2xl p-8 md:p-10 text-center z-10"
+            >
+              {/* Gold luxury accents */}
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-gold-400 via-gold-600 to-gold-400" />
+              
+              <div className="w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-gold-500/20">
+                <Sparkles className="w-8 h-8 text-gold-600 animate-pulse" />
+              </div>
+
+              <h3 className="text-2xl font-serif font-bold text-navy-950 mb-3 leading-tight">
+                We couldn’t find an account for this email.
+              </h3>
+              <p className="text-sm text-navy-950/60 mb-6 font-medium">
+                It looks like you’re new to HampiStays.
+              </p>
+
+              <div className="bg-white/40 border border-sand-200/50 rounded-2xl p-5 mb-8 italic text-gold-700 font-serif text-sm">
+                “Begin your luxury heritage journey with us.”
+              </div>
+
+              <div className="space-y-4">
+                <Button
+                  onClick={() => {
+                    setShowOnboarding(false);
+                    navigate(`/register?email=${encodeURIComponent(onboardingEmail)}`);
+                  }}
+                  className="w-full h-12 text-sm shadow-gold hover:scale-[1.02] transition-all duration-300 font-bold uppercase tracking-wider rounded-xl bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 flex items-center justify-center gap-2"
+                >
+                  Create Your Account
+                </Button>
+                
+                <button
+                  onClick={() => setShowOnboarding(false)}
+                  className="text-xs text-navy-950/40 hover:text-navy-950 font-bold uppercase tracking-widest transition-colors"
+                >
+                  Back to Login
+                </button>
+              </div>
+
+              {/* Progress bar representing auto-redirect */}
+              <div className="absolute bottom-0 inset-x-0 h-1 bg-sand-200">
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 6, ease: "linear" }}
+                  onAnimationComplete={() => {
+                    if (showOnboarding) {
+                      setShowOnboarding(false);
+                      navigate(`/register?email=${encodeURIComponent(onboardingEmail)}`);
+                    }
+                  }}
+                  className="h-full bg-gold-500"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

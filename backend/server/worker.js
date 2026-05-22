@@ -196,7 +196,13 @@ app.post('/auth/login', async (c) => {
   const lowerEmail = email.toLowerCase();
   try {
     const user = await prisma.user.findUnique({ where: { email: lowerEmail } });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) return c.json({ error: 'Invalid credentials' }, 401);
+    if (!user) {
+      return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
+    }
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
+    }
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
     return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
   } catch (err) { return c.json({ error: err.message }, 500); }
