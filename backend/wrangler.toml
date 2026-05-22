@@ -7,7 +7,7 @@ compatibility_flags = [ "nodejs_compat" ]
 [vars]
 NODE_ENV = "production"
 DATABASE_URL = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19PcmdjaG1kSVZvUWlsU0ZKYzdUNnciLCJhcGlfa2V5IjoiMDFLUkdGRUdIRlFWODY2WjRXQzRSSjNUUTQiLCJ0ZW5hbnRfaWQiOiJlMzk1ZTEzMWEyZWFhZDZlMTRjOGE2NjRiZTYzYTNiYjI3YzY3MzZmOGU5N2I4ZTAyMmIyYzM2N2I2NWI4NGViIiwiaW50ZXJuYWxfc2VjcmV0IjoiOTQ1ZmE0YTktYzRlMS00NmZlLWE2OTMtNDQ4Mjc3NGQ3ZTFjIn0.DHdv0ptcMr4pgGbxveQilsz8YICyZIkWRpV56g1a6X4"
-FRONTEND_URL = "https://hampistays.pages.dev"
+FRONTEND_URL = "https://new-hampi-stays.pages.dev"
 JWT_SECRET = "aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f"
 VITE_GOOGLE_CLIENT_ID = "389686748462-nh36uj8ht8go4unb9607sclhgl1plb7r.apps.googleusercontent.com"
 CLOUDINARY_CLOUD_NAME = "dfs6lmdns"
