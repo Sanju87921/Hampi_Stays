@@ -1472,14 +1472,20 @@ app.post('/bookings', authMiddleware, async (c) => {
     const room = resort.roomTypes.find(r => r.id === roomId);
     if (!room) return c.json({ error: 'Room type not found' }, 404);
 
-    const startDate = new Date(checkIn);
-    const endDate = new Date(checkOut);
-    const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    // Parse dates as UTC date strings (YYYY-MM-DD) to avoid timezone shifting
+    const parseDate = (d) => {
+      const s = typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0];
+      const [y, m, day] = s.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, day));
+    };
+    const startDate = parseDate(checkIn);
+    const endDate = parseDate(checkOut);
+    const nights = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
     
     const nightsTotal = room.pricePerNight * nights;
     const taxes = Math.round(nightsTotal * 0.12);
     const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
-    const airportPickupCost = airportPickup ? 800 : 0;
+    const airportPickupCost = airportPickup ? 1500 : 0;
     const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
 
     const referenceNumber = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -1547,7 +1553,8 @@ app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
       .join('');
 
     if (generatedSignature !== razorpay_signature) {
-      return c.json({ error: 'Invalid payment signature. Potential fraud detected.' }, 400);
+      console.error('Signature mismatch:', { generated: generatedSignature, received: razorpay_signature });
+      return c.json({ error: 'Payment verification failed. Invalid signature.' }, 400);
     }
 
     // 2. Update Booking Status
