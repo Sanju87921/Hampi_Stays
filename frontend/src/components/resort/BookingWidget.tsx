@@ -102,6 +102,7 @@ export function BookingWidget({
           checkOut,
           adults,
           totalPrice: total,
+          baseNightlyPrice: baseTotal / (nights || 1),
           image: resort.images[0]
         }
       });

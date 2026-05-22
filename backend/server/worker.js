@@ -1488,6 +1488,8 @@ app.post('/bookings', authMiddleware, async (c) => {
     const airportPickupCost = airportPickup ? 1500 : 0;
     const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
 
+    console.log('[BOOKING DEBUG] checkIn:', checkIn, '| checkOut:', checkOut, '| nights:', nights, '| pricePerNight:', room?.pricePerNight, '| totalPrice:', totalPrice);
+
     const referenceNumber = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     
     // 2. Create Razorpay Order
@@ -1530,7 +1532,25 @@ app.post('/bookings', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// Get booking by reference number (used by CheckoutSuccessPage)
+app.get('/bookings/reference/:ref', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const ref = c.req.param('ref');
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { referenceNumber: ref },
+      include: { 
+        resort: true,
+        room: true
+      }
+    });
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+    return c.json(booking);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
+
   const prisma = getPrisma(c.env);
   const ref = c.req.param('ref');
   

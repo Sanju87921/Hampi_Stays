@@ -64,7 +64,7 @@ export function CheckoutPage() {
   if (!hasBookingData) return <Navigate to="/resorts" replace />;
 
   const airportPickupCost = selectedRequests.includes("airport_pickup") ? 1500 : 0;
-  const basePrice = bookingData.baseNightlyPrice || Math.round(bookingData.totalPrice / 1.12);
+  const basePrice = bookingData.baseNightlyPrice || Math.round((bookingData.totalPrice / 1.12) / nights);
   const nightsTotal = basePrice * nights;
   const taxes = Math.round(nightsTotal * 0.12);
   const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
