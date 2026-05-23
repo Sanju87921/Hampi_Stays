@@ -1,5 +1,5 @@
 # Cloudflare Pages Configuration
-name = "hampistays"
+name = "hampi-stays"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-05-13"
 compatibility_flags = [ "nodejs_compat" ]
