@@ -17,7 +17,9 @@ export function Hero() {
     "/images/hampi-3.png",
     "/images/hampi-4.png",
     "/images/hampi-5.png",
-    "/images/hampi-6.png"
+    "/images/hampi-6.png",
+    "/images/hampi-7.jpg",
+    "/images/hampi-8.jpg"
   ];
 
   const imageLabels = [
@@ -27,7 +29,9 @@ export function Hero() {
     "Ancient Granite Boulders",
     "The Royal Lotus Mahal",
     "Anjanadri Hill — Hanuman's Birthplace",
-    "Tungabhadra River Twilight"
+    "Tungabhadra River Twilight",
+    "Virupaksha Temple & Tungabhadra River",
+    "Virupaksha Temple Gopuram against Blue Sky"
   ];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
