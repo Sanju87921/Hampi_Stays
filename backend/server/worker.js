@@ -21,86 +21,89 @@ const getPrisma = (env) => {
   }
   if (prismaInstance) return prismaInstance;
   
+  // safeEncrypt: prevents double-encryption if the value is already in iv:authTag:cipher format
+  const safeEncrypt = (value) => {
+    if (!value) return value;
+    const parts = value.split(':');
+    if (parts.length === 3 && /^[0-9a-f]{24}$/i.test(parts[0]) && /^[0-9a-f]{32}$/i.test(parts[1])) {
+      return value; // already encrypted
+    }
+    return encrypt(value);
+  };
+
   prismaInstance = new PrismaClient({
     datasources: { db: { url: env.DATABASE_URL } },
   }).$extends(withAccelerate()).$extends({
     query: {
       user: {
         async create({ args, query }) {
-          if (args.data.phone) args.data.phone = encrypt(args.data.phone);
-          if (args.data.location) args.data.location = encrypt(args.data.location);
-          if (args.data.idNumber) args.data.idNumber = encrypt(args.data.idNumber);
+          if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+          if (args.data.location) args.data.location = safeEncrypt(args.data.location);
+          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
         },
         async update({ args, query }) {
-          if (args.data.phone) args.data.phone = encrypt(args.data.phone);
-          if (args.data.location) args.data.location = encrypt(args.data.location);
-          if (args.data.idNumber) args.data.idNumber = encrypt(args.data.idNumber);
+          if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+          if (args.data.location) args.data.location = safeEncrypt(args.data.location);
+          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
         },
       },
       resortOwner: {
         async create({ args, query }) {
-          if (args.data.gstNumber) args.data.gstNumber = encrypt(args.data.gstNumber);
+          if (args.data.gstNumber) args.data.gstNumber = safeEncrypt(args.data.gstNumber);
           return query(args);
         },
         async update({ args, query }) {
-          if (args.data.gstNumber) args.data.gstNumber = encrypt(args.data.gstNumber);
+          if (args.data.gstNumber) args.data.gstNumber = safeEncrypt(args.data.gstNumber);
           return query(args);
         },
       },
       guideProfile: {
         async create({ args, query }) {
-          if (args.data.idNumber) args.data.idNumber = encrypt(args.data.idNumber);
+          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
         },
         async update({ args, query }) {
-          if (args.data.idNumber) args.data.idNumber = encrypt(args.data.idNumber);
+          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
         },
       },
     },
-    result: {
-      user: {
-        phone: {
-          needs: { phone: true },
-          compute(user) {
-            return decrypt(user.phone);
-          },
-        },
-        location: {
-          needs: { location: true },
-          compute(user) {
-            return decrypt(user.location);
-          },
-        },
-        idNumber: {
-          needs: { idNumber: true },
-          compute(user) {
-            return decrypt(user.idNumber);
-          },
-        },
-      },
-      resortOwner: {
-        gstNumber: {
-          needs: { gstNumber: true },
-          compute(owner) {
-            return decrypt(owner.gstNumber);
-          },
-        },
-      },
-      guideProfile: {
-        idNumber: {
-          needs: { idNumber: true },
-          compute(profile) {
-            return decrypt(profile.idNumber);
-          },
-        },
-      },
-    },
+    // NOTE: result.compute is NOT used here because it is silently bypassed in the
+    // Cloudflare Workers Edge runtime. Decryption is handled explicitly via decryptUser().
   });
   
   return prismaInstance;
+};
+
+/**
+ * Explicitly decrypt PII fields on a raw user object returned from Prisma.
+ * This is required because Prisma $extends result.compute is silently bypassed
+ * in the Cloudflare Workers Edge runtime.
+ */
+const decryptUser = (user) => {
+  if (!user) return user;
+  const out = { ...user };
+  if (out.phone) out.phone = decrypt(out.phone);
+  if (out.location) out.location = decrypt(out.location);
+  if (out.idNumber) out.idNumber = decrypt(out.idNumber);
+  delete out.passwordHash;
+  return out;
+};
+
+const decryptOwner = (owner) => {
+  if (!owner) return owner;
+  const out = { ...owner };
+  if (out.gstNumber) out.gstNumber = decrypt(out.gstNumber);
+  return out;
+};
+
+const decryptGuide = (guide) => {
+  if (!guide) return guide;
+  const out = { ...guide };
+  if (out.idNumber) out.idNumber = decrypt(out.idNumber);
+  return out;
 };
 
 // --- Middleware ---
@@ -140,8 +143,18 @@ const adminMiddleware = async (c, next) => {
 
 // --- Routes ---
 
-// Health & Public Stats
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date() }));
+app.get('/health', (c) => {
+  const key = c.env.ENCRYPTION_KEY;
+  const keyHash = key ? crypto.createHash('sha256').update(key).digest('hex') : 'null';
+  return c.json({ 
+    status: 'ok', 
+    timestamp: new Date(), 
+    encryptionKeyLength: key ? key.length : 0,
+    encryptionKeyPrefix: key ? key.substring(0, 6) : 'null',
+    encryptionKeyHash: keyHash
+  });
+});
+
 
 app.get('/stats', async (c) => {
   const prisma = getPrisma(c.env);
@@ -665,8 +678,7 @@ app.get('/users/profile', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    const { passwordHash, ...safeUser } = user;
-    return c.json(safeUser);
+    return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -689,8 +701,7 @@ app.patch('/users/profile', authMiddleware, async (c) => {
         kycStatus: idImage ? 'PENDING' : undefined
       }
     });
-    const { passwordHash, ...safeUser } = user;
-    return c.json(safeUser);
+    return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -749,8 +760,7 @@ app.get('/users/:id', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    const { passwordHash, ...safeUser } = user;
-    return c.json(safeUser);
+    return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -777,8 +787,7 @@ app.patch('/users/:id', authMiddleware, async (c) => {
         kycStatus: idImage ? 'PENDING' : undefined
       }
     });
-    const { passwordHash, ...safeUser } = user;
-    return c.json(safeUser);
+    return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
