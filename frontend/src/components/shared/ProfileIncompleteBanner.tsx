@@ -17,7 +17,8 @@ export function ProfileIncompleteBanner() {
 
     const checkIncomplete = () => {
       // 1. Check basic profile requirements (Everyone)
-      const hasBasicInfo = !!(user.phone && user.avatar);
+      // Making avatar optional so users aren't perpetually prompted if they skip the photo
+      const hasBasicInfo = !!(user.phone);
       
       // 2. Check Role-Specific Requirements
       if (user.role === 'RESORT_OWNER') {
