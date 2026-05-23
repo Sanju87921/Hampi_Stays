@@ -21,6 +21,7 @@ router.get('/bookings/all', adminController.getAllBookings);
 
 // Guide Management
 router.get('/guides', adminController.getAllGuides);
+router.patch('/guides/:id/status', adminController.updateGuideStatus);
 router.patch('/guides/:id/toggle-active', adminController.toggleGuideActive);
 router.patch('/guides/toggle-all', adminController.toggleAllGuides);
 

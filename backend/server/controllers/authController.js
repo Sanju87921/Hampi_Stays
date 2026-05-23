@@ -111,6 +111,9 @@ export const login = async (req, res, next) => {
         avatar: user.avatar,
         phone: user.phone,
         location: user.location,
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage,
         kycStatus: user.kycStatus || 'NOT_SUBMITTED'
       }
     });
@@ -296,6 +299,9 @@ export const getMe = async (req, res, next) => {
         avatar: user.avatar,
         phone: user.phone,
         location: user.location,
+        idType: user.idType,
+        idNumber: user.idNumber,
+        idImage: user.idImage,
         kycStatus: user.kycStatus || 'NOT_SUBMITTED'
       }
     });

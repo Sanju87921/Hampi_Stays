@@ -1456,7 +1456,17 @@ app.patch('/admin/guides/:id/status', authMiddleware, adminMiddleware, async (c)
   const id = c.req.param('id');
   const { status } = await c.req.json();
   try {
-    const guide = await prisma.guideProfile.update({ where: { id }, data: { status } });
+    const guide = await prisma.guideProfile.update({ 
+      where: { id }, 
+      data: { status },
+      include: { user: true }
+    });
+    if (guide.userId) {
+      await prisma.user.update({
+        where: { id: guide.userId },
+        data: { kycStatus: status }
+      });
+    }
     return c.json(guide);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -1808,6 +1818,127 @@ app.get('/heritage/poi', (c) => {
 });
 
 // Local Guides
+app.get('/guides/profile/:userId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.req.param('userId');
+  try {
+    let guide = await prisma.guideProfile.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            phone: true,
+            location: true,
+            kycStatus: true,
+          }
+        },
+        experiences: true
+      }
+    });
+
+    if (!guide) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return c.json({ error: 'User not found' }, 404);
+      if (user.role !== 'GUIDE') return c.json({ error: 'User is not a guide' }, 400);
+
+      guide = await prisma.guideProfile.create({
+        data: {
+          userId,
+          bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+          specialties: ["Architecture", "History"],
+          languages: ["English", "Kannada"],
+          pricePerDay: 2500,
+          pricePerHour: 500,
+          yearsExperience: 0,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              phone: true,
+              location: true,
+              kycStatus: true,
+            }
+          },
+          experiences: true
+        }
+      });
+    }
+
+    return c.json(guide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/guides/profile/:userId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.req.param('userId');
+  const payload = c.get('user');
+  
+  if (payload.userId !== userId && payload.role !== 'ADMIN') {
+    return c.json({ error: 'Unauthorized to update this profile' }, 403);
+  }
+
+  try {
+    const { bio, pricePerDay, pricePerHour, specialties, languages, idType, idNumber, idImage, avatar } = await c.req.json();
+    let guide = await prisma.guideProfile.findUnique({ where: { userId } });
+    if (!guide) return c.json({ error: 'Guide profile not found' }, 404);
+
+    let verificationStatus = guide.status;
+    if (idImage && idImage !== guide.idImage) {
+      verificationStatus = 'PENDING';
+    }
+
+    const updatedGuide = await prisma.guideProfile.update({
+      where: { userId },
+      data: {
+        bio,
+        pricePerDay: pricePerDay ? parseFloat(pricePerDay) : undefined,
+        pricePerHour: pricePerHour ? parseFloat(pricePerHour) : undefined,
+        specialties,
+        languages,
+        idType,
+        idNumber,
+        idImage,
+        status: verificationStatus
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            phone: true,
+            location: true,
+            kycStatus: true,
+          }
+        },
+        experiences: true
+      }
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatar: avatar || undefined,
+        idType: idType || undefined,
+        idNumber: idNumber || undefined,
+        idImage: idImage || undefined,
+        kycStatus: idImage && idImage !== guide.idImage ? 'PENDING' : undefined
+      }
+    });
+
+    return c.json(updatedGuide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 app.get('/guides', async (c) => {
   const prisma = getPrisma(c.env);
   try {
@@ -1826,6 +1957,28 @@ app.get('/guides', async (c) => {
       }
     });
     return c.json(guides);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/guides/:id/bookings', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('id');
+  try {
+    const bookings = await prisma.guideBooking.findMany({
+      where: { guideId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true
+          }
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+    return c.json(bookings);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1870,6 +2023,36 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
       }
     });
     return c.json(booking, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const bookingId = c.req.param('bookingId');
+  const { status } = await c.req.json();
+  const payload = c.get('user');
+  try {
+    const existingBooking = await prisma.guideBooking.findUnique({
+      where: { id: bookingId },
+      include: { guide: true }
+    });
+
+    if (!existingBooking) return c.json({ error: 'Booking not found' }, 404);
+
+    if (
+      payload.userId !== existingBooking.userId &&
+      payload.userId !== existingBooking.guide.userId &&
+      payload.role !== 'ADMIN'
+    ) {
+      return c.json({ error: 'Unauthorized to update this booking' }, 403);
+    }
+
+    const booking = await prisma.guideBooking.update({
+      where: { id: bookingId },
+      data: { status }
+    });
+
+    return c.json(booking);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

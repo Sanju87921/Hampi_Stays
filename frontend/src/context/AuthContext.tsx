@@ -27,6 +27,7 @@ interface AuthContextType {
   loginWithApple: (response: any, role?: UserRole) => Promise<any>;
   register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
   updateUser: (updatedUser: User) => void;
+  refreshUser: () => Promise<void>;
   logout: () => void;
   isVerifying: boolean;
   showAuthModal: boolean;
@@ -187,6 +188,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("hampi-user", JSON.stringify(updatedUser));
   };
 
+  const refreshUser = async () => {
+    try {
+      const data = await apiClient.get<{ user: User }>('/auth/me');
+      if (data?.user) {
+        setUser(data.user);
+        localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      }
+    } catch (err) {
+      console.warn("refreshUser failed:", err);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("hampi-user");
@@ -216,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout, 
       register, 
       updateUser,
+      refreshUser,
       showAuthModal,
       setShowAuthModal,
       authModalView,

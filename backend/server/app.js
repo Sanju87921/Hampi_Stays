@@ -22,6 +22,7 @@ import heritageRoutes from './routes/heritageRoutes.js';
 import experienceRoutes from './routes/experienceRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import guideRoutes from './routes/guideRoutes.js';
+import guideBookingRoutes from './routes/guideBookingRoutes.js';
 
 
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -82,6 +83,7 @@ app.use('/api/heritage', heritageRoutes);
 app.use('/api/experiences', experienceRoutes);
 app.use('/api/owners', ownerRoutes);
 app.use('/api/guides', guideRoutes);
+app.use('/api/guide-bookings', guideBookingRoutes);
 
 
 app.use('/api/upload', uploadRoutes);

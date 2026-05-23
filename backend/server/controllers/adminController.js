@@ -367,3 +367,27 @@ export const toggleAllGuides = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateGuideStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const guide = await prisma.guideProfile.update({
+      where: { id },
+      data: { status },
+      include: { user: true }
+    });
+
+    if (guide.userId) {
+      await prisma.user.update({
+        where: { id: guide.userId },
+        data: { kycStatus: status }
+      });
+    }
+
+    res.json(guide);
+  } catch (error) {
+    next(error);
+  }
+};

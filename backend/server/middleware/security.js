@@ -44,46 +44,46 @@ export const authorize = (...roles) => {
 /**
  * Global Rate Limiter
  */
-export const globalLimiter = rateLimit({
+export const globalLimiter = process.env.NODE_ENV === 'production' ? rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per window
   message: { error: 'Too many requests from this IP, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
-});
+}) : (req, res, next) => next();
 
 /**
  * Auth Rate Limiter (for login/register)
  */
-export const authLimiter = rateLimit({
+export const authLimiter = process.env.NODE_ENV === 'production' ? rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit each IP to 10 login attempts per hour
   message: { error: 'Too many login attempts, please try again after an hour' },
   standardHeaders: true,
   legacyHeaders: false,
-});
+}) : (req, res, next) => next();
 
 /**
  * OTP Send Rate Limiter (Prevent SMS/Email flood)
  */
-export const otpSendLimiter = rateLimit({
+export const otpSendLimiter = process.env.NODE_ENV === 'production' ? rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // Limit each IP to 5 OTP requests per hour
   message: { error: 'Too many verification codes requested. Please try again after an hour.' },
   standardHeaders: true,
   legacyHeaders: false,
-});
+}) : (req, res, next) => next();
 
 /**
  * OTP Verify Rate Limiter (Prevent brute-force)
  */
-export const otpVerifyLimiter = rateLimit({
+export const otpVerifyLimiter = process.env.NODE_ENV === 'production' ? rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 verification attempts per 15 mins
   message: { error: 'Too many failed attempts. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-});
+}) : (req, res, next) => next();
 
 /**
  * Security Headers Configuration (Helmet)

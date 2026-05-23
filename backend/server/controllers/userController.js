@@ -1,13 +1,18 @@
 import prisma from '../utils/prisma.js';
 
+// Helper to strip sensitive fields
+const safeUser = (user) => {
+  const { passwordHash, ...safe } = user;
+  return safe;
+};
+
 export const getProfile = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId }
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const { passwordHash, ...safeUser } = user;
-    res.json(safeUser);
+    res.json(safeUser(user));
   } catch (error) {
     next(error);
   }
@@ -16,22 +21,30 @@ export const getProfile = async (req, res, next) => {
 export const updateProfile = async (req, res, next) => {
   try {
     const { name, email, phone, avatar, location, idType, idNumber, idImage } = req.body;
+
+    // Only include fields that are actually provided (not undefined)
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (email !== undefined) data.email = email.toLowerCase();
+    if (phone !== undefined) data.phone = phone;
+    if (avatar !== undefined) data.avatar = avatar;
+    if (location !== undefined) data.location = location;
+    if (idType !== undefined) data.idType = idType;
+    if (idNumber !== undefined) data.idNumber = idNumber;
+    if (idImage !== undefined) {
+      data.idImage = idImage;
+      // Only set kycStatus to PENDING if a new document is being uploaded
+      const currentUser = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { idImage: true, kycStatus: true } });
+      if (idImage && idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
+        data.kycStatus = 'PENDING';
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: req.user.userId },
-      data: { 
-        name, 
-        email: email?.toLowerCase(), 
-        phone, 
-        avatar, 
-        location, 
-        idType, 
-        idNumber, 
-        idImage,
-        kycStatus: idImage ? 'PENDING' : undefined
-      }
+      data
     });
-    const { passwordHash, ...safeUser } = user;
-    res.json(safeUser);
+    res.json(safeUser(user));
   } catch (error) {
     next(error);
   }
@@ -92,8 +105,7 @@ export const getUserById = async (req, res, next) => {
       where: { id: req.params.id }
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const { passwordHash, ...safeUser } = user;
-    res.json(safeUser);
+    res.json(safeUser(user));
   } catch (error) {
     next(error);
   }
@@ -108,22 +120,27 @@ export const updateUserById = async (req, res, next) => {
     }
 
     const { name, email, phone, avatar, location, idType, idNumber, idImage } = req.body;
-    const user = await prisma.user.update({
-      where: { id },
-      data: { 
-        name, 
-        email: email?.toLowerCase(), 
-        phone, 
-        avatar, 
-        location, 
-        idType, 
-        idNumber, 
-        idImage,
-        kycStatus: idImage ? 'PENDING' : undefined
+
+    // Only update fields that are explicitly provided
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (email !== undefined) data.email = email.toLowerCase();
+    if (phone !== undefined) data.phone = phone;
+    if (avatar !== undefined) data.avatar = avatar;
+    if (location !== undefined) data.location = location;
+    if (idType !== undefined) data.idType = idType;
+    if (idNumber !== undefined) data.idNumber = idNumber;
+    if (idImage !== undefined) {
+      data.idImage = idImage;
+      // Only set kycStatus to PENDING if a new document is being uploaded
+      const currentUser = await prisma.user.findUnique({ where: { id }, select: { idImage: true, kycStatus: true } });
+      if (idImage && idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
+        data.kycStatus = 'PENDING';
       }
-    });
-    const { passwordHash, ...safeUser } = user;
-    res.json(safeUser);
+    }
+
+    const user = await prisma.user.update({ where: { id }, data });
+    res.json(safeUser(user));
   } catch (error) {
     next(error);
   }

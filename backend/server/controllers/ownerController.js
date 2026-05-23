@@ -31,8 +31,6 @@ export const getOwnerResorts = async (req, res, next) => {
     });
 
     if (!owner) {
-      // If no owner profile exists, return an empty array for resorts
-      // This is a common case for new users
       return res.json([]);
     }
 
@@ -42,6 +40,97 @@ export const getOwnerResorts = async (req, res, next) => {
     }));
 
     res.json(resortsWithFallback);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get owner profile (user + owner record) by userId
+ */
+export const getOwnerProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Security: only allow owner to see their own profile or admin
+    if (req.user.userId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const [user, owner] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, avatar: true, phone: true, location: true, kycStatus: true, idType: true, idNumber: true, idImage: true }
+      }),
+      prisma.resortOwner.findUnique({
+        where: { userId },
+        select: { id: true, businessName: true, gstNumber: true, isVerified: true }
+      })
+    ]);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json({ ...user, ownerProfile: owner });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update owner profile (user fields + owner business fields)
+ */
+export const updateOwnerProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Security: only allow owner to update their own profile or admin
+    if (req.user.userId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized to update this profile' });
+    }
+
+    const { name, phone, avatar, location, idType, idNumber, idImage, businessName, gstNumber } = req.body;
+
+    // Update User fields
+    const userData = {};
+    if (name !== undefined) userData.name = name;
+    if (phone !== undefined) userData.phone = phone;
+    if (avatar !== undefined) userData.avatar = avatar;
+    if (location !== undefined) userData.location = location;
+    if (idType !== undefined) userData.idType = idType;
+    if (idNumber !== undefined) userData.idNumber = idNumber;
+    if (idImage !== undefined) {
+      userData.idImage = idImage;
+      const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { idImage: true, kycStatus: true } });
+      if (idImage && idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
+        userData.kycStatus = 'PENDING';
+      }
+    }
+
+    // Update ResortOwner profile fields
+    const ownerData = {};
+    if (businessName !== undefined) ownerData.businessName = businessName;
+    if (gstNumber !== undefined) ownerData.gstNumber = gstNumber;
+
+    const [updatedUser] = await Promise.all([
+      Object.keys(userData).length > 0
+        ? prisma.user.update({ where: { id: userId }, data: userData })
+        : prisma.user.findUnique({ where: { id: userId } }),
+      Object.keys(ownerData).length > 0
+        ? prisma.resortOwner.upsert({
+            where: { userId },
+            update: ownerData,
+            create: { userId, ...ownerData }
+          })
+        : Promise.resolve(null)
+    ]);
+
+    const ownerProfile = await prisma.resortOwner.findUnique({
+      where: { userId },
+      select: { id: true, businessName: true, gstNumber: true, isVerified: true }
+    });
+
+    const { passwordHash, ...safeUser } = updatedUser;
+    res.json({ ...safeUser, ownerProfile });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate, Link } from "react-router-dom";
@@ -120,12 +121,25 @@ export function GuideDashboard() {
     if (!user) return;
     setIsSavingProfile(true);
     try {
-      await apiClient.patch(`/guides/profile/${user.id}`, profileForm);
+      const updatedGuide = await apiClient.patch<any>(`/guides/profile/${user.id}`, {
+        ...profileForm,
+        name: user.name, // keep user name in sync
+      });
+      // Sync the user avatar/phone to AuthContext if they changed
+      if (updatedGuide.user) {
+        updateUser({
+          ...user,
+          avatar: updatedGuide.user.avatar || user.avatar,
+          phone: updatedGuide.user.phone || user.phone,
+        });
+      }
       setShowSaveSuccess(true);
-      setTimeout(() => setShowSaveSuccess(false), 3000);
-      fetchProfile();
+      toast.success("✓ Profile saved successfully!");
+      setTimeout(() => setShowSaveSuccess(false), 4000);
+      fetchProfile(); // Re-fetch to ensure UI is fully in sync with DB
     } catch (err) {
       console.error("Failed to update profile", err);
+      toast.error("Failed to save profile. Please try again.");
     } finally {
       setIsSavingProfile(false);
     }
@@ -641,8 +655,10 @@ export function GuideDashboard() {
 
                       // 5. Update local form state too
                       setProfileForm(prev => ({...prev, avatar: uploadData.url}));
+                      toast.success("Profile photo updated!");
                     } catch (err) {
                       console.error("Avatar upload failed", err);
+                      toast.error("Failed to upload photo. Please try again.");
                     } finally {
                       setIsUploadingAvatar(false);
                     }
