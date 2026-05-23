@@ -34,8 +34,8 @@ function getKey(customKey) {
     throw new Error('ENCRYPTION_KEY must be set in production');
   }
 
-  // Stable, deterministic 32-byte development key
-  keyCache = Buffer.from('8f2f6a5b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f', 'hex');
+  // Stable, deterministic 32-byte development key matching .env for seamless local/cloud sync
+  keyCache = Buffer.from('15193fa55735bb1bae85abf1eba39e815e6c5fd4ba2fbc633b438738faf0511f', 'hex');
   return keyCache;
 }
 
