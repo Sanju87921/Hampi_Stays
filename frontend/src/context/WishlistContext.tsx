@@ -24,8 +24,19 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     queryKey: ['wishlist', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const data = await apiClient.get<Resort[]>(`/users/${user.id}/wishlist`);
-      return Array.isArray(data) ? data : [];
+      const data = await apiClient.get<any[]>(`/users/${user.id}/wishlist`);
+      if (!Array.isArray(data)) return [];
+      return data.map((r: any) => ({
+        ...r,
+        location: {
+          area: r.locationArea || "Hampi",
+          district: "Hampi",
+          state: "Karnataka",
+          lat: r.locationLat || 15.3350,
+          lng: r.locationLng || 76.4600,
+          distanceFromCenterKm: 5
+        }
+      })) as Resort[];
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes

@@ -36,11 +36,23 @@ export function TravelerDashboard() {
       try {
         const [bookingsData, wishlistData] = await Promise.all([
           apiClient.get<Booking[]>(`/users/bookings`),
-          apiClient.get<Resort[]>(`/users/${user.id}/wishlist`)
+          apiClient.get<any[]>(`/users/${user.id}/wishlist`)
         ]);
 
+        const normalizedWishlist = (wishlistData || []).map((r: any) => ({
+          ...r,
+          location: {
+            area: r.locationArea || "Hampi",
+            district: "Hampi",
+            state: "Karnataka",
+            lat: r.locationLat || 15.3350,
+            lng: r.locationLng || 76.4600,
+            distanceFromCenterKm: 5
+          }
+        })) as Resort[];
+
         setBookings(bookingsData);
-        setWishlist(wishlistData);
+        setWishlist(normalizedWishlist);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -53,8 +65,21 @@ export function TravelerDashboard() {
     // Real-time sync listener
     const handleWishlistUpdate = () => {
       if (!user) return;
-      apiClient.get<Resort[]>(`/users/${user.id}/wishlist`)
-        .then(data => setWishlist(data))
+      apiClient.get<any[]>(`/users/${user.id}/wishlist`)
+        .then(data => {
+          const normalized = (data || []).map((r: any) => ({
+            ...r,
+            location: {
+              area: r.locationArea || "Hampi",
+              district: "Hampi",
+              state: "Karnataka",
+              lat: r.locationLat || 15.3350,
+              lng: r.locationLng || 76.4600,
+              distanceFromCenterKm: 5
+            }
+          })) as Resort[];
+          setWishlist(normalized);
+        })
         .catch(err => console.error("Real-time wishlist sync failed:", err));
     };
 
