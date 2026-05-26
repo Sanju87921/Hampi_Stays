@@ -381,14 +381,8 @@ app.post('/auth/login', async (c) => {
       return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
     }
 
-    // Strict verification check
-    if (!user.isEmailVerified && !user.isMobileVerified) {
-      return c.json({
-        error: 'Please verify your account before continuing.',
-        code: 'UNVERIFIED_ACCOUNT',
-        email: user.email,
-        phone: user.phone
-      }, 403);
+    if (user.verifiedEmail !== true) {
+      return c.json({ error: 'Access denied. Account email is not verified.', code: 'UNVERIFIED_ACCOUNT' }, 403);
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
@@ -573,6 +567,7 @@ app.post('/auth/google', async (c) => {
             role: role || 'TRAVELLER',
             avatar: payload.picture,
             isEmailVerified: true,
+            verifiedEmail: true,
             verificationCompletedAt: new Date()
           }
         });
@@ -645,6 +640,7 @@ app.post('/auth/apple', async (c) => {
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
             role: role || 'TRAVELLER',
             isEmailVerified: true,
+            verifiedEmail: true,
             verificationCompletedAt: new Date()
           }
         });
@@ -888,6 +884,8 @@ app.post('/auth/verify-otp', async (c) => {
             phone: pending.phone || null,
             isEmailVerified: pending.otpType === 'email',
             isMobileVerified: pending.otpType === 'mobile',
+            verifiedEmail: pending.otpType === 'email' || pending.otpType === 'mobile',
+            verifiedPhone: pending.otpType === 'mobile',
             verificationCompletedAt: new Date()
           }
         });

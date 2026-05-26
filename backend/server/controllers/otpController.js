@@ -166,6 +166,8 @@ export const verifyOtp = async (req, res, next) => {
             phone: pending.phone || null,
             isEmailVerified: pending.otpType === 'email',
             isMobileVerified: pending.otpType === 'mobile',
+            verifiedEmail: pending.otpType === 'email' || pending.otpType === 'mobile',
+            verifiedPhone: pending.otpType === 'mobile',
             verificationCompletedAt: new Date()
           }
         });

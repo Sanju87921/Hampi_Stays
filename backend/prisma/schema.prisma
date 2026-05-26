@@ -24,6 +24,8 @@ model User {
   idType           String?
   isEmailVerified  Boolean           @default(false)
   isMobileVerified Boolean           @default(false)
+  verifiedEmail    Boolean           @default(false)
+  verifiedPhone    Boolean           @default(false)
   verificationCompletedAt DateTime?
   kycStatus        String?           @default("NOT_SUBMITTED")
   location         String?

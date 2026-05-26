@@ -126,14 +126,8 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' });
     }
 
-    // Strict verification check
-    if (!user.isEmailVerified && !user.isMobileVerified) {
-      return res.status(403).json({
-        error: 'Please verify your account before continuing.',
-        code: 'UNVERIFIED_ACCOUNT',
-        email: user.email,
-        phone: user.phone
-      });
+    if (user.verifiedEmail !== true) {
+      return res.status(403).json({ error: 'Access denied. Account email is not verified.', code: 'UNVERIFIED_ACCOUNT' });
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -186,6 +180,7 @@ export const googleAuth = async (req, res, next) => {
             role: role || 'TRAVELLER',
             avatar: payload.picture,
             isEmailVerified: true,
+            verifiedEmail: true,
             verificationCompletedAt: new Date()
           }
         });
@@ -258,6 +253,7 @@ export const appleAuth = async (req, res, next) => {
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
             role: role || 'TRAVELLER',
             isEmailVerified: true,
+            verifiedEmail: true,
             verificationCompletedAt: new Date()
           }
         });
