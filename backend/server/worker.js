@@ -1754,27 +1754,33 @@ app.patch('/bookings/:id/status', authMiddleware, async (c) => {
 });
 
 
-// Cloudinary Upload
-app.post('/upload', authMiddleware, async (c) => {
-  const formData = await c.req.formData();
-  const file = formData.get('image');
-  if (!file) return c.json({ error: 'No image provided' }, 400);
-
+// Cloudinary Upload Signature
+app.get('/upload/signature', authMiddleware, async (c) => {
   try {
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    uploadData.append('upload_preset', 'ml_default'); // You might need to change this
-    uploadData.append('cloud_name', c.env.CLOUDINARY_CLOUD_NAME);
+    const timestamp = Math.round(new Date().getTime() / 1000).toString();
+    const folder = 'hampi-stays';
+    const apiSecret = c.env.CLOUDINARY_API_SECRET;
+    
+    // Cloudinary requires signature: sha1(folder=hampi-stays&timestamp=123456... + api_secret)
+    const signString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(signString);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${c.env.CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: 'POST',
-      body: uploadData
+    return c.json({
+      signature,
+      timestamp,
+      cloud_name: c.env.CLOUDINARY_CLOUD_NAME,
+      api_key: c.env.CLOUDINARY_API_KEY,
+      folder
     });
-
-    const result = await response.json();
-    return c.json({ url: result.secure_url });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
 });
+
 
 // Heritage & Discovery
 app.get('/heritage/poi', (c) => {

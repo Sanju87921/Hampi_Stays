@@ -13,6 +13,33 @@ import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncomple
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
 
+// Direct-to-Cloudinary Signed Upload Helper
+async function uploadFile(file: File): Promise<string> {
+  const token = localStorage.getItem('hampi-token');
+  const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!sigRes.ok) throw new Error('Failed to get upload signature');
+  const sigData = await sigRes.json();
+  
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('api_key', sigData.api_key);
+  fd.append('timestamp', sigData.timestamp);
+  fd.append('signature', sigData.signature);
+  fd.append('folder', sigData.folder);
+
+  const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
+    method: 'POST',
+    body: fd,
+  });
+  
+  if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+  const data = await uploadRes.json();
+  if (!data.secure_url) throw new Error('No URL returned');
+  return data.secure_url;
+}
+
 export function GuideDashboard() {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
@@ -418,16 +445,8 @@ export function GuideDashboard() {
                           const fd = new FormData();
                           fd.append('image', file);
                           try {
-                            const token = localStorage.getItem("hampi-token");
-                            const r = await fetch(`${API_BASE_URL}/upload`, {
-                              method: 'POST',
-                              headers: {
-                                ...(token && { 'Authorization': `Bearer ${token}` })
-                              },
-                              body: fd
-                            });
-                            const d = await r.json();
-                            if (d.url) setNewExp(prev => ({ ...prev, imageUrl: d.url }));
+                            const url = await uploadFile(file);
+                            if (url) setNewExp(prev => ({ ...prev, imageUrl: url }));
                           } catch (err) { console.error("Image upload failed", err); }
                           finally { setIsUploadingExpImage(false); }
                         }}
@@ -549,17 +568,9 @@ export function GuideDashboard() {
                     const fd = new FormData();
                     fd.append('image', file);
                     try {
-                      const token = localStorage.getItem("hampi-token");
-                      const r = await fetch(`${API_BASE_URL}/upload`, {
-                        method: 'POST',
-                        headers: {
-                          ...(token && { 'Authorization': `Bearer ${token}` })
-                        },
-                        body: fd
-                      });
-                      const d = await r.json();
-                      if (d.url) {
-                        await apiClient.patch(`/experiences/${exp.id}`, { images: [d.url] });
+                      const url = await uploadFile(file);
+                      if (url) {
+                        await apiClient.patch(`/experiences/${exp.id}`, { images: [url] });
                         fetchProfile(); // Refresh to show new image
                       }
                     } catch (err) { console.error("Image upload failed", err); }
@@ -632,29 +643,20 @@ export function GuideDashboard() {
                     const formData = new FormData();
                     formData.append('image', file);
                     try {
-                      // 1. Upload to Cloudinary
-                      const token = localStorage.getItem("hampi-token");
-                      const uploadRes = await fetch(`${API_BASE_URL}/upload`, {
-                        method: 'POST',
-                        headers: {
-                          ...(token && { 'Authorization': `Bearer ${token}` })
-                        },
-                        body: formData
-                      });
-                      const uploadData = await uploadRes.json();
-                      if (!uploadData.url) throw new Error('Upload failed');
+                      const url = await uploadFile(file);
+                      if (!url) throw new Error('Upload failed');
 
                       // 2. Save avatar URL immediately to the User record
-                      await apiClient.patch(`/users/${user.id}`, { avatar: uploadData.url });
+                      await apiClient.patch(`/users/${user.id}`, { avatar: url });
 
                       // 3. Update AuthContext so image shows everywhere instantly
-                      updateUser({ ...user, avatar: uploadData.url });
+                      updateUser({ ...user, avatar: url });
 
                       // 4. Update dedicated preview state — this triggers re-render immediately
-                      setAvatarPreview(uploadData.url);
+                      setAvatarPreview(url);
 
                       // 5. Update local form state too
-                      setProfileForm(prev => ({...prev, avatar: uploadData.url}));
+                      setProfileForm(prev => ({...prev, avatar: url}));
                       toast.success("Profile photo updated!");
                     } catch (err) {
                       console.error("Avatar upload failed", err);
@@ -892,16 +894,8 @@ export function GuideDashboard() {
                     const formData = new FormData();
                     formData.append('image', file);
                     try {
-                      const token = localStorage.getItem("hampi-token");
-                      const res = await fetch(`${API_BASE_URL}/upload`, {
-                        method: 'POST',
-                        headers: {
-                          ...(token && { 'Authorization': `Bearer ${token}` })
-                        },
-                        body: formData
-                      });
-                      const data = await res.json();
-                      if (data.url) setProfileForm({...profileForm, idImage: data.url});
+                      const url = await uploadFile(file);
+                      if (url) setProfileForm({...profileForm, idImage: url});
                     } catch (err) { console.error("Upload failed", err); }
                     finally { setIsUploadingId(false); }
                   }}

@@ -24,25 +24,36 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
     reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
 
-    // Upload to our backend
+    // Upload directly to Cloudinary using signed signature
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("image", file);
-
+    
     try {
       const token = localStorage.getItem("hampi-token");
-      const response = await fetch(`${API_BASE_URL}/upload`, {
+      
+      // 1. Get Signature
+      const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!sigRes.ok) throw new Error("Failed to get upload signature");
+      const sigData = await sigRes.json();
+      
+      // 2. Upload to Cloudinary
+      const uploadFd = new FormData();
+      uploadFd.append('file', file);
+      uploadFd.append('api_key', sigData.api_key);
+      uploadFd.append('timestamp', sigData.timestamp);
+      uploadFd.append('signature', sigData.signature);
+      uploadFd.append('folder', sigData.folder);
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
         method: "POST",
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: formData,
+        body: uploadFd,
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Upload failed");
+      if (!response.ok) throw new Error(data.error?.message || "Upload failed");
 
-      onUploadSuccess(data.url);
+      onUploadSuccess(data.secure_url);
       toast.success("Image uploaded successfully!");
     } catch (error) {
       console.error("Upload error:", error);

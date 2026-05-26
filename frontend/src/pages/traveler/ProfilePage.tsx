@@ -9,20 +9,35 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
 
-// Upload file using raw fetch (not apiClient which JSON-stringifies body)
+// Upload file via direct Cloudinary signed upload
 async function uploadFile(file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append('image', file);
   const token = localStorage.getItem('hampi-token');
-  const res = await fetch(`${API_BASE_URL}/upload`, {
+  
+  // 1. Get Signature from Backend
+  const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!sigRes.ok) throw new Error('Failed to get upload signature');
+  const sigData = await sigRes.json();
+  
+  // 2. Upload directly to Cloudinary
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('api_key', sigData.api_key);
+  fd.append('timestamp', sigData.timestamp);
+  fd.append('signature', sigData.signature);
+  fd.append('folder', sigData.folder);
+
+  const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: fd,
   });
-  if (!res.ok) throw new Error('Upload failed');
-  const data = await res.json();
-  if (!data.url) throw new Error('No URL returned from upload');
-  return data.url;
+  
+  if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+  const uploadData = await uploadRes.json();
+  if (!uploadData.secure_url) throw new Error('No URL returned from upload');
+  
+  return uploadData.secure_url;
 }
 
 const getInitials = (name: string) => {
