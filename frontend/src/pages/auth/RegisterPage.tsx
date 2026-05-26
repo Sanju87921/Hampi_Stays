@@ -94,33 +94,18 @@ export function RegisterPage() {
     }
     if (!formData.terms) return setError("You must agree to the terms");
     setError("");
-    try {
-      setIsVerifying(true);
-      const apiRole = role === "owner" ? "RESORT_OWNER" : role === "guide" ? "GUIDE" : "TRAVELLER";
-      await apiClient.post('/auth/register', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: apiRole
-      });
-      
-      toast.success("Account created successfully! Please login.");
-      const redirectUrl = searchParams.get("redirect");
-      const redirectQuery = redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : "";
-      navigate(`/login${redirectQuery}`);
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
-      toast.error(err.message || 'Registration failed');
-    } finally {
-      setIsVerifying(false);
-    }
+    setStep(3);
   };
 
   const sendOtp = async (method: "email" | "sms") => {
     setIsSendingOtp(true);
     setError("");
     try {
-      await apiClient.post('/auth/send-otp', { email: formData.email });
+      if (method === "email") {
+        await apiClient.post('/auth/send-email-otp', { email: formData.email });
+      } else {
+        await apiClient.post('/auth/send-mobile-otp', { phone: formData.phone });
+      }
       startCountdown();
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP');
@@ -145,12 +130,16 @@ export function RegisterPage() {
 
       // First register the user account
       const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
-      await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
+      const regResult = await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
+      const registeredUserId = regResult?.user?.id;
 
       // Then verify OTP against backend
       await apiClient.post('/auth/verify-otp', {
         otp: enteredOtp,
         email: formData.email,
+        phone: formData.phone,
+        otpType: verificationMethod,
+        userId: registeredUserId
       });
 
       setVerifiedSuccess(true);
@@ -168,6 +157,7 @@ export function RegisterPage() {
       setIsVerifying(false);
     }
   };
+
 
   const onGoogleSuccess = async (response: any) => {
     setError("");
@@ -577,11 +567,55 @@ export function RegisterPage() {
                   initial="hidden"
                   animate="show"
                   exit="exit"
-                  className="space-y-8"
+                  className="space-y-6"
                 >
-                  <div className="text-center">
-                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Email Verification</h2>
-                    <p className="text-navy-800/60 text-sm font-medium">Verify your email address to secure your account.</p>
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Verify Your Account</h2>
+                    <p className="text-navy-800/60 text-sm font-medium">Choose a verification method to secure your account.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 mb-6">
+                    {/* Email Verification Card */}
+                    <div
+                      onClick={() => handleStartVerification("email")}
+                      className="p-5 rounded-2xl border border-sand-200 hover:border-gold-400 hover:bg-sand-100/40 cursor-pointer transition-all duration-300 relative overflow-hidden bg-sand-50/50 backdrop-blur-sm group flex items-center gap-4 hover:shadow-luxury"
+                    >
+                      <PremiumIcon 
+                        icon={Mail} 
+                        variant="gold" 
+                        size="md" 
+                        animate={false} 
+                      />
+                      <div>
+                        <h3 className="font-bold text-base text-navy-950 group-hover:text-gold-700 transition-colors">
+                          Verify via Email (Gmail)
+                        </h3>
+                        <p className="text-sm text-navy-800/60 leading-snug">
+                          Send a 6-digit OTP code to {formData.email}.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SMS Verification Card */}
+                    <div
+                      onClick={() => handleStartVerification("sms")}
+                      className="p-5 rounded-2xl border border-sand-200 hover:border-sunset-400 hover:bg-sand-100/40 cursor-pointer transition-all duration-300 relative overflow-hidden bg-sand-50/50 backdrop-blur-sm group flex items-center gap-4 hover:shadow-luxury"
+                    >
+                      <PremiumIcon 
+                        icon={Smartphone} 
+                        variant="navy" 
+                        size="md" 
+                        animate={false} 
+                      />
+                      <div>
+                        <h3 className="font-bold text-base text-navy-950 group-hover:text-sunset-700 transition-colors">
+                          Verify via SMS (Mobile)
+                        </h3>
+                        <p className="text-sm text-navy-800/60 leading-snug">
+                          Send a 6-digit OTP code to {formData.phone}.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               ) : (
