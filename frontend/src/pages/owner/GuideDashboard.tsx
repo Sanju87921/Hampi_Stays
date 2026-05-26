@@ -19,7 +19,11 @@ async function uploadFile(file: File): Promise<string> {
   const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
-  if (!sigRes.ok) throw new Error('Failed to get upload signature');
+  if (!sigRes.ok) {
+    const errText = await sigRes.text();
+    console.error('Signature fetch failed:', errText);
+    throw new Error('Failed to get upload signature: ' + errText);
+  }
   const sigData = await sigRes.json();
   
   const fd = new FormData();

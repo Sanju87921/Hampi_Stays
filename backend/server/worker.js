@@ -154,20 +154,13 @@ const createRateLimiter = (options = {}) => {
 const authLimiter = createRateLimiter({ name: 'auth', windowMs: 15 * 60 * 1000, maxRequests: 5, message: "Too many login attempts. Please wait 15 minutes." });
 const otpLimiter = createRateLimiter({ name: 'otp', windowMs: 10 * 60 * 1000, maxRequests: 3, message: "Too many OTP requests. Please wait 10 minutes." });
 const bookingLimiter = createRateLimiter({ name: 'booking', windowMs: 10 * 60 * 1000, maxRequests: 10, message: "Too many booking attempts. Please slow down." });
-const uploadLimiter = createRateLimiter({ name: 'upload', windowMs: 60 * 60 * 1000, maxRequests: 20, message: "Upload limit reached. Try again later." });
-const globalLimiter = createRateLimiter({ name: 'global', windowMs: 1 * 60 * 1000, maxRequests: 200, message: "Too many requests detected. Please wait a moment before trying again." });
+const uploadLimiter = createRateLimiter({ name: 'upload', windowMs: 60 * 60 * 1000, maxRequests: 30, message: "Upload limit reached. Try again later." });
+const globalLimiter = createRateLimiter({ name: 'global', windowMs: 1 * 60 * 1000, maxRequests: 300, message: "Too many requests detected. Please wait a moment before trying again." });
 
 // --- Middleware ---
 app.use('*', logger());
-app.use('*', globalLimiter);
-app.use('/auth/login', authLimiter);
-app.use('/auth/register', authLimiter);
-app.use('/auth/send-otp', otpLimiter);
-app.use('/auth/verify-otp', otpLimiter);
-app.use('/auth/forgot-password', otpLimiter);
-app.use('/bookings', bookingLimiter);
-app.use('/upload/signature', uploadLimiter);
 
+// CORS MUST be first — before rate limiters — so OPTIONS preflight always gets CORS headers
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
     origin: c.env.FRONTEND_URL || '*',
@@ -177,6 +170,19 @@ app.use('*', async (c, next) => {
   });
   return corsMiddleware(c, next);
 });
+
+// Rate limiters — skip OPTIONS preflight requests so they never count against limits
+app.use('*', async (c, next) => {
+  if (c.req.method === 'OPTIONS') return next();
+  return globalLimiter(c, next);
+});
+app.use('/auth/login', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return authLimiter(c, next); });
+app.use('/auth/register', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return authLimiter(c, next); });
+app.use('/auth/send-otp', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return otpLimiter(c, next); });
+app.use('/auth/verify-otp', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return otpLimiter(c, next); });
+app.use('/auth/forgot-password', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return otpLimiter(c, next); });
+app.use('/bookings', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return bookingLimiter(c, next); });
+app.use('/upload/signature', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return uploadLimiter(c, next); });
 
 // Auth Middlewares
 const authMiddleware = async (c, next) => {
@@ -728,9 +734,41 @@ app.post('/auth/verify-otp', async (c) => {
     await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
 
     const targetUserId = userId || record.userId;
+    let user;
     if (targetUserId) {
       const updateData = otpType === 'mobile' || phone ? { isMobileVerified: true } : { isEmailVerified: true };
       await prisma.user.update({ where: { id: targetUserId }, data: updateData });
+      user = await prisma.user.findUnique({ where: { id: targetUserId } });
+    } else if (otpType === 'mobile' && phone) {
+      const normalizedPhone = phone?.replace(/\\D/g, '').slice(-10);
+      user = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+      if (user) {
+        await prisma.user.update({ where: { id: user.id }, data: { isMobileVerified: true } });
+      }
+    } else if (email) {
+      const emailLower = email?.toLowerCase();
+      user = await prisma.user.findUnique({ where: { email: emailLower } });
+      if (user) {
+        await prisma.user.update({ where: { id: user.id }, data: { isEmailVerified: true } });
+      }
+    }
+
+    if (user) {
+      const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+      return c.json({
+        success: true,
+        verified: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: user.avatar,
+          phone: user.phone,
+          location: user.location
+        }
+      });
     }
 
     return c.json({ success: true, verified: true });
