@@ -1519,75 +1519,120 @@ app.post('/bookings', authMiddleware, async (c) => {
   const payload = c.get('user');
   
   try {
-    // 1. RECALCULATE PRICE FOR SECURITY
-    const resort = await prisma.resort.findUnique({ 
-      where: { id: resortId },
-      include: { roomTypes: true }
+    // We run the concurrency check and booking creation in a transaction
+    const { booking, totalPrice, referenceNumber } = await prisma.$transaction(async (tx) => {
+      // 1. RECALCULATE PRICE & FETCH ROOM DETAILS
+      const resort = await tx.resort.findUnique({ 
+        where: { id: resortId },
+        include: { roomTypes: true }
+      });
+      
+      if (!resort) throw new Error('Resort not found');
+      
+      const room = resort.roomTypes.find(r => r.id === roomId);
+      if (!room) throw new Error('Room type not found');
+
+      // Parse dates safely
+      const parseDate = (d) => {
+        const s = typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0];
+        const [y, m, day] = s.split('-').map(Number);
+        return new Date(Date.UTC(y, m - 1, day));
+      };
+      const startDate = parseDate(checkIn);
+      const endDate = parseDate(checkOut);
+      
+      // 2. CONCURRENCY CHECK: OVERLAP VALIDATION
+      // Find all bookings for this room that overlap with the requested dates
+      // and are either CONFIRMED/PAID/CHECKED_IN, OR are PENDING and created within the last 15 minutes
+      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const overlappingBookings = await tx.booking.count({
+        where: {
+          roomId: roomId,
+          checkIn: { lt: endDate },
+          checkOut: { gt: startDate },
+          OR: [
+            { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] } },
+            { status: 'PENDING', createdAt: { gt: fifteenMinsAgo } }
+          ]
+        }
+      });
+
+      // If all available units for this room type are taken, abort!
+      if (overlappingBookings >= room.availableCount) {
+        throw new Error('ROOM_UNAVAILABLE');
+      }
+
+      // 3. PRICE CALCULATION
+      const nights = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const nightsTotal = room.pricePerNight * nights;
+      const taxes = Math.round(nightsTotal * 0.12);
+      const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
+      const airportPickupCost = airportPickup ? 1500 : 0;
+      const computedTotal = nightsTotal + taxes + insuranceCost + airportPickupCost;
+
+      const refNum = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // 4. CREATE PENDING RESERVATION (LOCK)
+      const newBooking = await tx.booking.create({
+        data: {
+          userId: payload.userId,
+          resortId,
+          roomId,
+          checkIn: startDate,
+          checkOut: endDate,
+          guests: parseInt(guests) || 1,
+          totalPrice: computedTotal,
+          specialRequests,
+          referenceNumber: refNum,
+          commissionRate: resort.commissionRate || 7.0,
+          status: 'PENDING'
+        }
+      });
+
+      return { booking: newBooking, totalPrice: computedTotal, referenceNumber: refNum };
+    }, {
+      isolationLevel: 'Serializable', // Use strictest isolation for concurrency safety
+      maxWait: 5000,
+      timeout: 10000
     });
-    
-    if (!resort) return c.json({ error: 'Resort not found' }, 404);
-    
-    const room = resort.roomTypes.find(r => r.id === roomId);
-    if (!room) return c.json({ error: 'Room type not found' }, 404);
 
-    // Parse dates as UTC date strings (YYYY-MM-DD) to avoid timezone shifting
-    const parseDate = (d) => {
-      const s = typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0];
-      const [y, m, day] = s.split('-').map(Number);
-      return new Date(Date.UTC(y, m - 1, day));
-    };
-    const startDate = parseDate(checkIn);
-    const endDate = parseDate(checkOut);
-    const nights = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    
-    const nightsTotal = room.pricePerNight * nights;
-    const taxes = Math.round(nightsTotal * 0.12);
-    const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
-    const airportPickupCost = airportPickup ? 1500 : 0;
-    const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
+    // 5. CREATE RAZORPAY ORDER (OUTSIDE TRANSACTION TO AVOID HOLDING LOCKS)
+    try {
+      const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`)}`
+        },
+        body: JSON.stringify({
+          amount: Math.round(totalPrice * 100),
+          currency: 'INR',
+          receipt: referenceNumber
+        })
+      });
+      
+      const order = await rzpResponse.json();
+      if (!order.id) {
+        console.error("Razorpay Error:", order);
+        throw new Error(order.error?.description || 'Razorpay order creation failed');
+      }
 
-    console.log('[BOOKING DEBUG] checkIn:', checkIn, '| checkOut:', checkOut, '| nights:', nights, '| pricePerNight:', room?.pricePerNight, '| totalPrice:', totalPrice);
-
-    const referenceNumber = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    
-    // 2. Create Razorpay Order
-    const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`)}`
-      },
-      body: JSON.stringify({
-        amount: Math.round(totalPrice * 100),
-        currency: 'INR',
-        receipt: referenceNumber
-      })
-    });
-    
-    const order = await rzpResponse.json();
-    if (!order.id) {
-      console.error("Razorpay Error:", order);
-      throw new Error(order.error?.description || 'Razorpay order creation failed');
+      return c.json({ ...booking, orderId: order.id });
+    } catch (rzpErr) {
+      // If Razorpay fails, immediately release the held room reservation
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: 'FAILED' }
+      });
+      throw rzpErr;
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        userId: payload.userId,
-        resortId,
-        roomId,
-        checkIn: startDate,
-        checkOut: endDate,
-        guests: parseInt(guests) || 1,
-        totalPrice,
-        specialRequests,
-        referenceNumber,
-        commissionRate: resort.commissionRate || 7.0,
-        status: 'PENDING'
-      }
-    });
-
-    return c.json({ ...booking, orderId: order.id });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+  } catch (err) { 
+    if (err.message === 'ROOM_UNAVAILABLE') {
+      return c.json({ error: 'This sanctuary was just reserved by another traveler. Please select different dates or another room.' }, 409);
+    }
+    return c.json({ error: err.message }, 500); 
+  }
 });
 
 // Get booking by reference number (used by CheckoutSuccessPage)
