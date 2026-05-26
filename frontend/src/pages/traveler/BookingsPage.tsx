@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
   Star, XCircle, ChevronRight, Sparkles,
-  Navigation, CheckCircle2, History, QrCode
+  Navigation, CheckCircle2, History, QrCode, Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
