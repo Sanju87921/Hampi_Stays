@@ -126,10 +126,6 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' });
     }
 
-    if (user.verifiedEmail !== true) {
-      return res.status(403).json({ error: 'Access denied. Account email is not verified.', code: 'UNVERIFIED_ACCOUNT' });
-    }
-
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({

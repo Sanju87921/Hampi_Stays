@@ -381,10 +381,6 @@ app.post('/auth/login', async (c) => {
       return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
     }
 
-    if (user.verifiedEmail !== true) {
-      return c.json({ error: 'Access denied. Account email is not verified.', code: 'UNVERIFIED_ACCOUNT' }, 403);
-    }
-
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
     const profileCompletionStatus = computeProfileCompletion(user);
     return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
