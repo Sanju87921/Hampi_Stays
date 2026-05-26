@@ -34,7 +34,11 @@ async function uploadFile(file: File): Promise<string> {
     body: fd,
   });
   
-  if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    console.error("Cloudinary upload error:", errText);
+    throw new Error('Cloudinary upload failed: ' + errText);
+  }
   const data = await uploadRes.json();
   if (!data.secure_url) throw new Error('No URL returned');
   return data.secure_url;

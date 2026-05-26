@@ -17,7 +17,11 @@ async function uploadFile(file: File): Promise<string> {
   const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
-  if (!sigRes.ok) throw new Error('Failed to get upload signature');
+  if (!sigRes.ok) {
+    const errText = await sigRes.text();
+    console.error("Signature fetch error:", errText);
+    throw new Error('Failed to get upload signature: ' + errText);
+  }
   const sigData = await sigRes.json();
   
   // 2. Upload directly to Cloudinary
@@ -33,7 +37,11 @@ async function uploadFile(file: File): Promise<string> {
     body: fd,
   });
   
-  if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    console.error("Cloudinary upload error:", errText);
+    throw new Error('Cloudinary upload failed: ' + errText);
+  }
   const uploadData = await uploadRes.json();
   if (!uploadData.secure_url) throw new Error('No URL returned from upload');
   

@@ -1763,11 +1763,7 @@ app.get('/upload/signature', authMiddleware, async (c) => {
     
     // Cloudinary requires signature: sha1(folder=hampi-stays&timestamp=123456... + api_secret)
     const signString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(signString);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const signature = crypto.createHash('sha1').update(signString).digest('hex');
 
     return c.json({
       signature,
