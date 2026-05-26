@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Mail, Smartphone, ShieldCheck, RefreshCw, KeyRound } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
@@ -9,17 +9,20 @@ import { cn } from "../../utils/cn";
 import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
 import { AppleAuthButton } from "../../components/auth/AppleAuthButton";
 import { CinematicLogo } from "../../components/ui/CinematicLogo";
+import { apiClient } from "../../utils/apiClient";
+import { toast } from "react-hot-toast";
 
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingEmail, setOnboardingEmail] = useState("");
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithOtp, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const premiumMessage = searchParams.get("message");
@@ -40,6 +43,129 @@ export function LoginPage() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const [loginMode, setLoginMode] = useState<"password" | "otp">("password");
+  const [otpMethod, setOtpMethod] = useState<"email" | "sms">("email");
+  const [otpStep, setOtpStep] = useState<1 | 2>(1);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+  
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = useCallback(() => {
+    setCountdown(60);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setError("");
+    setIsSendingOtp(true);
+    setDevOtp(null);
+    try {
+      if (otpMethod === "email") {
+        if (!email) throw new Error("Email address is required.");
+        const res = await apiClient.post<any>("/auth/send-email-otp", { email });
+        if (res.devOtp) {
+          setDevOtp(res.devOtp);
+          toast.success(`[Test Mode] OTP: ${res.devOtp}`, { duration: 8000 });
+        } else {
+          toast.success("Verification code sent successfully!");
+        }
+      } else {
+        if (!phone) throw new Error("Mobile number is required.");
+        const res = await apiClient.post<any>("/auth/send-mobile-otp", { phone });
+        if (res.devOtp) {
+          setDevOtp(res.devOtp);
+          toast.success(`[Test Mode] OTP: ${res.devOtp}`, { duration: 8000 });
+        } else {
+          toast.success("Verification code sent successfully!");
+        }
+      }
+      setOtpStep(2);
+      startCountdown();
+    } catch (err: any) {
+      setError(err.message || "Failed to send verification code. Please try again.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyAndLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    const code = otp.join("");
+    if (code.length < 6) {
+      setError("Please enter the complete 6-digit verification code.");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      await loginWithOtp({
+        otp: code,
+        email: otpMethod === "email" ? email : undefined,
+        phone: otpMethod === "sms" ? phone : undefined,
+        otpType: otpMethod === "email" ? "email" : "mobile"
+      });
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        navigate(decodeURIComponent(redirectUrl));
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      setError(err.message || "Invalid or expired verification code.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      const pastedData = value.slice(0, 6).split("");
+      const newOtp = [...otp];
+      pastedData.forEach((char, idx) => {
+        if (index + idx < 6) newOtp[index + idx] = char;
+      });
+      setOtp(newOtp);
+      const nextIndex = Math.min(index + pastedData.length, 5);
+      otpRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,44 +355,210 @@ export function LoginPage() {
                   {error}
                 </p>
               )}
+            </motion.div>            {/* Login Mode Switcher */}
+            <motion.div variants={itemVariant} className="flex p-1 bg-sand-200/50 rounded-2xl mb-6">
+              <button
+                type="button"
+                onClick={() => { setLoginMode("password"); setError(""); }}
+                className={cn(
+                  "flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2",
+                  loginMode === "password"
+                    ? "bg-white text-navy-950 shadow-sm"
+                    : "text-navy-800/60 hover:text-navy-950"
+                )}
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                Password
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginMode("otp"); setError(""); }}
+                className={cn(
+                  "flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2",
+                  loginMode === "otp"
+                    ? "bg-white text-navy-950 shadow-sm"
+                    : "text-navy-800/60 hover:text-navy-950"
+                )}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                OTP Code
+              </button>
             </motion.div>
 
-            <motion.form variants={itemVariant} className="space-y-3" onSubmit={handleLogin}>
-              <Input 
-                label="Email Address" 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-              />
-              <Input 
-                label="Password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
+            {loginMode === "password" ? (
+              <motion.form variants={itemVariant} className="space-y-3" onSubmit={handleLogin}>
+                <Input 
+                  label="Email Address" 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
+                <Input 
+                  label="Password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
 
-              <div className="flex items-center justify-between py-1">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" className="w-3 h-3 rounded border-sand-300 text-gold-500 focus:ring-gold-400 transition-colors" />
-                  <span className="text-[10px] font-medium text-navy-800/60 group-hover:text-navy-950 transition-colors">Remember me</span>
-                </label>
-                <Link to="/forgot-password" className="text-[10px] font-bold text-gold-600 hover:text-sunset-500 transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
+                <div className="flex items-center justify-between py-1">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" className="w-3 h-3 rounded border-sand-300 text-gold-500 focus:ring-gold-400 transition-colors" />
+                    <span className="text-[10px] font-medium text-navy-800/60 group-hover:text-navy-950 transition-colors">Remember me</span>
+                  </label>
+                  <Link to="/forgot-password" className="text-[10px] font-bold text-gold-600 hover:text-sunset-500 transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
 
-              <div className="flex justify-center pt-2">
-                <Button 
-                  type="submit" 
-                  className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block" 
-                  isLoading={isLoading}
+                <div className="flex justify-center pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block" 
+                    isLoading={isLoading}
+                  >
+                    Sign In
+                  </Button>
+                </div>
+              </motion.form>
+            ) : otpStep === 1 ? (
+              <motion.form 
+                variants={itemVariant} 
+                className="space-y-4" 
+                onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}
+              >
+                {/* Verification Method Picker */}
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div
+                    onClick={() => setOtpMethod("email")}
+                    className={cn(
+                      "p-3 rounded-xl border cursor-pointer transition-all duration-300 flex items-center justify-center gap-2",
+                      otpMethod === "email"
+                        ? "border-gold-500 bg-gold-500/10 text-gold-700 shadow-sm"
+                        : "border-sand-200 hover:border-sand-300 text-navy-800/60"
+                    )}
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span className="text-xs font-bold">Gmail</span>
+                  </div>
+                  <div
+                    onClick={() => setOtpMethod("sms")}
+                    className={cn(
+                      "p-3 rounded-xl border cursor-pointer transition-all duration-300 flex items-center justify-center gap-2",
+                      otpMethod === "sms"
+                        ? "border-gold-500 bg-gold-500/10 text-gold-700 shadow-sm"
+                        : "border-sand-200 hover:border-sand-300 text-navy-800/60"
+                    )}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span className="text-xs font-bold">SMS / Mobile</span>
+                  </div>
+                </div>
+
+                {otpMethod === "email" ? (
+                  <Input 
+                    label="Email Address" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required 
+                  />
+                ) : (
+                  <Input 
+                    label="Mobile Number (10 digits)" 
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="9876543210"
+                    required 
+                  />
+                )}
+
+                <div className="flex justify-center pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block" 
+                    isLoading={isSendingOtp}
+                  >
+                    Send Verification Code
+                  </Button>
+                </div>
+              </motion.form>
+            ) : (
+              <motion.form 
+                variants={itemVariant} 
+                className="space-y-4" 
+                onSubmit={handleVerifyAndLogin}
+              >
+                <div className="text-center">
+                  <p className="text-xs text-navy-800/60 mb-2">
+                    Enter the 6-digit code sent to{" "}
+                    <span className="font-bold text-navy-950">
+                      {otpMethod === "email" ? email : `+91 ${phone}`}
+                    </span>
+                  </p>
+                  
+                  {devOtp && (
+                    <div className="inline-block bg-gold-500/10 border border-gold-500/20 px-3 py-1 rounded-full text-[10px] text-gold-800 font-bold mb-4 animate-pulse">
+                      Test Mode OTP: {devOtp}
+                    </div>
+                  )}
+                </div>
+
+                {/* 6 Digit Input boxes */}
+                <div className="flex justify-between gap-2 max-w-xs mx-auto my-6">
+                  {otp.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => { otpRefs.current[idx] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      className="w-10 h-12 text-center text-lg font-bold bg-white border border-sand-200 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 rounded-xl transition-all shadow-sm"
+                    />
+                  ))}
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block" 
+                    isLoading={isLoading}
+                  >
+                    Verify & Sign In
+                  </Button>
+                </div>
+
+                <div className="text-center mt-4">
+                  {countdown > 0 ? (
+                    <p className="text-xs text-navy-800/40">Resend code in {countdown}s</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSendOtp()}
+                      className="text-xs font-bold text-gold-600 hover:text-sunset-500 transition-colors flex items-center justify-center gap-1.5 mx-auto"
+                      disabled={isSendingOtp}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Resend Code
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setOtpStep(1)}
+                  className="text-xs font-bold text-navy-800/40 hover:text-navy-950 transition-colors block mx-auto mt-2"
                 >
-                  Sign In
-                </Button>
-              </div>
-            </motion.form>
+                  Change Email / Mobile
+                </button>
+              </motion.form>
+            )}
 
             <motion.div variants={itemVariant} className="mt-8">
               <div className="relative flex items-center py-4">

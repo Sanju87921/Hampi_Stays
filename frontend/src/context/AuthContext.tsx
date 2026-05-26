@@ -24,6 +24,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<any>;
+  loginWithOtp: (payload: { otp: string, email?: string, phone?: string, otpType: "email" | "mobile" }) => Promise<any>;
   loginWithGoogle: (credential: string, role?: UserRole) => Promise<any>;
   loginWithApple: (response: any, role?: UserRole) => Promise<any>;
   register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
@@ -132,6 +133,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithOtp = async (payload: { otp: string, email?: string, phone?: string, otpType: "email" | "mobile" }) => {
+    setIsLoading(true);
+    try {
+      const data = await apiClient.post<any>('/auth/verify-otp', payload);
+      if (data.token && data.user) {
+        localStorage.setItem("hampi-token", data.token);
+        localStorage.setItem("hampi-user", JSON.stringify(data.user));
+        setUser(data.user);
+        _setShowAuthModal(false);
+      }
+      setIsLoading(false);
+      return data;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
   const loginWithGoogle = async (credential: string, role?: UserRole) => {
     setIsLoading(true);
     try {
@@ -225,6 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isVerifying,
       isAuthenticated: !!user && !isVerifying, 
       login, 
+      loginWithOtp,
       loginWithGoogle, 
       loginWithApple, 
       logout, 

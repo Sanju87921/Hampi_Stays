@@ -261,7 +261,22 @@ app.post('/auth/register', async (c) => {
     const passwordHash = await bcrypt.hash(password, salt);
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({ data: { email: lowerEmail, name, passwordHash, role: role || 'TRAVELLER', phone } });
-      if (role === 'RESORT_OWNER') await tx.resortOwner.create({ data: { userId: newUser.id, businessName: `${name}'s Portfolio` } });
+      if (role === 'RESORT_OWNER') {
+        await tx.resortOwner.create({ data: { userId: newUser.id, businessName: `${name}'s Portfolio` } });
+      }
+      if (role === 'GUIDE') {
+        await tx.guideProfile.create({
+          data: {
+            userId: newUser.id,
+            bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+            specialties: ["Architecture", "History"],
+            languages: ["English", "Kannada"],
+            pricePerDay: 2500,
+            pricePerHour: 500,
+            yearsExperience: 0,
+          },
+        });
+      }
       return newUser;
     });
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });

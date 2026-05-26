@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
 import prisma from '../utils/prisma.js';
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -125,9 +126,32 @@ export const verifyOtp = async (req, res, next) => {
     await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
 
     const targetUserId = userId || record.userId;
+    let user;
     if (targetUserId) {
       const updateData = otpType === 'email' ? { isEmailVerified: true } : { isMobileVerified: true };
-      await prisma.user.update({ where: { id: targetUserId }, data: updateData });
+      user = await prisma.user.update({ where: { id: targetUserId }, data: updateData });
+    } else if (otpType === 'email' && email) {
+      const emailLower = email.toLowerCase();
+      user = await prisma.user.findUnique({ where: { email: emailLower } });
+      if (user) {
+        user = await prisma.user.update({ where: { id: user.id }, data: { isEmailVerified: true } });
+      }
+    } else if (phone) {
+      const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
+      user = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+      if (user) {
+        user = await prisma.user.update({ where: { id: user.id }, data: { isMobileVerified: true } });
+      }
+    }
+
+    if (user) {
+      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      return res.json({
+        success: true,
+        verified: true,
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus }
+      });
     }
 
     res.json({ success: true, verified: true });
