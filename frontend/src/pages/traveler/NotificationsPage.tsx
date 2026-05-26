@@ -28,7 +28,7 @@ export function NotificationsPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setNotifications(data);
+          setNotifications(Array.isArray(data) ? data : []);
         }
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
@@ -49,27 +49,30 @@ export function NotificationsPage() {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setNotifications(prev => (Array.isArray(prev) ? prev.map(n => n.id === id ? { ...n, isRead: true } : n) : []));
     } catch (err) {
       console.error(err);
     }
   };
 
-  const getIconAndStyle = (type: string) => {
-    if (type.includes("UPCOMING_STAY")) {
+  const getIconAndStyle = (type: string = "") => {
+    const safeType = type || "";
+    if (safeType.includes("UPCOMING_STAY")) {
       return { icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" };
     }
-    if (type.includes("TRAVEL_PREP")) {
+    if (safeType.includes("TRAVEL_PREP")) {
       return { icon: Plane, color: "text-sky-600", bg: "bg-sky-50" };
     }
-    if (type.includes("CHECKIN_REMINDER")) {
+    if (safeType.includes("CHECKIN_REMINDER")) {
       return { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" };
     }
     return { icon: Bell, color: "text-gold-600", bg: "bg-gold-50" };
   };
 
   const formatTime = (dateString: string) => {
+    if (!dateString) return "Just now";
     const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "Just now";
     const now = new Date();
     const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
     if (diff < 60) return "Just now";
