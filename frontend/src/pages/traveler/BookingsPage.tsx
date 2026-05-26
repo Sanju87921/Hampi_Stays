@@ -362,7 +362,7 @@ export function BookingsPage() {
       <section className="relative h-[35vh] flex items-center mb-12 overflow-hidden bg-navy-950">
         <div className="absolute inset-0 opacity-40">
           <img
-            src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000"
+            src="https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000"
             className="w-full h-full object-cover"
             alt="Hampi landscape"
           />
@@ -442,7 +442,7 @@ export function BookingsPage() {
                 {/* Photo Section */}
                 <div className="w-full lg:w-96 h-64 lg:h-auto overflow-hidden shrink-0 relative">
                   <img
-                    src={booking.resort?.images?.[0] || 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000'}
+                    src={booking.resort?.images?.[0] || 'https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1000'}
                     alt={booking.resort?.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                   />

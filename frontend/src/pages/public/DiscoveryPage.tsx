@@ -25,7 +25,7 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const DISCOVERY_IMAGES = [
-  "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
@@ -89,7 +89,7 @@ export function DiscoveryPage() {
             x: 82,
             y: 24,
             description: "An architectural masterpiece famous for its iconic Stone Chariot, musical monolithic pillars, and stunning carvings depicting ancient Vijayanagara heritage.",
-            image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=1200",
+            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=1200",
             recommendedTours: ["Sunrise Raga Photography", "Stones That Sing Music Session"],
             nearbyResort: "Evolve Back Hampi"
           },
@@ -133,7 +133,7 @@ export function DiscoveryPage() {
             x: 65,
             y: 60,
             description: "A grand domed building used to house the royal state elephants of the Vijayanagara Empire, highlighting symmetrical chambers and beautiful central towers.",
-            image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1200",
+            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1200",
             recommendedTours: ["Royal Stables Photo Session", "Vijayanagara History Walk"],
             nearbyResort: "Evolve Back Hampi"
           },
@@ -425,7 +425,7 @@ export function DiscoveryPage() {
                     {/* Header Image */}
                     <div className="relative h-48 -mx-8 -mt-8 mb-6 overflow-hidden">
                       <img 
-                        src={poiErrors[selectedPOI.id] ? "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=1200" : selectedPOI.image} 
+                        src={poiErrors[selectedPOI.id] ? "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=1200" : selectedPOI.image} 
                         className="w-full h-full object-cover rounded-b-[2rem]" 
                         onError={() => setPoiErrors(prev => ({ ...prev, [selectedPOI.id]: true }))}
                         alt={selectedPOI.name}

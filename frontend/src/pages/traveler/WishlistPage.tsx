@@ -31,11 +31,11 @@ export function WishlistPage() {
               >
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=800"}
+                    src={resort.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=800"}
                     alt={resort.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=800";
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=800";
                     }}
                   />
                   <button

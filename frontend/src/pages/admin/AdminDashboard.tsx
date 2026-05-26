@@ -449,7 +449,7 @@ export function AdminDashboard() {
       <div className="flex flex-col lg:flex-row">
         <div className="lg:w-72 h-48 lg:h-auto relative">
           <img 
-            src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa"} 
+            src={resort.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42"} 
             className="w-full h-full object-cover rounded-[2.5rem]" 
             alt={resort.name}
           />

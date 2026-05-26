@@ -32,7 +32,7 @@ export function HampiGuidePage() {
       {/* Hero Section */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <img 
-          src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
+          src="https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000" 
           className="absolute inset-0 w-full h-full object-cover scale-105"
           alt="Hampi Heritage"
         />

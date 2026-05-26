@@ -283,7 +283,7 @@ export function CheckoutSuccessPage() {
                   <h3 className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest mb-4">Resort Details</h3>
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-sm">
-                      <img src={booking?.resort?.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa"} alt="Resort" className="w-full h-full object-cover" />
+                      <img src={booking?.resort?.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42"} alt="Resort" className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <h4 className="text-xl font-serif font-bold text-navy-950">{booking?.resort?.name}</h4>

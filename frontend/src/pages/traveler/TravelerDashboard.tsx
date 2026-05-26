@@ -217,7 +217,7 @@ export function TravelerDashboard() {
     resortName: bookings[0].resort?.name || "Resort",
     dates: `${new Date(bookings[0].checkIn).toLocaleDateString()} - ${new Date(bookings[0].checkOut).toLocaleDateString()}`,
     status: "Confirmed",
-    image: bookings[0].resort?.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000",
+    image: bookings[0].resort?.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1000",
     location: bookings[0].resort?.locationArea || "Hampi",
   } : null;
 
@@ -556,7 +556,7 @@ export function TravelerDashboard() {
                     <div className="p-6 border-b border-sand-100 text-center bg-white/40">
                       <div className="w-20 h-20 mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white mb-3">
                         <img 
-                          src={activeMessageBooking.resort?.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000"} 
+                          src={activeMessageBooking.resort?.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1000"} 
                           alt={activeMessageBooking.resort?.name} 
                           className="w-full h-full object-cover"
                         />

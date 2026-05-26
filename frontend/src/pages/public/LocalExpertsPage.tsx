@@ -13,7 +13,7 @@ import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 
 const EXPERT_IMAGES = [
-  "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000",
   "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000",
   "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?auto=format&fit=crop&q=80&w=2000",
   "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?auto=format&fit=crop&q=80&w=2000"
@@ -487,7 +487,7 @@ export function LocalExpertsPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-20" />
               <img 
-                src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
+                src="https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000" 
                 className="w-80 h-80 object-cover rounded-[3rem] shadow-2xl rotate-3"
                 alt="Hampi Heritage"
               />
