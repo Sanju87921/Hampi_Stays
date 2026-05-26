@@ -245,9 +245,10 @@ app.get('/settings', async (c) => {
 });
 
 // Authentication
+// Authentication
 app.post('/auth/register', async (c) => {
   const prisma = getPrisma(c.env);
-  const { name, email, password, role, phone } = await c.req.json();
+  const { name, email, password, role, phone, verificationType } = await c.req.json();
   const lowerEmail = email.toLowerCase();
   try {
     const settings = await prisma.systemSettings.findFirst();
@@ -257,31 +258,93 @@ app.post('/auth/register', async (c) => {
 
     const existing = await prisma.user.findUnique({ where: { email: lowerEmail } });
     if (existing) return c.json({ error: 'Email already registered' }, 400);
+
+    const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+      if (existingPhone) {
+        return c.json({ error: 'Phone number already registered' }, 400);
+      }
+    }
+
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(password, salt);
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({ data: { email: lowerEmail, name, passwordHash, role: role || 'TRAVELLER', phone } });
-      if (role === 'RESORT_OWNER') {
-        await tx.resortOwner.create({ data: { userId: newUser.id, businessName: `${name}'s Portfolio` } });
+
+    // Upsert into pending verifications
+    await prisma.pendingVerification.upsert({
+      where: { email: lowerEmail },
+      update: {
+        name,
+        phone: normalizedPhone,
+        passwordHash,
+        role: role || 'TRAVELLER',
+        otpHash,
+        otpType: verificationType || 'email',
+        expiresAt,
+        attempts: 0,
+        createdAt: new Date()
+      },
+      create: {
+        email: lowerEmail,
+        name,
+        phone: normalizedPhone,
+        passwordHash,
+        role: role || 'TRAVELLER',
+        otpHash,
+        otpType: verificationType || 'email',
+        expiresAt
       }
-      if (role === 'GUIDE') {
-        await tx.guideProfile.create({
-          data: {
-            userId: newUser.id,
-            bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
-            specialties: ["Architecture", "History"],
-            languages: ["English", "Kannada"],
-            pricePerDay: 2500,
-            pricePerHour: 500,
-            yearsExperience: 0,
-          },
-        });
-      }
-      return newUser;
     });
-    const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-    const profileCompletionStatus = computeProfileCompletion(user);
-    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } }, 201);
+
+    // Send OTP
+    if (verificationType === 'sms' && normalizedPhone) {
+      if (c.env.TWILIO_ACCOUNT_SID && c.env.TWILIO_AUTH_TOKEN) {
+        c.executionCtx.waitUntil(
+          (async () => {
+            try {
+              const twilio = await import('twilio');
+              const twilioClient = twilio.default(c.env.TWILIO_ACCOUNT_SID, c.env.TWILIO_AUTH_TOKEN);
+              await twilioClient.messages.create({
+                body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes.`,
+                from: c.env.TWILIO_PHONE_NUMBER,
+                to: `+91${normalizedPhone}`
+              });
+            } catch (err) {
+              console.error("Twilio send failed:", err);
+            }
+          })()
+        );
+      }
+    } else {
+      if (c.env.RESEND_API_KEY) {
+        const resend = new Resend(c.env.RESEND_API_KEY);
+        const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
+        c.executionCtx.waitUntil(
+          resend.emails.send({
+            from: emailFrom,
+            to: lowerEmail,
+            subject: `${otp} – Your HampiStays Verification Code`,
+            html: `<h1>Your verification code is ${otp}</h1>`
+          }).catch(err => console.error("Async email send failed:", err))
+        );
+      }
+    }
+
+    const isTestEmail = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test');
+    const isTestPhone = normalizedPhone === '9876543210' || normalizedPhone.startsWith('99999');
+    const isTest = isTestEmail || isTestPhone;
+
+    return c.json({
+      success: true,
+      status: 'pending_verification',
+      message: `Verification code sent via ${verificationType || 'email'}.`,
+      devOtp: (c.env.NODE_ENV !== 'production' || isTest) ? otp : undefined
+    });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -317,6 +380,17 @@ app.post('/auth/login', async (c) => {
     if (!isMatch) {
       return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
     }
+
+    // Strict verification check
+    if (!user.isEmailVerified && !user.isMobileVerified) {
+      return c.json({
+        error: 'Please verify your account before continuing.',
+        code: 'UNVERIFIED_ACCOUNT',
+        email: user.email,
+        phone: user.phone
+      }, 403);
+    }
+
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
     const profileCompletionStatus = computeProfileCompletion(user);
     return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
@@ -497,7 +571,9 @@ app.post('/auth/google', async (c) => {
             name: payload.name || 'Google Traveler',
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
             role: role || 'TRAVELLER',
-            avatar: payload.picture
+            avatar: payload.picture,
+            isEmailVerified: true,
+            verificationCompletedAt: new Date()
           }
         });
 
@@ -567,7 +643,9 @@ app.post('/auth/apple', async (c) => {
             email: userEmail,
             name: name,
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
-            role: role || 'TRAVELLER'
+            role: role || 'TRAVELLER',
+            isEmailVerified: true,
+            verificationCompletedAt: new Date()
           }
         });
 
@@ -658,22 +736,36 @@ app.post('/auth/send-otp', async (c) => {
 
 app.post('/auth/send-email-otp', async (c) => {
   const prisma = getPrisma(c.env);
-  const { email, userId } = await c.req.json();
+  const { email } = await c.req.json();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return c.json({ error: 'A valid email address is required.' }, 400);
   }
+  const lowerEmail = email.toLowerCase();
   try {
-    await prisma.otpVerification.deleteMany({
-      where: { email, otpType: 'email', verified: false }
-    });
+    const userExists = await prisma.user.findUnique({ where: { email: lowerEmail } });
+    const pendingExists = await prisma.pendingVerification.findUnique({ where: { email: lowerEmail } });
+
+    if (!userExists && !pendingExists) {
+      return c.json({ error: 'Email address not registered or pending registration.' }, 404);
+    }
 
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpHash = await bcrypt.hash(otp, 12);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    await prisma.otpVerification.create({
-      data: { userId: userId || null, email, otpHash, otpType: 'email', expiresAt }
-    });
+    if (pendingExists) {
+      await prisma.pendingVerification.update({
+        where: { email: lowerEmail },
+        data: { otpHash, otpType: 'email', expiresAt, attempts: 0 }
+      });
+    } else {
+      await prisma.otpVerification.deleteMany({
+        where: { email: lowerEmail, otpType: 'email', verified: false }
+      });
+      await prisma.otpVerification.create({
+        data: { email: lowerEmail, otpHash, otpType: 'email', expiresAt, userId: userExists.id }
+      });
+    }
 
     if (c.env.RESEND_API_KEY) {
       const resend = new Resend(c.env.RESEND_API_KEY);
@@ -681,17 +773,17 @@ app.post('/auth/send-email-otp', async (c) => {
       c.executionCtx.waitUntil(
         resend.emails.send({
           from: emailFrom,
-          to: email,
+          to: lowerEmail,
           subject: `${otp} – Your HampiStays Verification Code`,
           html: `<h1>Your verification code is ${otp}</h1>`
         }).catch(err => console.error("Async email send failed:", err))
       );
     }
 
-    const isTestAccount = email.endsWith('@example.com') || email.includes('test');
+    const isTestAccount = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test');
     return c.json({ 
       success: true, 
-      message: `Verification code sent to ${email}`,
+      message: `Verification code sent to ${lowerEmail}`,
       devOtp: (c.env.NODE_ENV !== 'production' || isTestAccount) ? otp : undefined 
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -699,23 +791,36 @@ app.post('/auth/send-email-otp', async (c) => {
 
 app.post('/auth/send-mobile-otp', async (c) => {
   const prisma = getPrisma(c.env);
-  const { phone, userId } = await c.req.json();
+  const { phone } = await c.req.json();
   if (!phone || !/^[6-9]\d{9}$/.test(phone.replace(/\D/g, '').slice(-10))) {
     return c.json({ error: 'A valid 10-digit Indian mobile number is required.' }, 400);
   }
   const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
   try {
-    await prisma.otpVerification.deleteMany({
-      where: { phone: normalizedPhone, otpType: 'mobile', verified: false }
-    });
+    const userExists = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+    const pendingExists = await prisma.pendingVerification.findFirst({ where: { phone: normalizedPhone } });
+
+    if (!userExists && !pendingExists) {
+      return c.json({ error: 'Mobile number not registered or pending registration.' }, 404);
+    }
 
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpHash = await bcrypt.hash(otp, 12);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    await prisma.otpVerification.create({
-      data: { userId: userId || null, phone: normalizedPhone, otpHash, otpType: 'mobile', expiresAt }
-    });
+    if (pendingExists) {
+      await prisma.pendingVerification.update({
+        where: { id: pendingExists.id },
+        data: { otpHash, otpType: 'mobile', expiresAt, attempts: 0 }
+      });
+    } else {
+      await prisma.otpVerification.deleteMany({
+        where: { phone: normalizedPhone, otpType: 'mobile', verified: false }
+      });
+      await prisma.otpVerification.create({
+        data: { phone: normalizedPhone, otpHash, otpType: 'mobile', expiresAt, userId: userExists.id }
+      });
+    }
 
     if (c.env.TWILIO_ACCOUNT_SID && c.env.TWILIO_AUTH_TOKEN) {
       c.executionCtx.waitUntil(
@@ -746,53 +851,70 @@ app.post('/auth/send-mobile-otp', async (c) => {
 
 app.post('/auth/verify-otp', async (c) => {
   const prisma = getPrisma(c.env);
-  const { otp, email, phone, otpType, userId } = await c.req.json();
+  const { otp, email, phone, otpType } = await c.req.json();
+  const lowerEmail = email?.toLowerCase();
+  const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
   try {
-    const whereClause = otpType === 'email' || email
-      ? { email, otpType: 'email', verified: false }
-      : { phone: phone?.replace(/\D/g, '').slice(-10), otpType: 'mobile', verified: false };
-
-    const record = await prisma.otpVerification.findFirst({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' }
+    // 1. Check PendingVerification first (Registration Flow)
+    const pending = await prisma.pendingVerification.findFirst({
+      where: lowerEmail ? { email: lowerEmail } : { phone: normalizedPhone }
     });
 
-    if (!record || new Date() > record.expiresAt || record.attempts >= 5) {
-      return c.json({ error: 'Invalid or expired OTP. Please request a new code.' }, 400);
-    }
+    if (pending) {
+      if (new Date() > pending.expiresAt) {
+        return c.json({ error: 'Verification code has expired. Please request a new code.' }, 400);
+      }
+      if (pending.attempts >= 5) {
+        return c.json({ error: 'Too many failed attempts. Please request a new verification code.' }, 400);
+      }
 
-    const isValid = await bcrypt.compare(otp, record.otpHash);
-    if (!isValid) {
-      await prisma.otpVerification.update({
-        where: { id: record.id },
-        data: { attempts: { increment: 1 } }
+      const isValid = await bcrypt.compare(otp, pending.otpHash);
+      if (!isValid) {
+        await prisma.pendingVerification.update({
+          where: { id: pending.id },
+          data: { attempts: { increment: 1 } }
+        });
+        return c.json({ error: 'Invalid verification code.' }, 400);
+      }
+
+      // Valid OTP! Create user in transaction
+      const user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: pending.email,
+            name: pending.name,
+            passwordHash: pending.passwordHash,
+            role: pending.role,
+            phone: pending.phone || null,
+            isEmailVerified: pending.otpType === 'email',
+            isMobileVerified: pending.otpType === 'mobile',
+            verificationCompletedAt: new Date()
+          }
+        });
+
+        if (pending.role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: { userId: newUser.id, businessName: `${pending.name}'s Portfolio` }
+          });
+        } else if (pending.role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            }
+          });
+        }
+        return newUser;
       });
-      return c.json({ error: 'Invalid code.' }, 400);
-    }
 
-    await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
+      // Cleanup pending verification
+      await prisma.pendingVerification.delete({ where: { id: pending.id } });
 
-    const targetUserId = userId || record.userId;
-    let user;
-    if (targetUserId) {
-      const updateData = otpType === 'mobile' || phone ? { isMobileVerified: true } : { isEmailVerified: true };
-      await prisma.user.update({ where: { id: targetUserId }, data: updateData });
-      user = await prisma.user.findUnique({ where: { id: targetUserId } });
-    } else if (otpType === 'mobile' && phone) {
-      const normalizedPhone = phone?.replace(/\D/g, '').slice(-10);
-      user = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
-      if (user) {
-        await prisma.user.update({ where: { id: user.id }, data: { isMobileVerified: true } });
-      }
-    } else if (email) {
-      const emailLower = email?.toLowerCase();
-      user = await prisma.user.findUnique({ where: { email: emailLower } });
-      if (user) {
-        await prisma.user.update({ where: { id: user.id }, data: { isEmailVerified: true } });
-      }
-    }
-
-    if (user) {
       const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
       return c.json({
         success: true,
@@ -805,12 +927,76 @@ app.post('/auth/verify-otp', async (c) => {
           role: user.role,
           avatar: user.avatar,
           phone: user.phone,
-          location: user.location
+          location: user.location,
+          kycStatus: user.kycStatus || 'NOT_SUBMITTED'
         }
       });
     }
 
-    return c.json({ success: true, verified: true });
+    // 2. Otherwise check OtpVerification (Login / Existing User Flow)
+    const whereClause = otpType === 'email' || lowerEmail
+      ? { email: lowerEmail, otpType: 'email', verified: false }
+      : { phone: normalizedPhone, otpType: 'mobile', verified: false };
+
+    const record = await prisma.otpVerification.findFirst({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!record || new Date() > record.expiresAt || record.attempts >= 5) {
+      return c.json({ error: 'Invalid or expired verification code. Please request a new code.' }, 400);
+    }
+
+    const isValid = await bcrypt.compare(otp, record.otpHash);
+    if (!isValid) {
+      await prisma.otpVerification.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } }
+      });
+      return c.json({ error: 'Invalid verification code.' }, 400);
+    }
+
+    await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
+
+    let user;
+    if (lowerEmail) {
+      user = await prisma.user.findUnique({ where: { email: lowerEmail } });
+      if (user) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { isEmailVerified: true, verificationCompletedAt: new Date() }
+        });
+      }
+    } else if (normalizedPhone) {
+      user = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+      if (user) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { isMobileVerified: true, verificationCompletedAt: new Date() }
+        });
+      }
+    }
+
+    if (!user) {
+      return c.json({ error: 'User account not found.' }, 404);
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+    return c.json({
+      success: true,
+      verified: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
+      }
+    });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -2463,10 +2649,31 @@ async function processUpcomingStays(env) {
   }
 }
 
+async function cleanupPendingVerifications(env) {
+  const prisma = getPrisma(env);
+  try {
+    const expired = await prisma.pendingVerification.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date()
+        }
+      }
+    });
+    if (expired.count > 0) {
+      console.log(`Cleaned up ${expired.count} expired pending registrations.`);
+    }
+  } catch (error) {
+    console.error("Cleanup pending verifications task error:", error);
+  }
+}
+
 export default {
   fetch: app.fetch,
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(processUpcomingStays(env));
+    ctx.waitUntil(Promise.all([
+      processUpcomingStays(env),
+      cleanupPendingVerifications(env)
+    ]));
   }
 };
 

@@ -19,7 +19,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 export const register = async (req, res, next) => {
   try {
-    const { password, name, role, email: rawEmail, phone } = req.body;
+    const { password, name, role, email: rawEmail, phone, verificationType } = req.body;
     const email = rawEmail.toLowerCase();
     
     const settings = await prisma.systemSettings.findFirst();
@@ -32,53 +32,79 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    // High salt rounds for better protection
+    const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+      if (existingPhone) {
+        return res.status(400).json({ error: 'Phone number already registered' });
+      }
+    }
+
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 12);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
     const salt = await bcrypt.genSalt(12);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    const result = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email,
-          name,
-          passwordHash,
-          phone,
-          role: role || 'TRAVELLER',
-          kycStatus: 'NOT_SUBMITTED'
-        },
-      });
-
-      if (role === 'RESORT_OWNER') {
-        await tx.resortOwner.create({
-          data: {
-            userId: newUser.id,
-            businessName: `${name}'s Portfolio`,
-          },
-        });
+    // Upsert into pending verifications
+    await prisma.pendingVerification.upsert({
+      where: { email },
+      update: {
+        name,
+        phone: normalizedPhone,
+        passwordHash,
+        role: role || 'TRAVELLER',
+        otpHash,
+        otpType: verificationType || 'email',
+        expiresAt,
+        attempts: 0,
+        createdAt: new Date()
+      },
+      create: {
+        email,
+        name,
+        phone: normalizedPhone,
+        passwordHash,
+        role: role || 'TRAVELLER',
+        otpHash,
+        otpType: verificationType || 'email',
+        expiresAt
       }
-
-      if (role === 'GUIDE') {
-        await tx.guideProfile.create({
-          data: {
-            userId: newUser.id,
-            bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
-            specialties: ["Architecture", "History"],
-            languages: ["English", "Kannada"],
-            pricePerDay: 2500,
-            pricePerHour: 500,
-            yearsExperience: 0,
-          },
-        });
-      }
-
-      return newUser;
     });
 
-    const token = jwt.sign({ userId: result.id, role: result.role }, JWT_SECRET, { expiresIn: '7d' });
+    // Send OTP
+    if (verificationType === 'sms' && normalizedPhone) {
+      if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+        const twilio = await import('twilio');
+        const twilioClient = twilio.default(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        await twilioClient.messages.create({
+          body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: `+91${normalizedPhone}`
+        });
+      }
+    } else {
+      if (resend) {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: email,
+          subject: `${otp} – Your HampiStays Verification Code`,
+          html: `<h1>Your verification code is ${otp}</h1>`
+        });
+      }
+    }
 
-    res.status(201).json({
-      token,
-      user: { id: result.id, name: result.name, email: result.email, role: result.role }
+    const isTestEmail = email.endsWith('@example.com') || email.includes('test');
+    const isTestPhone = normalizedPhone === '9876543210' || normalizedPhone.startsWith('99999');
+    const isTest = isTestEmail || isTestPhone;
+
+    res.status(200).json({
+      success: true,
+      status: 'pending_verification',
+      message: `Verification code sent via ${verificationType || 'email'}.`,
+      devOtp: (process.env.NODE_ENV !== 'production' || isTest) ? otp : undefined
     });
   } catch (error) {
     next(error);
@@ -98,6 +124,16 @@ export const login = async (req, res, next) => {
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' });
+    }
+
+    // Strict verification check
+    if (!user.isEmailVerified && !user.isMobileVerified) {
+      return res.status(403).json({
+        error: 'Please verify your account before continuing.',
+        code: 'UNVERIFIED_ACCOUNT',
+        email: user.email,
+        phone: user.phone
+      });
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -148,7 +184,9 @@ export const googleAuth = async (req, res, next) => {
             name: payload.name || 'Google Traveler',
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
             role: role || 'TRAVELLER',
-            avatar: payload.picture
+            avatar: payload.picture,
+            isEmailVerified: true,
+            verificationCompletedAt: new Date()
           }
         });
 
@@ -218,7 +256,9 @@ export const appleAuth = async (req, res, next) => {
             email: userEmail,
             name: name,
             passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
-            role: role || 'TRAVELLER'
+            role: role || 'TRAVELLER',
+            isEmailVerified: true,
+            verificationCompletedAt: new Date()
           }
         });
 

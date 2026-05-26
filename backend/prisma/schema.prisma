@@ -24,6 +24,7 @@ model User {
   idType           String?
   isEmailVerified  Boolean           @default(false)
   isMobileVerified Boolean           @default(false)
+  verificationCompletedAt DateTime?
   kycStatus        String?           @default("NOT_SUBMITTED")
   location         String?
   bookings         Booking[]
@@ -371,4 +372,20 @@ enum ResortStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model PendingVerification {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String
+  phone            String
+  passwordHash     String
+  role             Role     @default(TRAVELLER)
+  otpHash          String
+  otpType          String   // "email" or "mobile"
+  expiresAt        DateTime
+  attempts         Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@map("pending_verifications")
 }

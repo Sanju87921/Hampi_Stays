@@ -26,7 +26,7 @@ export function RegisterPage() {
   const [error, setError] = useState("");
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
-  const { register, loginWithGoogle } = useAuth();
+  const { register, loginWithGoogle, loginWithOtp } = useAuth();
   const navigate = useNavigate();
   const premiumMessage = searchParams.get("message");
 
@@ -50,28 +50,31 @@ export function RegisterPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    email: emailParam ? decodeURIComponent(emailParam) : "",
+    email: emailParam || "",
     phone: "",
     password: "",
     confirmPassword: "",
-    terms: false,
+    terms: false
   });
 
+  const [verificationMethod, setVerificationMethod] = useState<"email" | "sms">("email");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [verificationMethod, setVerificationMethod] = useState<"email" | "sms" | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   const startCountdown = useCallback(() => {
-    setCountdown(60);
     if (countdownRef.current) clearInterval(countdownRef.current);
+    setCountdown(30);
     countdownRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { clearInterval(countdownRef.current!); return 0; }
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -102,9 +105,15 @@ export function RegisterPage() {
     setError("");
     try {
       if (method === "email") {
-        await apiClient.post('/auth/send-email-otp', { email: formData.email });
+        const res = await apiClient.post<any>('/auth/send-email-otp', { email: formData.email });
+        if (res?.devOtp) {
+          toast.success(`[Test Mode] Verification code: ${res.devOtp}`, { duration: 10000 });
+        }
       } else {
-        await apiClient.post('/auth/send-mobile-otp', { phone: formData.phone });
+        const res = await apiClient.post<any>('/auth/send-mobile-otp', { phone: formData.phone });
+        if (res?.devOtp) {
+          toast.success(`[Test Mode] Verification code: ${res.devOtp}`, { duration: 10000 });
+        }
       }
       startCountdown();
     } catch (err: any) {
@@ -118,7 +127,28 @@ export function RegisterPage() {
     setVerificationMethod(method);
     setOtp(["", "", "", "", "", ""]);
     setStep(4);
-    await sendOtp(method);
+    try {
+      setIsSendingOtp(true);
+      setError("");
+      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+      const res = await register(
+        formData.name,
+        formData.email,
+        formData.phone,
+        formData.password,
+        apiRole as any,
+        method
+      );
+      if (res?.devOtp) {
+        toast.success(`[Test Mode] Verification code: ${res.devOtp}`, { duration: 10000 });
+      }
+      startCountdown();
+    } catch (err: any) {
+      setError(err.message || 'Failed to send verification code');
+      setStep(3);
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -128,18 +158,11 @@ export function RegisterPage() {
       const enteredOtp = otp.join("");
       if (enteredOtp.length !== 6) throw new Error("Please enter the complete 6-digit code.");
 
-      // First register the user account
-      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
-      const regResult = await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
-      const registeredUserId = regResult?.user?.id;
-
-      // Then verify OTP against backend
-      await apiClient.post('/auth/verify-otp', {
+      await loginWithOtp({
         otp: enteredOtp,
         email: formData.email,
         phone: formData.phone,
-        otpType: verificationMethod,
-        userId: registeredUserId
+        otpType: verificationMethod === "sms" ? "mobile" : "email"
       });
 
       setVerifiedSuccess(true);

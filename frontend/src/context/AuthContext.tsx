@@ -27,7 +27,7 @@ interface AuthContextType {
   loginWithOtp: (payload: { otp: string, email?: string, phone?: string, otpType: "email" | "mobile" }) => Promise<any>;
   loginWithGoogle: (credential: string, role?: UserRole) => Promise<any>;
   loginWithApple: (response: any, role?: UserRole) => Promise<any>;
-  register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
+  register: (name: string, email: string, phone: string, password: string, role: UserRole, verificationType?: "email" | "sms") => Promise<any>;
   updateUser: (updatedUser: User) => void;
   refreshUser: () => Promise<void>;
   logout: () => void;
@@ -187,15 +187,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, phone: string, password: string, role: UserRole) => {
+  const register = async (name: string, email: string, phone: string, password: string, role: UserRole, verificationType: "email" | "sms" = "email") => {
     setIsLoading(true);
     try {
-      const data = await apiClient.post<any>('/auth/register', { name, email, phone, password, role });
-      localStorage.setItem("hampi-token", data.token);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      setUser(data.user);
+      const data = await apiClient.post<any>('/auth/register', { name, email, phone, password, role, verificationType });
       setIsLoading(false);
-      _setShowAuthModal(false);
       return data;
     } catch (err) {
       setIsLoading(false);
