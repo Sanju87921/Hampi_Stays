@@ -1,68 +1,128 @@
-import { motion } from "framer-motion";
-import { Bell, Info, ShieldCheck, Calendar, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Info, ShieldCheck, Calendar, Star, Plane, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
+import { useAuth } from "../../context/AuthContext";
 
 export function NotificationsPage() {
-  const notifications = [
-    {
-      id: 1,
-      title: "Booking Confirmed",
-      desc: "Your stay at Heritage Resort Hampi has been confirmed by the owner.",
-      time: "2 hours ago",
-      icon: ShieldCheck,
-      color: "text-green-600",
-      bg: "bg-green-50"
-    },
-    {
-      id: 2,
-      title: "Review Request",
-      desc: "How was your stay at Hampi Island? Share your experience with others.",
-      time: "1 day ago",
-      icon: Star,
-      color: "text-gold-600",
-      bg: "bg-gold-50"
-    },
-    {
-      id: 3,
-      title: "Trip Reminder",
-      desc: "Your upcoming trip to Matanga Hill is only 3 days away!",
-      time: "2 days ago",
-      icon: Calendar,
-      color: "text-blue-600",
-      bg: "bg-blue-50"
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { token } = useAuth();
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [token]);
+
+  const markAsRead = async (id: string, isRead: boolean) => {
+    if (isRead) return;
+    try {
+      await fetch(`${API_BASE_URL}/users/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getIconAndStyle = (type: string) => {
+    if (type.includes("UPCOMING_STAY")) {
+      return { icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" };
+    }
+    if (type.includes("TRAVEL_PREP")) {
+      return { icon: Plane, color: "text-sky-600", bg: "bg-sky-50" };
+    }
+    if (type.includes("CHECKIN_REMINDER")) {
+      return { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" };
+    }
+    return { icon: Bell, color: "text-gold-600", bg: "bg-gold-50" };
+  };
+
+  const formatTime = (dateString: string) => {
+    const d = new Date(dateString);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
+  };
 
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        <header className="mb-10">
-          <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Notifications</h1>
-          <p className="text-navy-950/50">Stay updated with your latest bookings and alerts.</p>
+        <header className="mb-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Notifications</h1>
+            <p className="text-navy-950/50">Stay updated with your latest bookings and alerts.</p>
+          </div>
+          {notifications.filter(n => !n.isRead).length > 0 && (
+            <div className="bg-gold-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+              {notifications.filter(n => !n.isRead).length} New
+            </div>
+          )}
         </header>
 
         <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden">
-          {notifications.length > 0 ? (
+          {isLoading ? (
+            <div className="p-20 text-center animate-pulse">
+              <div className="w-16 h-16 bg-sand-100 rounded-full mx-auto mb-4" />
+              <div className="h-4 bg-sand-100 rounded w-1/3 mx-auto mb-2" />
+              <div className="h-3 bg-sand-100 rounded w-1/4 mx-auto" />
+            </div>
+          ) : notifications.length > 0 ? (
             <div className="divide-y divide-sand-50">
-              {notifications.map((n, i) => (
-                <motion.div
-                  key={n.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="p-8 flex items-start gap-6 hover:bg-sand-50/50 transition-colors group cursor-pointer"
-                >
-                  <div className={`w-12 h-12 rounded-2xl ${n.bg} flex items-center justify-center shrink-0 border border-sand-100`}>
-                    <n.icon className={`w-6 h-6 ${n.color}`} />
-                  </div>
-                  <div className="flex-grow">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold text-navy-950">{n.title}</h3>
-                      <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">{n.time}</span>
-                    </div>
-                    <p className="text-sm text-navy-950/60 leading-relaxed">{n.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
+              <AnimatePresence>
+                {notifications.map((n, i) => {
+                  const { icon: Icon, color, bg } = getIconAndStyle(n.type);
+                  return (
+                    <motion.div
+                      key={n.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => markAsRead(n.id, n.isRead)}
+                      className={`p-8 flex items-start gap-6 transition-all duration-300 group cursor-pointer ${n.isRead ? 'opacity-60 bg-white hover:bg-sand-50/30' : 'bg-sand-50/20 hover:bg-sand-50/60'}`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl ${bg} flex items-center justify-center shrink-0 border border-white shadow-sm relative`}>
+                        <Icon className={`w-6 h-6 ${color}`} />
+                        {!n.isRead && (
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`font-bold ${!n.isRead ? 'text-navy-950' : 'text-navy-950/70'}`}>{n.title}</h3>
+                          <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest shrink-0">{formatTime(n.createdAt)}</span>
+                        </div>
+                        <p className={`text-sm leading-relaxed ${!n.isRead ? 'text-navy-950/80 font-medium' : 'text-navy-950/50'}`}>
+                          {n.message}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="p-20 text-center">
@@ -78,7 +138,7 @@ export function NotificationsPage() {
         <div className="mt-8 p-6 bg-gold-50 border border-gold-100 rounded-3xl flex items-center gap-4">
           <Info className="w-5 h-5 text-gold-600 shrink-0" />
           <p className="text-xs text-navy-950/60 leading-relaxed">
-            <b>Pro Tip:</b> Enable browser notifications in your settings to get real-time alerts for booking confirmations and expert messages.
+            <b>Pro Tip:</b> Our digital concierge automatically monitors your upcoming stays and sends helpful preparations 7 days before your arrival.
           </p>
         </div>
       </div>

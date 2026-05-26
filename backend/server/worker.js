@@ -888,6 +888,23 @@ app.get('/users/notifications', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.patch('/users/notifications/:id/read', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const id = c.req.param('id');
+  try {
+    const notification = await prisma.notification.findUnique({ where: { id } });
+    if (!notification || notification.userId !== payload.userId) {
+      return c.json({ error: 'Notification not found' }, 404);
+    }
+    const updated = await prisma.notification.update({
+      where: { id },
+      data: { isRead: true }
+    });
+    return c.json(updated);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 app.get('/users/:id', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -2316,6 +2333,99 @@ app.onError((err, c) => {
   return c.json({ error: err.message || 'Internal Server Error' }, 500);
 });
 
-export default app;
+async function processUpcomingStays(env) {
+  const prisma = getPrisma(env);
+  try {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 8); // Look ahead up to 7+1 days
+
+    // We only care about CONFIRMED bookings coming up
+    const bookings = await prisma.booking.findMany({
+      where: {
+        status: 'CONFIRMED',
+        checkIn: {
+          gte: today,
+          lt: in7Days
+        }
+      },
+      include: { resort: { select: { name: true } } }
+    });
+
+    const notificationsToCreate = [];
+
+    for (const booking of bookings) {
+      const checkInDate = new Date(booking.checkIn);
+      checkInDate.setUTCHours(0, 0, 0, 0);
+      const diffTime = checkInDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      let typeKey = '';
+      let title = '';
+      let message = '';
+      
+      // We encode the uniqueness into the type field to avoid schema migrations
+      if (diffDays === 7) {
+        typeKey = `UPCOMING_STAY_BOOKING_${booking.id}_DAYS_7`;
+        title = 'Your Journey Awaits ✈️';
+        message = 'Your Hampi escape is getting closer. Time to start preparing for your immersive stay.';
+      } else if (diffDays === 5) {
+        typeKey = `UPCOMING_STAY_BOOKING_${booking.id}_DAYS_5`;
+        title = '5 Days to Sanctuary 🌿';
+        message = `You are 5 days away from your retreat at ${booking.resort.name}. Hampi weather will be warm during your stay. Light cotton clothing is recommended.`;
+      } else if (diffDays === 3) {
+        typeKey = `UPCOMING_STAY_BOOKING_${booking.id}_DAYS_3`;
+        title = 'Pack Your Essentials 🧳';
+        message = 'Your upcoming stay begins in 3 days. Pack your essentials and prepare for the journey.';
+      } else if (diffDays === 1) {
+        typeKey = `UPCOMING_STAY_BOOKING_${booking.id}_DAYS_1`;
+        title = 'See You Tomorrow 🌅';
+        message = `Tomorrow is your arrival day at ${booking.resort.name}. Safe travels.`;
+      } else if (diffDays === 0) {
+        typeKey = `UPCOMING_STAY_BOOKING_${booking.id}_DAYS_0`;
+        title = 'Welcome to Hampi 🏨';
+        message = 'Your sanctuary stay begins today. We are ready to welcome you.';
+      } else {
+        continue;
+      }
+
+      // Check for duplicates
+      const existing = await prisma.notification.findFirst({
+        where: {
+          userId: booking.userId,
+          type: typeKey
+        }
+      });
+
+      if (!existing) {
+        notificationsToCreate.push({
+          userId: booking.userId,
+          title,
+          message,
+          type: typeKey
+        });
+      }
+    }
+
+    if (notificationsToCreate.length > 0) {
+      await prisma.notification.createMany({
+        data: notificationsToCreate,
+        skipDuplicates: true
+      });
+      console.log(`Created ${notificationsToCreate.length} upcoming stay notifications.`);
+    }
+
+  } catch (error) {
+    console.error("Scheduled task error:", error);
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(processUpcomingStays(env));
+  }
+};
 
 

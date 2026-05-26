@@ -29,14 +29,16 @@ export function TravelerDashboard() {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showStayPassModal, setShowStayPassModal] = useState<Booking | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
       try {
-        const [bookingsData, wishlistData] = await Promise.all([
+        const [bookingsData, wishlistData, notificationsData] = await Promise.all([
           apiClient.get<Booking[]>(`/users/bookings`),
-          apiClient.get<any[]>(`/users/${user.id}/wishlist`)
+          apiClient.get<any[]>(`/users/${user.id}/wishlist`),
+          apiClient.get<any[]>(`/users/notifications`).catch(() => [])
         ]);
 
         const normalizedWishlist = (wishlistData || []).map((r: any) => ({
@@ -53,6 +55,9 @@ export function TravelerDashboard() {
 
         setBookings(bookingsData);
         setWishlist(normalizedWishlist);
+        if (notificationsData) {
+          setUnreadCount(notificationsData.filter((n: any) => !n.isRead).length);
+        }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -252,7 +257,7 @@ export function TravelerDashboard() {
             { name: "My Bookings", icon: ShoppingBag, path: "/dashboard/bookings" },
             { name: "Guest Inbox", icon: Mail, id: "inbox" },
             { name: "Wishlist", icon: Heart, path: "/dashboard/wishlist" },
-            { name: "Notifications", icon: Bell, path: "/dashboard/notifications" },
+            { name: "Notifications", icon: Bell, path: "/dashboard/notifications", badge: unreadCount },
             { name: "Profile", icon: User, path: "/dashboard/profile" },
           ].map((item) => {
             const isActive = item.id ? activeTab === item.id : location.pathname === item.path;
@@ -261,7 +266,7 @@ export function TravelerDashboard() {
                 key={item.name}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 relative",
                   isActive 
                     ? "bg-navy-950 text-white shadow-lg shadow-navy-950/20" 
                     : "text-navy-950/60 hover:bg-sand-100 hover:text-navy-950"
@@ -269,6 +274,11 @@ export function TravelerDashboard() {
               >
                 <item.icon className="w-5 h-5" />
                 {item.name}
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="absolute right-4 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             ) : (
               <button

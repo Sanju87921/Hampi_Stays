@@ -20,3 +20,6 @@ ENCRYPTION_KEY = "15193fa55735bb1bae85abf1eba39e815e6c5fd4ba2fbc633b438738faf051
 
 [dev]
 port = 5000
+
+[triggers]
+crons = ["0 * * * *"]
