@@ -106,8 +106,68 @@ const decryptGuide = (guide) => {
   return out;
 };
 
+// --- Edge Rate Limiting & Abuse Protection ---
+const rateLimitCache = new Map();
+
+const getClientIp = (c) => c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
+
+const createRateLimiter = (options = {}) => {
+  const windowMs = options.windowMs || 60 * 1000;
+  const maxRequests = options.maxRequests || 100;
+  
+  return async (c, next) => {
+    const ip = getClientIp(c);
+    const key = `${ip}:${options.name || 'global'}`;
+    const now = Date.now();
+    let record = rateLimitCache.get(key);
+    
+    if (!record) {
+      record = { count: 1, resetTime: now + windowMs };
+      rateLimitCache.set(key, record);
+    } else {
+      if (now > record.resetTime) {
+        record.count = 1;
+        record.resetTime = now + windowMs;
+      } else {
+        record.count++;
+      }
+    }
+
+    if (record.count > maxRequests) {
+      console.warn(`[ABUSE DETECTED] Rate limit exceeded for IP: ${ip} on limiter: ${options.name}`);
+      return c.json({ 
+        error: options.message || "Too many requests detected. Please wait a moment before trying again." 
+      }, 429);
+    }
+
+    // Clean up stale cache randomly (5% chance per request) to prevent isolate memory leaks
+    if (Math.random() < 0.05) {
+      for (const [k, v] of rateLimitCache.entries()) {
+        if (now > v.resetTime) rateLimitCache.delete(k);
+      }
+    }
+
+    await next();
+  };
+};
+
+const authLimiter = createRateLimiter({ name: 'auth', windowMs: 15 * 60 * 1000, maxRequests: 5, message: "Too many login attempts. Please wait 15 minutes." });
+const otpLimiter = createRateLimiter({ name: 'otp', windowMs: 10 * 60 * 1000, maxRequests: 3, message: "Too many OTP requests. Please wait 10 minutes." });
+const bookingLimiter = createRateLimiter({ name: 'booking', windowMs: 10 * 60 * 1000, maxRequests: 10, message: "Too many booking attempts. Please slow down." });
+const uploadLimiter = createRateLimiter({ name: 'upload', windowMs: 60 * 60 * 1000, maxRequests: 20, message: "Upload limit reached. Try again later." });
+const globalLimiter = createRateLimiter({ name: 'global', windowMs: 1 * 60 * 1000, maxRequests: 200, message: "Too many requests detected. Please wait a moment before trying again." });
+
 // --- Middleware ---
 app.use('*', logger());
+app.use('*', globalLimiter);
+app.use('/auth/login', authLimiter);
+app.use('/auth/register', authLimiter);
+app.use('/auth/send-otp', otpLimiter);
+app.use('/auth/verify-otp', otpLimiter);
+app.use('/auth/forgot-password', otpLimiter);
+app.use('/bookings', bookingLimiter);
+app.use('/upload/signature', uploadLimiter);
+
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
     origin: c.env.FRONTEND_URL || '*',
