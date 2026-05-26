@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Info, Calendar, Plane, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { apiClient } from "../../utils/apiClient";
 
 interface Notification {
   id: string;
@@ -16,39 +16,39 @@ interface Notification {
 export function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    let active = true;
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/users/notifications`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        if (isAuthenticated) {
+          const data = await apiClient.get<Notification[]>("/users/notifications");
+          if (active) {
+            setNotifications(Array.isArray(data) ? data : []);
           }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(Array.isArray(data) ? data : []);
+        } else {
+          await Promise.resolve();
         }
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
       } finally {
-        setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+        }
       }
     };
 
-    if (token) {
-      fetchNotifications();
-    }
-  }, [token]);
+    fetchNotifications();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
 
   const markAsRead = async (id: string, isRead: boolean) => {
     if (isRead) return;
     try {
-      await fetch(`${API_BASE_URL}/users/notifications/${id}/read`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      await apiClient.patch(`/users/notifications/${id}/read`);
       setNotifications(prev => (Array.isArray(prev) ? prev.map(n => n.id === id ? { ...n, isRead: true } : n) : []));
     } catch (err) {
       console.error(err);
