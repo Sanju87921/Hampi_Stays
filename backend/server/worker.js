@@ -330,8 +330,8 @@ app.post('/auth/forgot-password', async (c) => {
     if (c.env.RESEND_API_KEY) {
       const resend = new Resend(c.env.RESEND_API_KEY);
       const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
-      try {
-        await resend.emails.send({
+      c.executionCtx.waitUntil(
+        resend.emails.send({
           from: emailFrom,
           to: normalizedEmail,
           subject: 'Reset your HampiStays Password',
@@ -357,10 +357,8 @@ app.post('/auth/forgot-password', async (c) => {
               </div>
             </div>
           `
-        });
-      } catch (err) {
-        console.error('Failed to send reset email:', err);
-      }
+        }).catch(err => console.error('Failed to send async reset email:', err))
+      );
     }
 
     return c.json({
@@ -597,12 +595,14 @@ app.post('/auth/send-otp', async (c) => {
     if (c.env.RESEND_API_KEY) {
       const resend = new Resend(c.env.RESEND_API_KEY);
       const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
-      await resend.emails.send({
-        from: emailFrom,
-        to: email,
-        subject: `${otp} – Your HampiStays Verification Code`,
-        html: `<h1>Your verification code is ${otp}</h1>`
-      });
+      c.executionCtx.waitUntil(
+        resend.emails.send({
+          from: emailFrom,
+          to: email,
+          subject: `${otp} – Your HampiStays Verification Code`,
+          html: `<h1>Your verification code is ${otp}</h1>`
+        }).catch(err => console.error("Async email send failed:", err))
+      );
     }
 
     return c.json({ 
@@ -635,12 +635,14 @@ app.post('/auth/send-email-otp', async (c) => {
     if (c.env.RESEND_API_KEY) {
       const resend = new Resend(c.env.RESEND_API_KEY);
       const emailFrom = c.env.EMAIL_FROM || 'noreply@hampistays.com';
-      await resend.emails.send({
-        from: emailFrom,
-        to: email,
-        subject: `${otp} – Your HampiStays Verification Code`,
-        html: `<h1>Your verification code is ${otp}</h1>`
-      });
+      c.executionCtx.waitUntil(
+        resend.emails.send({
+          from: emailFrom,
+          to: email,
+          subject: `${otp} – Your HampiStays Verification Code`,
+          html: `<h1>Your verification code is ${otp}</h1>`
+        }).catch(err => console.error("Async email send failed:", err))
+      );
     }
 
     return c.json({ 
@@ -672,17 +674,21 @@ app.post('/auth/send-mobile-otp', async (c) => {
     });
 
     if (c.env.TWILIO_ACCOUNT_SID && c.env.TWILIO_AUTH_TOKEN) {
-      try {
-        const twilio = await import('twilio');
-        const twilioClient = twilio.default(c.env.TWILIO_ACCOUNT_SID, c.env.TWILIO_AUTH_TOKEN);
-        await twilioClient.messages.create({
-          body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes.`,
-          from: c.env.TWILIO_PHONE_NUMBER,
-          to: `+91${normalizedPhone}`
-        });
-      } catch (err) {
-        console.error("Twilio send failed:", err);
-      }
+      c.executionCtx.waitUntil(
+        (async () => {
+          try {
+            const twilio = await import('twilio');
+            const twilioClient = twilio.default(c.env.TWILIO_ACCOUNT_SID, c.env.TWILIO_AUTH_TOKEN);
+            await twilioClient.messages.create({
+              body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes.`,
+              from: c.env.TWILIO_PHONE_NUMBER,
+              to: `+91${normalizedPhone}`
+            });
+          } catch (err) {
+            console.error("Twilio async send failed:", err);
+          }
+        })()
+      );
     }
 
     return c.json({ 
@@ -1801,19 +1807,17 @@ app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
       include: { resort: true }
     });
 
-    // 3. Create Notification
-    try {
-      await prisma.notification.create({
+    // 3. Create Notification Asynchronously
+    c.executionCtx.waitUntil(
+      prisma.notification.create({
         data: {
           userId: booking.userId,
           title: 'Booking Confirmed!',
           message: `Payment successful for ${booking.resort.name}. Reference: ${ref}`,
           type: 'booking'
         }
-      });
-    } catch (notifErr) {
-      console.warn('Notification creation failed (non-critical):', notifErr.message);
-    }
+      }).catch(notifErr => console.warn('Async notification creation failed:', notifErr.message))
+    );
 
     return c.json({ success: true, booking });
   } catch (err) { 
@@ -1832,14 +1836,16 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       include: { resort: true }
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: booking.userId,
-        title: 'Booking Cancelled 😔',
-        message: `Your booking at ${booking.resort.name} has been cancelled successfully.`,
-        type: 'booking'
-      }
-    });
+    c.executionCtx.waitUntil(
+      prisma.notification.create({
+        data: {
+          userId: booking.userId,
+          title: 'Booking Cancelled 😔',
+          message: `Your booking at ${booking.resort.name} has been cancelled successfully.`,
+          type: 'booking'
+        }
+      }).catch(err => console.error("Async cancel notification failed:", err))
+    );
 
     return c.json(booking);
   } catch (err) { 
@@ -1858,14 +1864,16 @@ app.patch('/bookings/:id/status', authMiddleware, async (c) => {
       include: { resort: true }
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: booking.userId,
-        title: `Booking Status Update!`,
-        message: `Your booking at ${booking.resort.name} is now ${status}.`,
-        type: 'booking'
-      }
-    });
+    c.executionCtx.waitUntil(
+      prisma.notification.create({
+        data: {
+          userId: booking.userId,
+          title: `Booking Status Update!`,
+          message: `Your booking at ${booking.resort.name} is now ${status}.`,
+          type: 'booking'
+        }
+      }).catch(err => console.error("Async status notification failed:", err))
+    );
 
     return c.json(booking);
   } catch (err) { 
