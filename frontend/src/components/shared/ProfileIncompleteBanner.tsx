@@ -16,22 +16,29 @@ export function ProfileIncompleteBanner() {
     }
 
     const checkIncomplete = () => {
-      // 1. Check basic profile requirements (Everyone)
-      // Making avatar optional so users aren't perpetually prompted if they skip the photo
-      const hasBasicInfo = !!(user.phone);
-      
-      // 2. Check Role-Specific Requirements
+      // Use backend-computed profileCompletionStatus if available
+      if (user.profileCompletionStatus === 'COMPLETE') return false;
+
+      // 1. Strict Profile Requirements (No fields skipped)
+      const hasFullName = !!(user.name && user.name.trim() !== "");
+      const hasEmail = !!(user.email && user.email.trim() !== "");
+      const hasPhone = !!(user.phone && user.phone.trim() !== "");
+      const hasLocation = !!(user.location && user.location.trim() !== "");
+      const hasAvatar = !!(user.avatar && user.avatar.trim() !== "");
+
+      // 2. Role-Specific Validation
       if (user.role === 'RESORT_OWNER') {
-        // Owners need basic info + KYC submitted (PENDING or VERIFIED)
         const hasSubmittedKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
-        return !hasBasicInfo || !hasSubmittedKYC;
+        return !(hasFullName && hasEmail && hasPhone && hasLocation && hasAvatar && hasSubmittedKYC);
       }
 
       if (user.role === 'GUIDE') {
-        return !hasBasicInfo;
+        const hasSubmittedKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
+        return !(hasFullName && hasPhone && hasLocation && hasAvatar && hasSubmittedKYC);
       }
 
-      return !hasBasicInfo;
+      // TRAVELLER Requirements
+      return !(hasFullName && hasEmail && hasPhone && hasLocation && hasAvatar);
     };
 
     const isIncomplete = checkIncomplete();

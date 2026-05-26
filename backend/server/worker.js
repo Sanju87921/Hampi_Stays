@@ -265,9 +265,29 @@ app.post('/auth/register', async (c) => {
       return newUser;
     });
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } }, 201);
+    const profileCompletionStatus = computeProfileCompletion(user);
+    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } }, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
+
+// Helper: compute profile completion status based on role and fields
+function computeProfileCompletion(user) {
+  if (!user) return 'INCOMPLETE';
+  const name = user.name && user.name.trim();
+  const email = user.email && user.email.trim();
+  const phone = user.phone && user.phone.trim();
+  const location = user.location && user.location.trim();
+  const avatar = user.avatar && user.avatar.trim();
+  const hasKyc = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
+  if (user.role === 'TRAVELLER') {
+    return (name && email && phone && location && avatar) ? 'COMPLETE' : 'INCOMPLETE';
+  } else if (user.role === 'GUIDE') {
+    return (name && phone && location && avatar && hasKyc) ? 'COMPLETE' : 'INCOMPLETE';
+  } else if (user.role === 'RESORT_OWNER') {
+    return (name && email && phone && location && avatar && hasKyc) ? 'COMPLETE' : 'INCOMPLETE';
+  }
+  return (name && email) ? 'COMPLETE' : 'INCOMPLETE';
+}
 
 app.post('/auth/login', async (c) => {
   const prisma = getPrisma(c.env);
@@ -283,7 +303,8 @@ app.post('/auth/login', async (c) => {
       return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
     }
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
+    const profileCompletionStatus = computeProfileCompletion(user);
+    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -293,7 +314,8 @@ app.get('/auth/me', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar } });
+    const profileCompletionStatus = computeProfileCompletion(user);
+    return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

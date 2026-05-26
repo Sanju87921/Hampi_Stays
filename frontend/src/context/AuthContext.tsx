@@ -16,6 +16,7 @@ interface User {
   idNumber?: string;
   idImage?: string;
   kycStatus?: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "REJECTED";
+  profileCompletionStatus?: "INCOMPLETE" | "COMPLETE";
 }
 
 interface AuthContextType {

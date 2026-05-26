@@ -3,6 +3,21 @@ import prisma from '../utils/prisma.js';
 // Helper to strip sensitive fields
 const safeUser = (user) => {
   const { passwordHash, ...safe } = user;
+
+  // Compute profile completion status dynamically
+  let isComplete = false;
+  if (user.role === 'TRAVELLER') {
+    isComplete = !!(user.name && user.email && user.phone && user.location && user.avatar);
+  } else if (user.role === 'GUIDE') {
+    const hasKyc = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
+    isComplete = !!(user.name && user.phone && user.location && user.avatar && hasKyc);
+  } else if (user.role === 'RESORT_OWNER') {
+    isComplete = !!(user.name && user.email && user.phone && user.location && user.avatar);
+  } else {
+    isComplete = !!(user.name && user.email);
+  }
+
+  safe.profileCompletionStatus = isComplete ? 'COMPLETE' : 'INCOMPLETE';
   return safe;
 };
 
