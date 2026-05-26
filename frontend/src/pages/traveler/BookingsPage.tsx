@@ -365,16 +365,12 @@ export function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-sand-50/30 pt-20 pb-24">
-      {/* Cinematic Hero Section */}
-      <section className="relative h-[35vh] flex items-center mb-12 overflow-hidden bg-navy-950">
-        <div className="absolute inset-0 opacity-40">
-          <img
-            src="https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000"
-            className="w-full h-full object-cover"
-            alt="Hampi landscape"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-sand-50/30 to-transparent" />
+      {/* Premium Gradient Hero Section */}
+      <section className="relative h-[35vh] flex items-center mb-12 overflow-hidden" style={{ background: 'linear-gradient(135deg, #08142b 0%, #0d1b3d 40%, #16274f 70%, #0d1b3d 100%)' }}>
+        {/* Decorative radial glow orbs */}
+        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.3) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-30%] left-[-5%] w-[400px] h-[400px] rounded-full opacity-15" style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.2) 0%, transparent 70%)' }} />
+        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 60%)' }} />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
