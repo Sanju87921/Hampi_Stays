@@ -26,7 +26,6 @@ model User {
   isMobileVerified Boolean           @default(false)
   kycStatus        String?           @default("NOT_SUBMITTED")
   location         String?
-  profileCompletionStatus String @default("INCOMPLETE")
   bookings         Booking[]
   guideBookings    GuideBooking[]
   guideProfile     GuideProfile?
