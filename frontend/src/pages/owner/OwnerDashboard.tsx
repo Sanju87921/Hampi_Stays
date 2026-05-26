@@ -1632,15 +1632,59 @@ export function OwnerDashboard() {
                           </div>
 
                           {/* Special Requests Section */}
-                          <div className="p-6 rounded-3xl bg-gold-50/50 border border-gold-100 relative overflow-hidden">
-                             <div className="absolute top-0 right-0 w-16 h-16 bg-gold-500/5 rounded-full blur-xl -mr-8 -mt-8" />
-                             <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest mb-2 flex items-center gap-2">
-                               <AlertCircle className="w-3.5 h-3.5" /> Guest Special Requests
-                             </p>
-                             <p className="text-sm text-navy-950/70 font-medium italic">
-                               {booking.specialRequests || "No special requests mentioned by the guest for this stay."}
-                             </p>
-                           </div>
+                          {(() => {
+                            const text = booking.specialRequests;
+                            if (!text) {
+                              return (
+                                <div className="p-6 rounded-3xl bg-gold-50/50 border border-gold-100 relative overflow-hidden">
+                                  <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-3.5 h-3.5" /> Guest Special Requests
+                                  </p>
+                                  <p className="text-sm text-navy-950/40 font-medium italic">
+                                    No special requests mentioned by the guest for this stay.
+                                  </p>
+                                </div>
+                              );
+                            }
+
+                            const mealMatch = text.match(/^\[Selected Meals:\s*([^\]]+)\]/);
+                            let meals: string[] = [];
+                            let remainingText = text;
+                            if (mealMatch) {
+                              meals = mealMatch[1].split(";").map(m => m.trim());
+                              remainingText = text.replace(mealMatch[0], "").trim();
+                            }
+                            const requests = remainingText.split(";").map(r => r.trim()).filter(Boolean);
+
+                            return (
+                              <div className="p-6 rounded-3xl bg-gold-50/50 border border-gold-100 relative overflow-hidden space-y-4">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-gold-500/5 rounded-full blur-xl -mr-8 -mt-8" />
+                                {meals.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest mb-2">Curated Meal Packages</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {meals.map((meal, index) => (
+                                        <span key={index} className="px-3 py-1.5 bg-white border border-gold-200 text-xs font-semibold text-navy-950 rounded-xl flex items-center gap-1.5 shadow-sm">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
+                                          {meal}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {(requests.length > 0 || meals.length === 0) && (
+                                  <div>
+                                    <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                      <AlertCircle className="w-3.5 h-3.5" /> Guest Special Requests & Notes
+                                    </p>
+                                    <p className="text-sm text-navy-950/70 font-medium italic">
+                                      {requests.join("; ") || "No additional requests."}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-6 border-t border-sand-100">
                               <div>

@@ -25,7 +25,9 @@ export const createOrder = async (req, res, next) => {
       checkOut, 
       guests, 
       addInsurance, 
-      airportPickup 
+      airportPickup,
+      selectedMeals,
+      specialRequests
     } = req.body;
     
     // 1. RECALCULATE PRICE ON BACKEND (Security: Never trust frontend price)
@@ -51,8 +53,32 @@ export const createOrder = async (req, res, next) => {
     const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
     const airportPickupCost = airportPickup ? 1500 : 0;
     
-    const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
+    // Meal Packages calculation (with 5% GST for F&B)
+    let mealTotal = 0;
+    const validatedMealDescriptions = [];
+    const resortMealPackages = resort.mealPackages || [];
+    if (Array.isArray(selectedMeals) && selectedMeals.length > 0) {
+      for (const mealName of selectedMeals) {
+        const pkg = resortMealPackages.find(p => p.name === mealName);
+        if (pkg) {
+          const guestCount = Number(guests) || 1;
+          const cost = pkg.price * guestCount * nights;
+          mealTotal += cost;
+          validatedMealDescriptions.push(`${pkg.name} (₹${pkg.price} x ${guestCount} guests x ${nights} nights = ₹${cost})`);
+        }
+      }
+    }
+    const mealTaxes = Math.round(mealTotal * 0.05);
+    
+    const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
     const referenceNumber = `HS-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
+    // Format special requests to store selected meals in DB
+    let formattedSpecialRequests = specialRequests || "";
+    if (validatedMealDescriptions.length > 0) {
+      const prefix = `[Selected Meals: ${validatedMealDescriptions.join("; ")}]`;
+      formattedSpecialRequests = formattedSpecialRequests ? `${prefix} ${formattedSpecialRequests}` : prefix;
+    }
 
     // 2. Create Razorpay Order
     const options = {
@@ -79,7 +105,8 @@ export const createOrder = async (req, res, next) => {
         totalPrice,
         referenceNumber,
         commissionRate: resort.commissionRate,
-        status: 'PENDING'
+        status: 'PENDING',
+        specialRequests: formattedSpecialRequests
       }
     });
 

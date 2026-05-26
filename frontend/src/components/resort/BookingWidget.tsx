@@ -103,7 +103,8 @@ export function BookingWidget({
           adults,
           totalPrice: total,
           baseNightlyPrice: baseTotal / (nights || 1),
-          image: resort.images[0]
+          image: resort.images[0],
+          mealPackages: resort.mealPackages || []
         }
       });
     }, { message: "Complete Your Reservation", view: "register" });

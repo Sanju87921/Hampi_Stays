@@ -1658,7 +1658,7 @@ app.get('/admin/otp-logs', authMiddleware, adminMiddleware, (c) => c.json([]));
 app.post('/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
-  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup } = data;
+  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup, selectedMeals } = data;
   const payload = c.get('user');
   
   try {
@@ -1711,9 +1711,34 @@ app.post('/bookings', authMiddleware, async (c) => {
       const taxes = Math.round(nightsTotal * 0.12);
       const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
       const airportPickupCost = airportPickup ? 1500 : 0;
-      const computedTotal = nightsTotal + taxes + insuranceCost + airportPickupCost;
+
+      // Meal Packages calculation (with 5% GST for F&B)
+      let mealTotal = 0;
+      const validatedMealDescriptions = [];
+      const resortMealPackages = resort.mealPackages || [];
+      if (Array.isArray(selectedMeals) && selectedMeals.length > 0) {
+        for (const mealName of selectedMeals) {
+          const pkg = resortMealPackages.find(p => p.name === mealName);
+          if (pkg) {
+            const guestCount = Number(guests) || 1;
+            const cost = pkg.price * guestCount * nights;
+            mealTotal += cost;
+            validatedMealDescriptions.push(`${pkg.name} (₹${pkg.price} x ${guestCount} guests x ${nights} nights = ₹${cost})`);
+          }
+        }
+      }
+      const mealTaxes = Math.round(mealTotal * 0.05);
+      
+      const computedTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
 
       const refNum = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // Format special requests to store selected meals in DB
+      let formattedSpecialRequests = specialRequests || "";
+      if (validatedMealDescriptions.length > 0) {
+        const prefix = `[Selected Meals: ${validatedMealDescriptions.join("; ")}]`;
+        formattedSpecialRequests = formattedSpecialRequests ? `${prefix} ${formattedSpecialRequests}` : prefix;
+      }
 
       // 4. CREATE PENDING RESERVATION (LOCK)
       const newBooking = await tx.booking.create({
@@ -1725,7 +1750,7 @@ app.post('/bookings', authMiddleware, async (c) => {
           checkOut: endDate,
           guests: parseInt(guests) || 1,
           totalPrice: computedTotal,
-          specialRequests,
+          specialRequests: formattedSpecialRequests,
           referenceNumber: refNum,
           commissionRate: resort.commissionRate || 7.0,
           status: 'PENDING'

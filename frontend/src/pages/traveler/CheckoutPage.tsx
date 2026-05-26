@@ -21,7 +21,7 @@ const SPECIAL_REQUEST_OPTIONS = [
   { id: "early_checkin", label: "Early Check-in (before 12pm)", icon: Clock },
   { id: "anniversary", label: "Anniversary / Special Occasion Setup", icon: Heart },
   { id: "dietary", label: "Special Dietary Requirements", icon: Utensils },
-  { id: "airport_pickup", label: "Airport Pickup (₹800 extra)", icon: Plane },
+  { id: "airport_pickup", label: "Airport Pickup (₹1500 extra)", icon: Plane },
 ];
 
 const PAYMENT_METHODS = [
@@ -39,6 +39,7 @@ export function CheckoutPage() {
   const [currency, setCurrency] = useState<"INR" | "USD">("INR");
   const [addInsurance, setAddInsurance] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [specialNote, setSpecialNote] = useState("");
   const [guestInfo, setGuestInfo] = useState({
@@ -68,12 +69,29 @@ export function CheckoutPage() {
   const nightsTotal = basePrice * nights;
   const taxes = Math.round(nightsTotal * 0.12);
   const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
-  const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost;
+
+  // Meal pricing calculations (with 5% GST for F&B)
+  const mealTotal = selectedMeals.reduce((acc, mealName) => {
+    const pkg = (bookingData.mealPackages || []).find((p: any) => p.name === mealName);
+    if (pkg) {
+      return acc + (pkg.price * (bookingData.adults || 1) * nights);
+    }
+    return acc;
+  }, 0);
+  const mealTaxes = Math.round(mealTotal * 0.05);
+
+  const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
 
   const fmt = (amount: number) =>
     currency === "INR"
       ? `₹${amount.toLocaleString("en-IN")}`
       : `$${(amount * USD_RATE).toFixed(2)}`;
+
+  const toggleMeal = (name: string) => {
+    setSelectedMeals(prev =>
+      prev.includes(name) ? prev.filter(m => m !== name) : [...prev, name]
+    );
+  };
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -96,7 +114,8 @@ export function CheckoutPage() {
         phone: guestInfo.phone,
         customerName: guestInfo.name,
         addInsurance,
-        airportPickup: airportPickupCost > 0
+        airportPickup: airportPickupCost > 0,
+        selectedMeals
       });
 
       // 2. Load Razorpay Script dynamically if not present
@@ -288,6 +307,51 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Meal Packages */}
+                  {(bookingData.mealPackages && bookingData.mealPackages.length > 0) && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-navy-950 font-serif">Curated Meal Packages</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {bookingData.mealPackages.map((pkg: any) => {
+                          const isSelected = selectedMeals.includes(pkg.name);
+                          const totalMealPrice = pkg.price * (bookingData.adults || 1) * nights;
+                          return (
+                            <div
+                              key={pkg.name}
+                              className={cn(
+                                "p-6 rounded-3xl border-2 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4",
+                                isSelected ? "border-gold-500 bg-gold-50/20" : "border-sand-100 hover:border-gold-200"
+                              )}
+                              onClick={() => toggleMeal(pkg.name)}
+                            >
+                              <div className="flex items-start gap-4">
+                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0",
+                                  isSelected ? "bg-gold-100 text-gold-700" : "bg-sand-50 text-navy-950/30")}>
+                                  <Utensils className="w-7 h-7" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-navy-950 text-lg">{pkg.name}</p>
+                                  <p className="text-sm text-navy-950/50 mt-0.5">{pkg.description || "No description provided."}</p>
+                                  <p className="text-xs text-gold-600 font-bold mt-1">₹{pkg.price.toLocaleString("en-IN")} / guest / night</p>
+                                </div>
+                              </div>
+                              <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2 border-t md:border-t-0 pt-4 md:pt-0 border-sand-100">
+                                <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all order-2 md:order-1",
+                                  isSelected ? "border-gold-500 bg-gold-500" : "border-sand-300")}>
+                                  {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                </div>
+                                <div className="text-left md:text-right order-1 md:order-2">
+                                  <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Total stay cost</p>
+                                  <p className="font-bold text-navy-950">{fmt(totalMealPrice)}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Multi-currency toggle */}
                   <div className="p-6 rounded-3xl border border-sand-100 bg-sand-50">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -397,8 +461,20 @@ export function CheckoutPage() {
                   {selectedRequests.includes("airport_pickup") && (
                     <div className="flex justify-between text-navy-950/60">
                       <span>Airport Pickup</span>
-                      <span className="font-bold text-navy-950">{fmt(800)}</span>
+                      <span className="font-bold text-navy-950">{fmt(1500)}</span>
                     </div>
+                  )}
+                  {mealTotal > 0 && (
+                    <>
+                      <div className="flex justify-between text-navy-950/60">
+                        <span>Selected Meals</span>
+                        <span className="font-bold text-navy-950">{fmt(mealTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-navy-950/60 text-xs">
+                        <span className="text-navy-950/50">Meals GST (5%)</span>
+                        <span className="font-bold text-navy-950/70">{fmt(mealTaxes)}</span>
+                      </div>
+                    </>
                   )}
                   <div className="flex justify-between pt-3 border-t border-sand-100">
                     <span className="text-lg font-bold text-navy-950">Total</span>

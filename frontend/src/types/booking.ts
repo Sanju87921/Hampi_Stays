@@ -22,6 +22,7 @@ export interface Booking {
     id: string;
     name: string;
   };
+  specialRequests?: string;
 }
 
 export interface Message {

@@ -520,6 +520,54 @@ export function BookingsPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Add-ons & Meal Packages */}
+                    {(() => {
+                      const text = booking.specialRequests;
+                      if (!text) return null;
+                      
+                      const mealMatch = text.match(/^\[Selected Meals:\s*([^\]]+)\]/);
+                      let meals: string[] = [];
+                      let remainingText = text;
+                      if (mealMatch) {
+                        meals = mealMatch[1].split(";").map(m => m.trim());
+                        remainingText = text.replace(mealMatch[0], "").trim();
+                      }
+                      const requests = remainingText.split(";").map(r => r.trim()).filter(Boolean);
+                      
+                      if (meals.length === 0 && requests.length === 0) return null;
+                      
+                      return (
+                        <div className="mb-8 p-6 bg-sand-50/60 rounded-3xl border border-sand-100/50 space-y-4">
+                          {meals.length > 0 && (
+                            <div>
+                              <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold mb-2">Curated Meal Packages</p>
+                              <div className="flex flex-wrap gap-2">
+                                {meals.map((meal, index) => (
+                                  <span key={index} className="px-3 py-1.5 bg-white border border-sand-200 text-xs font-semibold text-navy-950 rounded-xl flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gold-500" />
+                                    {meal}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {requests.length > 0 && (
+                            <div>
+                              <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold mb-2">Special Requests & Add-ons</p>
+                              <div className="flex flex-wrap gap-2">
+                                {requests.map((req, index) => (
+                                  <span key={index} className="px-3 py-1.5 bg-white border border-sand-200 text-xs font-semibold text-navy-950 rounded-xl flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-navy-400" />
+                                    {req}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-6 pt-8 border-t border-sand-100">
