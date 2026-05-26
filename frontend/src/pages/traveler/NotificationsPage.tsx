@@ -1,34 +1,45 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Info, ShieldCheck, Calendar, Star, Plane, CheckCircle2 } from "lucide-react";
+import { Bell, Info, Calendar, Plane, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { token } = useAuth();
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/users/notifications`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch notifications:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/users/notifications`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchNotifications();
+    }
   }, [token]);
 
   const markAsRead = async (id: string, isRead: boolean) => {
