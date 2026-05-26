@@ -685,21 +685,29 @@ app.get('/users/profile', authMiddleware, async (c) => {
 app.patch('/users/profile', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const payload = c.get('user');
-  const { name, email, phone, avatar, location, idType, idNumber, idImage } = await c.req.json();
+  const body = await c.req.json();
   try {
+    // Only update fields that are explicitly provided in the request body
+    const data = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.email !== undefined) data.email = body.email.toLowerCase();
+    if (body.phone !== undefined) data.phone = body.phone;
+    if (body.avatar !== undefined) data.avatar = body.avatar;
+    if (body.location !== undefined) data.location = body.location;
+    if (body.idType !== undefined) data.idType = body.idType;
+    if (body.idNumber !== undefined) data.idNumber = body.idNumber;
+    if (body.idImage !== undefined) {
+      data.idImage = body.idImage;
+      // Only set kycStatus to PENDING if a new document is being uploaded
+      const currentUser = await prisma.user.findUnique({ where: { id: payload.userId }, select: { idImage: true, kycStatus: true } });
+      if (body.idImage && body.idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
+        data.kycStatus = 'PENDING';
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: payload.userId },
-      data: { 
-        name, 
-        email: email?.toLowerCase(), 
-        phone, 
-        avatar, 
-        location, 
-        idType, 
-        idNumber, 
-        idImage,
-        kycStatus: idImage ? 'PENDING' : undefined
-      }
+      data
     });
     return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -771,21 +779,28 @@ app.patch('/users/:id', authMiddleware, async (c) => {
   if (payload.userId !== id && payload.role !== 'ADMIN') {
     return c.json({ error: 'Unauthorized to update this profile' }, 403);
   }
-  const { name, email, phone, avatar, location, idType, idNumber, idImage } = await c.req.json();
+  const body = await c.req.json();
   try {
+    // Only update fields that are explicitly provided in the request body
+    const data = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.email !== undefined) data.email = body.email.toLowerCase();
+    if (body.phone !== undefined) data.phone = body.phone;
+    if (body.avatar !== undefined) data.avatar = body.avatar;
+    if (body.location !== undefined) data.location = body.location;
+    if (body.idType !== undefined) data.idType = body.idType;
+    if (body.idNumber !== undefined) data.idNumber = body.idNumber;
+    if (body.idImage !== undefined) {
+      data.idImage = body.idImage;
+      const currentUser = await prisma.user.findUnique({ where: { id }, select: { idImage: true, kycStatus: true } });
+      if (body.idImage && body.idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
+        data.kycStatus = 'PENDING';
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id },
-      data: { 
-        name, 
-        email: email?.toLowerCase(), 
-        phone, 
-        avatar, 
-        location, 
-        idType, 
-        idNumber, 
-        idImage,
-        kycStatus: idImage ? 'PENDING' : undefined
-      }
+      data
     });
     return c.json(decryptUser(user));
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -1754,16 +1769,24 @@ app.patch('/bookings/:id/status', authMiddleware, async (c) => {
 });
 
 
-// Cloudinary Upload Signature
+// Cloudinary Upload Signature — uses native Web Crypto API for edge runtime compatibility
 app.get('/upload/signature', authMiddleware, async (c) => {
   try {
     const timestamp = Math.round(new Date().getTime() / 1000).toString();
     const folder = 'hampi-stays';
     const apiSecret = c.env.CLOUDINARY_API_SECRET;
     
+    if (!apiSecret) {
+      return c.json({ error: 'CLOUDINARY_API_SECRET is not configured' }, 500);
+    }
+
     // Cloudinary requires signature: sha1(folder=hampi-stays&timestamp=123456... + api_secret)
     const signString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-    const signature = crypto.createHash('sha1').update(signString).digest('hex');
+    const encoder = new TextEncoder();
+    const data = encoder.encode(signString);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     return c.json({
       signature,
@@ -1773,7 +1796,8 @@ app.get('/upload/signature', authMiddleware, async (c) => {
       folder
     });
   } catch (err) {
-    return c.json({ error: err.message }, 500);
+    console.error('Upload signature error:', err);
+    return c.json({ error: 'Failed to generate upload signature: ' + err.message }, 500);
   }
 });
 
