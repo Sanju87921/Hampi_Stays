@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: ['jspdf', 'jspdf-autotable', 'qrcode']
+  },
   server: {
     proxy: {
       '/api': {
