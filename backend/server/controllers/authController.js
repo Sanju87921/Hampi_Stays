@@ -19,7 +19,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 export const register = async (req, res, next) => {
   try {
-    const { password, name, role, email: rawEmail } = req.body;
+    const { password, name, role, email: rawEmail, phone } = req.body;
     const email = rawEmail.toLowerCase();
     
     const settings = await prisma.systemSettings.findFirst();
@@ -42,6 +42,7 @@ export const register = async (req, res, next) => {
           email,
           name,
           passwordHash,
+          phone,
           role: role || 'TRAVELLER',
           kycStatus: 'NOT_SUBMITTED'
         },
