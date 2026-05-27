@@ -25,11 +25,13 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const DISCOVERY_IMAGES = [
-  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
+  "/hampi-heritage-hero.png",
+  "/hampi-temple.png",
+  "/hampi-dawn.png",
+  "/hampi-chariot.png",
+  "/hampi-lotus.png"
 ];
+
 
 interface POI {
   id: string;
@@ -89,7 +91,7 @@ export function DiscoveryPage() {
             x: 82,
             y: 24,
             description: "An architectural masterpiece famous for its iconic Stone Chariot, musical monolithic pillars, and stunning carvings depicting ancient Vijayanagara heritage.",
-            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=1200",
+            image: "/hampi-chariot.png",
             recommendedTours: ["Sunrise Raga Photography", "Stones That Sing Music Session"],
             nearbyResort: "Evolve Back Hampi"
           },
@@ -100,7 +102,7 @@ export function DiscoveryPage() {
             x: 24,
             y: 35,
             description: "Hampi's oldest functioning temple, dedicated to Lord Shiva, featuring an iconic nine-tiered entrance gopuram towering gracefully above the sacred Tungabhadra River.",
-            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=1200",
+            image: "/hampi-heritage-hero.png",
             recommendedTours: ["Evening Sacred Aarti Experience", "Virupaksha Mythological Trek"],
             nearbyResort: "Heritage Resort Hampi"
           },
@@ -111,7 +113,7 @@ export function DiscoveryPage() {
             x: 21,
             y: 45,
             description: "A sloping rocky expanse scattered with ancient pre-Vijayanagara temples, monolithic structures, and the absolute best sunset viewpoints in all of Karnataka.",
-            image: "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=1200",
+            image: "/hampi-dawn.png",
             recommendedTours: ["Sun-Set Serenade Walk", "Monolithic Sculpture Masterclass"],
             nearbyResort: "Hampi's Boulders Resort"
           },
@@ -122,7 +124,7 @@ export function DiscoveryPage() {
             x: 52,
             y: 65,
             description: "A beautiful, air-cooled two-story pleasure palace showcasing a marvelous synthesis of Indo-Islamic architecture, with arches mimicking lotus petals.",
-            image: "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=1200",
+            image: "/hampi-lotus.png",
             recommendedTours: ["Zenana Court Promenade", "Royal Hydrological Innovations Hike"],
             nearbyResort: "Kamalapura Luxury Palace"
           },
@@ -133,7 +135,7 @@ export function DiscoveryPage() {
             x: 65,
             y: 60,
             description: "A grand domed building used to house the royal state elephants of the Vijayanagara Empire, highlighting symmetrical chambers and beautiful central towers.",
-            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1200",
+            image: "/hampi-temple.png",
             recommendedTours: ["Royal Stables Photo Session", "Vijayanagara History Walk"],
             nearbyResort: "Evolve Back Hampi"
           },
@@ -144,7 +146,7 @@ export function DiscoveryPage() {
             x: 48,
             y: 42,
             description: "The highest point in Hampi, offering a stunning 360-degree aerial panorama of the entire ancient ruins landscape at sunrise.",
-            image: "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?auto=format&fit=crop&q=80&w=1200",
+            image: "/hampi-dawn.png",
             recommendedTours: ["Early Morning Sunrise Trek", "Vantage Point Photo Expedition"],
             nearbyResort: "Heritage Resort Hampi"
           },
@@ -155,7 +157,7 @@ export function DiscoveryPage() {
             x: 55,
             y: 80,
             description: "A royal bath enclosure styled in beautiful Indo-Islamic style, featuring an ornamental moat and exquisite balconies overhanging the bathing pool.",
-            image: "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?auto=format&fit=crop&q=80&w=1200",
+            image: "/hampi-temple.png",
             recommendedTours: ["Zenana Hydro-Engineering Walk", "Royal Bathing Customs Heritage Hike"],
             nearbyResort: "Kamalapura Luxury Palace"
           },
@@ -166,7 +168,7 @@ export function DiscoveryPage() {
             x: 32,
             y: 32,
             description: "A historic avenue aligned with ancient double-story colonnaded stone pavilions, stretching out from Virupaksha Temple to the foothills of Matanga.",
-            image: "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1200",
+            image: "/hampi-heritage-hero.png",
             recommendedTours: ["Bazaar Walk & Local Crafts", "Sacred Virupaksha Heritage Hike"],
             nearbyResort: "Hampi's Boulders Resort"
           }
@@ -218,7 +220,17 @@ export function DiscoveryPage() {
   return (
     <div className="min-h-screen bg-navy-950 overflow-hidden relative">
       {/* Cinematic Background */}
-      <ImmersiveBackground images={DISCOVERY_IMAGES} height="h-full" overlayColor="from-navy-950/90 via-navy-950/50 to-navy-950" interval={3500} />
+      <ImmersiveBackground 
+        images={DISCOVERY_IMAGES} 
+        height="h-full" 
+        overlayColor="from-navy-950/95 via-navy-950/70 to-navy-950" 
+        interval={4500}
+        showVignette={true}
+        showWarmGlow={true}
+        blurAmount="blur-[0.5px]"
+        brightnessClass="brightness-[0.75]"
+        contrastClass="contrast-[1.1]"
+      />
 
       <div className="container mx-auto px-4 pt-32 pb-20 relative z-20 h-[calc(100vh-80px)] flex flex-col">
         {/* Header containing the map toggle switch */}
@@ -279,7 +291,7 @@ export function DiscoveryPage() {
         </header>
 
         {/* Map Explorer Area */}
-        <div className="flex-1 relative bg-white/5 backdrop-blur-sm rounded-[3.5rem] border border-white/10 shadow-2xl overflow-hidden group">
+        <div className="flex-1 relative bg-navy-950/45 backdrop-blur-md rounded-[3.5rem] border border-gold-500/10 shadow-[0_30px_100px_rgba(0,0,0,0.85)] overflow-hidden group">
           {/* Loading State Overlay */}
           {isLoading && (
              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-navy-950/80 backdrop-blur-md">
@@ -292,12 +304,28 @@ export function DiscoveryPage() {
           {viewMode === "ancient" ? (
             <div className="w-full h-full relative">
               {/* Stylized Map Grid overlay */}
-              <div className="absolute inset-0 opacity-10 pointer-events-none z-0">
-                <div className="w-full h-full grid grid-cols-12 grid-rows-12">
+              <div className="absolute inset-0 opacity-15 pointer-events-none z-0">
+                <div className="w-full h-full grid grid-cols-12 grid-rows-12 border border-gold-500/20">
                   {Array.from({ length: 144 }).map((_, i) => (
-                    <div key={i} className="border border-white/10" />
+                    <div key={i} className="border border-gold-500/5 relative">
+                      {/* Grid intersections with small plus marks */}
+                      {i % 13 === 0 && (
+                        <span className="absolute -top-1.5 -left-1.5 text-[8px] text-gold-500/40 font-light">+</span>
+                      )}
+                    </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Compass Rose Cartographic Motif */}
+              <div className="absolute bottom-10 left-10 w-28 h-28 opacity-10 pointer-events-none border border-gold-500/40 rounded-full flex items-center justify-center animate-[spin_180s_linear_infinite]">
+                <div className="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-gold-500 to-transparent" />
+                <div className="absolute h-full w-0.5 bg-gradient-to-b from-transparent via-gold-500 to-transparent" />
+                <div className="w-12 h-12 border border-dashed border-gold-500/40 rounded-full" />
+                <span className="absolute top-1 text-[8px] text-gold-500 font-bold">N</span>
+                <span className="absolute bottom-1 text-[8px] text-gold-500 font-bold">S</span>
+                <span className="absolute left-1 text-[8px] text-gold-500 font-bold">W</span>
+                <span className="absolute right-1 text-[8px] text-gold-500 font-bold">E</span>
               </div>
 
               {/* Pins layer */}
@@ -310,33 +338,48 @@ export function DiscoveryPage() {
                   onMouseEnter={() => setHoveredPOI(poi)}
                   onMouseLeave={() => setHoveredPOI(null)}
                   onClick={() => setSelectedPOI(poi)}
-                  className="absolute z-30 transform -translate-x-1/2 -translate-y-1/2 group/pin"
+                  className="absolute z-30 transform -translate-x-1/2 -translate-y-1/2 group/pin cursor-pointer focus:outline-none"
                   style={{ left: `${poi.x}%`, top: `${poi.y}%` }}
                 >
-                  <div className="relative">
-                    {/* Ping Animation */}
-                    <div className="absolute -inset-4 bg-gold-500/25 rounded-full animate-ping opacity-40" />
-                    
-                    <PremiumIcon 
-                      icon={Landmark} 
-                      variant={selectedPOI?.id === poi.id ? "gold" : "navy"} 
-                      size="md"
-                      className={cn(
-                        "transition-all duration-500 border border-white/10",
-                        selectedPOI?.id === poi.id ? "scale-125" : "hover:scale-110"
-                      )}
-                    />
+                  <div className="relative flex items-center justify-center">
+                    {/* Double Pulsing/Breathing Aura */}
+                    <div className="absolute -inset-3 bg-gold-500/20 rounded-full animate-ping duration-[3000ms] opacity-60" />
+                    <div className="absolute -inset-2 bg-gold-400/10 rounded-full animate-pulse duration-[2000ms]" />
+
+                    {/* Glowing outer ring */}
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 backdrop-blur-md border shadow-lg",
+                      selectedPOI?.id === poi.id
+                        ? "bg-gold-500 border-gold-300 text-navy-950 scale-125 shadow-gold/50"
+                        : "bg-navy-950/80 border-gold-500/30 text-gold-400 hover:scale-115 hover:border-gold-400 hover:text-gold-300 shadow-black/50"
+                    )}>
+                      <Landmark className={cn(
+                        "w-5 h-5 transition-transform duration-500",
+                        selectedPOI?.id === poi.id ? "scale-110" : "group-hover/pin:rotate-6"
+                      )} />
+                    </div>
+
+                    {/* Subtle pulse category dot */}
+                    <div className={cn(
+                      "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-navy-950 transition-colors duration-300",
+                      poi.category === "Architecture" ? "bg-amber-400" :
+                      poi.category === "Heritage" ? "bg-amber-500" : "bg-emerald-400"
+                    )} />
 
                     {/* Hover Label */}
                     <AnimatePresence>
                       {(hoveredPOI?.id === poi.id && !selectedPOI) && (
                         <motion.div
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 20 }}
-                          exit={{ opacity: 0, x: 10 }}
-                          className="absolute left-10 top-1/2 -translate-y-1/2 bg-navy-950/90 text-gold-400 border border-gold-500/30 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap z-40"
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: -45 }}
+                          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                          className="absolute bg-navy-950/90 text-gold-400 border border-gold-500/30 px-3.5 py-1.5 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] whitespace-nowrap z-40 backdrop-blur-md flex items-center gap-1.5 pointer-events-none"
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-widest">{poi.name}</p>
+                          <span className={cn("w-1.5 h-1.5 rounded-full", 
+                            poi.category === "Architecture" ? "bg-amber-400" :
+                            poi.category === "Heritage" ? "bg-amber-500" : "bg-emerald-400"
+                          )} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">{poi.name}</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -344,23 +387,25 @@ export function DiscoveryPage() {
                 </motion.button>
               ))}
 
-              {/* Stylized River Element */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
-                <path 
-                  d="M 10 30 Q 30 40 50 20 T 90 40" 
+              {/* Stylized River Element (Tungabhadra River) */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20 filter drop-shadow-[0_0_8px_rgba(251,191,36,0.2)]">
+                <motion.path 
+                  d="M 0 150 Q 250 80 450 250 T 900 120 T 1500 280" 
                   fill="none" 
                   stroke="#fbbf24" 
-                  strokeWidth="2" 
-                  strokeDasharray="10 5"
-                  className="animate-pulse"
+                  strokeWidth="2.5" 
+                  strokeDasharray="15 8"
+                  animate={{ strokeDashoffset: [0, -100] }}
+                  transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
                 />
+                <text x="120" y="110" fill="#fbbf24" className="text-[8px] font-bold uppercase tracking-[0.3em] opacity-40 italic font-serif">Tungabhadra River</text>
               </svg>
             </div>
           ) : (
             /* View Mode 2: Interactive Leaflet Map using Google Satellite Hybrid Tiles */
             <div className="w-full h-full relative z-10">
               <MapContainer 
-                center={[15.333, 76.468]} 
+                center={[15.333, 76.468]}  
                 zoom={14} 
                 className="w-full h-full"
                 scrollWheelZoom={true}
