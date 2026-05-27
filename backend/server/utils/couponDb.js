@@ -2,26 +2,39 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, '../data');
-const COUPONS_FILE = path.join(DATA_DIR, 'coupons.json');
-const BOOKING_COUPONS_FILE = path.join(DATA_DIR, 'booking_coupons.json');
+let __filename = '';
+let __dirname = '';
+let DATA_DIR = '';
+let COUPONS_FILE = '';
+let BOOKING_COUPONS_FILE = '';
+
+try {
+  if (typeof import.meta !== 'undefined' && import.meta.url) {
+    __filename = fileURLToPath(import.meta.url);
+    __dirname = path.dirname(__filename);
+    DATA_DIR = path.join(__dirname, '../data');
+    COUPONS_FILE = path.join(DATA_DIR, 'coupons.json');
+    BOOKING_COUPONS_FILE = path.join(DATA_DIR, 'booking_coupons.json');
+  }
+} catch (err) {
+  // Safe ignore if URL or fileURLToPath is unavailable in workers
+}
 
 // Memory fallback cache if fs write fails (e.g. in Cloudflare Worker environment)
 let couponsMemoryCache = null;
 let bookingCouponsMemoryCache = null;
 
+
 // Ensure data directory and files exist if running in standard Node env
 try {
-  if (fs.existsSync) {
+  if (DATA_DIR && fs.existsSync) {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    if (!fs.existsSync(COUPONS_FILE)) {
+    if (COUPONS_FILE && !fs.existsSync(COUPONS_FILE)) {
       fs.writeFileSync(COUPONS_FILE, JSON.stringify([], null, 2));
     }
-    if (!fs.existsSync(BOOKING_COUPONS_FILE)) {
+    if (BOOKING_COUPONS_FILE && !fs.existsSync(BOOKING_COUPONS_FILE)) {
       fs.writeFileSync(BOOKING_COUPONS_FILE, JSON.stringify([], null, 2));
     }
   }
@@ -97,35 +110,49 @@ function getInitialSeededCoupons() {
 
 function readJsonFile(filePath) {
   try {
-    if (fs.readFileSync) {
+    if (filePath && fs.readFileSync) {
       const data = fs.readFileSync(filePath, 'utf8');
       return JSON.parse(data);
     }
   } catch (err) {
     // Fallback if read fails
   }
-  if (filePath === COUPONS_FILE) {
+  if (filePath && filePath === COUPONS_FILE) {
     if (!couponsMemoryCache) couponsMemoryCache = getInitialSeededCoupons();
     return couponsMemoryCache;
-  } else {
+  } else if (filePath && filePath === BOOKING_COUPONS_FILE) {
     if (!bookingCouponsMemoryCache) bookingCouponsMemoryCache = [];
     return bookingCouponsMemoryCache;
+  } else {
+    // String heuristic if paths are uninitialized in worker
+    if (filePath && typeof filePath === 'string' && filePath.includes('booking_coupons')) {
+      if (!bookingCouponsMemoryCache) bookingCouponsMemoryCache = [];
+      return bookingCouponsMemoryCache;
+    }
+    if (!couponsMemoryCache) couponsMemoryCache = getInitialSeededCoupons();
+    return couponsMemoryCache;
   }
 }
 
 function writeJsonFile(filePath, data) {
   try {
-    if (fs.writeFileSync) {
+    if (filePath && fs.writeFileSync) {
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
       return;
     }
   } catch (err) {
     // Fallback if write fails
   }
-  if (filePath === COUPONS_FILE) {
+  if (filePath && filePath === COUPONS_FILE) {
     couponsMemoryCache = data;
-  } else {
+  } else if (filePath && filePath === BOOKING_COUPONS_FILE) {
     bookingCouponsMemoryCache = data;
+  } else {
+    if (filePath && typeof filePath === 'string' && filePath.includes('booking_coupons')) {
+      bookingCouponsMemoryCache = data;
+    } else {
+      couponsMemoryCache = data;
+    }
   }
 }
 
