@@ -50,6 +50,14 @@ export function CheckoutPage() {
     nationality: "Indian",
   });
 
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    description: string;
+  } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
   useEffect(() => {
     if (user) {
       setGuestInfo(prev => ({
@@ -93,6 +101,40 @@ export function CheckoutPage() {
   const mealTaxes = Math.round(mealTotal * 0.05);
 
   const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
+  const finalPrice = Math.max(0, grandTotal - (appliedCoupon?.discountAmount || 0));
+
+  const handleApplyCoupon = async () => {
+    if (!couponCodeInput.trim()) return;
+    setIsValidatingCoupon(true);
+    try {
+      const response = await apiClient.post<any>('/coupons/validate', {
+        code: couponCodeInput.trim().toUpperCase(),
+        resortId: bookingData.resortId,
+        originalAmount: grandTotal
+      });
+      if (response.valid) {
+        setAppliedCoupon({
+          code: response.code,
+          discountAmount: response.discountAmount,
+          description: response.description
+        });
+        toast.success(`Coupon "${response.code}" applied successfully!`);
+      } else {
+        toast.error(response.error || "Invalid coupon code");
+      }
+    } catch (err: any) {
+      const errMsg = err.response?.data?.error || err.message || "Failed to validate coupon";
+      toast.error(errMsg);
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    toast.success("Coupon removed");
+  };
 
   const fmt = (amount: number) =>
     currency === "INR"
@@ -121,13 +163,14 @@ export function CheckoutPage() {
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         guests: bookingData.adults,
-        totalPrice: grandTotal,
+        totalPrice: finalPrice,
         specialRequests: allRequests,
         phone: guestInfo.phone,
         customerName: guestInfo.name,
         addInsurance,
         airportPickup: airportPickupCost > 0,
-        selectedMeals
+        selectedMeals,
+        couponCode: appliedCoupon?.code || null
       });
 
       // 2. Load Razorpay Script dynamically if not present
@@ -149,7 +192,7 @@ export function CheckoutPage() {
 
         const options = {
           key: razorpayKey,
-          amount: Math.round(grandTotal * 100),
+          amount: Math.round(finalPrice * 100),
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${bookingData.resortName}`,
@@ -412,7 +455,7 @@ export function CheckoutPage() {
 
                   <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
                     <Button size="lg" className="w-full sm:w-auto px-12 h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
-                      Pay {fmt(grandTotal)} Securely
+                      Pay {fmt(finalPrice)} Securely
                     </Button>
                     <button onClick={() => setStep(2)} className="text-sm font-bold text-navy-950/40 hover:text-navy-950 transition-colors py-2">
                       Back to Add-ons
@@ -454,6 +497,40 @@ export function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* Coupon Code Input */}
+                <div className="mb-6 pt-4 border-t border-sand-100">
+                  <p className="text-xs font-bold text-navy-950/40 uppercase tracking-widest mb-3">Promo & Offer Code</p>
+                  {appliedCoupon ? (
+                    <div className="p-4 rounded-2xl bg-gold-50/50 border border-gold-200 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-navy-950">{appliedCoupon.code}</p>
+                        <p className="text-xs text-navy-950/60 mt-0.5">{appliedCoupon.description}</p>
+                      </div>
+                      <button onClick={handleRemoveCoupon} className="text-xs font-bold text-red-600 hover:text-red-700 uppercase tracking-wider underline shrink-0">
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="ENTER CODE"
+                        value={couponCodeInput}
+                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        disabled={isValidatingCoupon}
+                        className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl border border-sand-200 focus:outline-none focus:border-gold-500 bg-sand-50/50 transition-colors uppercase"
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={isValidatingCoupon || !couponCodeInput.trim()}
+                        className="px-5 py-2 text-xs font-bold text-white bg-gold-600 hover:bg-gold-700 rounded-xl transition disabled:opacity-50 uppercase tracking-widest"
+                      >
+                        {isValidatingCoupon ? "..." : "Apply"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Price Breakdown */}
                 <div className="space-y-2 pt-4 border-t border-sand-100 text-sm">
                   <div className="flex justify-between text-navy-950/60">
@@ -488,9 +565,15 @@ export function CheckoutPage() {
                       </div>
                     </>
                   )}
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-gold-600 font-bold bg-gold-50/30 p-2 rounded-xl border border-gold-100/50">
+                      <span>Discount ({appliedCoupon.code})</span>
+                      <span>-{fmt(appliedCoupon.discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-3 border-t border-sand-100">
-                    <span className="text-lg font-bold text-navy-950">Total</span>
-                    <span className="text-lg font-bold text-navy-950">{fmt(grandTotal)}</span>
+                    <span className="text-lg font-bold text-navy-950 font-serif">Total</span>
+                    <span className="text-lg font-bold text-navy-950">{fmt(finalPrice)}</span>
                   </div>
                   {currency === "USD" && (
                     <p className="text-[10px] text-navy-950/30 italic text-right">*Approx. rate. Charged in INR</p>

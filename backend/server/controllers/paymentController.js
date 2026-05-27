@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import prisma from '../utils/prisma.js';
+import { validateCouponCode } from '../utils/couponEngine.js';
 
 let razorpayInstance = null;
 const getRazorpay = () => {
@@ -27,7 +28,8 @@ export const createOrder = async (req, res, next) => {
       addInsurance, 
       airportPickup,
       selectedMeals,
-      specialRequests
+      specialRequests,
+      couponCode
     } = req.body;
     
     // 1. RECALCULATE PRICE ON BACKEND (Security: Never trust frontend price)
@@ -71,6 +73,26 @@ export const createOrder = async (req, res, next) => {
     const mealTaxes = Math.round(mealTotal * 0.05);
     
     const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
+
+    // Secure Coupon Discount Calculation on Backend
+    let discountAmount = 0;
+    let finalAmount = totalPrice;
+    if (couponCode) {
+      const couponResult = await validateCouponCode(prisma, {
+        code: couponCode,
+        userId: req.user.userId,
+        resortId,
+        originalAmount: totalPrice
+      });
+
+      if (!couponResult.valid) {
+        return res.status(400).json({ error: couponResult.error });
+      }
+
+      discountAmount = couponResult.discountAmount;
+      finalAmount = couponResult.finalAmount;
+    }
+
     const referenceNumber = `HS-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
     // Format special requests to store selected meals in DB
@@ -82,7 +104,7 @@ export const createOrder = async (req, res, next) => {
 
     // 2. Create Razorpay Order
     const options = {
-      amount: Math.round(totalPrice * 100),
+      amount: Math.round(finalAmount * 100),
       currency: "INR",
       receipt: referenceNumber,
     };
@@ -102,7 +124,11 @@ export const createOrder = async (req, res, next) => {
         checkIn: startDate,
         checkOut: endDate,
         guests: Number(guests),
-        totalPrice,
+        totalPrice: finalAmount,
+        originalAmount: totalPrice,
+        discountAmount: discountAmount,
+        finalAmount: finalAmount,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
         referenceNumber,
         commissionRate: resort.commissionRate,
         status: 'PENDING',
@@ -115,7 +141,10 @@ export const createOrder = async (req, res, next) => {
       amount: order.amount,
       currency: order.currency,
       referenceNumber,
-      bookingId: booking.id
+      bookingId: booking.id,
+      discountAmount,
+      finalAmount,
+      originalAmount: totalPrice
     });
   } catch (error) {
     next(error);
@@ -144,7 +173,17 @@ export const verifyPayment = async (req, res, next) => {
       include: { resort: true }
     });
 
-    // 3. Notify User
+    // 3. Increment coupon usage count securely
+    if (booking.couponCode) {
+      await prisma.coupon.update({
+        where: { code: booking.couponCode },
+        data: { usedCount: { increment: 1 } }
+      }).catch(err => {
+        console.error("Failed to increment coupon used count:", err);
+      });
+    }
+
+    // 4. Notify User
     await prisma.notification.create({
       data: {
         userId: booking.userId,

@@ -13,6 +13,17 @@ import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import { validateCouponCode } from './utils/couponEngine.js';
+import { 
+  getAllCoupons, 
+  createCouponInDb, 
+  updateCouponStatus, 
+  deleteCouponFromDb, 
+  findCouponByCode, 
+  getBookingCouponsAnalytics,
+  incrementCouponUsage,
+  recordBookingCoupon
+} from './utils/couponDb.js';
 
 const app = new Hono({ strict: false }).basePath('/api');
 
@@ -2266,7 +2277,7 @@ app.get('/admin/otp-logs', authMiddleware, adminMiddleware, (c) => c.json([]));
 app.post('/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
-  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup, selectedMeals } = data;
+  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup, selectedMeals, couponCode } = data;
   const payload = c.get('user');
   
   try {
@@ -2293,8 +2304,6 @@ app.post('/bookings', authMiddleware, async (c) => {
       const endDate = parseDate(checkOut);
       
       // 2. CONCURRENCY CHECK: OVERLAP VALIDATION
-      // Find all bookings for this room that overlap with the requested dates
-      // and are either CONFIRMED/PAID/CHECKED_IN, OR are PENDING and created within the last 15 minutes
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
       const overlappingBookings = await tx.booking.count({
         where: {
@@ -2339,6 +2348,25 @@ app.post('/bookings', authMiddleware, async (c) => {
       
       const computedTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
 
+      // Secure Coupon Discount Calculation on Backend
+      let discountAmount = 0;
+      let finalAmount = computedTotal;
+      if (couponCode) {
+        const couponResult = await validateCouponCode(tx, {
+          code: couponCode,
+          userId: payload.userId,
+          resortId,
+          originalAmount: computedTotal
+        });
+
+        if (!couponResult.valid) {
+          throw new Error(`COUPON_INVALID:${couponResult.error}`);
+        }
+
+        discountAmount = couponResult.discountAmount;
+        finalAmount = couponResult.finalAmount;
+      }
+
       const refNum = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
       // Format special requests to store selected meals in DB
@@ -2349,6 +2377,15 @@ app.post('/bookings', authMiddleware, async (c) => {
       }
 
       // 4. CREATE PENDING RESERVATION (LOCK)
+      // Note: coupon fields (originalAmount, discountAmount, couponCode) are NOT in the
+      // Prisma Booking model. They are tracked via the couponDb fallback layer.
+      // totalPrice stores the final (post-discount) amount that matches the Razorpay order.
+      let finalSpecialRequests = formattedSpecialRequests;
+      if (couponCode && discountAmount > 0) {
+        const couponNote = `[Coupon: ${couponCode.trim().toUpperCase()}, Discount: ₹${discountAmount}, Original: ₹${computedTotal}]`;
+        finalSpecialRequests = finalSpecialRequests ? `${couponNote} ${finalSpecialRequests}` : couponNote;
+      }
+
       const newBooking = await tx.booking.create({
         data: {
           userId: payload.userId,
@@ -2357,15 +2394,22 @@ app.post('/bookings', authMiddleware, async (c) => {
           checkIn: startDate,
           checkOut: endDate,
           guests: parseInt(guests) || 1,
-          totalPrice: computedTotal,
-          specialRequests: formattedSpecialRequests,
+          totalPrice: finalAmount,
+          specialRequests: finalSpecialRequests,
           referenceNumber: refNum,
           commissionRate: resort.commissionRate || 7.0,
           status: 'PENDING'
         }
       });
 
-      return { booking: newBooking, totalPrice: computedTotal, referenceNumber: refNum };
+      return {
+        booking: newBooking,
+        totalPrice: finalAmount,
+        referenceNumber: refNum,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
+        discountAmount,
+        originalAmount: computedTotal
+      };
     }, {
       isolationLevel: 'Serializable', // Use strictest isolation for concurrency safety
       maxWait: 5000,
@@ -2529,10 +2573,204 @@ app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
       }).catch(notifErr => console.warn('Async notification creation failed:', notifErr.message))
     );
 
+    // 4. Increment coupon usage count & record booking coupon in JSON fallback
+    // Extract coupon info from specialRequests since these fields aren't in the Prisma schema
+    const couponMatch = booking.specialRequests?.match(/\[Coupon: ([A-Z0-9]+), Discount: ₹(\d+)/);
+    const extractedCouponCode = couponMatch?.[1] || null;
+    const extractedDiscount = couponMatch ? parseInt(couponMatch[2], 10) : 0;
+
+    if (extractedCouponCode) {
+      c.executionCtx.waitUntil(
+        (async () => {
+          try {
+            await incrementCouponUsage(prisma, extractedCouponCode);
+            await recordBookingCoupon(prisma, booking.id, booking.userId, extractedCouponCode, extractedDiscount);
+          } catch (err) {
+            console.error("Failed to post-process coupon verification in worker:", err);
+          }
+        })()
+      );
+    }
+
     return c.json({ success: true, booking });
   } catch (err) { 
     console.error('Verification Error:', err.message, err.stack);
     return c.json({ error: err.message }, 500); 
+  }
+});
+
+// --- Coupon & Promotions Section ---
+app.post('/coupons/validate', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const userId = payload?.userId;
+  
+  try {
+    const { code, resortId, originalAmount } = await c.req.json();
+    const result = await validateCouponCode(prisma, {
+      code,
+      userId,
+      resortId,
+      originalAmount: Number(originalAmount)
+    });
+    
+    if (!result.valid) {
+      return c.json({ valid: false, error: result.error }, 400);
+    }
+    
+    return c.json({
+      valid: true,
+      discountAmount: result.discountAmount,
+      finalAmount: result.finalAmount,
+      description: result.coupon.description,
+      code: result.coupon.code
+    });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/coupons/apply', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const userId = payload?.userId;
+  
+  try {
+    const { code, resortId, originalAmount } = await c.req.json();
+    const result = await validateCouponCode(prisma, {
+      code,
+      userId,
+      resortId,
+      originalAmount: Number(originalAmount)
+    });
+    
+    if (!result.valid) {
+      return c.json({ valid: false, error: result.error }, 400);
+    }
+    
+    return c.json({
+      valid: true,
+      discountAmount: result.discountAmount,
+      finalAmount: result.finalAmount,
+      description: result.coupon.description,
+      code: result.coupon.code
+    });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// Admin Coupons CRUD
+app.get('/admin/coupons', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const coupons = await getAllCoupons(prisma);
+    return c.json(coupons);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/admin/coupons', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const {
+      code,
+      description,
+      discountType,
+      discountValue,
+      minimumAmount,
+      maxDiscount,
+      usageLimit,
+      startsAt,
+      expiresAt,
+      applicableResortId,
+      applicableRole
+    } = await c.req.json();
+
+    if (!code || !description || !discountType || discountValue === undefined || !expiresAt) {
+      return c.json({ error: 'Required fields: code, description, discountType, discountValue, expiresAt' }, 400);
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const existing = await findCouponByCode(prisma, cleanCode);
+    if (existing) {
+      return c.json({ error: 'Coupon code already exists' }, 400);
+    }
+
+    const coupon = await createCouponInDb(prisma, {
+      code: cleanCode,
+      description,
+      discountType,
+      discountValue: Number(discountValue),
+      minimumAmount: minimumAmount !== undefined ? Number(minimumAmount) : 0,
+      maxDiscount: maxDiscount !== undefined ? Number(maxDiscount) : null,
+      usageLimit: usageLimit !== undefined ? Number(usageLimit) : null,
+      startsAt: startsAt ? new Date(startsAt) : new Date(),
+      expiresAt: new Date(expiresAt),
+      applicableResortId: applicableResortId || null,
+      applicableRole: applicableRole || null
+    });
+
+    return c.json(coupon, 201);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.patch('/admin/coupons/:id/toggle', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const { active } = await c.req.json();
+    const coupon = await updateCouponStatus(prisma, id, Boolean(active));
+    return c.json(coupon);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.delete('/admin/coupons/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    await deleteCouponFromDb(prisma, id);
+    return c.json({ success: true, message: 'Coupon deleted successfully' });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.get('/admin/coupons/analytics', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const bookingsWithCoupons = await getBookingCouponsAnalytics(prisma);
+
+    let totalDiscountGiven = 0;
+    const codeStats = {};
+
+    bookingsWithCoupons.forEach(b => {
+      const amt = b.discountAmount || 0;
+      totalDiscountGiven += amt;
+      
+      if (!codeStats[b.couponCode]) {
+        codeStats[b.couponCode] = { code: b.couponCode, count: 0, totalDiscount: 0 };
+      }
+      codeStats[b.couponCode].count += 1;
+      codeStats[b.couponCode].totalDiscount += amt;
+    });
+
+    const coupons = await getAllCoupons(prisma);
+    const activeCampaignsCount = coupons.filter(c => c.active).length;
+
+    return c.json({
+      activeCampaignsCount,
+      totalDiscountGiven,
+      couponBookingsCount: bookingsWithCoupons.length,
+      couponBreakdown: Object.values(codeStats)
+    });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
   }
 });
 

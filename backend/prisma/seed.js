@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -400,6 +402,116 @@ async function main() {
     });
   }
   console.log('✅ Seeded guides and experiences');
+
+  // 8. Seeding Coupons
+  console.log('🎫 Seeding coupons...');
+  
+  // Check if DB supports Coupon model
+  let useDbCoupons = false;
+  try {
+    if (prisma.coupon) {
+      await prisma.coupon.deleteMany();
+      useDbCoupons = true;
+    }
+  } catch (e) {
+    console.log('⚠️  DB does not support Coupon table. Seeding coupons to local JSON store instead.');
+  }
+
+  const evolveBack = await prisma.resort.findFirst({ where: { slug: 'evolve-back-kamalapura' } });
+
+  const couponsData = [
+    {
+      code: 'WELCOME10',
+      description: 'Get 10% off on your retreat, up to ₹2,000.',
+      discountType: 'PERCENTAGE',
+      discountValue: 10,
+      minimumAmount: 5000,
+      maxDiscount: 2000,
+      usageLimit: 500,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+      active: true
+    },
+    {
+      code: 'FIRSTSTAY',
+      description: 'Exclusive ₹1,500 off on your very first booking at HampiStays.',
+      discountType: 'FIXED',
+      discountValue: 1500,
+      minimumAmount: 8000,
+      usageLimit: 1000,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      active: true
+    },
+    {
+      code: 'VIPSTAYS',
+      description: 'Elite 20% off for VIP travellers, up to ₹5,000.',
+      discountType: 'PERCENTAGE',
+      discountValue: 20,
+      minimumAmount: 15000,
+      maxDiscount: 5000,
+      applicableRole: 'TRAVELLER',
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      active: true
+    },
+    {
+      code: 'HAMPIFEST',
+      description: 'Seasonal celebration: 15% off up to ₹3,000.',
+      discountType: 'PERCENTAGE',
+      discountValue: 15,
+      minimumAmount: 10000,
+      maxDiscount: 3000,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      active: true
+    }
+  ];
+
+  if (evolveBack) {
+    couponsData.push({
+      code: 'KAMALAPURA25',
+      description: 'Exclusive ₹2,500 off on suites at Evolve Back Kamalapura Palace.',
+      discountType: 'FIXED',
+      discountValue: 2500,
+      minimumAmount: 20000,
+      applicableResortId: evolveBack.id,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      active: true
+    });
+  }
+
+  if (useDbCoupons) {
+    for (const c of couponsData) {
+      await prisma.coupon.create({ data: c });
+    }
+    console.log('✅ Seeded coupons to database successfully');
+  } else {
+    // Write to server/data/coupons.json
+    try {
+      const targetDir = path.join(process.cwd(), 'server/data');
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      const couponsFile = path.join(targetDir, 'coupons.json');
+      
+      const fileCoupons = couponsData.map((c, i) => ({
+        id: `wel-${i}`,
+        ...c,
+        usedCount: 0,
+        startsAt: c.startsAt.toISOString(),
+        expiresAt: c.expiresAt.toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+
+      fs.writeFileSync(couponsFile, JSON.stringify(fileCoupons, null, 2), 'utf8');
+      console.log('✅ Seeded coupons to local JSON store successfully');
+    } catch (err) {
+      console.error('❌ Failed to write local coupons JSON file:', err.message);
+    }
+  }
 
   console.log('🚀 Database seeding complete!');
 }

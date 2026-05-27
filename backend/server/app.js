@@ -28,6 +28,7 @@ import guideBookingRoutes from './routes/guideBookingRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import couponRoutes from './routes/couponRoutes.js';
 
 
 
@@ -89,6 +90,7 @@ app.use('/api/guide-bookings', guideBookingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/coupons', couponRoutes);
 
 
 
