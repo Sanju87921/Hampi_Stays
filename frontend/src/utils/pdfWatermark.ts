@@ -6,7 +6,8 @@ interface WatermarkOptions {
 }
 
 /**
- * Applies a luxury, secure, print-safe watermark on every page of a jsPDF document.
+ * Applies a refined, luxury-grade, print-safe watermark on every page of a jsPDF document.
+ * Matches premium resort stationery aesthetic (Taj Hotels / Aman Resorts style).
  * 
  * @param doc The jsPDF instance to apply the watermark to.
  * @param options Meta-options containing reference numbers and timestamps.
@@ -22,67 +23,120 @@ export function applyPdfWatermark(doc: jsPDF, options: WatermarkOptions = {}) {
     // Save graphics state to isolate changes
     doc.saveGraphicsState();
 
-    // Set low-opacity transparency (5% opacity is hospitality-grade and print-safe)
-    try {
-      // jsPDF GState is standard for transparency/opacity
-      const gState = new (doc as any).GState({ opacity: 0.05, "stroke-opacity": 0.05 });
-      doc.setGState(gState);
-    } catch (e) {
-      console.warn("jsPDF GState is not available. Drawing with very light color fallback.");
-    }
-
-    // Drawing settings
-    // Muted Gold tint (soft/warm hue)
-    doc.setDrawColor(197, 160, 89);
-    doc.setFillColor(197, 160, 89);
-    doc.setTextColor(197, 160, 89);
-    doc.setLineWidth(0.4);
-
-    // Page A4 dimensions: 210 x 297 mm
+    // A4 dimensions: 210 x 297 mm
     const cx = 105;
     const cy = 148.5;
 
-    // --- 1. Luxury Circular Crest ---
-    // Outer ornate circle
-    doc.circle(cx, cy, 45, "S");
-    // Inner crisp circle
-    doc.circle(cx, cy, 42, "S");
+    // --- 1. PREMIUM LAID-PAPER TEXTURE GRID (1% - 1.5% Opacity) ---
+    try {
+      const textureGState = new (doc as any).GState({ opacity: 0.015, "stroke-opacity": 0.015 });
+      doc.setGState(textureGState);
+    } catch (e) {
+      console.warn("jsPDF GState is not available.");
+    }
 
-    // Elegant internal diamond grid or star
-    // Drawing a delicate 8-point star inside the circle
-    doc.line(cx, cy - 42, cx, cy + 42); // vertical axis
-    doc.line(cx - 42, cy, cx + 42, cy); // horizontal axis
-    doc.line(cx - 30, cy - 30, cx + 30, cy + 30); // diagonal axis 1
-    doc.line(cx - 30, cy + 30, cx + 30, cy - 30); // diagonal axis 2
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.15);
 
-    // Small interior solid dots for premium heritage seal texture
-    doc.circle(cx, cy - 36, 1, "F");
-    doc.circle(cx, cy + 36, 1, "F");
-    doc.circle(cx - 36, cy, 1, "F");
-    doc.circle(cx + 36, cy, 1, "F");
+    // Draw horizontal texture lines
+    for (let y = cy - 70; y <= cy + 70; y += 12) {
+      doc.line(cx - 65, y, cx + 65, y);
+    }
+    // Draw vertical texture lines
+    for (let x = cx - 65; x <= cx + 65; x += 12) {
+      doc.line(x, cy - 70, x, cy + 70);
+    }
+
+    // --- 2. FEATHERED GOLDEN-RATIO DIAMOND FRAME (4% - 6% Opacity) ---
+    // We achieve a feathered/blended outline by rendering nested shapes with descending opacity
+    const drawDiamond = (r: number) => {
+      doc.line(cx, cy - r, cx + r, cy);
+      doc.line(cx + r, cy, cx, cy + r);
+      doc.line(cx, cy + r, cx - r, cy);
+      doc.line(cx - r, cy, cx, cy - r);
+    };
+
+    // Innermost Diamond (6% Opacity)
+    try {
+      const gStateInner = new (doc as any).GState({ opacity: 0.06, "stroke-opacity": 0.06 });
+      doc.setGState(gStateInner);
+    } catch (e) {}
+    doc.setLineWidth(0.3);
+    drawDiamond(44);
+
+    // Middle Diamond (4% Opacity)
+    try {
+      const gStateMiddle = new (doc as any).GState({ opacity: 0.04, "stroke-opacity": 0.04 });
+      doc.setGState(gStateMiddle);
+    } catch (e) {}
+    doc.setLineWidth(0.2);
+    drawDiamond(47);
+
+    // Outermost Diamond (2% Opacity for feathered edge)
+    try {
+      const gStateOuter = new (doc as any).GState({ opacity: 0.02, "stroke-opacity": 0.02 });
+      doc.setGState(gStateOuter);
+    } catch (e) {}
+    doc.setLineWidth(0.1);
+    drawDiamond(50);
+
+    // --- 3. ELEGANT HERITAGE LOGO / ARCH EMBLEM (5% - 6% Opacity) ---
+    try {
+      const logoGState = new (doc as any).GState({ opacity: 0.055, "stroke-opacity": 0.055 });
+      doc.setGState(logoGState);
+    } catch (e) {}
     
-    // Draw outer boundary ring
-    doc.circle(cx, cy, 48, "S");
+    doc.setDrawColor(197, 160, 89);
+    doc.setFillColor(197, 160, 89);
+    doc.setTextColor(197, 160, 89);
 
-    // --- 2. Centered Rotated Text Layer ---
-    // 320 degrees (rotated slightly upwards)
+    // Draw luxury crown/temple arch pinnacle at top-center of the diamonds
+    // Base dome
+    doc.setLineWidth(0.35);
+    doc.line(cx - 8, cy - 28, cx + 8, cy - 28);
+    // Left pillar top
+    doc.line(cx - 6, cy - 28, cx - 6, cy - 31);
+    // Right pillar top
+    doc.line(cx + 6, cy - 28, cx + 6, cy - 31);
+    // Center pinnacle triangle
+    doc.triangle(cx - 4, cy - 31, cx + 4, cy - 31, cx, cy - 38, "S");
+    // Little solid crown gem
+    doc.circle(cx, cy - 39.5, 0.6, "F");
+
+    // --- 4. CENTERED DIAGONAL BRANDING (5.5% Opacity) ---
+    // 322 degrees rotation angle
+    const rotateAngle = 322;
+
+    // Classic wide-spaced luxury text (Taj / Aman Resorts style)
     doc.setFont("times", "bold");
-    doc.setFontSize(26);
-    doc.text("HAMPISTAYS", cx, cy - 3, { align: "center", angle: 320 });
+    doc.setFontSize(21);
+    doc.text("H A M P I S T A Y S", cx, cy - 4, { align: "center", angle: rotateAngle });
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("LUXURY ECO-HOSPITALITY", cx, cy + 5, { align: "center", angle: 320 });
+    doc.setFontSize(7.5);
+    doc.text("LUXURY ECO-HOSPITALITY", cx, cy + 3, { align: "center", angle: rotateAngle });
 
+    // Faint security metadata
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.text(`VERIFICATION REF: ${ref}`, cx, cy + 12, { align: "center", angle: 320 });
-
     doc.setFontSize(6.5);
-    doc.text(`GENERATED: ${timeStr}`, cx, cy + 18, { align: "center", angle: 320 });
-    doc.text("DIGITALLY SECURED BY HAMPISTAYS", cx, cy + 24, { align: "center", angle: 320 });
+    doc.text(`AUTHENTICATION REF: ${ref}`, cx, cy + 9, { align: "center", angle: rotateAngle });
 
-    // Restore graphics state so next elements aren't affected
+    doc.setFontSize(6);
+    doc.text(`VERIFIED RECORD: ${timeStr}`, cx, cy + 14, { align: "center", angle: rotateAngle });
+
+    // --- 5. AUTHENTICITY FOOTER LAYER (8% Opacity for elegant readability) ---
+    try {
+      const footerGState = new (doc as any).GState({ opacity: 0.08, "stroke-opacity": 0.08 });
+      doc.setGState(footerGState);
+    } catch (e) {}
+
+    // Tiny, clean, centered authenticity footer
+    doc.setFont("times", "italic");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100); // Slate gray/bronze feel
+    doc.text(`Digitally Generated & Verified by HampiStays  |  Reference: ${ref}`, cx, 284, { align: "center" });
+
+    // Restore graphics state so subsequent elements aren't affected
     doc.restoreGraphicsState();
   }
 }
