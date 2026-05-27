@@ -1880,21 +1880,66 @@ app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, as
 // User Management
 app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
+  const role = c.req.query('role');
+  const search = c.req.query('search') || '';
+  const page = parseInt(c.req.query('page') || '1', 10);
+  const limit = parseInt(c.req.query('limit') || '20', 10);
+  const skip = (page - 1) * limit;
+
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        phone: true,
-        kycStatus: true,
-        avatar: true
-      }
+    const whereClause = {
+      ...(role && role !== 'ALL' ? { role } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search } }
+        ]
+      } : {})
+    };
+
+    const [users, totalCount, verifiedCount] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          phone: true,
+          kycStatus: true,
+          avatar: true,
+          verifiedEmail: true,
+          verifiedPhone: true,
+          isEmailVerified: true,
+          isMobileVerified: true,
+          deletedAt: true,
+          ownerProfile: role === 'RESORT_OWNER' ? { select: { businessName: true, isVerified: true, _count: { select: { resorts: true } } } } : false,
+          guideProfile: role === 'GUIDE' ? { select: { specialties: true, languages: true, isActive: true, rating: true, isVerified: true, status: true } } : false,
+          _count: {
+            select: {
+              bookings: true,
+              wishlist: true,
+              guideBookings: true
+            }
+          }
+        }
+      }),
+      prisma.user.count({ where: whereClause }),
+      prisma.user.count({ where: { ...whereClause, OR: [{ verifiedEmail: true }, { isEmailVerified: true }] } })
+    ]);
+
+    return c.json({
+      users,
+      totalCount,
+      verifiedCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit)
     });
-    return c.json(users);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

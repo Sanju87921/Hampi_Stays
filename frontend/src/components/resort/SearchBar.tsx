@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { Button } from "../ui/Button";
 import { Calendar, type DateRange } from "../ui/Calendar";
 import { cn } from "../../utils/cn";
+import { useTranslation } from "react-i18next";
 
 type Panel = "location" | "dates" | "guests" | null;
 
@@ -35,6 +36,7 @@ export function SearchBar() {
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [guests, setGuests] = useState<GuestCount>({ adults: 2, children: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Close panel on outside click
   useEffect(() => {
@@ -94,7 +96,7 @@ export function SearchBar() {
     }
   };
 
-  const guestLabel = `${guests.adults + guests.children} guest${guests.adults + guests.children !== 1 ? "s" : ""}`;
+  const guestLabel = t("hero.guestCount", { count: guests.adults + guests.children });
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -111,12 +113,12 @@ export function SearchBar() {
           onClick={() => togglePanel("location")}
         >
           <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
-            Where
+            {t("hero.search")}
           </span>
           <div className="flex items-center gap-3 text-navy-950/50">
             <MapPin className="w-5 h-5 text-gold-500 flex-shrink-0" />
             <span className={cn("text-base font-medium truncate", location ? "text-navy-950" : "text-navy-800/40")}>
-              {location || "Search destinations"}
+              {location || t("hero.searchPlaceholder")}
             </span>
           </div>
           <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-sand-200 group-hover:bg-transparent transition-colors" />
@@ -132,7 +134,7 @@ export function SearchBar() {
           onClick={() => togglePanel("dates")}
         >
           <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
-            When
+            {t("hero.checkIn")} - {t("hero.checkOut")}
           </span>
           <div className="flex items-center gap-3 text-navy-950/50">
             <CalIcon className="w-5 h-5 text-gold-500 flex-shrink-0" />
@@ -156,7 +158,7 @@ export function SearchBar() {
             onClick={() => togglePanel("guests")}
           >
             <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
-              Who
+              {t("hero.guests")}
             </span>
             <div className="flex items-center gap-3 text-navy-950/50">
               <Users className="w-5 h-5 text-gold-500 flex-shrink-0" />
@@ -171,7 +173,7 @@ export function SearchBar() {
             className="w-14 h-14 md:w-auto md:h-[54px] p-0 md:px-8 rounded-full ml-4 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-navy-950 hover:bg-gold-600 border-none"
           >
             <Search className="w-5 h-5 text-white" />
-            <span className="hidden md:inline font-bold text-white text-base">Search</span>
+            <span className="hidden md:inline font-bold text-white text-base">{t("common.search")}</span>
           </Button>
         </div>
       </div>

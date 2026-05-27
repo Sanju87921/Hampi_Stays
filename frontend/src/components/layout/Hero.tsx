@@ -4,11 +4,13 @@ import { SearchBar } from "../resort/SearchBar";
 import { useAuth } from "../../context/AuthContext";
 import { ShieldCheck, ArrowRight, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export function Hero() {
   const { scrollY } = useScroll();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const { t } = useTranslation();
 
   const hampiImages = [
     "/images/hero.png",
@@ -115,7 +117,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-4 cursor-default select-none"
           >
             <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse flex-shrink-0" />
-            {isAdmin ? "Administrator Session" : "Welcome to Hampi"}
+            {isAdmin ? "Administrator Session" : t("hero.badge")}
           </motion.span>
 
           {!isAdmin && (
@@ -141,8 +143,8 @@ export function Hero() {
               </>
             ) : (
               <>
-                Discover Ancient <br className="hidden sm:block" />
-                <span className="text-gold-400 italic">Luxury</span>
+                {t("hero.title1")} <br className="hidden sm:block" />
+                <span className="text-gold-400 italic">{t("hero.title2")}</span>
               </>
             )}
           </motion.h1>
@@ -153,7 +155,7 @@ export function Hero() {
           >
             {isAdmin 
               ? "You are logged in as the platform curator. Manage approvals, monitor performance, and maintain excellence."
-              : "Experience the grandeur of the Vijayanagara Empire seamlessly blended with world-class eco-hospitality."}
+              : t("hero.subtitle")}
           </motion.p>
 
           <motion.div variants={textVariant} className="w-full flex justify-center">

@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useSystem } from "../../context/SystemContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
-
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "../ui/LanguageSwitcher";
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -19,6 +20,7 @@ export function Navbar() {
   const { protect } = useProtectedAction();
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,31 +50,31 @@ export function Navbar() {
   const navLinks = isDashboard 
     ? user?.role === 'GUIDE'
       ? [
-          { name: "Overview", path: "/dashboard" },
+          { name: t("navbar.dashboard"), path: "/dashboard" },
           { name: "My Tours", path: "/dashboard?tab=tours" },
-          { name: "My Profile", path: "/dashboard?tab=profile" },
-          { name: "Bookings", path: "/dashboard?tab=bookings" },
+          { name: t("navbar.profile"), path: "/dashboard?tab=profile" },
+          { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
           { name: "Settings", path: "/dashboard?tab=settings" },
         ]
       : user?.role === 'TRAVELLER'
         ? [
-            { name: "Overview", path: "/dashboard" },
+            { name: t("navbar.dashboard"), path: "/dashboard" },
             { name: "Book Stays", path: "/resorts" },
-            { name: "Wishlist", path: "/dashboard/wishlist" },
-            { name: "My Bookings", path: "/dashboard/bookings" },
+            { name: t("navbar.wishlist"), path: "/dashboard/wishlist" },
+            { name: t("navbar.bookings"), path: "/dashboard/bookings" },
             { name: "Notifications", path: "/dashboard/notifications" },
-            { name: "Profile", path: "/dashboard/profile" },
+            { name: t("navbar.profile"), path: "/dashboard/profile" },
           ]
         : [
-            { name: "Overview", path: "/dashboard" },
+            { name: t("navbar.dashboard"), path: "/dashboard" },
             { name: "Properties", path: "/dashboard?tab=properties" },
-            { name: "Bookings", path: "/dashboard?tab=bookings" },
-            { name: "Profile", path: "/dashboard/profile" },
+            { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
+            { name: t("navbar.profile"), path: "/dashboard/profile" },
             { name: "Settings", path: "/dashboard?tab=settings" },
           ]
     : [
-    { name: "Resorts", path: "/resorts" },
-    { name: "Ruins Explorer", path: "/discovery" },
+    { name: t("navbar.resorts"), path: "/resorts" },
+    { name: t("navbar.discover"), path: "/discovery" },
   ];
 
   return (
@@ -144,6 +146,7 @@ export function Navbar() {
           <div className="flex-1 flex justify-end items-center gap-5 z-10">
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-6">
+              <LanguageSwitcher />
               {isAuthenticated ? (
                 <div className="flex items-center gap-6">
                   <Link
@@ -176,7 +179,7 @@ export function Navbar() {
                       isScrolled ? "text-navy-950" : "text-white"
                     )}
                   >
-                    Log in
+                    {t("navbar.signIn")}
                   </Link>
                   <Button
                     variant="primary"
@@ -193,7 +196,7 @@ export function Navbar() {
                       );
                     }}
                   >
-                    Book Now
+                    {t("common.bookNow")}
                   </Button>
                 </div>
               )}
@@ -249,6 +252,9 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col gap-3 sm:gap-4 mt-2">
+                <div className="flex justify-center mb-2">
+                  <LanguageSwitcher />
+                </div>
                 {!isAuthenticated ? (
                   <>
                     <button
@@ -258,7 +264,7 @@ export function Navbar() {
                       }}
                       className="w-full text-center font-bold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors block text-sm"
                     >
-                      Log in
+                      {t("navbar.signIn")}
                     </button>
                     <button 
                       onClick={() => {
@@ -271,7 +277,7 @@ export function Navbar() {
                         size="lg" 
                         className="w-full h-14 sm:h-16 rounded-2xl border-none shadow-gold text-sm"
                       >
-                        Start Your Journey
+                        {t("common.bookNow")}
                       </Button>
                     </button>
                   </>

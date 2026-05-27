@@ -12,6 +12,7 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
+import { UserManagement } from "./components/UserManagement";
 
 type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs";
 
@@ -1962,7 +1963,7 @@ export function AdminDashboard() {
             {activeTab === "overview" && renderOverview()}
             {activeTab === "properties" && renderProperties()}
             {activeTab === "guides" && renderGuides()}
-            {activeTab === "users" && renderUsers()}
+            {activeTab === "users" && <UserManagement />}
             {activeTab === "bookings" && renderBookings()}
             {activeTab === "payouts" && renderPayouts()}
             {activeTab === "newsletter" && renderNewsletter()}

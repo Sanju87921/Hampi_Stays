@@ -24,7 +24,7 @@ export function RegisterPage() {
   const [role, setRole] = useState<UserRole>(emailParam ? "guest" : null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [error, setError] = useState("");
-  const { settings } = useSystem();
+  const { settings, isLoading: isSettingsLoading } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
   const { register, loginWithGoogle, loginWithOtp } = useAuth();
   const navigate = useNavigate();
