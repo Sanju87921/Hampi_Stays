@@ -25,7 +25,7 @@ const CurationDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div className="bg-sand-50 rounded-2xl border border-sand-200 overflow-hidden">
               <div className="h-40 bg-sand-200 relative">
-                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Resort" className="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Resort" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = '/images/hero.png'; }} />
                 <div className="absolute top-3 left-3 px-3 py-1 bg-navy-950/80 backdrop-blur text-gold-400 text-[10px] font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
                   <Star className="w-3 h-3" /> Slot 1
                 </div>
@@ -38,7 +38,7 @@ const CurationDashboard = () => {
             </div>
             <div className="bg-sand-50 rounded-2xl border border-sand-200 overflow-hidden">
               <div className="h-40 bg-sand-200 relative">
-                <img src="https://images.unsplash.com/photo-1542314831-c6a4d14d8c85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Resort" className="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1542314831-c6a4d14d8c85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Resort" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = '/images/hampi-1.png'; }} />
                 <div className="absolute top-3 left-3 px-3 py-1 bg-navy-950/80 backdrop-blur text-gold-400 text-[10px] font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
                   <Star className="w-3 h-3" /> Slot 2
                 </div>
