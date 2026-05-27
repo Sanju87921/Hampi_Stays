@@ -21,6 +21,7 @@ export interface HomepageHero {
 const HeroModule = () => {
   const [slides, setSlides] = useState<HomepageHero[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [rotationSpeed, setRotationSpeed] = useState(3);
   const [previewIdx, setPreviewIdx] = useState(0);
   const [previewPlaying, setPreviewPlaying] = useState(false);
@@ -32,11 +33,28 @@ const HeroModule = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   const fetchSlides = async () => {
+    setLoadError(null);
     try {
-      const data = await api.get('/hero-slides?all=true');
-      setSlides(data);
+      const data = await api.get<HomepageHero[]>('/hero-slides?all=true');
+      // API returns array always — even empty
+      if (Array.isArray(data)) {
+        setSlides(data);
+        console.log('[HeroModule] Loaded', data.length, 'slides');
+      } else {
+        console.warn('[HeroModule] Unexpected API response:', data);
+        setSlides([]);
+      }
     } catch (err: any) {
-      toast.error('Failed to load hero slides');
+      console.error('[HeroModule] fetchSlides error:', err?.message, err?.status);
+      // Only show error state for actual network/server failures (not empty db)
+      if (err?.status >= 500) {
+        setLoadError('Backend error. The hero slides table may not be set up yet. Contact support or run: prisma db push');
+      } else if (err?.status === 404) {
+        setLoadError('Hero slides endpoint not found. Check worker deployment.');
+      } else {
+        setLoadError(err?.message || 'Failed to connect to the API.');
+      }
+      setSlides([]);
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +217,38 @@ const HeroModule = () => {
   };
 
   if (isLoading) {
-    return <div className="py-12 flex justify-center"><div className="w-8 h-8 border-4 border-gold-400 border-t-transparent rounded-full animate-spin" /></div>;
+    return (
+      <div className="py-16 flex flex-col items-center justify-center gap-4">
+        <div className="w-10 h-10 border-4 border-gold-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-navy-950/50 font-medium">Loading hero slides...</p>
+      </div>
+    );
+  }
+
+  // API/backend error state — show informative admin message
+  if (loadError) {
+    return (
+      <div className="py-12 flex flex-col items-center justify-center text-center max-w-md mx-auto gap-6">
+        <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center">
+          <span className="text-2xl">⚠️</span>
+        </div>
+        <div>
+          <h3 className="font-bold text-navy-950 text-lg mb-2">Hero Slides Unavailable</h3>
+          <p className="text-sm text-navy-950/60 leading-relaxed">{loadError}</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setIsLoading(true); fetchSlides(); }}
+            className="bg-navy-950 hover:bg-gold-600 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors shadow-lg"
+          >
+            Retry
+          </button>
+        </div>
+        <div className="text-[10px] text-navy-950/30 font-mono bg-sand-50 px-3 py-2 rounded-xl border border-sand-200 text-left max-w-full break-all">
+          {loadError}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -286,8 +335,24 @@ const HeroModule = () => {
         
         <div className="space-y-3">
           {slides.length === 0 ? (
-            <div className="text-center py-8 text-navy-950/50 bg-sand-50 rounded-2xl border border-dashed border-sand-200">
-              No slides configured. Upload an image to create the first slide.
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-sand-50/50 rounded-2xl border-2 border-dashed border-sand-200 gap-6">
+              <div className="w-20 h-20 rounded-full bg-white shadow-lg border border-sand-200 flex items-center justify-center">
+                <Monitor className="w-8 h-8 text-navy-950/20" />
+              </div>
+              <div>
+                <h3 className="font-bold text-navy-950 text-lg mb-2">No Hero Slides Yet</h3>
+                <p className="text-sm text-navy-950/50 max-w-xs mx-auto leading-relaxed">
+                  Your homepage carousel is empty. Upload a stunning image of Hampi to create your first hero slide.
+                </p>
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="bg-navy-950 hover:bg-gold-600 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" />
+                Upload First Slide
+              </button>
             </div>
           ) : (
             slides.map((slide, idx) => (

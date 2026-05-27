@@ -61,17 +61,7 @@ const CurationDashboard = () => {
       );
     }
     if (activeTab === 'hero') {
-      return (
-        <div className="relative">
-          <div className="absolute top-0 right-0 z-10 flex items-center gap-2">
-            <span className="px-3 py-1 bg-gold-100/80 text-gold-700 text-[10px] font-bold uppercase tracking-widest rounded-full border border-gold-200">Coming Soon</span>
-          </div>
-          <div className="opacity-60 pointer-events-none">
-            <HeroModule />
-          </div>
-        </div>
-      );
-    }
+      return <HeroModule />;    }
     // Coming Soon for other tabs
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto py-12">

@@ -3339,8 +3339,17 @@ app.get('/hero-slides', async (c) => {
       where: includeAll ? undefined : { isActive: true },
       orderBy: { sortOrder: 'asc' }
     });
+    console.log(`[HeroSlides] Fetched ${slides.length} slides (includeAll=${includeAll})`);
     return c.json(slides);
-  } catch (err) { return c.json({ error: err.message }, 500); }
+  } catch (err) {
+    // Table may not exist yet (P2021) — return empty array instead of 500
+    if (err.code === 'P2021' || err.message?.includes('does not exist') || err.message?.includes('homepageHero')) {
+      console.warn('[HeroSlides] Table not found — returning empty array. Run: prisma db push');
+      return c.json([]);
+    }
+    console.error('[HeroSlides] GET error:', err.message);
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 app.post('/hero-slides', authMiddleware, adminMiddleware, async (c) => {
