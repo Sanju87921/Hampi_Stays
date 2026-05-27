@@ -12,7 +12,7 @@ export function Hero() {
   const isAdmin = user?.role === "ADMIN";
   const { t } = useTranslation();
 
-  const hampiImages = [
+  const hampiImagesFallback = [
     "/images/hero.png",
     "/images/hampi-1.png",
     "/images/hampi-2.png",
@@ -22,7 +22,7 @@ export function Hero() {
     "/images/hampi-6.png"
   ];
 
-  const imageLabels = [
+  const imageLabelsFallback = [
     "The Sacred Virupaksha Temple",
     "The Sacred Stone Chariot",
     "Virupaksha Temple Gateway",
@@ -32,14 +32,36 @@ export function Hero() {
     "Tungabhadra River Twilight"
   ];
 
+  const [hampiImages, setHampiImages] = useState(hampiImagesFallback);
+  const [imageLabels, setImageLabels] = useState(imageLabelsFallback);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    // Fetch dynamic hero slides
+    fetch(import.meta.env.VITE_API_URL + '/hero-slides')
+      .then(res => res.json())
+      .then((data) => {
+        if (data && data.length > 0) {
+          setHampiImages(data.map((s: any) => s.imageUrl));
+          setImageLabels(data.map((s: any) => s.title));
+        }
+      })
+      .catch(err => console.error("Failed to load hero slides", err));
+      
+    // Rotation interval config
+    let speed = 3;
+    const configStr = localStorage.getItem('hampi_hero_config');
+    if (configStr) {
+      try {
+        speed = JSON.parse(configStr).rotationSpeed || 3;
+      } catch (e) {}
+    }
+
     const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % hampiImages.length);
-    }, 3000);
+      setCurrentImageIndex((prev) => (prev + 1) % (hampiImages.length || 1));
+    }, speed * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [hampiImages.length]);
 
   const staggerContainer: Variants = {
     hidden: { opacity: 0 },

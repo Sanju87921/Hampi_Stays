@@ -3330,6 +3330,60 @@ app.get('/experiences/:id', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// Hero Slides API
+app.get('/hero-slides', async (c) => {
+  const prisma = getPrisma(c.env);
+  const includeAll = c.req.query('all') === 'true';
+  try {
+    const slides = await prisma.homepageHero.findMany({
+      where: includeAll ? undefined : { isActive: true },
+      orderBy: { sortOrder: 'asc' }
+    });
+    return c.json(slides);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/hero-slides', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const data = await c.req.json();
+  try {
+    const slide = await prisma.homepageHero.create({ data });
+    return c.json(slide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.put('/hero-slides/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const data = await c.req.json();
+  try {
+    const slide = await prisma.homepageHero.update({ where: { id }, data });
+    return c.json(slide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/hero-slides/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    await prisma.homepageHero.delete({ where: { id } });
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/hero-slides/reorder', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const { ids } = await c.req.json();
+  try {
+    const queries = ids.map((id, index) => prisma.homepageHero.update({
+      where: { id },
+      data: { sortOrder: index }
+    }));
+    await prisma.$transaction(queries);
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 // Error Handling
 app.onError((err, c) => {
   console.error(err);

@@ -424,3 +424,21 @@ model VerificationAudit {
 
   @@map("verification_audits")
 }
+
+model HomepageHero {
+  id             String    @id @default(cuid())
+  title          String
+  subtitle       String?
+  imageUrl       String
+  mobileImageUrl String?
+  ctaText        String?
+  ctaLink        String?
+  isActive       Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("homepage_heroes")
+}
