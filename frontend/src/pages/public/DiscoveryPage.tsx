@@ -434,8 +434,8 @@ export function DiscoveryPage() {
                           <h4 className="font-bold text-xs mb-1 text-navy-950">{poi.name}</h4>
                           <p className="text-[9px] text-navy-950/60 leading-normal mb-3">{poi.description.substring(0, 70)}...</p>
                           <Button 
-                            size="xs" 
-                            className="w-full bg-navy-950 text-white hover:bg-navy-900 border-none font-bold py-1 px-2 rounded-lg text-[9px]"
+                            size="sm" 
+                            className="w-full bg-navy-950 text-white hover:bg-navy-900 border-none font-bold py-1 px-2 rounded-lg text-[9px] h-8"
                             onClick={() => setSelectedPOI(poi)}
                           >
                             Inspect Heritage Details
