@@ -35,6 +35,7 @@ const ProfilePage = lazy(() => import("./pages/traveler/ProfilePage").then(m => 
 const NotificationsPage = lazy(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
 const DashboardSelector = lazy(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
 const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
+const CurationDashboard = lazy(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -190,6 +191,14 @@ function AnimatedRoutes() {
                 element={
                   <ProtectedRoute>
                     <DashboardSelector />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/curation"
+                element={
+                  <ProtectedRoute>
+                    <CurationDashboard />
                   </ProtectedRoute>
                 }
               />

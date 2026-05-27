@@ -169,10 +169,12 @@ export function Hero() {
                   </button>
                 </Link>
                 <div className="flex gap-4">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-gold-400" />
-                    <span className="text-white text-sm font-bold">Curation Mode</span>
-                  </div>
+                  <Link to="/admin/curation">
+                    <button className="bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center gap-3 transition-colors duration-300">
+                      <Building2 className="w-5 h-5 text-gold-400" />
+                      <span className="text-white text-base font-bold">Curation Mode</span>
+                    </button>
+                  </Link>
                 </div>
               </div>
             ) : (
