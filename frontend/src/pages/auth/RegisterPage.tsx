@@ -242,6 +242,14 @@ export function RegisterPage() {
     },
   };
 
+  if (isSettingsLoading) {
+    return (
+      <div className="min-h-screen bg-sand-50 flex items-center justify-center p-4 md:p-6 lg:p-8">
+        <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-sand-50 flex items-center justify-center p-4 md:p-6 lg:p-8">
       <div className="w-full max-w-[1400px] md:h-[800px] flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">

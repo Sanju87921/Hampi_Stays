@@ -56,6 +56,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       if (data && typeof data === "object") {
         setSettings(prev => ({ ...prev, ...data }));
       }
+      // Force a full refetch to guarantee frontend state matches backend exactly
+      await fetchSettings();
     } catch (error) {
       console.error("Failed to update system settings:", error);
       throw error;

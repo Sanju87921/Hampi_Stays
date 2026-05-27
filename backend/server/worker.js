@@ -350,11 +350,15 @@ app.get('/stats', async (c) => {
 app.get('/settings', async (c) => {
   const prisma = getPrisma(c.env);
   try {
-    let settings = await prisma.systemSettings.findFirst({ cacheStrategy: { ttl: 600 } });
+    let settings = await prisma.systemSettings.findFirst();
     if (!settings) {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true, defaultCommissionRate: 7.0, requireOtpForSignup: true } });
     }
-    return c.json(settings);
+    return c.json(settings, 200, {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
