@@ -16,6 +16,7 @@ import { apiClient } from "../../utils/apiClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as QRCode from "qrcode";
+import { applyPdfWatermark } from "../../utils/pdfWatermark";
 
 const downloadPdf = (doc: any, filename: string) => {
   const blob = doc.output("blob");
@@ -274,6 +275,9 @@ export function OwnerDashboard() {
     doc.setFontSize(7);
     doc.text("HampiStays Partner Network | Hampi, Karnataka | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
+    // --- 7. APPLY LUXURY WATERMARK SYSTEM ---
+    applyPdfWatermark(doc, { referenceNumber: safeRef });
+
     downloadPdf(doc, `HampiStays_Invoice_${safeRef}.pdf`);
   };
 
@@ -435,6 +439,9 @@ export function OwnerDashboard() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
+
+    // --- 7. APPLY LUXURY WATERMARK SYSTEM ---
+    applyPdfWatermark(doc, { referenceNumber: safeRef });
 
     downloadPdf(doc, `HampiStays_Confirmation_${safeRef}.pdf`);
   };

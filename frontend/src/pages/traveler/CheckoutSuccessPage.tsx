@@ -13,6 +13,7 @@ import autoTable from "jspdf-autotable";
 import * as QRCode from "qrcode";
 import { useAuth } from "../../context/AuthContext";
 import type { Booking } from "../../types/booking";
+import { applyPdfWatermark } from "../../utils/pdfWatermark";
 
 const downloadPdf = (doc: any, filename: string) => {
   const blob = doc.output("blob");
@@ -215,6 +216,9 @@ export function CheckoutSuccessPage() {
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
       doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
+
+      // --- 7. APPLY LUXURY WATERMARK SYSTEM ---
+      applyPdfWatermark(doc, { referenceNumber: safeRef });
 
       downloadPdf(doc, `HampiStays_Confirmation_${safeRef}.pdf`);
     } catch (err) {

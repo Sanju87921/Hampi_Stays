@@ -47,11 +47,43 @@ export const updateProfile = async (req, res, next) => {
     if (idType !== undefined) data.idType = idType;
     if (idNumber !== undefined) data.idNumber = idNumber;
     if (idImage !== undefined) {
-      data.idImage = idImage;
-      // Only set kycStatus to PENDING if a new document is being uploaded
-      const currentUser = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { idImage: true, kycStatus: true } });
-      if (idImage && idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
-        data.kycStatus = 'PENDING';
+      const currentUser = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { idImage: true, kycStatus: true, name: true } });
+      if (idImage && idImage !== currentUser?.idImage) {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const submissionCount = await prisma.verificationAudit.count({
+          where: {
+            targetUserId: req.user.userId,
+            action: { in: ['SUBMITTED', 'RESUBMITTED'] },
+            createdAt: { gte: oneDayAgo }
+          }
+        });
+
+        if (submissionCount >= 5) {
+          return res.status(429).json({ error: 'Too many KYC submissions. You can only submit your KYC documents 5 times per day.' });
+        }
+
+        data.idImage = idImage;
+        const previousStatus = currentUser?.kycStatus || 'NOT_SUBMITTED';
+        const targetStatus = previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'PENDING';
+        data.kycStatus = targetStatus;
+
+        // Log VerificationAudit trail
+        await prisma.verificationAudit.create({
+          data: {
+            adminId: 'USER_SELF',
+            adminName: name || currentUser?.name || 'User Self',
+            targetUserId: req.user.userId,
+            targetName: name || currentUser?.name || 'User Self',
+            targetType: 'USER',
+            action: previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'SUBMITTED',
+            previousStatus,
+            newStatus: targetStatus,
+            ipAddress: req.ip || req.headers['x-forwarded-for'] || null,
+            userAgent: req.headers['user-agent'] || null
+          }
+        });
+      } else {
+        data.idImage = idImage;
       }
     }
 

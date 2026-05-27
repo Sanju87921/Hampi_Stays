@@ -24,6 +24,8 @@ router.get('/guides', adminController.getAllGuides);
 router.patch('/guides/:id/status', adminController.updateGuideStatus);
 router.patch('/guides/:id/toggle-active', adminController.toggleGuideActive);
 router.patch('/guides/toggle-all', adminController.toggleAllGuides);
+router.get('/kyc-image/:id', adminController.getSignedKycImage);
+router.get('/audit-logs', adminController.getAuditLogs);
 
 // Financials & Security
 router.get('/payouts', adminController.getPayouts);

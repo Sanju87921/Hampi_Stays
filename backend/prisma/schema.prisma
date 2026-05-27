@@ -28,6 +28,10 @@ model User {
   verifiedPhone    Boolean           @default(false)
   verificationCompletedAt DateTime?
   kycStatus        String?           @default("NOT_SUBMITTED")
+  kycRejectionReason String?
+  deletedAt        DateTime?
+  fraudScore       Int               @default(0)
+  fraudFlags       String[]          @default([])
   location         String?
   bookings         Booking[]
   guideBookings    GuideBooking[]
@@ -84,6 +88,7 @@ model Resort {
   mealPackages   Json?
   verificationDocs Json?
   status         ResortStatus   @default(PENDING)
+  deletedAt      DateTime?
   commissionRate Float          @default(7.0)
   bookings       Booking[]
   discountCodes  DiscountCode[]
@@ -273,7 +278,11 @@ model GuideProfile {
   idNumber        String?
   idType          String?
   status          ResortStatus   @default(PENDING)
+  rejectionReason String?
   isActive        Boolean        @default(true)
+  deletedAt       DateTime?
+  fraudScore      Int            @default(0)
+  fraudFlags      String[]       @default([])
   experiences     Experience[]
   bookings        GuideBooking[]
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -374,6 +383,10 @@ enum ResortStatus {
   PENDING
   APPROVED
   REJECTED
+  NOT_SUBMITTED
+  UNDER_REVIEW
+  RESUBMITTED
+  VERIFIED
 }
 
 model PendingVerification {
@@ -390,4 +403,22 @@ model PendingVerification {
   createdAt        DateTime @default(now())
 
   @@map("pending_verifications")
+}
+
+model VerificationAudit {
+  id              String   @id @default(cuid())
+  adminId         String
+  adminName       String?
+  targetUserId    String
+  targetName      String?
+  targetType      String   // "GUIDE" or "RESORT"
+  action          String   // "APPROVED", "REJECTED", "SUBMITTED"
+  rejectionReason String?
+  previousStatus  String?
+  newStatus       String
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  @@map("verification_audits")
 }

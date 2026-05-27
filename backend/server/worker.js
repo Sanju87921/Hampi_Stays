@@ -88,6 +88,7 @@ const decryptUser = (user) => {
   if (out.phone) out.phone = decrypt(out.phone);
   if (out.location) out.location = decrypt(out.location);
   if (out.idNumber) out.idNumber = decrypt(out.idNumber);
+  if (out.idImage) out.idImage = decrypt(out.idImage);
   delete out.passwordHash;
   return out;
 };
@@ -103,7 +104,89 @@ const decryptGuide = (guide) => {
   if (!guide) return guide;
   const out = { ...guide };
   if (out.idNumber) out.idNumber = decrypt(out.idNumber);
+  if (out.idImage) out.idImage = decrypt(out.idImage);
   return out;
+};
+
+const generateSignedKycUrlWorker = (guideId, env) => {
+  const expires = Math.floor(Date.now() / 1000) + 300; // 5 minutes validity
+  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
+  const dataToSign = `${guideId}:${expires}`;
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(dataToSign);
+  const token = hmac.digest('hex');
+  return `/api/admin/kyc-image/${guideId}?expires=${expires}&token=${token}`;
+};
+
+const verifySignedKycUrlWorker = (guideId, expires, token, env) => {
+  if (Math.floor(Date.now() / 1000) > parseInt(expires)) {
+    return false;
+  }
+  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
+  const dataToSign = `${guideId}:${expires}`;
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(dataToSign);
+  const expectedToken = hmac.digest('hex');
+  return token === expectedToken;
+};
+
+const runKycFraudCheckWorker = async (userId, idNumber, idImage, prisma) => {
+  const flags = [];
+  let score = 0;
+
+  if (!idNumber) return { score, flags };
+
+  const targetIdClean = idNumber.replace(/[\s-]/g, '').toLowerCase();
+
+  // Fetch all active users
+  const allUsers = await prisma.user.findMany({
+    where: {
+      id: { not: userId },
+      deletedAt: null
+    },
+    select: {
+      id: true,
+      email: true,
+      idNumber: true,
+      idImage: true
+    }
+  });
+
+  for (const otherUser of allUsers) {
+    if (otherUser.idNumber) {
+      const decIdNum = decrypt(otherUser.idNumber);
+      if (decIdNum) {
+        const cleanDecIdNum = decIdNum.replace(/[\s-]/g, '').toLowerCase();
+        if (cleanDecIdNum === targetIdClean) {
+          flags.push('DUPLICATE_ID_NUMBER');
+          score = Math.max(score, 90);
+        }
+      }
+    }
+
+    if (idImage && otherUser.idImage) {
+      const decImg = decrypt(otherUser.idImage);
+      if (decImg === idImage) {
+        flags.push('REUSED_DOCUMENT_IMAGE');
+        score = Math.max(score, 95);
+      }
+    }
+  }
+
+  // Count rejection history
+  const auditCount = await prisma.verificationAudit.count({
+    where: {
+      targetUserId: userId,
+      action: 'REJECTED'
+    }
+  });
+
+  if (auditCount >= 3) {
+    flags.push('REPEATED_REJECTIONS');
+    score = Math.max(score, 60);
+  }
+
+  return { score, flags };
 };
 
 // --- Edge Rate Limiting & Abuse Protection ---
@@ -186,9 +269,15 @@ app.use('/upload/signature', async (c, next) => { if (c.req.method === 'OPTIONS'
 
 // Auth Middlewares
 const authMiddleware = async (c, next) => {
+  let token = null;
   const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
-  const token = authHeader.split(' ')[1];
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    token = c.req.query('auth_token');
+  }
+
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
   try {
     const secret = c.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET not configured");
@@ -1131,10 +1220,45 @@ app.patch('/users/:id', authMiddleware, async (c) => {
     if (body.idType !== undefined) data.idType = body.idType;
     if (body.idNumber !== undefined) data.idNumber = body.idNumber;
     if (body.idImage !== undefined) {
-      data.idImage = body.idImage;
-      const currentUser = await prisma.user.findUnique({ where: { id }, select: { idImage: true, kycStatus: true } });
-      if (body.idImage && body.idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
-        data.kycStatus = 'PENDING';
+      const currentUser = await prisma.user.findUnique({ where: { id }, select: { idImage: true, kycStatus: true, name: true } });
+      if (body.idImage && body.idImage !== currentUser?.idImage) {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const submissionCount = await prisma.verificationAudit.count({
+          where: {
+            targetUserId: id,
+            action: { in: ['SUBMITTED', 'RESUBMITTED'] },
+            createdAt: { gte: oneDayAgo }
+          }
+        });
+
+        if (submissionCount >= 5) {
+          return c.json({ error: 'Too many KYC submissions. You can only submit your KYC documents 5 times per day.' }, 429);
+        }
+
+        data.idImage = body.idImage;
+        const previousStatus = currentUser?.kycStatus || 'NOT_SUBMITTED';
+        const targetStatus = previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'PENDING';
+        data.kycStatus = targetStatus;
+
+        // Log VerificationAudit trail
+        const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
+        const userAgent = c.req.header('user-agent') || null;
+        await prisma.verificationAudit.create({
+          data: {
+            adminId: 'USER_SELF',
+            adminName: body.name || currentUser?.name || 'User Self',
+            targetUserId: id,
+            targetName: body.name || currentUser?.name || 'User Self',
+            targetType: 'USER',
+            action: previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'SUBMITTED',
+            previousStatus,
+            newStatus: targetStatus,
+            ipAddress,
+            userAgent
+          }
+        });
+      } else {
+        data.idImage = body.idImage;
       }
     }
 
@@ -1811,27 +1935,240 @@ app.get('/admin/guides', authMiddleware, adminMiddleware, async (c) => {
       include: { user: true },
       orderBy: { createdAt: 'desc' }
     });
-    return c.json(guides);
+    
+    // Decrypt guide profiles and nested users, secure idImage
+    const decryptedGuides = guides.map(g => {
+      const decGuide = decryptGuide(g);
+      if (decGuide.user) {
+        decGuide.user = decryptUser(decGuide.user);
+      }
+      if (decGuide.idImage) {
+        decGuide.idImage = generateSignedKycUrlWorker(decGuide.id, c.env);
+      }
+      return decGuide;
+    });
+
+    return c.json(decryptedGuides);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
 app.patch('/admin/guides/:id/status', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
-  const { status } = await c.req.json();
+  const { status, rejectionReason } = await c.req.json();
   try {
-    const guide = await prisma.guideProfile.update({ 
-      where: { id }, 
-      data: { status },
+    // Fetch existing guide profile for audit log baseline
+    const existingGuide = await prisma.guideProfile.findUnique({
+      where: { id },
       include: { user: true }
     });
+
+    if (!existingGuide) {
+      return c.json({ error: 'Guide profile not found' }, 404);
+    }
+
+    const previousStatus = existingGuide.status;
+
+    // Run KYC Fraud check dynamically
+    let fraudScore = 0;
+    let fraudFlags = [];
+    if (existingGuide.userId && existingGuide.idNumber) {
+      const fraudCheck = await runKycFraudCheckWorker(existingGuide.userId, existingGuide.idNumber, existingGuide.idImage, prisma);
+      fraudScore = fraudCheck.score;
+      fraudFlags = fraudCheck.flags;
+    }
+
+    const updateData = { 
+      status,
+      fraudScore,
+      fraudFlags
+    };
+    
+    if (status === 'APPROVED') {
+      updateData.rejectionReason = null;
+      updateData.isVerified = true;
+      updateData.isActive = true;
+    } else if (status === 'REJECTED') {
+      updateData.rejectionReason = rejectionReason || 'Identity document was unreadable or invalid.';
+      updateData.isVerified = false;
+      updateData.isActive = false;
+    } else if (status === 'UNDER_REVIEW') {
+      updateData.isVerified = false;
+    }
+
+    const guide = await prisma.guideProfile.update({ 
+      where: { id }, 
+      data: updateData,
+      include: { user: true }
+    });
+
     if (guide.userId) {
+      const userUpdateData = {
+        kycStatus: status,
+        kycRejectionReason: status === 'REJECTED' ? (rejectionReason || 'Identity document was unreadable or invalid.') : null,
+        fraudScore,
+        fraudFlags
+      };
+
       await prisma.user.update({
         where: { id: guide.userId },
-        data: { kycStatus: status }
+        data: userUpdateData
       });
+
+      // Log Verification Audit Trail
+      const adminId = c.req.user?.userId || 'worker-admin';
+      const adminName = c.req.user?.email || 'Admin';
+      const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
+      const userAgent = c.req.header('user-agent') || null;
+
+      await prisma.verificationAudit.create({
+        data: {
+          adminId,
+          adminName,
+          targetUserId: guide.userId,
+          targetName: guide.user.name || 'Local Guide',
+          targetType: 'GUIDE',
+          action: status,
+          rejectionReason: status === 'REJECTED' ? (rejectionReason || 'Identity document was unreadable or invalid.') : null,
+          previousStatus,
+          newStatus: status,
+          ipAddress,
+          userAgent
+        }
+      });
+
+      // Create internal notification
+      const notificationTitle = status === 'APPROVED' ? 'Identity Verification Approved' : 'Identity Verification Rejected';
+      const notificationMessage = status === 'APPROVED'
+        ? 'Congratulations! Your identity documents have been verified. Your profile is now live.'
+        : `Your identity verification failed. Reason: ${rejectionReason || 'Identity document was unreadable or invalid.'}`;
+
+      await prisma.notification.create({
+        data: {
+          userId: guide.userId,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: status === 'APPROVED' ? 'KYC_APPROVED' : 'KYC_REJECTED'
+        }
+      });
+
+      // Send email notification via Resend
+      if (c.env.RESEND_API_KEY && guide.user.email) {
+        const resend = new Resend(c.env.RESEND_API_KEY);
+        const emailFrom = c.env.EMAIL_FROM || 'onboarding@resend.dev';
+        const userName = guide.user.name;
+        const toEmail = guide.user.email;
+
+        let emailHtml = '';
+        let emailSubject = '';
+
+        if (status === 'APPROVED') {
+          emailSubject = 'Identity Verification Approved | HampiStays';
+          emailHtml = `
+            <div style="font-family: serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #FAF9F6; color: #0C1E36; border: 1px solid #E6D5B8; border-radius: 16px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #C5A880; font-size: 28px; margin: 0; letter-spacing: 0.1em; text-transform: uppercase;">HampiStays</h2>
+                <p style="font-size: 12px; text-transform: uppercase; tracking: 0.2em; color: rgba(12, 30, 54, 0.4); margin-top: 5px;">Exclusive Heritage Stays & Experiences</p>
+              </div>
+              <div style="background-color: #FFFFFF; padding: 40px; border-radius: 12px; border: 1px solid #F0ECE3; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                <h3 style="font-size: 22px; margin-top: 0; color: #0C1E36;">Identity Verification Approved</h3>
+                <p>Dear ${userName},</p>
+                <p>We are pleased to inform you that your identity documents have been successfully verified by our administrative team.</p>
+                <p>Your local guide profile is now fully verified and visible to travellers searching for expert guides in Hampi.</p>
+                <div style="margin: 30px 0; text-align: center;">
+                  <a href="https://hampistays.com/dashboard" style="background-color: #0C1E36; color: #FAF9F6; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block;">Access Your Dashboard</a>
+                </div>
+                <p style="font-size: 14px; color: rgba(12, 30, 54, 0.6); line-height: 1.6;">Warm regards,<br>The HampiStays Team</p>
+              </div>
+            </div>
+          `;
+        } else if (status === 'REJECTED') {
+          emailSubject = 'Identity Verification Update | HampiStays';
+          emailHtml = `
+            <div style="font-family: serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #FAF9F6; color: #0C1E36; border: 1px solid #E6D5B8; border-radius: 16px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #C5A880; font-size: 28px; margin: 0; letter-spacing: 0.1em; text-transform: uppercase;">HampiStays</h2>
+                <p style="font-size: 12px; text-transform: uppercase; tracking: 0.2em; color: rgba(12, 30, 54, 0.4); margin-top: 5px;">Exclusive Heritage Stays & Experiences</p>
+              </div>
+              <div style="background-color: #FFFFFF; padding: 40px; border-radius: 12px; border: 1px solid #F0ECE3; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                <h3 style="font-size: 22px; margin-top: 0; color: #D32F2F;">Identity Verification Update</h3>
+                <p>Dear ${userName},</p>
+                <p>Thank you for submitting your identity documents for guide verification on HampiStays.</p>
+                <p>Unfortunately, our administrative team was unable to verify your profile at this time due to the following reason:</p>
+                <div style="background-color: #FFF8F8; border-left: 4px solid #D32F2F; padding: 15px 20px; margin: 20px 0; font-family: sans-serif; font-size: 14px; color: #555555; border-radius: 0 8px 8px 0;">
+                  <strong>Reason for Rejection:</strong><br>
+                  ${rejectionReason || 'Identity document was unreadable or invalid.'}
+                </div>
+                <p>Please log in to your dashboard to re-upload clear and valid identity documents (such as Aadhaar, PAN, or Passport) to complete your verification.</p>
+                <div style="margin: 30px 0; text-align: center;">
+                  <a href="https://hampistays.com/dashboard" style="background-color: #0C1E36; color: #FAF9F6; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block;">Update Documents</a>
+                </div>
+                <p style="font-size: 14px; color: rgba(12, 30, 54, 0.6); line-height: 1.6;">Warm regards,<br>The HampiStays Team</p>
+              </div>
+            </div>
+          `;
+        }
+
+        c.executionCtx.waitUntil(
+          resend.emails.send({
+            from: emailFrom,
+            to: toEmail,
+            subject: emailSubject,
+            html: emailHtml
+          }).catch(err => console.error("Async KYC email send failed:", err))
+        );
+      }
     }
-    return c.json(guide);
+
+    const decryptedGuide = decryptGuide(guide);
+    if (decryptedGuide.user) {
+      decryptedGuide.user = decryptUser(decryptedGuide.user);
+    }
+    return c.json(decryptedGuide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/admin/kyc-image/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const expires = c.req.query('expires');
+  const token = c.req.query('token');
+
+  if (!verifySignedKycUrlWorker(id, expires, token, c.env)) {
+    return c.json({ error: 'Forbidden: Invalid or expired signature' }, 403);
+  }
+
+  let idImage = null;
+  const guide = await prisma.guideProfile.findUnique({ where: { id } });
+  if (guide && guide.idImage) {
+    idImage = decrypt(guide.idImage);
+  } else {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (user && user.idImage) {
+      idImage = decrypt(user.idImage);
+    }
+  }
+
+  if (!idImage) {
+    return c.json({ error: 'KYC Document not found' }, 404);
+  }
+
+  const transform = c.req.query('transform');
+  let redirectUrl = idImage;
+  if (transform && redirectUrl.includes('cloudinary.com')) {
+    redirectUrl = redirectUrl.replace('/upload/', `/upload/${transform}/`);
+  }
+
+  return c.redirect(redirectUrl);
+});
+
+app.get('/admin/audit-logs', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const logs = await prisma.verificationAudit.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(logs);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

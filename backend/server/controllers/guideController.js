@@ -162,10 +162,43 @@ export const updateGuideProfileByUserId = async (req, res, next) => {
     if (idType !== undefined) guideData.idType = idType;
     if (idNumber !== undefined) guideData.idNumber = idNumber;
     if (idImage !== undefined) {
-      guideData.idImage = idImage;
-      // Only mark as pending when a NEW document is uploaded
-      if (idImage && idImage !== guide.idImage && guide.status !== 'APPROVED') {
-        guideData.status = 'PENDING';
+      if (idImage && idImage !== guide.idImage) {
+        // Enforce rate limiting of 5 KYC submissions per day
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const submissionCount = await prisma.verificationAudit.count({
+          where: {
+            targetUserId: userId,
+            action: { in: ['SUBMITTED', 'RESUBMITTED'] },
+            createdAt: { gte: oneDayAgo }
+          }
+        });
+
+        if (submissionCount >= 5) {
+          return res.status(429).json({ error: 'Too many KYC submissions. You can only submit your KYC documents 5 times per day.' });
+        }
+
+        guideData.idImage = idImage;
+        const previousStatus = guide.status || 'NOT_SUBMITTED';
+        const targetStatus = previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'PENDING';
+        guideData.status = targetStatus;
+
+        // Log VerificationAudit trail
+        await prisma.verificationAudit.create({
+          data: {
+            adminId: 'USER_SELF',
+            adminName: name || 'User Self',
+            targetUserId: userId,
+            targetName: name || 'Local Guide',
+            targetType: 'GUIDE',
+            action: previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'SUBMITTED',
+            previousStatus,
+            newStatus: targetStatus,
+            ipAddress: req.ip || req.headers['x-forwarded-for'] || null,
+            userAgent: req.headers['user-agent'] || null
+          }
+        });
+      } else {
+        guideData.idImage = idImage;
       }
     }
 
@@ -198,9 +231,9 @@ export const updateGuideProfileByUserId = async (req, res, next) => {
     if (idNumber !== undefined) userData.idNumber = idNumber;
     if (idImage !== undefined) {
       userData.idImage = idImage;
-      const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { idImage: true, kycStatus: true } });
-      if (idImage && idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
-        userData.kycStatus = 'PENDING';
+      if (idImage && idImage !== guide.idImage) {
+        const previousStatus = guide.status || 'NOT_SUBMITTED';
+        userData.kycStatus = previousStatus === 'REJECTED' ? 'RESUBMITTED' : 'PENDING';
       }
     }
 

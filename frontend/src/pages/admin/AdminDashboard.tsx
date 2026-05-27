@@ -5,14 +5,61 @@ import {
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
   TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
-  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck
+  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
+import { API_BASE_URL } from "../../config/api";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs";
+
+const getKycImageUrl = (idImage: string, transform: string) => {
+  if (!idImage) return "";
+  const token = localStorage.getItem('hampi-token') || "";
+  let fullUrl = idImage;
+  
+  if (fullUrl.startsWith('/api/')) {
+    const stripped = fullUrl.substring(4);
+    fullUrl = `${API_BASE_URL}${stripped}`;
+  }
+  
+  const connector = fullUrl.includes('?') ? '&' : '?';
+  return `${fullUrl}${connector}transform=${transform}&auth_token=${token}`;
+};
+
+const KycImage = ({ src, alt, transform, className }: { src: string; alt: string; transform: string; className?: string }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  const imageUrl = getKycImageUrl(src, transform);
+
+  return (
+    <div className={cn("relative overflow-hidden bg-sand-100", className)}>
+      {!loaded && !error && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-sand-100 via-sand-200 to-sand-100" />
+      )}
+      {error ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center text-[10px] font-bold text-red-500 uppercase">
+          <AlertCircle className="w-5 h-5 mb-1" /> Load Error
+        </div>
+      ) : (
+        <img
+          src={imageUrl}
+          alt={alt}
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          className={cn(
+            "w-full h-full object-cover transition-all duration-500",
+            loaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          )}
+        />
+      )}
+    </div>
+  );
+};
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -38,9 +85,16 @@ export function AdminDashboard() {
   const [newCommissionRate, setNewCommissionRate] = useState<number>(7.0);
   const [isSavingCommission, setIsSavingCommission] = useState(false);
   const [otpLogs, setOtpLogs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
   const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(7.0);
   const [isSavingGlobalCommission, setIsSavingGlobalCommission] = useState(false);
+
+  // Identity verification lightbox & rejection states
+  const [selectedIdImage, setSelectedIdImage] = useState<string | null>(null);
+  const [selectedIdDetails, setSelectedIdDetails] = useState<{ name: string; type: string; number: string } | null>(null);
+  const [rejectingGuideId, setRejectingGuideId] = useState<string | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
 
   useEffect(() => {
     fetchInitialData();
@@ -48,7 +102,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions'];
+    const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions', 'audit-logs', 'guides'];
     
     if (pollTabs.includes(activeTab)) {
       // Pulse: Fast 10s refresh for admin command center
@@ -85,6 +139,14 @@ export function AdminDashboard() {
             case 'users':
               const us = await apiClient.get<any[]>('/admin/users');
               setAllUsers(Array.isArray(us) ? us : []);
+              break;
+            case 'audit-logs':
+              const aLogs = await apiClient.get<any[]>('/admin/audit-logs');
+              setAuditLogs(aLogs);
+              break;
+            case 'guides':
+              const gds = await apiClient.get<any[]>('/admin/guides');
+              setAllGuides(gds);
               break;
           }
         } catch (err) {
@@ -149,6 +211,10 @@ export function AdminDashboard() {
           const logs = await apiClient.get<any[]>('/admin/otp-logs');
           setOtpLogs(logs);
           break;
+        case 'audit-logs':
+          const audit = await apiClient.get<any[]>('/admin/audit-logs');
+          setAuditLogs(audit);
+          break;
       }
     } catch (err) {
       console.error(`Failed to fetch data for tab: ${tab}`, err);
@@ -161,11 +227,19 @@ export function AdminDashboard() {
     }
   }, [activeTab]);
 
-  const handleGuideStatus = async (profileId: string, status: "APPROVED" | "REJECTED") => {
+  const handleGuideStatus = async (profileId: string, status: "APPROVED" | "REJECTED" | "UNDER_REVIEW", reason?: string) => {
+    if (status === 'REJECTED' && !reason) {
+      setRejectingGuideId(profileId);
+      setRejectionReasonInput("");
+      return;
+    }
+
     setProcessingId(profileId);
     try {
-      await apiClient.patch(`/admin/guides/${profileId}/status`, { status });
-      setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
+      await apiClient.patch(`/admin/guides/${profileId}/status`, { status, rejectionReason: reason });
+      setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status, rejectionReason: reason || null } : g));
+      toast.success(`Guide KYC successfully updated to ${status.replace('_', ' ').toLowerCase()}!`);
+      setRejectingGuideId(null);
     } catch (err: any) {
       toast.error(`Error: ${err.message || 'Failed to update guide status'}`);
     } finally {
@@ -897,21 +971,51 @@ export function AdminDashboard() {
                   <div className="w-24 h-24 rounded-[2rem] bg-sand-100 flex items-center justify-center overflow-hidden border border-sand-200">
                     {guide.user?.avatar ? <img src={guide.user.avatar} className="w-full h-full object-cover rounded-2xl" /> : <User className="w-10 h-10 text-sand-300" />}
                   </div>
-                  <div>
+                  <div className="flex-grow">
                     <div className="flex items-center gap-3 mb-1">
                       <h4 className="text-2xl font-bold text-navy-950">{guide.user?.name}</h4>
                     </div>
                     <p className="text-navy-950/40 text-sm mb-4">{guide.user?.email}</p>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-navy-50 text-navy-600 rounded-full text-[10px] font-bold uppercase tracking-widest">{guide.yearsExperience} Years Exp.</span>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        guide.status === 'APPROVED' ? 'bg-green-50 text-green-700' :
-                        guide.status === 'REJECTED' ? 'bg-red-50 text-red-700' :
-                        'bg-gold-50 text-gold-700'
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                        guide.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        guide.status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' :
+                        guide.status === 'UNDER_REVIEW' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        guide.status === 'RESUBMITTED' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        'bg-amber-50 text-gold-700 border-gold-200'
                       }`}>
-                        {guide.status}
+                        {guide.status.replace('_', ' ')}
                       </span>
                     </div>
+
+                    {/* Anti-Fraud Shield Alert */}
+                    {guide.fraudScore !== undefined && guide.fraudScore > 0 && (
+                      <div className={`mt-4 p-4 rounded-2xl border flex items-start gap-3 ${
+                        guide.fraudScore > 70 
+                          ? "bg-red-50 border-red-200 text-red-800" 
+                          : "bg-amber-50/50 border-amber-200 text-amber-800"
+                      }`}>
+                        <ShieldAlert className={`w-5 h-5 shrink-0 mt-0.5 ${guide.fraudScore > 70 ? "text-red-600 animate-bounce" : "text-amber-600"}`} />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider">KYC Fraud Risk: {guide.fraudScore}%</span>
+                            {guide.fraudScore > 70 && (
+                              <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[8px] font-bold uppercase tracking-widest animate-pulse">Critical Alert</span>
+                            )}
+                          </div>
+                          {guide.fraudFlags && guide.fraudFlags.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              {guide.fraudFlags.map((flag: string) => (
+                                <span key={flag} className="px-2 py-0.5 bg-white/60 border border-current/20 rounded text-[9px] font-mono font-bold uppercase">
+                                  {flag.replace(/_/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -922,21 +1026,46 @@ export function AdminDashboard() {
                     </p>
                   </div>
                   {guide.idType ? (
-                    <div className="flex gap-6">
-                      <div className="flex-grow space-y-2">
-                        <p className="text-xs font-bold text-navy-950">{guide.idType}</p>
-                        <p className="font-mono text-xs text-navy-950/60">{guide.idNumber}</p>
-                      </div>
-                      {guide.idImage && (
-                        <button 
-                          onClick={() => window.open(guide.idImage, '_blank')}
-                          className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 hover:border-gold-500 transition-colors group relative"
-                        >
-                          <img src={guide.idImage} className="w-full h-full object-cover rounded-3xl opacity-60 group-hover:opacity-100 transition-opacity" />
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-navy-950/20">
-                            <ExternalLink className="w-4 h-4 text-white" />
+                    <div className="space-y-3">
+                      <div className="flex gap-6">
+                        <div className="flex-grow space-y-2">
+                          <p className="text-xs font-bold text-navy-950">{guide.idType}</p>
+                          <p className="font-mono text-xs text-navy-950/60 blur-[3px] hover:blur-none transition-all duration-300 select-all cursor-pointer" title="Hover to reveal number">
+                            {guide.idNumber}
+                          </p>
+                        </div>
+                        {guide.idImage ? (
+                          <button 
+                            onClick={() => {
+                              setSelectedIdImage(guide.idImage);
+                              setSelectedIdDetails({
+                                name: guide.user?.name || 'Local Expert',
+                                type: guide.idType || 'Document',
+                                number: guide.idNumber || 'N/A'
+                              });
+                            }}
+                            className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 hover:border-gold-500 transition-colors group relative"
+                          >
+                            <KycImage 
+                              src={guide.idImage} 
+                              alt="Identity Document" 
+                              transform="w_300,q_auto,f_auto" 
+                              className="w-full h-full"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-navy-950/20 transition-opacity">
+                              <Eye className="w-4 h-4 text-white" />
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="w-20 h-20 rounded-xl bg-sand-100 border border-sand-200 flex items-center justify-center text-[10px] font-bold text-navy-950/40 uppercase tracking-widest text-center px-2">
+                            No Image
                           </div>
-                        </button>
+                        )}
+                      </div>
+                      {guide.status === 'REJECTED' && guide.rejectionReason && (
+                        <p className="text-xs text-red-600 font-medium bg-red-50 p-2.5 rounded-xl border border-red-100 mt-1">
+                          <strong>Reason:</strong> {guide.rejectionReason}
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -953,6 +1082,17 @@ export function AdminDashboard() {
                     <CheckCircle className="w-4 h-4" />
                     Approve
                   </Button>
+                  {guide.status !== 'APPROVED' && guide.status !== 'UNDER_REVIEW' && (
+                    <Button 
+                      variant="outline"
+                      className="border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 h-12 px-8"
+                      onClick={() => handleGuideStatus(guide.id, 'UNDER_REVIEW')}
+                      disabled={processingId === guide.id}
+                    >
+                      <Eye className="w-4 h-4" />
+                      Under Review
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     className="border-red-200 text-red-600 hover:bg-red-50 gap-2 h-12 px-8"
@@ -1383,6 +1523,91 @@ export function AdminDashboard() {
     </div>
   );
 
+  const renderAuditLogs = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-2xl font-bold text-navy-950">Verification Audit Logs</h3>
+            <p className="text-sm text-navy-950/40">Immutable log of all user verification changes, document submissions, and admin actions.</p>
+          </div>
+          <div className="px-4 py-2 bg-navy-50 text-navy-950/60 rounded-xl text-xs font-bold">
+            {auditLogs.length} Records
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                <th className="px-6 py-4">Timestamp</th>
+                <th className="px-6 py-4">Actor</th>
+                <th className="px-6 py-4">Target User</th>
+                <th className="px-6 py-4">Action</th>
+                <th className="px-6 py-4">Transition</th>
+                <th className="px-6 py-4">IP & User Agent</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-sand-100">
+              {auditLogs.map((log) => (
+                <tr key={log.id} className="hover:bg-sand-50/30 transition-colors">
+                  <td className="px-6 py-4 text-xs font-mono text-navy-950/70">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-navy-950">
+                      {log.adminId === 'USER_SELF' ? 'User Self' : log.adminName || 'Admin'}
+                    </p>
+                    <p className="text-[10px] text-navy-950/40 font-mono">{log.adminId}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-navy-950">{log.targetName || 'Guide'}</p>
+                    <p className="text-[10px] text-navy-950/40 font-mono">{log.targetUserId}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={cn(
+                      "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                      log.action === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                      log.action === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                      log.action === 'SUBMITTED' || log.action === 'RESUBMITTED' ? 'bg-purple-100 text-purple-700' :
+                      'bg-blue-100 text-blue-700'
+                    )}>
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-navy-950/40 font-bold uppercase">{log.previousStatus || 'NONE'}</span>
+                      <span className="text-navy-950/30">→</span>
+                      <span className="text-navy-950 font-bold uppercase">{log.newStatus}</span>
+                    </div>
+                    {log.rejectionReason && (
+                      <p className="text-[10px] text-red-600 italic mt-1 max-w-[200px] truncate" title={log.rejectionReason}>
+                        Reason: {log.rejectionReason}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-xs text-navy-950/50">
+                    <p className="font-mono">{log.ipAddress || 'Unknown IP'}</p>
+                    <p className="text-[9px] max-w-[150px] truncate" title={log.userAgent}>
+                      {log.userAgent || 'Unknown Agent'}
+                    </p>
+                  </td>
+                </tr>
+              ))}
+              {auditLogs.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center text-navy-950/30 italic">
+                    No verification audit records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderReviews = () => (
     <div className="space-y-8">
       <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
@@ -1557,6 +1782,7 @@ export function AdminDashboard() {
               { id: "bookings", label: "Bookings", icon: CalendarDays },
               { id: "commissions", label: "Commissions", icon: TrendingUp },
               { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
+              { id: "audit-logs", label: "Audit Logs", icon: History },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1596,6 +1822,7 @@ export function AdminDashboard() {
             {activeTab === "otp-logs" && renderOtpLogs()}
             {activeTab === "reviews" && renderReviews()}
             {activeTab === "commissions" && renderCommissions()}
+            {activeTab === "audit-logs" && renderAuditLogs()}
           </motion.div>
         )}
       </div>
@@ -1671,6 +1898,152 @@ export function AdminDashboard() {
                   </Button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* IDENTITY DOCUMENT PREVIEW LIGHTBOX */}
+      <AnimatePresence>
+        {selectedIdImage && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4" onContextMenu={(e) => e.preventDefault()}>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setSelectedIdImage(null); setSelectedIdDetails(null); }}
+              className="absolute inset-0 bg-navy-950/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-luxury p-8 border border-sand-100 flex flex-col md:flex-row gap-8 overflow-hidden z-10"
+            >
+              {/* Left Column: Image with interactive controls */}
+              <div className="flex-1 flex flex-col justify-center items-center bg-sand-50 rounded-[2rem] p-4 relative min-h-[300px] max-h-[500px] overflow-hidden select-none">
+                <KycImage 
+                  src={selectedIdImage} 
+                  alt="Identity Document" 
+                  transform="w_1200,q_auto,f_auto" 
+                  className="w-full h-full rounded-2xl shadow-sm"
+                />
+                {/* Watermark Overlay */}
+                <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-center opacity-10">
+                  <p className="text-2xl md:text-4xl font-bold uppercase tracking-widest text-navy-950 rotate-12 text-center whitespace-nowrap">
+                    HampiStays Secure Verification
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Information & Metadata */}
+              <div className="w-full md:w-80 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <ShieldCheck className="w-6 h-6 text-gold-500" />
+                    <h3 className="text-xl font-serif font-bold text-navy-950">Document Details</h3>
+                  </div>
+
+                  {selectedIdDetails && (
+                    <div className="space-y-4 py-4 border-t border-b border-sand-100">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Guide Name</span>
+                        <p className="font-bold text-navy-950">{selectedIdDetails.name}</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Document Type</span>
+                        <span className="px-3 py-1 bg-gold-50 text-gold-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                          {selectedIdDetails.type}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Document Number</span>
+                        <p className="font-mono text-sm font-bold text-navy-950 bg-sand-50 px-3 py-2 rounded-xl border border-sand-100 inline-block">
+                          {selectedIdDetails.number}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3 pt-6">
+                  <a 
+                    href={getKycImageUrl(selectedIdImage, "w_1200,q_auto,f_auto")} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full h-12 bg-sand-100 text-navy-950 rounded-xl font-bold hover:bg-sand-200 transition-colors text-xs uppercase tracking-widest"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Open Original
+                  </a>
+                  <Button 
+                    className="w-full h-12 bg-navy-950 text-white rounded-xl shadow-luxury"
+                    onClick={() => { setSelectedIdImage(null); setSelectedIdDetails(null); }}
+                  >
+                    Close Inspection
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* REJECT GUIDE KYC REASON MODAL */}
+      <AnimatePresence>
+        {rejectingGuideId && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRejectingGuideId(null)}
+              className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-luxury p-10 border border-sand-100 z-10"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+                  <XCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-navy-950">Reject Verification</h3>
+                  <p className="text-xs text-navy-950/40">Provide a reason for document rejection</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1 block mb-2">Rejection Reason</label>
+                  <textarea 
+                    value={rejectionReasonInput}
+                    onChange={e => setRejectionReasonInput(e.target.value)}
+                    placeholder="e.g. The uploaded Aadhar card photo is too blurry or crop is incomplete. Please re-upload a clear image."
+                    className="w-full h-32 bg-sand-50 border-2 border-sand-200 rounded-xl p-4 font-medium text-navy-950 outline-none focus:border-red-500 transition-all placeholder:text-navy-950/20 text-sm resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 h-12 rounded-xl"
+                    onClick={() => setRejectingGuideId(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-red-600/10 animate-pulse-slow"
+                    onClick={() => handleGuideStatus(rejectingGuideId, 'REJECTED', rejectionReasonInput)}
+                    isLoading={processingId === rejectingGuideId}
+                    disabled={!rejectionReasonInput.trim()}
+                  >
+                    Submit Rejection
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

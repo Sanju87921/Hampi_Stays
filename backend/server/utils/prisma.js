@@ -79,6 +79,12 @@ export const hardenedPrisma = prisma.$extends({
           return decrypt(user.idNumber);
         },
       },
+      idImage: {
+        needs: { idImage: true },
+        compute(user) {
+          return decrypt(user.idImage);
+        },
+      },
     },
     resortOwner: {
       gstNumber: {
@@ -93,6 +99,12 @@ export const hardenedPrisma = prisma.$extends({
         needs: { idNumber: true },
         compute(profile) {
           return decrypt(profile.idNumber);
+        },
+      },
+      idImage: {
+        needs: { idImage: true },
+        compute(profile) {
+          return decrypt(profile.idImage);
         },
       },
     },
