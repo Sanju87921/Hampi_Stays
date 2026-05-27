@@ -143,6 +143,8 @@ model SystemSettings {
   id                    String   @id @default(cuid())
   guideServiceEnabled   Boolean  @default(true)
   defaultCommissionRate Float    @default(7.0)
+  requireOtpForSignup   Boolean  @default(true)
+  updatedBy             String?
   updatedAt             DateTime @updatedAt
 }
 

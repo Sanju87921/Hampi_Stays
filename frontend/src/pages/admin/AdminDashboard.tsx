@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
+  ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
   TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
   Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX
@@ -137,6 +137,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const { settings, updateSettings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
+  const requireOtpForSignup = settings?.requireOtpForSignup ?? true;
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [modalData, setModalData] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -816,6 +817,29 @@ export function AdminDashboard() {
     setShowConfirmModal(true);
   };
 
+  const handleToggleOtpVerification = async () => {
+    const nextStatus = !requireOtpForSignup;
+    setModalData({
+      title: nextStatus ? "Enable OTP Verification" : "Disable OTP Verification",
+      message: nextStatus
+        ? "OTP verification will be REQUIRED for all new user signups. Users must verify via email or SMS before their account is created."
+        : "WARNING: New users will be registered INSTANTLY without any OTP verification. This bypasses the verification step entirely. Only use this in controlled environments.",
+      onConfirm: async () => {
+        setProcessingId('otp-toggle');
+        try {
+          await updateSettings({ requireOtpForSignup: nextStatus });
+          toast.success(`OTP verification ${nextStatus ? 'enabled' : 'disabled'} successfully.`);
+          setShowConfirmModal(false);
+        } catch (err: any) {
+          toast.error(`Error: ${err.message || 'Could not update setting'}`);
+        } finally {
+          setProcessingId(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
   const handleGuideActiveToggle = async (profileId: string, currentStatus: boolean) => {
     setProcessingId(profileId);
     try {
@@ -962,6 +986,55 @@ export function AdminDashboard() {
                />
              </div>
              <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em]">Master System Switch</p>
+          </div>
+        </div>
+      </div>
+
+      {/* MASTER OTP VERIFICATION CONTROL */}
+      <div className={`p-8 rounded-[3rem] border-2 transition-all mb-12 ${
+        requireOtpForSignup
+          ? "bg-white border-sand-100 shadow-sm"
+          : "bg-amber-50/50 border-amber-200 shadow-lg shadow-amber-500/5"
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex gap-6 items-start">
+            <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 ${
+              requireOtpForSignup ? "bg-navy-950 text-white" : "bg-amber-500 text-white"
+            }`}>
+              {requireOtpForSignup ? <ShieldCheck className="w-8 h-8" /> : <ShieldOff className="w-8 h-8" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-2xl font-bold text-navy-950">OTP Verification for Signup</h3>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                  requireOtpForSignup ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                }`}>
+                  {requireOtpForSignup ? "Required" : "Disabled"}
+                </span>
+              </div>
+              <p className="text-navy-950/40 text-sm max-w-xl">
+                {requireOtpForSignup
+                  ? "New users must verify their email or phone via a 6-digit OTP before their account is created. Recommended for production."
+                  : "New users are registered instantly without any verification step. Accounts are created immediately on form submission."
+                }
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-3">
+            <div
+              onClick={handleToggleOtpVerification}
+              className={`relative inline-flex h-12 w-24 items-center rounded-full transition-colors duration-500 cursor-pointer ${
+                requireOtpForSignup ? "bg-navy-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]" : "bg-amber-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
+              }`}
+            >
+              <motion.span
+                animate={{ x: requireOtpForSignup ? 52 : 4 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="inline-block h-9 w-9 rounded-full bg-white shadow-xl ring-2 ring-white/10"
+              />
+            </div>
+            <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em]">Auth Control Switch</p>
           </div>
         </div>
       </div>

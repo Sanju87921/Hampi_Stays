@@ -40,13 +40,70 @@ export const register = async (req, res, next) => {
       }
     }
 
+    const requireOtp = settings ? settings.requireOtpForSignup : true;
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    if (!requireOtp) {
+      // Direct registration
+      const user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email,
+            name,
+            passwordHash,
+            role: role || 'TRAVELLER',
+            phone: normalizedPhone || null,
+            isEmailVerified: verificationType !== 'sms',
+            isMobileVerified: verificationType === 'sms',
+            verifiedEmail: true,
+            verifiedPhone: verificationType === 'sms',
+            verificationCompletedAt: new Date()
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: { userId: newUser.id, businessName: `${name}'s Portfolio` }
+          });
+        } else if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            }
+          });
+        }
+        return newUser;
+      });
+
+      const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+      return res.status(201).json({
+        success: true,
+        status: 'verified',
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: user.avatar,
+          phone: user.phone,
+          location: user.location,
+          kycStatus: user.kycStatus || 'NOT_SUBMITTED'
+        }
+      });
+    }
+
     // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpHash = await bcrypt.hash(otp, 12);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(password, salt);
 
     // Upsert into pending verifications
     await prisma.pendingVerification.upsert({

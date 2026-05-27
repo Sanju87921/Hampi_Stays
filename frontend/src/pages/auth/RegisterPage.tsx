@@ -97,6 +97,41 @@ export function RegisterPage() {
     }
     if (!formData.terms) return setError("You must agree to the terms");
     setError("");
+
+    // OTP bypass: if admin has disabled OTP for signup, register directly
+    const requireOtp = settings?.requireOtpForSignup ?? true;
+    if (!requireOtp) {
+      // Jump to step 4 to show the loading/success animation
+      setStep(4);
+      setIsSendingOtp(true);
+      try {
+        const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+        const res = await register(
+          formData.name,
+          formData.email,
+          formData.phone,
+          formData.password,
+          apiRole as any,
+          "email"
+        );
+        if (res?.status === 'verified' && res?.token && res?.user) {
+          localStorage.setItem("hampi-token", res.token);
+          localStorage.setItem("hampi-user", JSON.stringify(res.user));
+          setVerifiedSuccess(true);
+          const redirectUrl = searchParams.get("redirect");
+          setTimeout(() => {
+            navigate(redirectUrl ? decodeURIComponent(redirectUrl) : "/dashboard");
+          }, 1800);
+        }
+      } catch (err: any) {
+        setError(err.message || 'Registration failed. Please try again.');
+        setStep(2);
+      } finally {
+        setIsSendingOtp(false);
+      }
+      return;
+    }
+
     setStep(3);
   };
 

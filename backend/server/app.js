@@ -105,7 +105,11 @@ app.get('/api/settings', async (req, res, next) => {
     let settings = await prisma.systemSettings.findFirst();
     if (!settings) {
       settings = await prisma.systemSettings.create({
-        data: { guideServiceEnabled: true, maintenanceMode: false }
+        data: {
+          guideServiceEnabled: true,
+          defaultCommissionRate: 7.0,
+          requireOtpForSignup: true
+        }
       });
     }
     res.json(settings);

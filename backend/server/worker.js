@@ -352,7 +352,7 @@ app.get('/settings', async (c) => {
   try {
     let settings = await prisma.systemSettings.findFirst({ cacheStrategy: { ttl: 600 } });
     if (!settings) {
-      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true } });
+      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true, defaultCommissionRate: 7.0, requireOtpForSignup: true } });
     }
     return c.json(settings);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -381,13 +381,71 @@ app.post('/auth/register', async (c) => {
       }
     }
 
+    const requireOtp = settings ? settings.requireOtpForSignup : true;
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    if (!requireOtp) {
+      // Direct registration
+      const user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: lowerEmail,
+            name,
+            passwordHash,
+            role: role || 'TRAVELLER',
+            phone: normalizedPhone || null,
+            isEmailVerified: verificationType !== 'sms',
+            isMobileVerified: verificationType === 'sms',
+            verifiedEmail: true,
+            verifiedPhone: verificationType === 'sms',
+            verificationCompletedAt: new Date()
+          }
+        });
+
+        if (role === 'RESORT_OWNER') {
+          await tx.resortOwner.create({
+            data: { userId: newUser.id, businessName: `${name}'s Portfolio` }
+          });
+        } else if (role === 'GUIDE') {
+          await tx.guideProfile.create({
+            data: {
+              userId: newUser.id,
+              bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+              specialties: ["Architecture", "History"],
+              languages: ["English", "Kannada"],
+              pricePerDay: 2500,
+              pricePerHour: 500,
+              yearsExperience: 0,
+            }
+          });
+        }
+        return newUser;
+      });
+
+      const secret = c.env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
+      const token = jwt.sign({ userId: user.id, role: user.role }, secret, { expiresIn: '7d' });
+      return c.json({
+        success: true,
+        status: 'verified',
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: user.avatar,
+          phone: user.phone,
+          location: user.location,
+          kycStatus: user.kycStatus || 'NOT_SUBMITTED'
+        }
+      }, 201);
+    }
+
     // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpHash = await bcrypt.hash(otp, 12);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(password, salt);
 
     // Upsert into pending verifications
     await prisma.pendingVerification.upsert({
@@ -1771,12 +1829,24 @@ app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
 
 app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
-  const { guideServiceEnabled, defaultCommissionRate } = await c.req.json();
+  const { guideServiceEnabled, defaultCommissionRate, requireOtpForSignup } = await c.req.json();
+  const userPayload = c.get('user');
   try {
+    let adminEmail = userPayload?.email;
+    if (!adminEmail && userPayload?.userId) {
+      const adminUser = await prisma.user.findUnique({ where: { id: userPayload.userId } });
+      if (adminUser) adminEmail = adminUser.email;
+    }
+    adminEmail = adminEmail || userPayload?.userId || 'system';
+
     let settings = await prisma.systemSettings.findFirst();
     const data = {};
     if (guideServiceEnabled !== undefined) data.guideServiceEnabled = guideServiceEnabled;
     if (defaultCommissionRate !== undefined) data.defaultCommissionRate = defaultCommissionRate;
+    if (requireOtpForSignup !== undefined) data.requireOtpForSignup = requireOtpForSignup;
+    data.updatedBy = adminEmail;
+
+    const previousSettings = settings ? { ...settings } : null;
 
     if (settings) {
       settings = await prisma.systemSettings.update({
@@ -1784,8 +1854,21 @@ app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, as
         data
       });
     } else {
-      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true, defaultCommissionRate: 7.0, ...data } });
+      settings = await prisma.systemSettings.create({
+        data: {
+          guideServiceEnabled: guideServiceEnabled !== undefined ? guideServiceEnabled : true,
+          defaultCommissionRate: defaultCommissionRate !== undefined ? defaultCommissionRate : 7.0,
+          requireOtpForSignup: requireOtpForSignup !== undefined ? requireOtpForSignup : true,
+          updatedBy: adminEmail
+        }
+      });
     }
+
+    // Audit Log in Cloudflare Worker
+    console.log(`[AUDIT] System Settings updated by Admin: ${adminEmail}. ` + 
+      `Changes: ${JSON.stringify(data)}. ` + 
+      `Previous: ${JSON.stringify(previousSettings)}`);
+
     return c.json(settings);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });

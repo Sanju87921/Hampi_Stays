@@ -3,8 +3,10 @@ import { apiClient } from "../utils/apiClient";
 
 interface SystemSettings {
   guideServiceEnabled: boolean;
-  maintenanceMode: boolean;
+  maintenanceMode?: boolean;
   defaultCommissionRate: number;
+  requireOtpForSignup: boolean;
+  updatedBy?: string;
 }
 
 interface SystemContextType {
@@ -18,6 +20,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   guideServiceEnabled: true,
   maintenanceMode: false,
   defaultCommissionRate: 7.0,
+  requireOtpForSignup: true,
 };
 
 const SystemContext = createContext<SystemContextType | undefined>(undefined);

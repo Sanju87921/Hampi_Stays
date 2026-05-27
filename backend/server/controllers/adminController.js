@@ -329,21 +329,45 @@ export const getOtpLogs = async (req, res, next) => {
  */
 export const updateSettings = async (req, res, next) => {
   try {
-    const { guideServiceEnabled } = req.body;
+    const { guideServiceEnabled, defaultCommissionRate, requireOtpForSignup } = req.body;
+    let adminEmail = req.user?.email;
+    if (!adminEmail && req.user?.userId) {
+      const adminUser = await prisma.user.findUnique({ where: { id: req.user.userId } });
+      if (adminUser) adminEmail = adminUser.email;
+    }
+    adminEmail = adminEmail || req.user?.userId || 'system';
     
     // Use upsert or findFirst then update to manage the single settings record
     let settings = await prisma.systemSettings.findFirst();
     
+    const updateData = {};
+    if (guideServiceEnabled !== undefined) updateData.guideServiceEnabled = guideServiceEnabled;
+    if (defaultCommissionRate !== undefined) updateData.defaultCommissionRate = defaultCommissionRate;
+    if (requireOtpForSignup !== undefined) updateData.requireOtpForSignup = requireOtpForSignup;
+    updateData.updatedBy = adminEmail;
+
+    const previousSettings = settings ? { ...settings } : null;
+
     if (settings) {
       settings = await prisma.systemSettings.update({
         where: { id: settings.id },
-        data: { guideServiceEnabled }
+        data: updateData
       });
     } else {
       settings = await prisma.systemSettings.create({
-        data: { guideServiceEnabled }
+        data: {
+          guideServiceEnabled: guideServiceEnabled !== undefined ? guideServiceEnabled : true,
+          defaultCommissionRate: defaultCommissionRate !== undefined ? defaultCommissionRate : 7.0,
+          requireOtpForSignup: requireOtpForSignup !== undefined ? requireOtpForSignup : true,
+          updatedBy: adminEmail
+        }
       });
     }
+    
+    // Audit Log to Console / Server Logs
+    console.log(`[AUDIT] System Settings updated by Admin: ${adminEmail}. ` + 
+      `Changes: ${JSON.stringify(updateData)}. ` + 
+      `Previous: ${JSON.stringify(previousSettings)}`);
     
     res.json(settings);
   } catch (error) {
