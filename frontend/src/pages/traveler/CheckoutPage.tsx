@@ -141,7 +141,7 @@ export function CheckoutPage() {
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${bookingData.resortName}`,
-          image: "/logo-full.png",
+          image: "https://res.cloudinary.com/dfs6lmdns/image/upload/c_fill,g_center,w_512,h_512/v1779876742/hampi-stays/hampistays-logo.png",
           order_id: booking.orderId,
           modal: {
             ondismiss: function() {

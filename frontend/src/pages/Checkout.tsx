@@ -100,7 +100,7 @@ export function Checkout() {
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${resort.name}`,
-          image: "/logo-full.png",
+          image: "https://res.cloudinary.com/dfs6lmdns/image/upload/c_fill,g_center,w_512,h_512/v1779876742/hampi-stays/hampistays-logo.png",
           order_id: bookingData.orderId,
           handler: async function (response: any) {
             try {
