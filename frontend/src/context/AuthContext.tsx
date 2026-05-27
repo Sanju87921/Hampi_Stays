@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { API_BASE_URL } from "../config/api";
 import { apiClient } from "../utils/apiClient";
+import { sanitizePhoneNumber } from "../utils/phone";
 
 type UserRole = "TRAVELLER" | "RESORT_OWNER" | "GUIDE" | "ADMIN";
 
@@ -74,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsVerifying(true);
         if (savedUser) {
           try {
-            setUser(JSON.parse(savedUser));
+            const parsed = JSON.parse(savedUser);
+            const sanitized = { ...parsed, phone: sanitizePhoneNumber(parsed.phone) };
+            setUser(sanitized);
             // UNLOCK UI: We have a local user, so let the app render
             setIsLoading(false); 
           } catch (e) {
@@ -85,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const data = await apiClient.get<{ user: User }>('/auth/me');
           if (data?.user) {
-            setUser(data.user);
-            localStorage.setItem("hampi-user", JSON.stringify(data.user));
+            const sanitized = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
+            setUser(sanitized);
+            localStorage.setItem("hampi-user", JSON.stringify(sanitized));
           }
         } catch (err: any) {
           console.warn("Session verification failed:", err.message);
@@ -117,12 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await apiClient.post<any>('/auth/login', { email, password });
       
+      const sanitizedUser = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
       // Atomic storage update
       localStorage.setItem("hampi-token", data.token);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-user", JSON.stringify(sanitizedUser));
       
       // Immediate state update
-      setUser(data.user);
+      setUser(sanitizedUser);
       setIsLoading(false); // Set loading to false immediately on success
       _setShowAuthModal(false);
       
@@ -138,9 +143,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await apiClient.post<any>('/auth/verify-otp', payload);
       if (data.token && data.user) {
+        const sanitizedUser = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
         localStorage.setItem("hampi-token", data.token);
-        localStorage.setItem("hampi-user", JSON.stringify(data.user));
-        setUser(data.user);
+        localStorage.setItem("hampi-user", JSON.stringify(sanitizedUser));
+        setUser(sanitizedUser);
         _setShowAuthModal(false);
       }
       setIsLoading(false);
@@ -155,9 +161,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const data = await apiClient.post<any>('/auth/google', { credential, role });
+      const sanitizedUser = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
       localStorage.setItem("hampi-token", data.token);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      setUser(data.user);
+      localStorage.setItem("hampi-user", JSON.stringify(sanitizedUser));
+      setUser(sanitizedUser);
       setIsLoading(false);
       _setShowAuthModal(false);
       return data;
@@ -175,9 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: appleResponse.user,
         role
       });
+      const sanitizedUser = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
       localStorage.setItem("hampi-token", data.token);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      setUser(data.user);
+      localStorage.setItem("hampi-user", JSON.stringify(sanitizedUser));
+      setUser(sanitizedUser);
       setIsLoading(false);
       _setShowAuthModal(false);
       return data;
@@ -200,16 +208,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateUser = (updatedUser: User) => {
-    setUser(updatedUser);
-    localStorage.setItem("hampi-user", JSON.stringify(updatedUser));
+    const sanitized = { ...updatedUser, phone: sanitizePhoneNumber(updatedUser.phone) };
+    setUser(sanitized);
+    localStorage.setItem("hampi-user", JSON.stringify(sanitized));
   };
 
   const refreshUser = async () => {
     try {
       const data = await apiClient.get<{ user: User }>('/auth/me');
       if (data?.user) {
-        setUser(data.user);
-        localStorage.setItem("hampi-user", JSON.stringify(data.user));
+        const sanitized = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
+        setUser(sanitized);
+        localStorage.setItem("hampi-user", JSON.stringify(sanitized));
       }
     } catch (err) {
       console.warn("refreshUser failed:", err);

@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import { encrypt, decrypt } from './crypto.js';
+import { encrypt, decrypt, sanitizePhoneNumber } from './crypto.js';
 
 const prisma = new PrismaClient();
+
 
 /**
  * Safely encrypt a value — skips if already encrypted (iv:authTag:ciphertext format)
@@ -19,6 +20,17 @@ function safeEncrypt(value) {
   return encrypt(value);
 }
 
+function safeSanitizeAndEncryptPhone(value) {
+  if (!value) return value;
+  const parts = value.split(':');
+  if (parts.length === 3 && /^[0-9a-f]{24}$/.test(parts[0]) && /^[0-9a-f]{32}$/.test(parts[1])) {
+    return value; // Already encrypted, don't double-encrypt
+  }
+  const sanitized = sanitizePhoneNumber(value);
+  if (!sanitized) return null;
+  return encrypt(sanitized);
+}
+
 /**
  * Hardened Prisma Client with field-level encryption
  */
@@ -26,13 +38,13 @@ export const hardenedPrisma = prisma.$extends({
   query: {
     user: {
       async create({ args, query }) {
-        if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+        if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
         if (args.data.location) args.data.location = safeEncrypt(args.data.location);
         if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
         return query(args);
       },
       async update({ args, query }) {
-        if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+        if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
         if (args.data.location) args.data.location = safeEncrypt(args.data.location);
         if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
         return query(args);
@@ -64,7 +76,7 @@ export const hardenedPrisma = prisma.$extends({
       phone: {
         needs: { phone: true },
         compute(user) {
-          return decrypt(user.phone);
+          return sanitizePhoneNumber(decrypt(user.phone));
         },
       },
       location: {

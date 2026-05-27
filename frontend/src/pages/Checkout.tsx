@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -13,6 +13,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { apiClient } from "../utils/apiClient";
 import { cn } from "../utils/cn";
 import { useAuth } from "../context/AuthContext";
+import { sanitizePhoneNumber } from "../utils/phone";
 
 export function Checkout() {
   const [searchParams] = useSearchParams();
@@ -32,9 +33,21 @@ export function Checkout() {
     firstName: user?.name?.split(" ")[0] || "",
     lastName: user?.name?.split(" ")[1] || "",
     email: user?.email || "",
-    phone: "",
+    phone: sanitizePhoneNumber(user?.phone),
     specialRequests: ""
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: prev.firstName || user.name?.split(" ")[0] || "",
+        lastName: prev.lastName || user.name?.split(" ")[1] || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone || sanitizePhoneNumber(user.phone) || "",
+      }));
+    }
+  }, [user]);
 
   const resortId = searchParams.get("resortId");
   const roomId = searchParams.get("roomId");

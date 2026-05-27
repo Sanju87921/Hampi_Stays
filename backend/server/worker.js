@@ -5,7 +5,10 @@ import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { encrypt, decrypt, setEncryptionKey } from './utils/crypto.js';
+import { encrypt, decrypt, setEncryptionKey, sanitizePhoneNumber } from './utils/crypto.js';
+import { normalizeUserResponse } from './utils/normalizer.js';
+import { logSecureError, logSecureWarn, logSecureInfo } from './utils/logger.js';
+import { validateAndCleanName, validateAndCleanEmail, validateAndCleanPhone, validateAndCleanLocation } from './utils/validation.js';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import crypto from 'crypto';
@@ -31,19 +34,30 @@ const getPrisma = (env) => {
     return encrypt(value);
   };
 
+  const safeSanitizeAndEncryptPhone = (value) => {
+    if (!value) return value;
+    const parts = value.split(':');
+    if (parts.length === 3 && /^[0-9a-f]{24}$/i.test(parts[0]) && /^[0-9a-f]{32}$/i.test(parts[1])) {
+      return value; // already encrypted
+    }
+    const sanitized = sanitizePhoneNumber(value);
+    if (!sanitized) return null;
+    return encrypt(sanitized);
+  };
+
   prismaInstance = new PrismaClient({
     datasources: { db: { url: env.DATABASE_URL } },
   }).$extends(withAccelerate()).$extends({
     query: {
       user: {
         async create({ args, query }) {
-          if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+          if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
           if (args.data.location) args.data.location = safeEncrypt(args.data.location);
           if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
         },
         async update({ args, query }) {
-          if (args.data.phone) args.data.phone = safeEncrypt(args.data.phone);
+          if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
           if (args.data.location) args.data.location = safeEncrypt(args.data.location);
           if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
           return query(args);
@@ -85,7 +99,7 @@ const getPrisma = (env) => {
 const decryptUser = (user) => {
   if (!user) return user;
   const out = { ...user };
-  if (out.phone) out.phone = decrypt(out.phone);
+  if (out.phone) out.phone = sanitizePhoneNumber(decrypt(out.phone));
   if (out.location) out.location = decrypt(out.location);
   if (out.idNumber) out.idNumber = decrypt(out.idNumber);
   if (out.idImage) out.idImage = decrypt(out.idImage);
@@ -459,21 +473,31 @@ function computeProfileCompletion(user) {
 app.post('/auth/login', async (c) => {
   const prisma = getPrisma(c.env);
   const { email, password } = await c.req.json();
-  const lowerEmail = email.toLowerCase();
+  const lowerEmail = validateAndCleanEmail(email);
+  if (!lowerEmail) {
+    logSecureWarn('MALFORMED_PAYLOAD', 'Invalid email format during login', { email });
+    return c.json({ error: 'Invalid email address format' }, 400);
+  }
   try {
     const user = await prisma.user.findUnique({ where: { email: lowerEmail } });
     if (!user) {
+      logSecureWarn('LOGIN_FAILED', 'User not found', { email: lowerEmail });
       return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
     }
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      logSecureWarn('LOGIN_FAILED', 'Incorrect password attempt', { email: lowerEmail });
       return c.json({ error: 'Incorrect password. Please try again.', code: 'INCORRECT_PASSWORD' }, 401);
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-    const profileCompletionStatus = computeProfileCompletion(user);
-    return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    const normalizedUser = normalizeUserResponse(user);
+    logSecureInfo('LOGIN_SUCCESS', 'User logged in successfully', { email: lowerEmail, userId: user.id });
+    return c.json({ token, user: normalizedUser });
+  } catch (err) { 
+    logSecureError('LOGIN_ERROR', 'Unexpected login error', { email: lowerEmail, error: err });
+    return c.json({ error: 'An unexpected security error occurred' }, 500); 
+  }
 });
 
 app.get('/auth/me', authMiddleware, async (c) => {
@@ -482,9 +506,12 @@ app.get('/auth/me', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    const profileCompletionStatus = computeProfileCompletion(user);
-    return c.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, phone: user.phone, location: user.location, kycStatus: user.kycStatus, profileCompletionStatus } });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    const normalizedUser = normalizeUserResponse(user);
+    return c.json({ user: normalizedUser });
+  } catch (err) { 
+    logSecureError('AUTH_ME_ERROR', 'Failed to retrieve profile in /auth/me', { userId: payload.userId, error: err });
+    return c.json({ error: 'An unexpected security error occurred' }, 500); 
+  }
 });
 
 app.post('/auth/forgot-password', async (c) => {
@@ -685,21 +712,13 @@ app.post('/auth/google', async (c) => {
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-
-    return c.json({
-      token,
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        role: user.role, 
-        avatar: user.avatar,
-        phone: user.phone,
-        location: user.location,
-        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
-      }
-    });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    const normalizedUser = normalizeUserResponse(user);
+    logSecureInfo('GOOGLE_AUTH_SUCCESS', 'User authenticated via Google', { email: user.email, userId: user.id });
+    return c.json({ token, user: normalizedUser });
+  } catch (err) { 
+    logSecureError('GOOGLE_AUTH_ERROR', 'Google OAuth verification failed', { error: err });
+    return c.json({ error: 'An unexpected security error occurred during Google Sign-In' }, 500); 
+  }
 });
 
 app.post('/auth/apple', async (c) => {
@@ -758,21 +777,13 @@ app.post('/auth/apple', async (c) => {
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
-
-    return c.json({
-      token,
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        role: user.role,
-        avatar: user.avatar,
-        phone: user.phone,
-        location: user.location,
-        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
-      }
-    });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    const normalizedUser = normalizeUserResponse(user);
+    logSecureInfo('APPLE_AUTH_SUCCESS', 'User authenticated via Apple', { email: user.email, userId: user.id });
+    return c.json({ token, user: normalizedUser });
+  } catch (err) { 
+    logSecureError('APPLE_AUTH_ERROR', 'Apple verification failed', { error: err });
+    return c.json({ error: 'An unexpected security error occurred during Apple Sign-In' }, 500); 
+  }
 });
 
 app.post('/auth/send-otp', async (c) => {
@@ -999,20 +1010,13 @@ app.post('/auth/verify-otp', async (c) => {
       await prisma.pendingVerification.delete({ where: { id: pending.id } });
 
       const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+      const normalizedUser = normalizeUserResponse(user);
+      logSecureInfo('OTP_VERIFY_SUCCESS', 'User registered and verified via OTP', { email: user.email, userId: user.id });
       return c.json({
         success: true,
         verified: true,
         token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
-          phone: user.phone,
-          location: user.location,
-          kycStatus: user.kycStatus || 'NOT_SUBMITTED'
-        }
+        user: normalizedUser
       });
     }
 
@@ -1065,20 +1069,13 @@ app.post('/auth/verify-otp', async (c) => {
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, c.env.JWT_SECRET, { expiresIn: '7d' });
+    const normalizedUser = normalizeUserResponse(user);
+    logSecureInfo('OTP_VERIFY_SUCCESS', 'User logged in and verified via OTP', { email: user.email, userId: user.id });
     return c.json({
       success: true,
       verified: true,
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        phone: user.phone,
-        location: user.location,
-        kycStatus: user.kycStatus || 'NOT_SUBMITTED'
-      }
+      user: normalizedUser
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -1090,8 +1087,11 @@ app.get('/users/profile', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    return c.json(decryptUser(user));
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    return c.json(normalizeUserResponse(user));
+  } catch (err) { 
+    logSecureError('PROFILE_FETCH_ERROR', 'Failed to retrieve profile in /users/profile', { userId: payload.userId, error: err });
+    return c.json({ error: 'An unexpected security error occurred' }, 500); 
+  }
 });
 
 app.patch('/users/profile', authMiddleware, async (c) => {
@@ -1099,18 +1099,50 @@ app.patch('/users/profile', authMiddleware, async (c) => {
   const payload = c.get('user');
   const body = await c.req.json();
   try {
-    // Only update fields that are explicitly provided in the request body
     const data = {};
-    if (body.name !== undefined) data.name = body.name;
-    if (body.email !== undefined) data.email = body.email.toLowerCase();
-    if (body.phone !== undefined) data.phone = body.phone;
+    if (body.name !== undefined) {
+      const cleanName = validateAndCleanName(body.name);
+      if (body.name && !cleanName) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid name attempt during profile update', { userId: payload.userId, name: body.name });
+        return c.json({ error: 'Invalid name format. Only letters and standard characters allowed.' }, 400);
+      }
+      data.name = cleanName;
+    }
+    if (body.email !== undefined) {
+      const cleanEmail = validateAndCleanEmail(body.email);
+      if (body.email && !cleanEmail) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid email attempt during profile update', { userId: payload.userId, email: body.email });
+        return c.json({ error: 'Invalid email address format.' }, 400);
+      }
+      data.email = cleanEmail;
+    }
+    if (body.phone !== undefined) {
+      const cleanPhone = validateAndCleanPhone(body.phone);
+      if (body.phone && !cleanPhone) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid phone attempt during profile update', { userId: payload.userId, phone: body.phone });
+        return c.json({ error: 'Invalid phone number format.' }, 400);
+      }
+      data.phone = cleanPhone;
+    }
+    if (body.location !== undefined) {
+      const cleanLocation = validateAndCleanLocation(body.location);
+      if (body.location && !cleanLocation) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid location attempt during profile update', { userId: payload.userId, location: body.location });
+        return c.json({ error: 'Invalid location text.' }, 400);
+      }
+      data.location = cleanLocation;
+    }
     if (body.avatar !== undefined) data.avatar = body.avatar;
-    if (body.location !== undefined) data.location = body.location;
     if (body.idType !== undefined) data.idType = body.idType;
-    if (body.idNumber !== undefined) data.idNumber = body.idNumber;
+    if (body.idNumber !== undefined) {
+      if (body.idNumber && body.idNumber.includes(':')) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed ID number contains colons', { userId: payload.userId });
+        return c.json({ error: 'Invalid ID number.' }, 400);
+      }
+      data.idNumber = body.idNumber;
+    }
     if (body.idImage !== undefined) {
       data.idImage = body.idImage;
-      // Only set kycStatus to PENDING if a new document is being uploaded
       const currentUser = await prisma.user.findUnique({ where: { id: payload.userId }, select: { idImage: true, kycStatus: true } });
       if (body.idImage && body.idImage !== currentUser?.idImage && currentUser?.kycStatus !== 'VERIFIED') {
         data.kycStatus = 'PENDING';
@@ -1121,8 +1153,11 @@ app.patch('/users/profile', authMiddleware, async (c) => {
       where: { id: payload.userId },
       data
     });
-    return c.json(decryptUser(user));
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    return c.json(normalizeUserResponse(user));
+  } catch (err) { 
+    logSecureError('PROFILE_UPDATE_ERROR', 'Profile update failed', { userId: payload.userId, error: err });
+    return c.json({ error: 'An unexpected security error occurred during profile update' }, 500); 
+  }
 });
 
 app.get('/users/bookings', authMiddleware, async (c) => {
@@ -1197,8 +1232,11 @@ app.get('/users/:id', authMiddleware, async (c) => {
   try {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return c.json({ error: 'User not found' }, 404);
-    return c.json(decryptUser(user));
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    return c.json(normalizeUserResponse(user));
+  } catch (err) { 
+    logSecureError('PROFILE_FETCH_ERROR', 'Failed to retrieve profile in /users/:id', { userId: id, error: err });
+    return c.json({ error: 'An unexpected security error occurred' }, 500); 
+  }
 });
 
 app.patch('/users/:id', authMiddleware, async (c) => {
@@ -1210,15 +1248,48 @@ app.patch('/users/:id', authMiddleware, async (c) => {
   }
   const body = await c.req.json();
   try {
-    // Only update fields that are explicitly provided in the request body
     const data = {};
-    if (body.name !== undefined) data.name = body.name;
-    if (body.email !== undefined) data.email = body.email.toLowerCase();
-    if (body.phone !== undefined) data.phone = body.phone;
+    if (body.name !== undefined) {
+      const cleanName = validateAndCleanName(body.name);
+      if (body.name && !cleanName) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid name attempt during profile update', { userId: id, name: body.name });
+        return c.json({ error: 'Invalid name format. Only letters and standard characters allowed.' }, 400);
+      }
+      data.name = cleanName;
+    }
+    if (body.email !== undefined) {
+      const cleanEmail = validateAndCleanEmail(body.email);
+      if (body.email && !cleanEmail) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid email attempt during profile update', { userId: id, email: body.email });
+        return c.json({ error: 'Invalid email address format.' }, 400);
+      }
+      data.email = cleanEmail;
+    }
+    if (body.phone !== undefined) {
+      const cleanPhone = validateAndCleanPhone(body.phone);
+      if (body.phone && !cleanPhone) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid phone attempt during profile update', { userId: id, phone: body.phone });
+        return c.json({ error: 'Invalid phone number format.' }, 400);
+      }
+      data.phone = cleanPhone;
+    }
+    if (body.location !== undefined) {
+      const cleanLocation = validateAndCleanLocation(body.location);
+      if (body.location && !cleanLocation) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed/invalid location attempt during profile update', { userId: id, location: body.location });
+        return c.json({ error: 'Invalid location text.' }, 400);
+      }
+      data.location = cleanLocation;
+    }
     if (body.avatar !== undefined) data.avatar = body.avatar;
-    if (body.location !== undefined) data.location = body.location;
     if (body.idType !== undefined) data.idType = body.idType;
-    if (body.idNumber !== undefined) data.idNumber = body.idNumber;
+    if (body.idNumber !== undefined) {
+      if (body.idNumber && body.idNumber.includes(':')) {
+        logSecureWarn('SUSPICIOUS_WRITE', 'Malformed ID number contains colons', { userId: id });
+        return c.json({ error: 'Invalid ID number.' }, 400);
+      }
+      data.idNumber = body.idNumber;
+    }
     if (body.idImage !== undefined) {
       const currentUser = await prisma.user.findUnique({ where: { id }, select: { idImage: true, kycStatus: true, name: true } });
       if (body.idImage && body.idImage !== currentUser?.idImage) {
@@ -1266,8 +1337,11 @@ app.patch('/users/:id', authMiddleware, async (c) => {
       where: { id },
       data
     });
-    return c.json(decryptUser(user));
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    return c.json(normalizeUserResponse(user));
+  } catch (err) { 
+    logSecureError('PROFILE_UPDATE_ERROR', 'Profile update failed via /users/:id', { userId: id, error: err });
+    return c.json({ error: 'An unexpected security error occurred during profile update' }, 500); 
+  }
 });
 
 // --- Wishlist ---

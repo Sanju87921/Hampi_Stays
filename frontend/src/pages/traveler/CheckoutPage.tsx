@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,7 @@ import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { sanitizePhoneNumber } from "../../utils/phone";
 
 const USD_RATE = 0.012; // 1 INR ≈ 0.012 USD
 
@@ -45,9 +46,20 @@ export function CheckoutPage() {
   const [guestInfo, setGuestInfo] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: user?.phone || "",
+    phone: sanitizePhoneNumber(user?.phone),
     nationality: "Indian",
   });
+
+  useEffect(() => {
+    if (user) {
+      setGuestInfo(prev => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone || sanitizePhoneNumber(user.phone) || "",
+      }));
+    }
+  }, [user]);
 
   const { bookingData, hasBookingData } = useMemo(() => ({
     bookingData: location.state || {},

@@ -8,6 +8,7 @@ import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
+import { sanitizePhoneNumber } from "../../utils/phone";
 
 // Upload file via direct Cloudinary signed upload
 async function uploadFile(file: File): Promise<string> {
@@ -73,7 +74,7 @@ function buildFormData(u: any): ProfileFormData {
   return {
     name: u?.name || "",
     email: u?.email || "",
-    phone: u?.phone || "",
+    phone: sanitizePhoneNumber(u?.phone),
     avatar: u?.avatar || "",
     location: u?.location || "Hampi, Karnataka",
     idType: u?.idType || "",

@@ -88,6 +88,9 @@ export function decrypt(encryptedText, customKey) {
     const [ivHex, authTagHex, encryptedContent] = encryptedText.split(':');
     
     if (!ivHex || !authTagHex || !encryptedContent) {
+      if (encryptedText.includes(':')) {
+        return ''; // Discard malformed/partial encrypted values
+      }
       return encryptedText; // Probably not encrypted or legacy data
     }
     
@@ -103,9 +106,50 @@ export function decrypt(encryptedText, customKey) {
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption failed:', error.message);
-    return encryptedText; // Fallback to original text if decryption fails
+    const parts = encryptedText.split(':');
+    const masked = parts[2] ? parts[2].slice(0, 8) + '...' : '***';
+    console.error(`[SECURE_LOG:DECRYPTION_FAILURE] Decryption failed for payload starting with: ${masked}. Error: ${error.message}`);
+    if (encryptedText && encryptedText.includes(':')) {
+      return ''; // Never expose raw ciphertext/iv string if decryption fails
+    }
+    return encryptedText; // Fallback to original text if decryption fails for legacy plaintext
   }
+}
+
+/**
+ * Sanitizes phone numbers, filtering out encrypted/malformed strings.
+ * @param {string} phone 
+ * @returns {string}
+ */
+export function sanitizePhoneNumber(phone) {
+  if (!phone) return '';
+  const str = String(phone).trim();
+  
+  // 1. If it contains colons, discard
+  if (str.includes(':')) return '';
+  
+  // 2. Remove all non-numeric characters except single leading '+'
+  const hasPlus = str.startsWith('+');
+  let cleaned = str.replace(/[^\d]/g, '');
+  if (hasPlus) {
+    cleaned = '+' + cleaned;
+  }
+  
+  // 3. Length check (must not exceed 15 characters)
+  if (cleaned.length > 15) return '';
+  
+  // 4. Must be numeric (with optional leading +)
+  const numericPart = hasPlus ? cleaned.slice(1) : cleaned;
+  if (!numericPart || !/^\d+$/.test(numericPart)) {
+    return '';
+  }
+  
+  // 5. Min length check
+  if (numericPart.length < 7) {
+    return '';
+  }
+  
+  return cleaned;
 }
 
 /**

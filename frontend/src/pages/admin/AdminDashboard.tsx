@@ -61,6 +61,71 @@ const KycImage = ({ src, alt, transform, className }: { src: string; alt: string
   );
 };
 
+const MOCK_GUIDES = [
+  {
+    id: "guide_mock_complete",
+    status: "APPROVED",
+    isActive: true,
+    yearsExperience: 8,
+    idType: "Passport",
+    idNumber: "L1234567",
+    idImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+    user: {
+      name: "Mallikarjuna Gowda (Mock Verified)",
+      email: "malli.gowda@hampi.com",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      phone: "+91 98450 12345",
+      location: "Hampi, Karnataka",
+      profileCompletionStatus: "VERIFIED"
+    },
+    fraudScore: 5,
+    fraudFlags: []
+  },
+  {
+    id: "guide_mock_partial",
+    status: "UNDER_REVIEW",
+    isActive: true,
+    yearsExperience: 3,
+    idType: "Aadhaar Card",
+    idNumber: "1234 5678 9012",
+    idImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&auto=format&fit=crop&q=80",
+    user: {
+      name: "Shiva Kumar (Mock Partial)",
+      email: "shiva@gmail.com",
+      avatar: "",
+      phone: "+91 99887 76655",
+      location: "",
+      profileCompletionStatus: "PARTIAL"
+    },
+    fraudScore: 45,
+    fraudFlags: ["IP_LOCATION_MISMATCH"]
+  },
+  {
+    id: "guide_mock_incomplete",
+    status: "PENDING",
+    isActive: false,
+    yearsExperience: 1,
+    idType: "Voter ID",
+    idNumber: "XYZ12345:678",
+    idImage: "",
+    user: {
+      name: "Invalid:Guide:123 (Mock Suspicious)",
+      email: "malformed-email",
+      avatar: "",
+      phone: "198326820ff072396814da7f:4d75666",
+      location: "Malicous_Blob:999",
+      profileCompletionStatus: "INCOMPLETE"
+    },
+    fraudScore: 95,
+    fraudFlags: ["SUSPICIOUS_PAYLOAD", "SUSPICIOUS_PHONE_FORMAT", "COLON_DELIMITED_VALUE", "CRITICAL_DOCUMENT_MISSING"]
+  }
+];
+
+const mergeMockGuides = (fetched: any[]) => {
+  const cleanFetched = Array.isArray(fetched) ? fetched.filter((g: any) => g && !g.id.startsWith("guide_mock_")) : [];
+  return [...MOCK_GUIDES, ...cleanFetched];
+};
+
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [propertySubTab, setPropertySubTab] = useState<"pending" | "active">("pending");
@@ -146,7 +211,7 @@ export function AdminDashboard() {
               break;
             case 'guides':
               const gds = await apiClient.get<any[]>('/admin/guides');
-              setAllGuides(gds);
+              setAllGuides(mergeMockGuides(gds));
               break;
           }
         } catch (err) {
@@ -189,7 +254,7 @@ export function AdminDashboard() {
           break;
         case 'guides':
           const guides = await apiClient.get<any[]>('/admin/guides');
-          setAllGuides(guides);
+          setAllGuides(mergeMockGuides(guides));
           break;
         case 'bookings':
           const bookings = await apiClient.get<any[]>('/admin/bookings/all');
@@ -987,6 +1052,16 @@ export function AdminDashboard() {
                       }`}>
                         {guide.status.replace('_', ' ')}
                       </span>
+                      {guide.user?.profileCompletionStatus && (
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                          guide.user.profileCompletionStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                          guide.user.profileCompletionStatus === 'COMPLETE' ? 'bg-green-100 text-green-800 border-green-300' :
+                          guide.user.profileCompletionStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                          'bg-red-100 text-red-800 border-red-300 animate-pulse'
+                        }`}>
+                          Profile: {guide.user.profileCompletionStatus}
+                        </span>
+                      )}
                     </div>
 
                     {/* Anti-Fraud Shield Alert */}
