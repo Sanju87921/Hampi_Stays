@@ -212,17 +212,17 @@ const CurationDashboard = () => {
       );
     }
     if (activeTab === 'hero') {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto py-12">
-      <div className="w-20 h-20 bg-sand-100 rounded-full flex items-center justify-center mb-6 text-navy-950/20">
-        {tabs.find(t => t.id === activeTab)?.icon}
-      </div>
-      <h3 className="text-xl font-bold text-navy-950 mb-2">Homepage Hero Selection</h3>
-      <p className="text-navy-950/60 text-sm mb-6">Soon you’ll be able to curate the homepage hero carousel.</p>
-      <span className="px-4 py-1.5 bg-gold-100 text-gold-700 text-[10px] font-bold uppercase tracking-widest rounded-full">Coming Soon</span>
-    </div>
-  );
-}
+      return (
+        <div className="relative">
+          <div className="absolute top-0 right-0 z-10 flex items-center gap-2">
+            <span className="px-3 py-1 bg-gold-100/80 text-gold-700 text-[10px] font-bold uppercase tracking-widest rounded-full border border-gold-200">Coming Soon</span>
+          </div>
+          <div className="opacity-60 pointer-events-none">
+            <HeroModule />
+          </div>
+        </div>
+      );
+    }
     // Coming Soon for other tabs
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto py-12">
