@@ -1,3 +1,5 @@
+import { SentryMonitor } from '../monitoring/sentry.js';
+import { AlertingSystem } from '../monitoring/alerting.js';
 import { AppError } from '../utils/errors/index.js';
 import { logSecureError } from '../logging/logger.js';
 
@@ -22,6 +24,16 @@ export const globalErrorHandler = (err, c) => {
 
   // Unhandled errors
   console.error('[UNHANDLED ERROR]', err);
+  
+  if (c.env) {
+    const sentry = new SentryMonitor(c.env, c.req.raw);
+    sentry.captureException(err, { traceId: c.get('traceId'), url: c.req.url });
+    
+    if (err.name !== 'ValidationError') {
+      const alertSys = new AlertingSystem(c.env);
+      c.executionCtx.waitUntil(alertSys.sendAlert('error', 'Unhandled Backend Exception', err.message, { stack: err.stack, traceId: c.get('traceId') }));
+    }
+  }
   if (c.env && c.env.NODE_ENV === 'production') {
     return c.json({ error: 'Internal Server Error', code: 'INTERNAL_ERROR' }, 500);
   }
