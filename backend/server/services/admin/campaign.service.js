@@ -1,0 +1,1 @@
+// campaign service stub\nexport {};\n

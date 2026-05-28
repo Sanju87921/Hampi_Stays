@@ -1,0 +1,1 @@
+// kyc service stub\nexport {};\n

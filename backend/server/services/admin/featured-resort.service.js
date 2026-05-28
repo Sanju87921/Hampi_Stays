@@ -1,0 +1,1 @@
+// featured-resort service stub\nexport {};\n

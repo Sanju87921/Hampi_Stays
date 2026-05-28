@@ -1,0 +1,1 @@
+// curation service stub\nexport {};\n
