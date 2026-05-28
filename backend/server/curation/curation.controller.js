@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma.js';
-import logger from '../logging/logger.js';
+import { logSecureError } from '../logging/logger.js';
 
 // Seasonal Campaigns
 export const getCampaigns = async (req, res) => {
@@ -9,7 +9,7 @@ export const getCampaigns = async (req, res) => {
     });
     res.json(campaigns);
   } catch (error) {
-    logger.error('Failed to get campaigns', error);
+    logSecureError('CURATION_ERROR', 'Failed to get campaigns', { error });
     res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 };
@@ -21,7 +21,7 @@ export const createCampaign = async (req, res) => {
     });
     res.json(campaign);
   } catch (error) {
-    logger.error('Failed to create campaign', error);
+    logSecureError('CURATION_ERROR', 'Failed to create campaign', { error });
     res.status(500).json({ error: 'Failed to create campaign' });
   }
 };

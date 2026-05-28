@@ -13,26 +13,29 @@ import {
   updateExperience,
   deleteExperience
 } from './curation.controller.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/security.js';
 
 const router = express.Router();
 
+// All curation routes require ADMIN
+router.use(authenticate, authorize('ADMIN'));
+
 // Seasonal Campaigns
 router.get('/campaigns', getCampaigns);
-router.post('/campaigns', requireAdmin, createCampaign);
-router.put('/campaigns/:id', requireAdmin, updateCampaign);
-router.delete('/campaigns/:id', requireAdmin, deleteCampaign);
+router.post('/campaigns', createCampaign);
+router.put('/campaigns/:id', updateCampaign);
+router.delete('/campaigns/:id', deleteCampaign);
 
 // Sponsored Placements
 router.get('/sponsored', getSponsored);
-router.post('/sponsored', requireAdmin, createSponsored);
-router.put('/sponsored/:id', requireAdmin, updateSponsored);
-router.delete('/sponsored/:id', requireAdmin, deleteSponsored);
+router.post('/sponsored', createSponsored);
+router.put('/sponsored/:id', updateSponsored);
+router.delete('/sponsored/:id', deleteSponsored);
 
 // Curated Experiences
 router.get('/experiences', getExperiences);
-router.post('/experiences', requireAdmin, createExperience);
-router.put('/experiences/:id', requireAdmin, updateExperience);
-router.delete('/experiences/:id', requireAdmin, deleteExperience);
+router.post('/experiences', createExperience);
+router.put('/experiences/:id', updateExperience);
+router.delete('/experiences/:id', deleteExperience);
 
 export default router;
