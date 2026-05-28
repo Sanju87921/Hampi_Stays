@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { authenticator } from 'otplib';
+import { OTP } from 'otplib';
+const authenticator = new OTP();
 import QRCode from 'qrcode';
 
 export const setupAdminSecurityRoutes = (app, authMiddleware, adminMiddleware) => {
@@ -84,7 +85,7 @@ export const setupAdminSecurityRoutes = (app, authMiddleware, adminMiddleware) =
       const admin = await prisma.user.findUnique({ where: { id: adminId } });
       
       const secret = authenticator.generateSecret();
-      const otpauthUrl = authenticator.keyuri(admin.email, 'HampiStays Admin', secret);
+      const otpauthUrl = authenticator.generateURI({ label: admin.email, issuer: 'HampiStays Admin', secret });
       const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
 
       // Temporarily store the secret in the DB until verified
@@ -110,7 +111,8 @@ export const setupAdminSecurityRoutes = (app, authMiddleware, adminMiddleware) =
         return c.json({ error: 'MFA not initialized' }, 400);
       }
 
-      const isValid = authenticator.verify({ token, secret: admin.mfaSecret });
+      const verifyResult = authenticator.verifySync({ token, secret: admin.mfaSecret });
+      const isValid = verifyResult && verifyResult.valid;
       if (!isValid) {
         return c.json({ error: 'Invalid authentication code' }, 400);
       }
