@@ -136,9 +136,9 @@ export function Hero() {
         >
           <motion.span
             variants={textVariant}
-            className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white  backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-4 cursor-default select-none"
+            className="inline-flex items-center gap-2 py-1.5 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-white text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase mb-4 cursor-default select-none shadow-sm"
           >
-            <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse flex-shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse flex-shrink-0" />
             {isAdmin ? "Administrator Session" : t("hero.badge")}
           </motion.span>
 
@@ -184,16 +184,16 @@ export function Hero() {
             {isAdmin ? (
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Link to="/admin/dashboard">
-                  <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950  font-bold rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/20 group">
-                    <ShieldCheck className="w-5 h-5" />
+                  <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950 font-black rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/30 group text-base tracking-wide">
+                    <ShieldCheck className="w-5 h-5 flex-shrink-0" />
                     Enter Command Center
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                   </button>
                 </Link>
                 <div className="flex gap-4">
                   <Link to="/admin/curation">
-                    <button className="bg-white  hover:bg-white  backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center gap-3 transition-colors duration-300">
-                      <Building2 className="w-5 h-5 text-gold-400" />
+                    <button className="bg-navy-950/40 hover:bg-navy-950/60 backdrop-blur-md border border-white/15 px-6 h-16 rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-sm">
+                      <Building2 className="w-5 h-5 text-gold-400 flex-shrink-0" />
                       <span className="text-white text-base font-bold">Curation Mode</span>
                     </button>
                   </Link>
