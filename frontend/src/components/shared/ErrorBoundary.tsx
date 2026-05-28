@@ -53,7 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Our team has been notified. Please try refreshing the page.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {this.state.error && (
               <div className="text-left bg-white p-4 rounded-xl border border-red-100 mb-8 overflow-auto max-h-48 text-xs font-mono text-red-900 shadow-sm">
                 <strong>{this.state.error.toString()}</strong>
                 <br />
@@ -76,3 +76,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+

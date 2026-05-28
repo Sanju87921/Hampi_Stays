@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,7 +65,12 @@ export function Navbar() {
             { name: "Notifications", path: "/dashboard/notifications" },
             { name: t("navbar.profile"), path: "/dashboard/profile" },
           ]
-        : [
+        : user?.role === 'ADMIN'
+          ? [
+              { name: "Profile", path: "/dashboard?tab=profile" },
+              { name: "Settings", path: "/dashboard?tab=settings" },
+            ]
+          : [
             { name: t("navbar.dashboard"), path: "/dashboard" },
             { name: "Properties", path: "/dashboard?tab=properties" },
             { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
@@ -94,25 +99,40 @@ export function Navbar() {
           {/* Mobile Left Spacer (to help center logo) */}
           <div className="flex-1 md:hidden" />
 
-          {/* Logo */}
-          <Link 
-            to={user?.role === 'RESORT_OWNER' ? "/dashboard" : "/"} 
-            className="flex items-center justify-center md:justify-start flex-1 md:flex-none z-10"
-          >
-            <img 
-              src="/logo.png" 
-              alt="HampiStays" 
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/favicon.svg";
-                target.className = "h-8 w-auto opacity-50";
-              }}
-              className={cn(
-                "h-20 w-auto object-contain transition-all duration-500",
-                !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
-              )}
-            />
-          </Link>
+                    {/* Logo & Admin Badge */}
+          <div className="flex items-center gap-4 flex-1 md:flex-none z-10">
+            <Link 
+              to={user?.role === 'RESORT_OWNER' || user?.role === 'ADMIN' ? "/dashboard" : "/"} 
+              className="flex items-center justify-center md:justify-start"
+            >
+              <img 
+                src="/logo.png" 
+                alt="HampiStays" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/favicon.svg";
+                  target.className = "h-8 w-auto opacity-50";
+                }}
+                className={cn(
+                  "h-20 w-auto object-contain transition-all duration-500",
+                  !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
+                )}
+              />
+            </Link>
+            {user?.role === 'ADMIN' && (
+                            <div className={cn(
+                "hidden md:flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all duration-300",
+                isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white/10 text-white border-white/20 backdrop-blur-md"
+              )}>
+                <div className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </div>
+                <Shield className="w-3 h-3 mr-1.5" />
+                Administrator
+              </div>
+            )}
+          </div>
 
           {/* Desktop Nav (Center) */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 z-20">
@@ -291,3 +311,8 @@ export function Navbar() {
     </motion.nav>
   );
 }
+
+
+
+
+
