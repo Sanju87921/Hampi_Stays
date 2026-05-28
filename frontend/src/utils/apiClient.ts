@@ -20,8 +20,33 @@ export class ApiError extends Error {
 
 /**
  * Enhanced fetch wrapper for HampiStays
- * Handles base URL, auth headers, and safe JSON parsing
+ * Handles base URL, auth headers, safe JSON parsing, timeouts, and retries.
  */
+async function fetchWithRetry(url: string, options: RequestInit, retries = 1, timeoutMs = 15000): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      // Retry on 5xx server errors or 429 Too Many Requests
+      if (!res.ok && (res.status >= 500 || res.status === 429) && i < retries) {
+        await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, i), 5000))); // Exponential backoff max 5s
+        continue;
+      }
+      return res;
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new ApiError('Request timed out after ' + (timeoutMs/1000) + 's', 408);
+      }
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, i), 5000)));
+    }
+  }
+  throw new Error('Unreachable');
+}
+
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, headers, ...rest } = options;
   
@@ -51,10 +76,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
-  const response = await fetch(url, {
-    ...rest,
-    headers: requestHeaders,
-  });
+  const response = await fetchWithRetry(url, { ...rest, headers: requestHeaders });
 
   // 4. Handle Empty or Non-JSON Responses safely
   const contentType = response.headers.get('content-type');
@@ -103,3 +125,4 @@ export const apiClient = {
   patch: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE', ...(body && { body: JSON.stringify(body) }) }),
 };
+

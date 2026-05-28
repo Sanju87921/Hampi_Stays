@@ -38,6 +38,7 @@ const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(
 const CurationDashboard = lazy(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { AuthModal } from "./components/auth/AuthModal";
 
 import { useAuth } from "./context/AuthContext";
@@ -114,7 +115,9 @@ const MainLayout = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
       <MobileDock />
@@ -127,7 +130,9 @@ const AuthLayout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
@@ -233,7 +238,8 @@ import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
-    <Router>
+    <ErrorBoundary>
+      <Router>
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -276,7 +282,11 @@ function App() {
       <AuthModal />
       <CookieConsent />
     </Router>
+    </ErrorBoundary>
   );
 }
 
 export default App;
+
+
+

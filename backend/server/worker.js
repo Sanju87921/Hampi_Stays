@@ -1882,6 +1882,18 @@ app.get('/experiences/:id', async (c) => {
 
 // Extracted POST /hero-slides/reorder to admin controller
 
+// Diagnostic Health System
+app.get('/health/routes', adminMiddleware, (c) => {
+  const routes = app.routes.map(r => ({
+    method: r.method,
+    path: r.path
+  }));
+  return c.json({
+    total: routes.length,
+    routes
+  });
+});
+
 // Error Handling
 app.onError((err, c) => {
   console.error(err);
@@ -2005,5 +2017,6 @@ export default {
     ]));
   }
 };
+
 
 
