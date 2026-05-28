@@ -561,3 +561,46 @@ model RewardCredit {
   
   @@map("reward_credits")
 }
+
+model SeasonalCampaign {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  bannerUrl   String?
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("seasonal_campaigns")
+}
+
+model SponsoredPlacement {
+  id          String   @id @default(cuid())
+  resortId    String
+  placement   String
+  priority    Int
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("sponsored_placements")
+}
+
+model CuratedExperience {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  imageUrl      String?
+  price         Float
+  duration      String
+  location      String
+  isFeatured    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@map("curated_experiences")
+}

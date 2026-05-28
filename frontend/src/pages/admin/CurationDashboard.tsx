@@ -5,6 +5,10 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import HeroModule from './HeroModule';
+import SeasonalCampaignsModule from './curation/SeasonalCampaignsModule';
+import SponsoredAdsModule from './curation/SponsoredAdsModule';
+import CuratedExperiencesModule from './curation/CuratedExperiencesModule';
+import SearchRankingModule from './curation/SearchRankingModule';
 
 const CurationDashboard = () => {
   const [activeTab, setActiveTab] = useState('featured');
@@ -62,17 +66,23 @@ const CurationDashboard = () => {
     }
     if (activeTab === 'hero') {
       return <HeroModule />;    }
-    // Coming Soon for other tabs
+    if (activeTab === 'campaigns') {
+      return <SeasonalCampaignsModule />;
+    }
+    if (activeTab === 'sponsored') {
+      return <SponsoredAdsModule />;
+    }
+    if (activeTab === 'experiences') {
+      return <CuratedExperiencesModule />;
+    }
+    if (activeTab === 'search') {
+      return <SearchRankingModule />;
+    }
+    
+    // Fallback for any other unexpected tab
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto py-12">
-        <div className="w-20 h-20 bg-sand-100 rounded-full flex items-center justify-center mb-6 text-navy-950/20">
-          {tabs.find(t => t.id === activeTab)?.icon}
-        </div>
         <h3 className="text-xl font-bold text-navy-950 mb-2">Module Under Construction</h3>
-        <p className="text-navy-950/60 text-sm mb-6">
-          The backend logic for {tabs.find(t => t.id === activeTab)?.label} is currently being upgraded for enterprise scale.
-        </p>
-        <span className="px-4 py-1.5 bg-gold-100 text-gold-700 text-[10px] font-bold uppercase tracking-widest rounded-full">Coming Soon</span>
       </div>
     );
   };
