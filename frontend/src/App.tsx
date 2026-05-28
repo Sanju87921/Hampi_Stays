@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "./components/layout/Navbar";
@@ -6,44 +6,43 @@ import { Footer } from "./components/layout/Footer";
 import { MobileDock } from "./components/layout/MobileDock";
 import { CookieConsent } from "./components/layout/CookieConsent";
 
+import { lazyWithRetry } from "./utils/lazyWithRetry";
+
 // Lazy Loaded Public Pages
-const LandingPage = lazy(() => import("./pages/public/LandingPage").then(m => ({ default: m.LandingPage })));
-const ResortsPage = lazy(() => import("./pages/public/ResortsPage").then(m => ({ default: m.ResortsPage })));
-const ResortDetailPage = lazy(() => import("./pages/public/ResortDetailPage").then(m => ({ default: m.ResortDetailPage })));
-const ResortComparePage = lazy(() => import("./pages/public/ResortComparePage").then(m => ({ default: m.ResortComparePage })));
-const GalleryPage = lazy(() => import("./pages/public/GalleryPage").then(m => ({ default: m.GalleryPage })));
-const DiscoveryPage = lazy(() => import("./pages/public/DiscoveryPage").then(m => ({ default: m.DiscoveryPage })));
-const ContactPage = lazy(() => import("./pages/public/ContactPage").then(m => ({ default: m.ContactPage })));
-const TermsOfServicePage = lazy(() => import("./pages/public/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
-const PrivacyPolicyPage = lazy(() => import("./pages/public/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
-const CookiesPage = lazy(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
-const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const LandingPage = lazyWithRetry(() => import("./pages/public/LandingPage").then(m => ({ default: m.LandingPage })));
+const ResortsPage = lazyWithRetry(() => import("./pages/public/ResortsPage").then(m => ({ default: m.ResortsPage })));
+const ResortDetailPage = lazyWithRetry(() => import("./pages/public/ResortDetailPage").then(m => ({ default: m.ResortDetailPage })));
+const ResortComparePage = lazyWithRetry(() => import("./pages/public/ResortComparePage").then(m => ({ default: m.ResortComparePage })));
+const GalleryPage = lazyWithRetry(() => import("./pages/public/GalleryPage").then(m => ({ default: m.GalleryPage })));
+const DiscoveryPage = lazyWithRetry(() => import("./pages/public/DiscoveryPage").then(m => ({ default: m.DiscoveryPage })));
+const ContactPage = lazyWithRetry(() => import("./pages/public/ContactPage").then(m => ({ default: m.ContactPage })));
+const TermsOfServicePage = lazyWithRetry(() => import("./pages/public/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
+const PrivacyPolicyPage = lazyWithRetry(() => import("./pages/public/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
+const CookiesPage = lazyWithRetry(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
+const NotFoundPage = lazyWithRetry(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 // Lazy Loaded Auth Pages
-const LoginPage = lazy(() => import("./pages/auth/LoginPage").then(m => ({ default: m.LoginPage })));
-const RegisterPage = lazy(() => import("./pages/auth/RegisterPage").then(m => ({ default: m.RegisterPage })));
-const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
-const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
+const LoginPage = lazyWithRetry(() => import("./pages/auth/LoginPage").then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazyWithRetry(() => import("./pages/auth/RegisterPage").then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazyWithRetry(() => import("./pages/auth/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazyWithRetry(() => import("./pages/auth/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
 
 // Lazy Loaded Role-based Pages
-const CheckoutPage = lazy(() => import("./pages/traveler/CheckoutPage").then(m => ({ default: m.CheckoutPage })));
-const CheckoutSuccessPage = lazy(() => import("./pages/traveler/CheckoutSuccessPage").then(m => ({ default: m.CheckoutSuccessPage })));
-const BookingConfirmationPage = lazy(() => import("./pages/traveler/BookingConfirmationPage").then(m => ({ default: m.BookingConfirmationPage })));
-const BookingsPage = lazy(() => import("./pages/traveler/BookingsPage").then(m => ({ default: m.BookingsPage })));
-const WishlistPage = lazy(() => import("./pages/traveler/WishlistPage").then(m => ({ default: m.WishlistPage })));
-const ProfilePage = lazy(() => import("./pages/traveler/ProfilePage").then(m => ({ default: m.ProfilePage })));
-const NotificationsPage = lazy(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
-const DashboardSelector = lazy(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
-const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
-const CurationDashboard = lazy(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
-const AdminProfilePage = lazy(() => import("./pages/admin/AdminProfilePage").then(m => ({ default: m.AdminProfilePage })));
-const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
+const CheckoutPage = lazyWithRetry(() => import("./pages/traveler/CheckoutPage").then(m => ({ default: m.CheckoutPage })));
+const CheckoutSuccessPage = lazyWithRetry(() => import("./pages/traveler/CheckoutSuccessPage").then(m => ({ default: m.CheckoutSuccessPage })));
+const BookingConfirmationPage = lazyWithRetry(() => import("./pages/traveler/BookingConfirmationPage").then(m => ({ default: m.BookingConfirmationPage })));
+const BookingsPage = lazyWithRetry(() => import("./pages/traveler/BookingsPage").then(m => ({ default: m.BookingsPage })));
+const WishlistPage = lazyWithRetry(() => import("./pages/traveler/WishlistPage").then(m => ({ default: m.WishlistPage })));
+const ProfilePage = lazyWithRetry(() => import("./pages/traveler/ProfilePage").then(m => ({ default: m.ProfilePage })));
+const NotificationsPage = lazyWithRetry(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
+const DashboardSelector = lazyWithRetry(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
+const ResortSetupPage = lazyWithRetry(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
+const CurationDashboard = lazyWithRetry(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
+const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
+const AdminProfilePage = lazyWithRetry(() => import("./pages/admin/AdminProfilePage").then(m => ({ default: m.AdminProfilePage })));
+const AdminSettingsPage = lazyWithRetry(() => import("./pages/admin/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
-import { ErrorBoundary } from "./components/shared/ErrorBoundary";
-import { AuthModal } from "./components/auth/AuthModal";
-
 import { useAuth } from "./context/AuthContext";
 import { useSystem } from "./context/SystemContext";
 
