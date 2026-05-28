@@ -48,6 +48,7 @@ model User {
   referralsSent      Referral[]         @relation("Referrer")
   referralsReceived  Referral[]         @relation("ReferredUser")
   rewardCredits      RewardCredit[]
+  blogPosts          BlogPost[]         @relation("BlogAuthor")
 
   @@map("users")
 }
@@ -253,6 +254,30 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model BlogPost {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  content         String   @db.Text
+  excerpt         String?
+  featuredImage   String?
+  authorId        String
+  categoryId      String?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  isFeatured      Boolean  @default(false)
+  tags            String[] @default([])
+
+  author          User     @relation("BlogAuthor", fields: [authorId], references: [id])
+
+  @@index([slug])
+  @@index([publishedAt])
+  @@map("blog_posts")
 }
 
 model ResortOwner {
