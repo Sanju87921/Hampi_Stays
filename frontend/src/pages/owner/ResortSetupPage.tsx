@@ -61,6 +61,7 @@ export function ResortSetupPage() {
       type: "luxury",
       categories: ["Heritage"],
       amenities: [] as string[],
+      customAmenities: [] as { id: string, name: string, type: 'CUSTOM', icon?: string, description?: string }[],
       houseRules: [] as string[],
       mealPackages: [] as { name: string, price: number, description: string }[],
       roomTypes: [] as { name: string, description: string, pricePerNight: number, capacity: number, availableCount: number }[],
@@ -76,6 +77,10 @@ export function ResortSetupPage() {
     localStorage.setItem("hampi-resort-setup-draft", JSON.stringify(formData));
   }, [formData]);
 
+  const [showCustomAmenityModal, setShowCustomAmenityModal] = useState(false);
+  const [editingAmenityId, setEditingAmenityId] = useState<string | null>(null);
+  const [amenityForm, setAmenityForm] = useState({ name: "", icon: "", description: "" });
+
   const amenitiesList = [
     { id: "Wifi", icon: Wifi },
     { id: "Pool", icon: Waves },
@@ -83,9 +88,54 @@ export function ResortSetupPage() {
     { id: "Spa", icon: Shield },
     { id: "Gym", icon: CheckCircle2 },
     { id: "Cafe", icon: Coffee },
+    { id: "Parking", icon: CheckCircle2 },
+    { id: "AC", icon: CheckCircle2 },
+    { id: "Room Service", icon: Coffee },
+    { id: "Bar", icon: Utensils },
+    { id: "Bonfire", icon: Shield },
+    { id: "Pet Friendly", icon: CheckCircle2 },
   ];
 
   const categories = ["Heritage", "Nature", "Riverside", "Temple View", "Boutique"];
+
+  const handleSaveCustomAmenity = () => {
+    if (!amenityForm.name.trim()) {
+      toast.error("Amenity name is required");
+      return;
+    }
+    if (amenityForm.name.length > 30) {
+      toast.error("Amenity name is too long");
+      return;
+    }
+    const currentCustom = formData.customAmenities || [];
+    if (editingAmenityId) {
+      setFormData(prev => ({
+        ...prev,
+        customAmenities: (prev.customAmenities || []).map(a => 
+          a.id === editingAmenityId ? { ...a, name: amenityForm.name, icon: amenityForm.icon, description: amenityForm.description } : a
+        )
+      }));
+    } else {
+      if (currentCustom.length >= 30) {
+        toast.error("Maximum 30 custom amenities allowed");
+        return;
+      }
+      if (currentCustom.some(a => a.name.toLowerCase() === amenityForm.name.toLowerCase())) {
+        toast.error("Amenity already exists");
+        return;
+      }
+      const newId = `custom_${Date.now()}`;
+      setFormData(prev => ({
+        ...prev,
+        customAmenities: [...(prev.customAmenities || []), { id: newId, name: amenityForm.name, type: 'CUSTOM', icon: amenityForm.icon, description: amenityForm.description }],
+        amenities: [...prev.amenities, newId]
+      }));
+    }
+    setShowCustomAmenityModal(false);
+    setAmenityForm({ name: "", icon: "", description: "" });
+    setEditingAmenityId(null);
+  };
+
 
   const handleAddCustomCategory = () => {
     const trimmed = customCategoryText.trim();
@@ -433,9 +483,14 @@ export function ResortSetupPage() {
 
               {step === 3 && (
                 <div className="space-y-10">
-                  <div>
-                    <h2 className="text-4xl font-serif font-bold text-navy-950 mb-3">Amenities & Services</h2>
-                    <p className="text-navy-950/60 text-lg">What makes your property exceptional?</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-4xl font-serif font-bold text-navy-950 mb-3">Amenities & Services</h2>
+                      <p className="text-navy-950/60 text-lg">What makes your property exceptional?</p>
+                    </div>
+                    <Button variant="outline" className="rounded-2xl gap-2 border-gold-200 text-gold-700" onClick={() => { setEditingAmenityId(null); setAmenityForm({ name: "", icon: "", description: "" }); setShowCustomAmenityModal(true); }}>
+                      <Plus className="w-4 h-4" /> Add Custom Amenity
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {amenitiesList.map(item => (
@@ -443,8 +498,26 @@ export function ResortSetupPage() {
                         className={cn("p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-4 transition-all group",
                           formData.amenities.includes(item.id) ? "border-gold-500 bg-gold-50 text-gold-700 shadow-luxury" : "border-sand-100 text-navy-950/40 hover:border-gold-200")}>
                         <item.icon className={cn("w-10 h-10 transition-transform", formData.amenities.includes(item.id) ? "scale-110" : "group-hover:scale-110")} />
-                        <span className="font-bold text-xs uppercase tracking-[0.2em]">{item.id}</span>
+                        <span className="font-bold text-xs uppercase tracking-[0.2em] text-center">{item.id}</span>
                       </button>
+                    ))}
+                    {(formData.customAmenities || []).map(item => (
+                      <div key={item.id} className="relative group cursor-pointer" onClick={() => handleToggleAmenity(item.id)}>
+                        <div className={cn("h-full p-10 rounded-[2.5rem] border-2 flex flex-col items-center gap-4 transition-all",
+                          formData.amenities.includes(item.id) ? "border-gold-500 bg-gold-50 text-gold-700 shadow-luxury" : "border-sand-100 text-navy-950/40 group-hover:border-gold-200")}>
+                          
+                          <svg className={cn("w-10 h-10 transition-transform", formData.amenities.includes(item.id) ? "scale-110" : "group-hover:scale-110")} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                          <span className="font-bold text-xs uppercase tracking-[0.2em] text-center">{item.name}</span>
+                        </div>
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); setEditingAmenityId(item.id); setAmenityForm({name: item.name, icon: item.icon || "", description: item.description || ""}); setShowCustomAmenityModal(true); }} className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm text-gold-600 hover:text-gold-700 border border-gold-200 hover:scale-110 transition-transform">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setFormData(p => ({...p, customAmenities: (p.customAmenities || []).filter(a => a.id !== item.id), amenities: p.amenities.filter(id => id !== item.id)})); }} className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm text-red-500 hover:text-red-600 border border-red-100 hover:scale-110 transition-transform">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -722,6 +795,60 @@ export function ResortSetupPage() {
               </div>
             </div>
           </motion.div>
+        </AnimatePresence>
+
+        {/* Custom Amenity Modal */}
+        <AnimatePresence>
+          {showCustomAmenityModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm"
+                onClick={() => setShowCustomAmenityModal(false)}
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                animate={{ opacity: 1, scale: 1, y: 0 }} 
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[3rem] p-8 md:p-10 shadow-2xl border border-white/50 flex flex-col gap-6"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-serif font-bold text-navy-950 mb-1">{editingAmenityId ? "Edit Amenity" : "Add Custom Amenity"}</h3>
+                    <p className="text-sm text-navy-950/60">Create a unique experience offering for your guests.</p>
+                  </div>
+                  <button onClick={() => setShowCustomAmenityModal(false)} className="p-2 bg-sand-100 hover:bg-sand-200 rounded-full text-navy-950 transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <Input 
+                    label="Amenity Name" 
+                    placeholder="e.g. Temple Sunrise View" 
+                    value={amenityForm.name} 
+                    onChange={e => setAmenityForm(p => ({...p, name: e.target.value}))} 
+                    maxLength={30}
+                  />
+                  <Input 
+                    label="Description (Optional)" 
+                    placeholder="Short description of the experience..." 
+                    value={amenityForm.description} 
+                    onChange={e => setAmenityForm(p => ({...p, description: e.target.value}))} 
+                  />
+                </div>
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <Button variant="outline" className="rounded-2xl" onClick={() => setShowCustomAmenityModal(false)}>Cancel</Button>
+                  <Button className="rounded-2xl shadow-gold" onClick={handleSaveCustomAmenity}>
+                    {editingAmenityId ? "Save Changes" : "Add Amenity"}
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
       </div>
     </div>

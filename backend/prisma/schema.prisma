@@ -99,6 +99,7 @@ model Resort {
   roomTypes      Room[]
   staff          StaffMember[]
   wishlist       Wishlist[]
+  resortAmenities ResortAmenity[]
 
   @@index([status])
   @@index([pricePerNight])
@@ -442,4 +443,17 @@ model HomepageHero {
   updatedAt      DateTime  @updatedAt
 
   @@map("homepage_heroes")
+}
+
+model ResortAmenity {
+  id          String   @id @default(cuid())
+  resortId    String
+  name        String
+  type        String   // "PREDEFINED" | "CUSTOM"
+  icon        String?
+  description String?
+  createdAt   DateTime @default(now())
+  resort      Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@map("resort_amenities")
 }

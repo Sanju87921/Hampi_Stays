@@ -125,7 +125,7 @@ export const getResortBySlug = async (req, res, next) => {
 
 export const createResort = async (req, res, next) => {
   try {
-    const { name, tagline, description, type, area, price, amenities, category, categories, roomTypes, images, mealPackages, houseRules, documents } = req.body;
+    const { name, tagline, description, type, area, price, amenities, customAmenities, category, categories, roomTypes, images, mealPackages, houseRules, documents } = req.body;
     const ownerId = req.user.userId; // Secure: get from token
     
     const owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
@@ -166,6 +166,14 @@ export const createResort = async (req, res, next) => {
             capacity: parseInt(room.capacity),
             availableCount: parseInt(room.availableCount),
             images: []
+          }))
+        },
+        resortAmenities: {
+          create: (customAmenities || []).map(a => ({
+            name: a.name,
+            type: a.type || 'CUSTOM',
+            icon: a.icon || null,
+            description: a.description || null
           }))
         }
       }
