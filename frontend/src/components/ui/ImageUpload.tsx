@@ -66,12 +66,12 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
 
   return (
     <div className={cn("space-y-2", className)}>
-      {label && <label className="text-xs font-bold text-navy-950/40 uppercase tracking-widest ml-1">{label}</label>}
+      {label && <label className="text-xs font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest ml-1">{label}</label>}
       
       <div 
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          "relative group cursor-pointer border-2 border-dashed border-sand-200 rounded-3xl p-4 transition-all hover:border-gold-400 hover:bg-gold-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center gap-3",
+          "relative group cursor-pointer border-2 border-dashed border-sand-200 dark:border-zinc-800 rounded-3xl p-4 transition-all hover:border-gold-400 hover:bg-gold-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center gap-3",
           preview && "border-solid border-gold-500"
         )}
       >
@@ -92,20 +92,20 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
               </p>
             </div>
             {isUploading && (
-              <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-white dark:bg-zinc-900/80 flex flex-col items-center justify-center gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-gold-600" />
-                <p className="text-[10px] font-bold text-navy-950 uppercase">Uploading to Cloudinary...</p>
+                <p className="text-[10px] font-bold text-navy-950 dark:text-white uppercase">Uploading to Cloudinary...</p>
               </div>
             )}
           </div>
         ) : (
           <>
-            <div className="w-12 h-12 rounded-2xl bg-sand-50 flex items-center justify-center text-navy-950/20 group-hover:text-gold-500 group-hover:bg-white transition-all shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-sand-50 dark:bg-zinc-950 flex items-center justify-center text-navy-950 dark:text-white/20 dark:text-zinc-700 group-hover:text-gold-500 group-hover:bg-white dark:bg-zinc-900 transition-all shadow-sm">
               <ImageIcon className="w-6 h-6" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-navy-950">Click to upload photo</p>
-              <p className="text-[10px] text-navy-950/40 font-medium">PNG, JPG, or WEBP (Max 5MB)</p>
+              <p className="text-sm font-bold text-navy-950 dark:text-white">Click to upload photo</p>
+              <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 font-medium">PNG, JPG, or WEBP (Max 5MB)</p>
             </div>
           </>
         )}

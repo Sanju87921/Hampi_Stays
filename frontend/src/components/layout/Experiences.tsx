@@ -62,7 +62,7 @@ export function Experiences() {
   const displayExperiences = experiences.length > 0 ? experiences : fallbackExperiences;
 
   return (
-    <section className="py-32 md:py-48 bg-sand-100 relative overflow-hidden">
+    <section className="py-32 md:py-48 bg-sand-100 dark:bg-zinc-800/50 relative overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
@@ -79,7 +79,7 @@ export function Experiences() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-7xl font-serif text-navy-950 font-bold mb-8 leading-[1.1]"
+            className="text-4xl md:text-5xl lg:text-7xl font-serif text-navy-950 dark:text-white font-bold mb-8 leading-[1.1]"
           >
             Beyond Accommodation
           </motion.h2>
@@ -143,7 +143,7 @@ export function Experiences() {
                     <span className="text-xl font-bold text-white flex items-center gap-0.5"><IndianRupee className="w-4 h-4" />{exp.price}</span>
                   </div>
                   <Link to="/experiences">
-                    <Button size="sm" className="rounded-xl bg-white text-navy-950 hover:bg-gold-500 hover:text-navy-950 border-none px-6">
+                    <Button size="sm" className="rounded-xl bg-white dark:bg-zinc-900 text-navy-950 dark:text-white hover:bg-gold-500 hover:text-navy-950 dark:text-white border-none px-6">
                       Book Now <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
@@ -155,7 +155,7 @@ export function Experiences() {
 
         <div className="mt-20 text-center">
           <Link to="/experiences">
-            <Button variant="outline" className="rounded-2xl px-12 h-14 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white transition-all font-bold">
+            <Button variant="outline" className="rounded-2xl px-12 h-14 border-navy-950 text-navy-950 dark:text-white hover:bg-navy-950 hover:text-white transition-all font-bold">
               View All Signature Tours
             </Button>
           </Link>

@@ -101,27 +101,27 @@ export function SearchBar() {
   return (
     <div ref={wrapperRef} className="relative">
       {/* Main Bar */}
-      <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-luxury p-3 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-3 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white/95">
+      <div className="bg-white dark:bg-zinc-900/90 backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-luxury p-3 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-3 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white dark:bg-zinc-900/95">
 
         {/* Location */}
         <button
           type="button"
           className={cn(
             "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
-            activePanel === "location" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
+            activePanel === "location" ? "bg-white dark:bg-zinc-900 shadow-md z-10" : "hover:bg-sand-100 dark:hover:bg-zinc-700/50"
           )}
           onClick={() => togglePanel("location")}
         >
-          <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
+          <span className="block text-[11px] font-bold text-navy-950 dark:text-white uppercase tracking-widest mb-1.5">
             {t("hero.search")}
           </span>
-          <div className="flex items-center gap-3 text-navy-950/50">
+          <div className="flex items-center gap-3 text-navy-950 dark:text-white/50 dark:text-zinc-400">
             <MapPin className="w-5 h-5 text-gold-500 flex-shrink-0" />
-            <span className={cn("text-base font-medium truncate", location ? "text-navy-950" : "text-navy-800/40")}>
+            <span className={cn("text-base font-medium truncate", location ? "text-navy-950 dark:text-white" : "text-navy-800/40")}>
               {location || t("hero.searchPlaceholder")}
             </span>
           </div>
-          <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-sand-200 group-hover:bg-transparent transition-colors" />
+          <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-sand-200 dark:bg-zinc-800 group-hover:bg-transparent transition-colors" />
         </button>
 
         {/* Dates */}
@@ -129,27 +129,27 @@ export function SearchBar() {
           type="button"
           className={cn(
             "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
-            activePanel === "dates" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
+            activePanel === "dates" ? "bg-white dark:bg-zinc-900 shadow-md z-10" : "hover:bg-sand-100 dark:hover:bg-zinc-700/50"
           )}
           onClick={() => togglePanel("dates")}
         >
-          <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
+          <span className="block text-[11px] font-bold text-navy-950 dark:text-white uppercase tracking-widest mb-1.5">
             {t("hero.checkIn")} - {t("hero.checkOut")}
           </span>
-          <div className="flex items-center gap-3 text-navy-950/50">
+          <div className="flex items-center gap-3 text-navy-950 dark:text-white/50 dark:text-zinc-400">
             <CalIcon className="w-5 h-5 text-gold-500 flex-shrink-0" />
-            <span className={cn("text-base font-medium truncate", dateRange.from ? "text-navy-950" : "text-navy-800/40")}>
+            <span className={cn("text-base font-medium truncate", dateRange.from ? "text-navy-950 dark:text-white" : "text-navy-800/40")}>
               {formatDateLabel()}
             </span>
           </div>
-          <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-sand-200 group-hover:bg-transparent transition-colors" />
+          <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-sand-200 dark:bg-zinc-800 group-hover:bg-transparent transition-colors" />
         </button>
 
         {/* Guests + Search */}
         <div
           className={cn(
             "flex-[1.2] w-full md:w-auto pl-8 pr-3 py-4 md:py-[6px] rounded-full transition-all duration-300 flex justify-between items-center",
-            activePanel === "guests" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
+            activePanel === "guests" ? "bg-white dark:bg-zinc-900 shadow-md z-10" : "hover:bg-sand-100 dark:hover:bg-zinc-700/50"
           )}
         >
           <button
@@ -157,12 +157,12 @@ export function SearchBar() {
             className="text-left flex-1"
             onClick={() => togglePanel("guests")}
           >
-            <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
+            <span className="block text-[11px] font-bold text-navy-950 dark:text-white uppercase tracking-widest mb-1.5">
               {t("hero.guests")}
             </span>
-            <div className="flex items-center gap-3 text-navy-950/50">
+            <div className="flex items-center gap-3 text-navy-950 dark:text-white/50 dark:text-zinc-400">
               <Users className="w-5 h-5 text-gold-500 flex-shrink-0" />
-              <span className="text-base font-medium text-navy-950">{guestLabel}</span>
+              <span className="text-base font-medium text-navy-950 dark:text-white">{guestLabel}</span>
             </div>
           </button>
 
@@ -182,7 +182,7 @@ export function SearchBar() {
 
       {/* Location Dropdown */}
       {activePanel === "location" && (
-        <div className="absolute top-full left-0 mt-3 bg-white rounded-[2rem] shadow-luxury border border-sand-100 p-6 w-full md:w-96 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="absolute top-full left-0 mt-3 bg-white dark:bg-zinc-900 rounded-[2rem] shadow-luxury border border-sand-100 dark:border-zinc-800/50 p-6 w-full md:w-96 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="relative mb-6">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gold-500">
               <MapPin className="w-4 h-4" />
@@ -193,13 +193,13 @@ export function SearchBar() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where in Hampi?"
-              className="w-full pl-11 pr-10 py-3.5 bg-sand-50/50 border border-sand-200 rounded-2xl text-navy-950 placeholder:text-navy-950/30 text-sm font-semibold outline-none focus:border-gold-400 focus:ring-4 focus:ring-gold-500/5 transition-all"
+              className="w-full pl-11 pr-10 py-3.5 bg-sand-50 dark:bg-zinc-950/50 border border-sand-200 dark:border-zinc-800 rounded-2xl text-navy-950 dark:text-white placeholder:text-navy-950 dark:text-white/30 dark:text-zinc-600 text-sm font-semibold outline-none focus:border-gold-400 focus:ring-4 focus:ring-gold-500/5 transition-all"
             />
             {location && (
               <button
                 type="button"
                 onClick={() => setLocation("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-sand-100 rounded-full text-navy-950/20 hover:text-navy-950 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-sand-100 dark:hover:bg-zinc-700 rounded-full text-navy-950 dark:text-white/20 dark:text-zinc-700 hover:text-navy-950 dark:text-white transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -207,7 +207,7 @@ export function SearchBar() {
           </div>
           
           <div className="px-1">
-            <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em] mb-4 text-center">
+            <p className="text-[10px] font-bold text-navy-950 dark:text-white/30 dark:text-zinc-600 uppercase tracking-[0.2em] mb-4 text-center">
               Suggestions
             </p>
             <div className="space-y-1 max-h-72 overflow-y-auto no-scrollbar">
@@ -216,12 +216,12 @@ export function SearchBar() {
                   key={s}
                   type="button"
                   onClick={() => { setLocation(s); setActivePanel("dates"); }}
-                  className="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-sand-50 transition-all group"
+                  className="w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-sand-50 dark:hover:bg-zinc-800 transition-all group"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-sand-50 flex items-center justify-center text-navy-950/20 group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-sand-50 dark:bg-zinc-950 flex items-center justify-center text-navy-950 dark:text-white/20 dark:text-zinc-700 group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <span className="font-semibold text-navy-950 group-hover:text-gold-600 transition-colors">{s}</span>
+                  <span className="font-semibold text-navy-950 dark:text-white group-hover:text-gold-600 transition-colors">{s}</span>
                 </button>
               ))}
             </div>
@@ -244,7 +244,7 @@ export function SearchBar() {
               <button
                 type="button"
                 onClick={() => setDateRange({ from: undefined, to: undefined })}
-                className="text-xs text-navy-950/50 hover:text-gold-600 font-semibold underline"
+                className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400 hover:text-gold-600 font-semibold underline"
               >
                 Clear dates
               </button>
@@ -255,7 +255,7 @@ export function SearchBar() {
 
       {/* Guests Dropdown */}
       {activePanel === "guests" && (
-        <div className="absolute top-full right-0 mt-3 bg-white rounded-3xl shadow-luxury border border-sand-100 p-6 w-80 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-luxury border border-sand-100 dark:border-zinc-800/50 p-6 w-80 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <p className="text-[11px] font-bold text-navy-800/40 uppercase tracking-widest mb-5">
             Guests
           </p>
@@ -263,24 +263,24 @@ export function SearchBar() {
           {/* Adults */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="font-semibold text-navy-950">Adults</p>
-              <p className="text-xs text-navy-950/50">Ages 13 and above</p>
+              <p className="font-semibold text-navy-950 dark:text-white">Adults</p>
+              <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">Ages 13 and above</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => adjustGuest("adults", -1)}
                 disabled={guests.adults <= 1}
-                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950/60 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="w-5 text-center font-bold text-navy-950">{guests.adults}</span>
+              <span className="w-5 text-center font-bold text-navy-950 dark:text-white">{guests.adults}</span>
               <button
                 type="button"
                 onClick={() => adjustGuest("adults", 1)}
                 disabled={guests.adults >= 12}
-                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950/60 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -290,24 +290,24 @@ export function SearchBar() {
           {/* Children */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-navy-950">Children</p>
-              <p className="text-xs text-navy-950/50">Ages 2–12</p>
+              <p className="font-semibold text-navy-950 dark:text-white">Children</p>
+              <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">Ages 2–12</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => adjustGuest("children", -1)}
                 disabled={guests.children <= 0}
-                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950/60 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="w-5 text-center font-bold text-navy-950">{guests.children}</span>
+              <span className="w-5 text-center font-bold text-navy-950 dark:text-white">{guests.children}</span>
               <button
                 type="button"
                 onClick={() => adjustGuest("children", 1)}
                 disabled={guests.children >= 8}
-                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950/60 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-300 flex items-center justify-center text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:border-sand-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </button>

@@ -36,7 +36,7 @@ export function Calendar({ selected, onSelect, disabled, className }: CalendarPr
 
   return (
     <div
-      className={`bg-white rounded-3xl shadow-luxury border border-sand-100 p-4 ${className ?? ""}`}
+      className={`bg-white dark:bg-zinc-900 rounded-3xl shadow-luxury border border-sand-100 dark:border-zinc-800/50 p-4 ${className ?? ""}`}
     >
       <style>{`
         .rdp-root {

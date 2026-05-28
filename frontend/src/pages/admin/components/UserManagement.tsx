@@ -69,15 +69,15 @@ export function UserManagement() {
     <ErrorBoundary>
     <div className="space-y-6">
       {/* Top Header & Analytics */}
-      <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-cinematic text-navy-950">User Management</h2>
-          <p className="text-navy-950/60 mt-2">Manage all platform roles, view analytics, and control access.</p>
+          <h2 className="text-3xl font-cinematic text-navy-950 dark:text-white">User Management</h2>
+          <p className="text-navy-950 dark:text-white/60 dark:text-zinc-400 mt-2">Manage all platform roles, view analytics, and control access.</p>
         </div>
         <div className="flex gap-4">
-          <div className="bg-sand-50 rounded-2xl p-4 min-w-[120px] border border-sand-100 text-center">
-            <p className="text-sm text-navy-950/40 font-bold uppercase tracking-wider mb-1">Total</p>
-            <p className="text-3xl font-cinematic text-navy-950">{totalCount}</p>
+          <div className="bg-sand-50 dark:bg-zinc-950 rounded-2xl p-4 min-w-[120px] border border-sand-100 dark:border-zinc-800/50 text-center">
+            <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500 font-bold uppercase tracking-wider mb-1">Total</p>
+            <p className="text-3xl font-cinematic text-navy-950 dark:text-white">{totalCount}</p>
           </div>
           <div className="bg-emerald-50 rounded-2xl p-4 min-w-[120px] border border-emerald-100 text-center">
             <p className="text-sm text-emerald-600/70 font-bold uppercase tracking-wider mb-1">Verified</p>
@@ -87,8 +87,8 @@ export function UserManagement() {
       </div>
 
       {/* Tabs & Search */}
-      <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-sand-100 bg-sand-50/30 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-sand-100 dark:border-zinc-800/50 bg-sand-50 dark:bg-zinc-950/30 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
             {tabs.map(tab => (
               <button
@@ -97,7 +97,7 @@ export function UserManagement() {
                 className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
                   activeRole === tab.id 
                     ? 'bg-navy-950 text-white shadow-md' 
-                    : 'text-navy-950/60 hover:bg-sand-100 hover:text-navy-950'
+                    : 'text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:bg-sand-100 dark:hover:bg-zinc-700 hover:text-navy-950 dark:text-white'
                 }`}
               >
                 {tab.icon}
@@ -106,13 +106,13 @@ export function UserManagement() {
             ))}
           </div>
           <div className="relative w-full md:w-64">
-            <Search className="w-4 h-4 text-navy-950/40 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-navy-950 dark:text-white/40 dark:text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Search by name, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-sand-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 transition-shadow"
+              className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 transition-shadow"
             />
           </div>
         </div>
@@ -124,14 +124,14 @@ export function UserManagement() {
               <div className="w-10 h-10 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : users.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[400px] text-navy-950/30">
+            <div className="flex flex-col items-center justify-center h-[400px] text-navy-950 dark:text-white/30 dark:text-zinc-600">
               <User className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-lg italic">No {activeRole.toLowerCase()}s found.</p>
             </div>
           ) : (
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
                   <th className="px-8 py-4">User Details</th>
                   <th className="px-8 py-4">
                     {activeRole === 'TRAVELLER' ? 'Engagement' : activeRole === 'RESORT_OWNER' ? 'Business' : activeRole === 'GUIDE' ? 'Specialty' : 'Permissions'}
@@ -143,40 +143,40 @@ export function UserManagement() {
               <tbody className="divide-y divide-sand-100">
                 {Array.isArray(users) && users.map(user => (
                   user ? (
-                  <tr key={user?.id} className="hover:bg-sand-50/30 transition-colors group">
+                  <tr key={user?.id} className="hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gold-100 text-gold-700 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
                           {user?.avatar ? <img src={user?.avatar} className="w-full h-full object-cover" /> : (user?.name ? user?.name[0] : '?')}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-navy-950 flex items-center gap-2">
+                          <p className="text-sm font-bold text-navy-950 dark:text-white flex items-center gap-2">
                             {user?.name}
                             {user?.role === 'ADMIN' && <Shield className="w-3 h-3 text-red-500" />}
                           </p>
-                          <p className="text-xs text-navy-950/60 mt-0.5">{user?.email}</p>
-                          <p className="text-[10px] text-navy-950/40 mt-1 uppercase tracking-wider">Joined: {new Date(user?.createdAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-navy-950 dark:text-white/60 dark:text-zinc-400 mt-0.5">{user?.email}</p>
+                          <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 mt-1 uppercase tracking-wider">Joined: {new Date(user?.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
                       {activeRole === 'TRAVELLER' && (
-                        <div className="flex gap-4 text-xs font-bold text-navy-950/60">
-                          <div className="bg-sand-100 px-3 py-1.5 rounded-lg text-center">
-                            <p className="text-navy-950 text-base">{user?._count?.bookings || 0}</p>
+                        <div className="flex gap-4 text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400">
+                          <div className="bg-sand-100 dark:bg-zinc-800/50 px-3 py-1.5 rounded-lg text-center">
+                            <p className="text-navy-950 dark:text-white text-base">{user?._count?.bookings || 0}</p>
                             <p className="text-[9px] uppercase tracking-wider">Bookings</p>
                           </div>
-                          <div className="bg-sand-100 px-3 py-1.5 rounded-lg text-center">
-                            <p className="text-navy-950 text-base">{user?._count?.wishlist || 0}</p>
+                          <div className="bg-sand-100 dark:bg-zinc-800/50 px-3 py-1.5 rounded-lg text-center">
+                            <p className="text-navy-950 dark:text-white text-base">{user?._count?.wishlist || 0}</p>
                             <p className="text-[9px] uppercase tracking-wider">Wishlist</p>
                           </div>
                         </div>
                       )}
                       {activeRole === 'RESORT_OWNER' && (
                         <div>
-                          <p className="text-sm font-bold text-navy-950">{user?.ownerProfile?.businessName || 'No Company Name'}</p>
+                          <p className="text-sm font-bold text-navy-950 dark:text-white">{user?.ownerProfile?.businessName || 'No Company Name'}</p>
                           <div className="flex items-center gap-3 mt-1.5">
-                            <span className="text-[10px] font-bold text-navy-950/60 bg-sand-100 px-2 py-0.5 rounded-md">
+                            <span className="text-[10px] font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 bg-sand-100 dark:bg-zinc-800/50 px-2 py-0.5 rounded-md">
                               {user?.ownerProfile?._count?.resorts || 0} Resorts
                             </span>
                             <span className="text-[10px] font-bold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-md">
@@ -187,7 +187,7 @@ export function UserManagement() {
                       )}
                       {activeRole === 'GUIDE' && (
                         <div>
-                          <p className="text-xs text-navy-950/60 font-bold mb-1">
+                          <p className="text-xs text-navy-950 dark:text-white/60 dark:text-zinc-400 font-bold mb-1">
                             {user?.guideProfile?.specialties?.[0] || 'General Guide'}
                           </p>
                           <div className="flex gap-1 flex-wrap">
@@ -247,8 +247,8 @@ export function UserManagement() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-sand-100 bg-sand-50/30 flex items-center justify-between">
-            <p className="text-xs font-bold text-navy-950/40 uppercase tracking-widest">
+          <div className="p-4 border-t border-sand-100 dark:border-zinc-800/50 bg-sand-50 dark:bg-zinc-950/30 flex items-center justify-between">
+            <p className="text-xs font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
               Page {page} of {totalPages}
             </p>
             <div className="flex gap-2">

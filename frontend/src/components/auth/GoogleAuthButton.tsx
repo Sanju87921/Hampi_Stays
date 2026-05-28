@@ -103,7 +103,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Slide to Contin
 
       {/* Main Track */}
       <div className={cn(
-        "relative w-full h-[60px] bg-sand-100/50 backdrop-blur-md border border-sand-200 rounded-3xl overflow-hidden transition-all duration-500",
+        "relative w-full h-[60px] bg-sand-100 dark:bg-zinc-800/50/50 backdrop-blur-md border border-sand-200 dark:border-zinc-800 rounded-3xl overflow-hidden transition-all duration-500",
         isSuccess ? "border-gold-500 shadow-gold" : "hover:border-sand-300 shadow-luxury"
       )}>
         
@@ -122,7 +122,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Slide to Contin
             <motion.span
               animate={{ x: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="text-[13px] font-black uppercase tracking-[0.2em] text-navy-950/40"
+              className="text-[13px] font-black uppercase tracking-[0.2em] text-navy-950 dark:text-white/40 dark:text-zinc-500"
             >
               {isLoading ? "Unlocking..." : text}
             </motion.span>
@@ -162,7 +162,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Slide to Contin
           onDragEnd={handleDragEnd}
           className={cn(
             "absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 rounded-2xl flex items-center justify-center z-20 cursor-grab active:cursor-grabbing transition-shadow",
-            isSuccess ? "bg-gold-500 shadow-gold" : "bg-white shadow-premium border border-sand-100 hover:bg-sand-50"
+            isSuccess ? "bg-gold-500 shadow-gold" : "bg-white dark:bg-zinc-900 shadow-premium border border-sand-100 dark:border-zinc-800/50 hover:bg-sand-50 dark:hover:bg-zinc-800"
           )}
         >
           <motion.div style={{ color: iconColor }}>

@@ -10,14 +10,14 @@ export function AttractionsGuide({ attractions }: AttractionsGuideProps) {
 
   return (
     <section className="mb-10">
-      <h2 className="text-2xl font-bold font-serif text-navy-950 mb-6">Explore the Neighborhood</h2>
+      <h2 className="text-2xl font-bold font-serif text-navy-950 dark:text-white mb-6">Explore the Neighborhood</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {attractions.map((place) => (
           <div 
             key={place.name}
-            className="group flex items-center gap-5 p-5 bg-white rounded-3xl border border-sand-100 hover:border-gold-300 transition-all hover:shadow-md"
+            className="group flex items-center gap-5 p-5 bg-white dark:bg-zinc-900 rounded-3xl border border-sand-100 dark:border-zinc-800/50 hover:border-gold-300 transition-all hover:shadow-md"
           >
-            <div className="w-20 h-20 rounded-2xl bg-sand-100 flex-shrink-0 overflow-hidden">
+            <div className="w-20 h-20 rounded-2xl bg-sand-100 dark:bg-zinc-800/50 flex-shrink-0 overflow-hidden">
               <img 
                 src={place.imageUrl || "/images/hampi-1.png"} 
                 alt={place.name}
@@ -29,16 +29,16 @@ export function AttractionsGuide({ attractions }: AttractionsGuideProps) {
             </div>
             <div className="flex-grow">
               <div className="flex items-center justify-between mb-1">
-                <h4 className="font-bold text-navy-950 group-hover:text-gold-600 transition-colors">{place.name}</h4>
+                <h4 className="font-bold text-navy-950 dark:text-white group-hover:text-gold-600 transition-colors">{place.name}</h4>
                 <span className="text-[10px] font-bold text-gold-600 bg-gold-50 px-2 py-0.5 rounded-full border border-gold-100">
                   {place.distanceKm}
                 </span>
               </div>
-              <p className="text-xs text-navy-950/50 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400 line-clamp-2 leading-relaxed">
                 Discover the architectural marvels of the Vijayanagara Empire located just a short journey from your sanctuary.
               </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-navy-950/20 group-hover:text-gold-600 transition-all group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 text-navy-950 dark:text-white/20 dark:text-zinc-700 group-hover:text-gold-600 transition-all group-hover:translate-x-1" />
           </div>
         ))}
       </div>
@@ -48,7 +48,7 @@ export function AttractionsGuide({ attractions }: AttractionsGuideProps) {
           <h4 className="text-xl font-serif font-bold mb-2">Unlock Hampi's Secrets</h4>
           <p className="text-white/60 text-sm max-w-md">Our certified local experts can bring these ancient stones to life with historical storytelling.</p>
         </div>
-        <a href="/guide" className="relative z-10 whitespace-nowrap bg-gold-500 hover:bg-gold-400 text-navy-950 px-8 py-3 rounded-xl font-bold transition-all shadow-gold group-hover:scale-105">
+        <a href="/guide" className="relative z-10 whitespace-nowrap bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white px-8 py-3 rounded-xl font-bold transition-all shadow-gold group-hover:scale-105">
           Find an Expert
         </a>
       </div>

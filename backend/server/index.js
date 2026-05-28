@@ -1,14 +1,18 @@
-import app from './app.js';
+import { serve } from '@hono/node-server';
+import app from './worker.js';
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+serve({
+  fetch: app.fetch,
+  port: PORT
+}, (info) => {
   console.log(`
     ==================================================
-    🚀 HAMPISTAYS SECURE SERVER RUNNING
+    🚀 HAMPISTAYS HONO EDGE RUNNING (NODE ADAPTER)
     🛡️  MODE: ${process.env.NODE_ENV || 'development'}
-    📍 PORT: ${PORT}
-    🏠 URL:  http://localhost:${PORT}
+    📍 PORT: ${info.port}
+    🏠 URL:  http://localhost:${info.port}
     ==================================================
   `);
 });

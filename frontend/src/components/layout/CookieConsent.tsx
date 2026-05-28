@@ -36,7 +36,7 @@ export function CookieConsent() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:max-w-md z-[9999]"
         >
-          <div className="bg-white/90 backdrop-blur-2xl border border-sand-200/60 shadow-2xl rounded-[2.5rem] p-8 overflow-hidden relative group">
+          <div className="bg-white dark:bg-zinc-900/90 backdrop-blur-2xl border border-sand-200 dark:border-zinc-800/60 shadow-2xl rounded-[2.5rem] p-8 overflow-hidden relative group">
             {/* Subtle background glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gold-200/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
             
@@ -47,19 +47,19 @@ export function CookieConsent() {
                     <Cookie className="w-6 h-6 text-gold-600" />
                   </div>
                   <div>
-                    <h4 className="text-navy-950 font-bold text-lg leading-tight">Cookie Settings</h4>
+                    <h4 className="text-navy-950 dark:text-white font-bold text-lg leading-tight">Cookie Settings</h4>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gold-600">Privacy & Transparency</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setIsVisible(false)}
-                  className="p-2 hover:bg-sand-100 rounded-full transition-colors text-navy-950/20 hover:text-navy-950"
+                  className="p-2 hover:bg-sand-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-navy-950 dark:text-white/20 dark:text-zinc-700 hover:text-navy-950 dark:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <p className="text-sm text-navy-950/70 leading-relaxed mb-8">
+              <p className="text-sm text-navy-950 dark:text-white/70 leading-relaxed mb-8">
                 We use cookies to personalize your experience, analyze our traffic, and show you the best of Hampi. 
                 By clicking "Accept All", you agree to our use of cookies as described in our 
                 <Link to="/cookies" className="text-gold-600 font-bold hover:underline mx-1">Policy</Link>.
@@ -68,27 +68,27 @@ export function CookieConsent() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleAccept}
-                  className="flex-grow bg-navy-950 text-white px-6 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950 transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2"
+                  className="flex-grow bg-navy-950 text-white px-6 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950 dark:text-white transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2"
                 >
                   Accept All
                   <ShieldCheck className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleDecline}
-                  className="flex-grow bg-sand-50 text-navy-950 border border-sand-200 px-6 py-4 rounded-2xl font-bold text-sm hover:bg-sand-100 transition-all flex items-center justify-center gap-2"
+                  className="flex-grow bg-sand-50 dark:bg-zinc-950 text-navy-950 dark:text-white border border-sand-200 dark:border-zinc-800 px-6 py-4 rounded-2xl font-bold text-sm hover:bg-sand-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
                 >
                   Essential Only
                 </button>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-sand-100 flex items-center justify-between">
+              <div className="mt-6 pt-6 border-t border-sand-100 dark:border-zinc-800/50 flex items-center justify-between">
                 <Link 
                   to="/privacy" 
-                  className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 hover:text-gold-600 transition-colors flex items-center gap-1 group"
+                  className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 transition-colors flex items-center gap-1 group"
                 >
                   Privacy Policy <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
-                <span className="text-[10px] font-bold text-navy-950/20">v2.4.0</span>
+                <span className="text-[10px] font-bold text-navy-950 dark:text-white/20 dark:text-zinc-700">v2.4.0</span>
               </div>
             </div>
           </div>

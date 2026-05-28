@@ -34,7 +34,7 @@ export function PremiumIcon({
   const variants = {
     gold: {
       container: "bg-gradient-to-br from-gold-100 via-gold-200 to-gold-400 shadow-[0_10px_20px_-5px_rgba(197,160,89,0.3),inset_0_-4px_8px_rgba(197,160,89,0.5),inset_0_4px_8px_rgba(255,255,255,0.8)]",
-      icon: "text-navy-950 drop-shadow-[0_2px_3px_rgba(0,0,0,0.1)]",
+      icon: "text-navy-950 dark:text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.1)]",
       glow: "bg-gold-500/20"
     },
     navy: {
@@ -48,9 +48,9 @@ export function PremiumIcon({
       glow: "bg-sand-500/10"
     },
     glass: {
-      container: "bg-white/40 backdrop-blur-xl border border-white/40 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1),inset_0_-4px_8px_rgba(255,255,255,0.2),inset_0_4px_8px_rgba(255,255,255,0.5)]",
-      icon: "text-navy-950 drop-shadow-[0_2px_3px_rgba(0,0,0,0.1)]",
-      glow: "bg-white/20"
+      container: "bg-white dark:bg-zinc-900/40 backdrop-blur-xl border border-white/40 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1),inset_0_-4px_8px_rgba(255,255,255,0.2),inset_0_4px_8px_rgba(255,255,255,0.5)]",
+      icon: "text-navy-950 dark:text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.1)]",
+      glow: "bg-white dark:bg-zinc-900/20"
     }
   };
 

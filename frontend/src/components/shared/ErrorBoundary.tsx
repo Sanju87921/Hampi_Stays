@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50 rounded-3xl border border-sand-200">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50 dark:bg-zinc-950 rounded-3xl border border-sand-200 dark:border-zinc-800">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -48,14 +48,14 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-8 h-8" />
             </div>
             
-            <h2 className="text-2xl font-cinematic text-navy-950 mb-3">Something went wrong</h2>
-            <p className="text-sm text-navy-950/60 mb-8 leading-relaxed">
+            <h2 className="text-2xl font-cinematic text-navy-950 dark:text-white mb-3">Something went wrong</h2>
+            <p className="text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400 mb-8 leading-relaxed">
               We encountered an unexpected error while loading this module. 
               Our team has been notified. Please try refreshing the page.
             </p>
             
             {this.state.error && (
-              <div className="text-left bg-white p-4 rounded-xl border border-red-100 mb-8 overflow-auto max-h-48 text-xs font-mono text-red-900 shadow-sm">
+              <div className="text-left bg-white dark:bg-zinc-900 p-4 rounded-xl border border-red-100 mb-8 overflow-auto max-h-48 text-xs font-mono text-red-900 shadow-sm">
                 <strong>{this.state.error.toString()}</strong>
                 <br />
                 {this.state.errorInfo?.componentStack}

@@ -50,7 +50,7 @@ export function ResortMap({ resorts, className }: ResortMapProps) {
                   alt={resort.name} 
                   className="w-full h-24 object-cover rounded-xl mb-3"
                 />
-                <h4 className="font-bold text-navy-950 leading-tight mb-1">{resort.name}</h4>
+                <h4 className="font-bold text-navy-950 dark:text-white leading-tight mb-1">{resort.name}</h4>
                 <div className="flex items-center gap-1 mb-2">
                   <Star className="w-3 h-3 text-gold-500 fill-current" />
                   <span className="text-[10px] font-bold">{resort.rating}</span>
@@ -59,7 +59,7 @@ export function ResortMap({ resorts, className }: ResortMapProps) {
                   <p className="text-xs font-bold text-gold-600">₹{resort.pricePerNight.toLocaleString()}</p>
                   <Link 
                     to={`/resorts/${resort.slug}`}
-                    className="text-[10px] font-bold text-navy-950 hover:underline flex items-center gap-0.5"
+                    className="text-[10px] font-bold text-navy-950 dark:text-white hover:underline flex items-center gap-0.5"
                   >
                     Details <MapPin className="w-2 h-2" />
                   </Link>

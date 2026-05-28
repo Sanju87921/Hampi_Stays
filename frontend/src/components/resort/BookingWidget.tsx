@@ -111,11 +111,11 @@ export function BookingWidget({
   };
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-luxury p-8">
-      <div className="flex items-baseline justify-between mb-8 pb-6 border-b border-sand-100">
+    <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-luxury p-8">
+      <div className="flex items-baseline justify-between mb-8 pb-6 border-b border-sand-100 dark:border-zinc-800/50">
         <div>
-          <span className="text-3xl font-serif font-bold text-navy-950">₹{(baseTotal / (nights || 1)).toLocaleString()}</span>
-          <span className="text-sm text-navy-950/50 font-medium"> / night</span>
+          <span className="text-3xl font-serif font-bold text-navy-950 dark:text-white">₹{(baseTotal / (nights || 1)).toLocaleString()}</span>
+          <span className="text-sm text-navy-950 dark:text-white/50 dark:text-zinc-400 font-medium"> / night</span>
         </div>
         <div className="flex items-center gap-1 text-gold-600 font-bold text-xs">
           <Info className="w-3.5 h-3.5" />
@@ -125,7 +125,7 @@ export function BookingWidget({
 
       <div className="space-y-4 mb-8">
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-4 bg-sand-50 rounded-2xl border border-sand-100">
+          <div className="p-4 bg-sand-50 dark:bg-zinc-950 rounded-2xl border border-sand-100 dark:border-zinc-800/50">
             <p className="text-[10px] font-bold text-navy-800/40 uppercase tracking-widest mb-1">Check-in</p>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gold-600" />
@@ -133,11 +133,11 @@ export function BookingWidget({
                 type="date" 
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="bg-transparent text-sm font-bold text-navy-950 outline-none w-full" 
+                className="bg-transparent text-sm font-bold text-navy-950 dark:text-white outline-none w-full" 
               />
             </div>
           </div>
-          <div className="p-4 bg-sand-50 rounded-2xl border border-sand-100">
+          <div className="p-4 bg-sand-50 dark:bg-zinc-950 rounded-2xl border border-sand-100 dark:border-zinc-800/50">
             <p className="text-[10px] font-bold text-navy-800/40 uppercase tracking-widest mb-1">Check-out</p>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gold-600" />
@@ -145,27 +145,27 @@ export function BookingWidget({
                 type="date" 
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="bg-transparent text-sm font-bold text-navy-950 outline-none w-full" 
+                className="bg-transparent text-sm font-bold text-navy-950 dark:text-white outline-none w-full" 
               />
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-sand-50 rounded-2xl border border-sand-100">
+        <div className="p-4 bg-sand-50 dark:bg-zinc-950 rounded-2xl border border-sand-100 dark:border-zinc-800/50">
           <p className="text-[10px] font-bold text-navy-800/40 uppercase tracking-widest mb-1">Guests</p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gold-600" />
-              <span className="text-sm font-bold text-navy-950">{adults} Guests</span>
+              <span className="text-sm font-bold text-navy-950 dark:text-white">{adults} Guests</span>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setAdults(Math.max(1, adults - 1))}
-                className="w-8 h-8 rounded-full border border-sand-200 flex items-center justify-center text-navy-950 hover:bg-white transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-200 dark:border-zinc-800 flex items-center justify-center text-navy-950 dark:text-white hover:bg-white dark:bg-zinc-900 transition-colors"
               >-</button>
               <button 
                 onClick={() => setAdults(adults + 1)}
-                className="w-8 h-8 rounded-full border border-sand-200 flex items-center justify-center text-navy-950 hover:bg-white transition-colors"
+                className="w-8 h-8 rounded-full border border-sand-200 dark:border-zinc-800 flex items-center justify-center text-navy-950 dark:text-white hover:bg-white dark:bg-zinc-900 transition-colors"
               >+</button>
             </div>
           </div>
@@ -195,16 +195,16 @@ export function BookingWidget({
 
       <div className="space-y-3 mb-8">
         <div className="flex justify-between text-sm">
-          <span className="text-navy-950/60 font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
-          <span className="text-navy-950 font-bold">₹{baseTotal.toLocaleString()}</span>
+          <span className="text-navy-950 dark:text-white/60 dark:text-zinc-400 font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
+          <span className="text-navy-950 dark:text-white font-bold">₹{baseTotal.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-navy-950/60 font-medium">Service & GST (12%)</span>
-          <span className="text-navy-950 font-bold">₹{taxes.toLocaleString()}</span>
+          <span className="text-navy-950 dark:text-white/60 dark:text-zinc-400 font-medium">Service & GST (12%)</span>
+          <span className="text-navy-950 dark:text-white font-bold">₹{taxes.toLocaleString()}</span>
         </div>
-        <div className="pt-3 border-t border-sand-100 flex justify-between">
-          <span className="text-lg font-bold text-navy-950">Total</span>
-          <span className="text-lg font-bold text-navy-950">₹{total.toLocaleString()}</span>
+        <div className="pt-3 border-t border-sand-100 dark:border-zinc-800/50 flex justify-between">
+          <span className="text-lg font-bold text-navy-950 dark:text-white">Total</span>
+          <span className="text-lg font-bold text-navy-950 dark:text-white">₹{total.toLocaleString()}</span>
         </div>
       </div>
 
@@ -217,7 +217,7 @@ export function BookingWidget({
         <ArrowRight className="w-5 h-5" />
       </Button>
 
-      <p className="text-center text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mt-6">
+      <p className="text-center text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest mt-6">
         Secure Payment via Razorpay
       </p>
     </div>

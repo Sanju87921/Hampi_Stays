@@ -7,7 +7,7 @@ import { Search, MapPin, Star, Filter } from 'lucide-react';
 const HitComponent = ({ hit }: any) => {
   return (
     <div 
-      className="bg-white/5 border border-[#C5A059]/20 rounded-2xl overflow-hidden backdrop-blur-md hover:bg-white/10 transition-all cursor-pointer group"
+      className="bg-white dark:bg-zinc-900/5 border border-[#C5A059]/20 rounded-2xl overflow-hidden backdrop-blur-md hover:bg-white dark:bg-zinc-900/10 transition-all cursor-pointer group"
       onClick={() => {
         trackFrontendEvent('search_result_clicked', { resortId: hit.objectID, name: hit.name });
         window.location.href = `/resorts/${hit.objectID}`;
@@ -25,7 +25,7 @@ const HitComponent = ({ hit }: any) => {
           </div>
         )}
         {hit.isFeatured && !hit.isSponsored && (
-          <div className="absolute top-3 left-3 bg-white/90 text-[#0A1128] text-xs font-bold px-2 py-1 rounded-md">
+          <div className="absolute top-3 left-3 bg-white dark:bg-zinc-900/90 text-[#0A1128] text-xs font-bold px-2 py-1 rounded-md">
             Featured
           </div>
         )}
@@ -45,7 +45,7 @@ const HitComponent = ({ hit }: any) => {
         
         <div className="flex flex-wrap gap-2 mb-4">
           {hit.amenities?.slice(0, 3).map((amenity: string) => (
-            <span key={amenity} className="text-xs text-white/70 bg-white/5 border border-white/10 px-2 py-1 rounded-md">
+            <span key={amenity} className="text-xs text-white/70 bg-white dark:bg-zinc-900/5 border border-white/10 px-2 py-1 rounded-md">
               {amenity}
             </span>
           ))}
@@ -70,7 +70,7 @@ export const PremiumSearchInterface = () => {
           
           {/* Advanced Filtering Sidebar */}
           <div className="w-full md:w-80 flex-shrink-0">
-            <div className="bg-white/5 border border-[#C5A059]/20 rounded-3xl p-6 backdrop-blur-md sticky top-24">
+            <div className="bg-white dark:bg-zinc-900/5 border border-[#C5A059]/20 rounded-3xl p-6 backdrop-blur-md sticky top-24">
               <h2 className="text-white font-serif text-xl mb-6 flex items-center gap-2">
                 <Filter className="w-5 h-5 text-[#C5A059]" />
                 Refine Search
@@ -85,7 +85,7 @@ export const PremiumSearchInterface = () => {
                       list: 'space-y-2',
                       label: 'flex items-center gap-3 text-slate-300 cursor-pointer hover:text-white transition-colors',
                       checkbox: 'w-4 h-4 rounded border-white/20 bg-transparent text-[#C5A059] focus:ring-[#C5A059] focus:ring-offset-[#0A1128]',
-                      count: 'ml-auto text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/50'
+                      count: 'ml-auto text-xs bg-white dark:bg-zinc-900/10 px-2 py-0.5 rounded-full text-white/50'
                     }}
                   />
                 </div>
@@ -100,7 +100,7 @@ export const PremiumSearchInterface = () => {
                       list: 'space-y-2',
                       label: 'flex items-center gap-3 text-slate-300 cursor-pointer hover:text-white transition-colors',
                       checkbox: 'w-4 h-4 rounded border-white/20 bg-transparent text-[#C5A059] focus:ring-[#C5A059] focus:ring-offset-[#0A1128]',
-                      count: 'ml-auto text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/50',
+                      count: 'ml-auto text-xs bg-white dark:bg-zinc-900/10 px-2 py-0.5 rounded-full text-white/50',
                       showMore: 'mt-3 text-sm text-[#C5A059] hover:text-white transition-colors'
                     }}
                   />
@@ -114,7 +114,7 @@ export const PremiumSearchInterface = () => {
                       list: 'space-y-2',
                       label: 'flex items-center gap-3 text-slate-300 cursor-pointer hover:text-white transition-colors',
                       checkbox: 'w-4 h-4 rounded border-white/20 bg-transparent text-[#C5A059] focus:ring-[#C5A059] focus:ring-offset-[#0A1128]',
-                      count: 'ml-auto text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/50'
+                      count: 'ml-auto text-xs bg-white dark:bg-zinc-900/10 px-2 py-0.5 rounded-full text-white/50'
                     }}
                   />
                 </div>
@@ -131,7 +131,7 @@ export const PremiumSearchInterface = () => {
                 classNames={{
                   root: 'w-full',
                   form: 'relative flex items-center',
-                  input: 'w-full bg-white/5 border border-[#C5A059]/30 rounded-full py-4 pl-14 pr-6 text-white placeholder-slate-400 focus:outline-none focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] transition-all text-lg',
+                  input: 'w-full bg-white dark:bg-zinc-900/5 border border-[#C5A059]/30 rounded-full py-4 pl-14 pr-6 text-white placeholder-slate-400 focus:outline-none focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] transition-all text-lg',
                   submit: 'hidden',
                   reset: 'absolute right-6 text-slate-400 hover:text-white transition-colors'
                 }}
@@ -153,7 +153,7 @@ export const PremiumSearchInterface = () => {
               <Pagination 
                 classNames={{
                   list: 'flex gap-2',
-                  item: 'w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer',
+                  item: 'w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 text-white/70 hover:bg-white dark:bg-zinc-900/10 hover:text-white transition-colors cursor-pointer',
                   selectedItem: 'bg-[#C5A059] text-[#0A1128] font-bold border-[#C5A059] hover:bg-[#C5A059]',
                   disabledItem: 'opacity-30 cursor-not-allowed hover:bg-transparent hover:text-white/70'
                 }}

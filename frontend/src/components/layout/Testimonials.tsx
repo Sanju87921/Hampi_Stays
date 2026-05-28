@@ -47,7 +47,7 @@ const testimonials = [
 
 export function Testimonials() {
   return (
-    <section className="py-32 md:py-48 bg-sand-50 relative overflow-hidden">
+    <section className="py-32 md:py-48 bg-sand-50 dark:bg-zinc-950 relative overflow-hidden">
       {/* Decorative background */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gold-200/10 rounded-full blur-[150px] opacity-60 -translate-y-1/2 translate-x-1/3 pointer-events-none animate-float-slow" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-sand-300/20 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
@@ -69,7 +69,7 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-navy-950 leading-tight"
+              className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-navy-950 dark:text-white leading-tight"
             >
               Echoes of Delight
             </motion.h2>
@@ -96,11 +96,11 @@ export function Testimonials() {
                 { platform: "TripAdvisor", rating: "5.0", count: "870+" },
                 { platform: "Booking.com", rating: "9.4/10", count: "540+" },
               ].map((item) => (
-                <div key={item.platform} className="flex items-center justify-between bg-sand-100/80 backdrop-blur-md rounded-xl px-4 py-3 border border-sand-200 shadow-sm">
+                <div key={item.platform} className="flex items-center justify-between bg-sand-100 dark:bg-zinc-800/50/80 backdrop-blur-md rounded-xl px-4 py-3 border border-sand-200 dark:border-zinc-800 shadow-sm">
                   <span className="text-sm text-navy-800 font-medium">{item.platform}</span>
                   <div className="flex items-center gap-2">
                     <Star className="w-3.5 h-3.5 fill-gold-500 text-gold-500" />
-                    <span className="text-navy-950 font-bold text-sm">{item.rating}</span>
+                    <span className="text-navy-950 dark:text-white font-bold text-sm">{item.rating}</span>
                     <span className="text-navy-600 text-xs">({item.count})</span>
                   </div>
                 </div>
@@ -117,7 +117,7 @@ export function Testimonials() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-sand-100 border border-sand-200 shadow-sm p-8 rounded-2xl relative group hover:-translate-y-1.5 hover:shadow-luxury transition-all duration-500 flex flex-col"
+                className="bg-sand-100 dark:bg-zinc-800/50 border border-sand-200 dark:border-zinc-800 shadow-sm p-8 rounded-2xl relative group hover:-translate-y-1.5 hover:shadow-luxury transition-all duration-500 flex flex-col"
               >
                 <Quote className="w-10 h-10 text-gold-500/10 absolute top-7 right-7 transition-transform duration-500 group-hover:scale-110 group-hover:text-gold-500/20" />
 
@@ -137,7 +137,7 @@ export function Testimonials() {
                   <p className="text-gold-600 text-xs font-semibold mt-0.5">{testimonial.stay}</p>
                 </div>
 
-                <div className="flex items-center gap-4 pt-5 border-t border-sand-200">
+                <div className="flex items-center gap-4 pt-5 border-t border-sand-200 dark:border-zinc-800">
                   <img
                     src={testimonial.avatar}
                     alt={testimonial.name}
@@ -145,7 +145,7 @@ export function Testimonials() {
                     className="w-12 h-12 rounded-full object-cover border-2 border-gold-300"
                   />
                   <div>
-                    <h4 className="font-bold text-navy-950 tracking-wide text-sm">{testimonial.name}</h4>
+                    <h4 className="font-bold text-navy-950 dark:text-white tracking-wide text-sm">{testimonial.name}</h4>
                     <p className="text-navy-600 text-xs font-medium mt-0.5">{testimonial.role}</p>
                   </div>
                 </div>

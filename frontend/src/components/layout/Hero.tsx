@@ -136,7 +136,7 @@ export function Hero() {
         >
           <motion.span
             variants={textVariant}
-            className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-4 cursor-default select-none"
+            className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white dark:bg-zinc-900/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-4 cursor-default select-none"
           >
             <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse flex-shrink-0" />
             {isAdmin ? "Administrator Session" : t("hero.badge")}
@@ -184,7 +184,7 @@ export function Hero() {
             {isAdmin ? (
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Link to="/admin/dashboard">
-                  <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/20 group">
+                  <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white font-bold rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/20 group">
                     <ShieldCheck className="w-5 h-5" />
                     Enter Command Center
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -192,7 +192,7 @@ export function Hero() {
                 </Link>
                 <div className="flex gap-4">
                   <Link to="/admin/curation">
-                    <button className="bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center gap-3 transition-colors duration-300">
+                    <button className="bg-white dark:bg-zinc-900/5 hover:bg-white dark:bg-zinc-900/10 backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center gap-3 transition-colors duration-300">
                       <Building2 className="w-5 h-5 text-gold-400" />
                       <span className="text-white text-base font-bold">Curation Mode</span>
                     </button>

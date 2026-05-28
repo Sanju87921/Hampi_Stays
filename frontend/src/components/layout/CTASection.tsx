@@ -67,12 +67,12 @@ export function CTASection() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link to="/resorts" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 border-none shadow-gold hover:-translate-y-1 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
+                <Button size="lg" className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white border-none shadow-gold hover:-translate-y-1 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
                   Explore Packages
                 </Button>
               </Link>
               <Link to="/contact" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 hover:border-gold-400/40 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
+                <Button size="lg" variant="outline" className="w-full border-white/20 text-white hover:bg-white dark:bg-zinc-900/10 hover:border-gold-400/40 transition-all duration-500 rounded-full px-10 h-14 text-lg font-bold">
                   Contact Concierge
                 </Button>
               </Link>

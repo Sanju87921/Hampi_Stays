@@ -39,7 +39,7 @@ const KycImage = ({ src, alt, transform, className }: { src: string; alt: string
   const imageUrl = getKycImageUrl(src, transform);
 
   return (
-    <div className={cn("relative overflow-hidden bg-sand-100", className)}>
+    <div className={cn("relative overflow-hidden bg-sand-100 dark:bg-zinc-800/50", className)}>
       {!loaded && !error && (
         <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-sand-100 via-sand-200 to-sand-100" />
       )}
@@ -454,24 +454,24 @@ export function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             key={stat.label} 
-            className="bg-white p-6 rounded-[2rem] border border-sand-200 shadow-sm"
+            className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border border-sand-200 dark:border-zinc-800 shadow-sm"
           >
             <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-4`}>
               <stat.icon className="w-6 h-6" />
             </div>
-            <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold text-navy-950">{stat.value}</p>
+            <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest mb-1">{stat.label}</p>
+            <p className="text-2xl font-bold text-navy-950 dark:text-white">{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Global Revenue Trends */}
-        <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-10 overflow-hidden relative">
+        <div className="lg:col-span-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm p-10 overflow-hidden relative">
            <div className="flex items-center justify-between mb-10">
               <div>
-                 <h3 className="text-xl font-bold text-navy-950">Platform Revenue Growth</h3>
-                 <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest mt-1">Global Marketplace Performance</p>
+                 <h3 className="text-xl font-bold text-navy-950 dark:text-white">Platform Revenue Growth</h3>
+                 <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 font-bold uppercase tracking-widest mt-1">Global Marketplace Performance</p>
               </div>
               <div className="flex gap-2">
                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold">
@@ -489,7 +489,7 @@ export function AdminDashboard() {
                     transition={{ delay: i * 0.1, duration: 1 }}
                     className="w-full bg-navy-950 rounded-t-xl group-hover:bg-gold-500 transition-colors cursor-pointer"
                   />
-                  <p className="mt-4 text-[8px] font-bold text-navy-950/20 text-center uppercase">M-{i+1}</p>
+                  <p className="mt-4 text-[8px] font-bold text-navy-950 dark:text-white/20 dark:text-zinc-700 text-center uppercase">M-{i+1}</p>
                 </div>
               ))}
            </div>
@@ -497,17 +497,17 @@ export function AdminDashboard() {
 
         {/* Platform Health Metrics */}
         <div className="lg:col-span-4 space-y-6">
-           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
-              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-4">Avg. Booking Value</p>
-              <p className="text-3xl font-serif font-bold text-navy-950 italic">₹{(stats?.avgBookingValue || 8450).toLocaleString()}</p>
+           <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm">
+              <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest mb-4">Avg. Booking Value</p>
+              <p className="text-3xl font-serif font-bold text-navy-950 dark:text-white italic">₹{(stats?.avgBookingValue || 8450).toLocaleString()}</p>
               <p className="text-[9px] text-green-600 font-bold mt-2 flex items-center gap-1">
                  <TrendingUp className="w-3 h-3" /> 8% Higher than last month
               </p>
            </div>
-           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
-              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-4">Cancellation Rate</p>
-              <p className="text-3xl font-serif font-bold text-navy-950 italic">{(stats?.cancellationRate || 4.2)}%</p>
-              <div className="mt-4 w-full bg-sand-100 h-1.5 rounded-full overflow-hidden">
+           <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm">
+              <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest mb-4">Cancellation Rate</p>
+              <p className="text-3xl font-serif font-bold text-navy-950 dark:text-white italic">{(stats?.cancellationRate || 4.2)}%</p>
+              <div className="mt-4 w-full bg-sand-100 dark:bg-zinc-800/50 h-1.5 rounded-full overflow-hidden">
                  <div className="bg-navy-950 h-full w-[4.2%]" />
               </div>
            </div>
@@ -516,22 +516,22 @@ export function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-8">
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-navy-950">Recent Activity</h3>
+            <h3 className="text-xl font-bold text-navy-950 dark:text-white">Recent Activity</h3>
             <Button variant="outline" onClick={() => setActiveTab('bookings')} className="text-xs h-8 px-4 rounded-full transition-all hover:bg-navy-950 hover:text-white">View All</Button>
           </div>
           <div className="space-y-6">
             {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 hover:bg-sand-50 rounded-2xl transition-colors">
-                <div className="w-10 h-10 bg-sand-100 rounded-full flex items-center justify-center">
+              <div key={i} className="flex items-center gap-4 p-4 hover:bg-sand-50 dark:hover:bg-zinc-800 rounded-2xl transition-colors">
+                <div className="w-10 h-10 bg-sand-100 dark:bg-zinc-800/50 rounded-full flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div className="flex-grow">
-                  <p className="text-sm font-bold text-navy-950">New Booking Confirmed</p>
-                  <p className="text-xs text-navy-950/50">Traveler booked Heritage Resort Hampi for 3 nights.</p>
+                  <p className="text-sm font-bold text-navy-950 dark:text-white">New Booking Confirmed</p>
+                  <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">Traveler booked Heritage Resort Hampi for 3 nights.</p>
                 </div>
-                <p className="text-[10px] font-bold text-navy-950/30 uppercase">2h ago</p>
+                <p className="text-[10px] font-bold text-navy-950 dark:text-white/30 dark:text-zinc-600 uppercase">2h ago</p>
               </div>
             ))}
           </div>
@@ -543,7 +543,7 @@ export function AdminDashboard() {
           <div className="space-y-4">
             <Button 
               onClick={() => handleSystemTask('payouts')}
-              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+              className="w-full bg-white dark:bg-zinc-900/10 hover:bg-white dark:bg-zinc-900/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
             >
               <AlertCircle className="w-5 h-5" />
               Verify Payouts
@@ -552,7 +552,7 @@ export function AdminDashboard() {
             
             <Button 
               onClick={() => handleSystemTask('newsletter')}
-              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"
+              className="w-full bg-white dark:bg-zinc-900/10 hover:bg-white dark:bg-zinc-900/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"
             >
               <Mail className="w-5 h-5" />
               Send Newsletter
@@ -560,7 +560,7 @@ export function AdminDashboard() {
 
             <Button 
               onClick={() => handleSystemTask('reviews')}
-              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+              className="w-full bg-white dark:bg-zinc-900/10 hover:bg-white dark:bg-zinc-900/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
             >
               <Star className="w-5 h-5" />
               Moderate Reviews
@@ -569,7 +569,7 @@ export function AdminDashboard() {
             
             <Button 
               onClick={() => handleSystemTask('security')}
-              className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 justify-start gap-3 h-14 rounded-2xl mt-4"
+              className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white justify-start gap-3 h-14 rounded-2xl mt-4"
             >
               <ShieldCheck className="w-5 h-5" />
               Security Audit
@@ -587,7 +587,7 @@ export function AdminDashboard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -50 }}
-      className="bg-white rounded-[2rem] border border-sand-100 shadow-sm overflow-hidden mb-6"
+      className="bg-white dark:bg-zinc-900 rounded-[2rem] border border-sand-100 dark:border-zinc-800/50 shadow-sm overflow-hidden mb-6"
     >
       <div className="flex flex-col lg:flex-row">
         <div className="lg:w-72 h-48 lg:h-auto relative">
@@ -598,7 +598,7 @@ export function AdminDashboard() {
           />
           {resort.isFeatured && (
             <div className="absolute top-4 left-4">
-              <span className="bg-gold-500 text-navy-950 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+              <span className="bg-gold-500 text-navy-950 dark:text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
                 <Sparkles className="w-3 h-3" />
                 Featured
               </span>
@@ -613,31 +613,31 @@ export function AdminDashboard() {
                 <MapPin className="w-3.5 h-3.5" />
                 {resort.locationArea}
               </div>
-              <h3 className="text-2xl font-bold text-navy-950 mb-2">{resort.name}</h3>
-              <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 max-w-2xl">{resort.description}</p>
+              <h3 className="text-2xl font-bold text-navy-950 dark:text-white mb-2">{resort.name}</h3>
+              <p className="text-sm text-navy-950 dark:text-white/50 dark:text-zinc-400 mb-6 line-clamp-2 max-w-2xl">{resort.description}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-xl">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-sand-200">
-                    <User className="w-4 h-4 text-navy-950/40" />
+                <div className="flex items-center gap-3 p-3 bg-sand-50 dark:bg-zinc-950 rounded-xl">
+                  <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center border border-sand-200 dark:border-zinc-800">
+                    <User className="w-4 h-4 text-navy-950 dark:text-white/40 dark:text-zinc-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-navy-950/40 uppercase">Owner</p>
-                    <p className="text-sm font-bold text-navy-950">{resort.owner?.user?.name}</p>
+                    <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase">Owner</p>
+                    <p className="text-sm font-bold text-navy-950 dark:text-white">{resort.owner?.user?.name}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-xl">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-sand-200">
-                    <Mail className="w-4 h-4 text-navy-950/40" />
+                <div className="flex items-center gap-3 p-3 bg-sand-50 dark:bg-zinc-950 rounded-xl">
+                  <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center border border-sand-200 dark:border-zinc-800">
+                    <Mail className="w-4 h-4 text-navy-950 dark:text-white/40 dark:text-zinc-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-navy-950/40 uppercase">Contact</p>
-                    <p className="text-sm font-bold text-navy-950 text-ellipsis overflow-hidden max-w-[150px]">{resort.owner?.user?.email}</p>
+                    <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase">Contact</p>
+                    <p className="text-sm font-bold text-navy-950 dark:text-white text-ellipsis overflow-hidden max-w-[150px]">{resort.owner?.user?.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-navy-950 text-white rounded-xl relative group overflow-hidden">
                   <div className="absolute inset-0 bg-gold-500/10 group-hover:bg-gold-500/20 transition-colors" />
-                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/10 relative z-10">
+                  <div className="w-10 h-10 bg-white dark:bg-zinc-900/10 rounded-full flex items-center justify-center border border-white/10 relative z-10">
                     <TrendingUp className="w-4 h-4 text-gold-400" />
                   </div>
                   <div className="relative z-10 flex-grow">
@@ -649,7 +649,7 @@ export function AdminDashboard() {
                           autoFocus
                           value={newCommissionRate}
                           onChange={(e) => setNewCommissionRate(parseFloat(e.target.value))}
-                          className="w-14 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-xs font-bold outline-none focus:border-gold-400"
+                          className="w-14 bg-white dark:bg-zinc-900/10 border border-white/20 rounded px-1.5 py-0.5 text-xs font-bold outline-none focus:border-gold-400"
                         />
                         <button onClick={() => handleUpdateCommission(resort.id)} disabled={isSavingCommission} className="text-gold-400 hover:text-gold-300">
                           {isSavingCommission ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
@@ -663,7 +663,7 @@ export function AdminDashboard() {
                             setEditingCommissionId(resort.id);
                             setNewCommissionRate(resort.commissionRate || 7.0);
                           }}
-                          className="transition-opacity text-[10px] font-bold text-gold-400 uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded hover:bg-white/20"
+                          className="transition-opacity text-[10px] font-bold text-gold-400 uppercase tracking-widest bg-white dark:bg-zinc-900/10 px-2 py-0.5 rounded hover:bg-white dark:bg-zinc-900/20"
                         >
                           Edit
                         </button>
@@ -699,7 +699,7 @@ export function AdminDashboard() {
                 <>
                   <Button 
                     variant={resort.isFeatured ? "primary" : "outline"}
-                    className={resort.isFeatured ? "bg-gold-500 hover:bg-gold-600 text-navy-950 gap-2 h-12 px-6 border-none" : "border-gold-200 text-gold-700 hover:bg-gold-50 gap-2 h-12 px-6"}
+                    className={resort.isFeatured ? "bg-gold-500 hover:bg-gold-600 text-navy-950 dark:text-white gap-2 h-12 px-6 border-none" : "border-gold-200 text-gold-700 hover:bg-gold-50 gap-2 h-12 px-6"}
                     onClick={() => handleToggleFeatured(resort.id, resort.isFeatured)}
                     disabled={processingId === resort.id}
                   >
@@ -708,7 +708,7 @@ export function AdminDashboard() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="border-navy-200 text-navy-950 hover:bg-navy-50 gap-2 h-12 px-6"
+                    className="border-navy-200 text-navy-950 dark:text-white hover:bg-navy-50 gap-2 h-12 px-6"
                     onClick={() => handleStatusUpdate(resort.id, "REJECTED")} // Actually "Suspension" logic
                     disabled={processingId === resort.id}
                   >
@@ -736,17 +736,17 @@ export function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
         <div>
-          <h3 className="text-2xl font-bold text-navy-950 mb-4">Property Management</h3>
-          <div className="flex bg-white p-1 rounded-xl border border-sand-200 w-fit">
+          <h3 className="text-2xl font-bold text-navy-950 dark:text-white mb-4">Property Management</h3>
+          <div className="flex bg-white dark:bg-zinc-900 p-1 rounded-xl border border-sand-200 dark:border-zinc-800 w-fit">
             <button 
               onClick={() => setPropertySubTab("pending")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${propertySubTab === 'pending' ? 'bg-navy-950 text-white shadow-md' : 'text-navy-950/40 hover:text-navy-950'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${propertySubTab === 'pending' ? 'bg-navy-950 text-white shadow-md' : 'text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-navy-950 dark:text-white'}`}
             >
               Pending ({pendingResorts.length})
             </button>
             <button 
               onClick={() => setPropertySubTab("active")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${propertySubTab === 'active' ? 'bg-navy-950 text-white shadow-md' : 'text-navy-950/40 hover:text-navy-950'}`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${propertySubTab === 'active' ? 'bg-navy-950 text-white shadow-md' : 'text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-navy-950 dark:text-white'}`}
             >
               Active ({activeResorts.length})
             </button>
@@ -754,11 +754,11 @@ export function AdminDashboard() {
         </div>
         <div className="flex flex-wrap gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 dark:text-white/30 dark:text-zinc-600" />
             <input 
               type="text" 
               placeholder="Search resorts..." 
-              className="pl-10 pr-4 py-2 bg-white border border-sand-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+              className="pl-10 pr-4 py-2 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20"
             />
           </div>
           <Button variant="outline" className="gap-2 rounded-xl whitespace-nowrap">
@@ -784,13 +784,13 @@ export function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white rounded-[3rem] p-20 text-center border border-sand-100 shadow-sm max-w-2xl mx-auto"
+            className="bg-white dark:bg-zinc-900 rounded-[3rem] p-20 text-center border border-sand-100 dark:border-zinc-800/50 shadow-sm max-w-2xl mx-auto"
           >
             <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8">
               <CheckCircle className="w-10 h-10 text-green-200" />
             </div>
-            <h2 className="text-2xl font-bold font-serif text-navy-950 mb-4">No {propertySubTab} resorts</h2>
-            <p className="text-navy-950/60">Everything is up to date.</p>
+            <h2 className="text-2xl font-bold font-serif text-navy-950 dark:text-white mb-4">No {propertySubTab} resorts</h2>
+            <p className="text-navy-950 dark:text-white/60 dark:text-zinc-400">Everything is up to date.</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -892,11 +892,11 @@ export function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[3rem] shadow-luxury p-10 border border-sand-100 overflow-hidden"
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[3rem] shadow-luxury p-10 border border-sand-100 dark:border-zinc-800/50 overflow-hidden"
             >
               {/* Warning Background Icon */}
               <div className="absolute -top-10 -right-10 opacity-[0.03] pointer-events-none">
-                <AlertCircle className="w-64 h-64 text-navy-950" />
+                <AlertCircle className="w-64 h-64 text-navy-950 dark:text-white" />
               </div>
 
               <div className="relative z-10">
@@ -911,11 +911,11 @@ export function AdminDashboard() {
                   }
                 </div>
                 
-                <h3 className="text-3xl font-serif font-bold text-navy-950 mb-4 uppercase tracking-tight">
+                <h3 className="text-3xl font-serif font-bold text-navy-950 dark:text-white mb-4 uppercase tracking-tight">
                   {modalData.title}
                 </h3>
                 
-                <p className="text-navy-950/50 leading-relaxed mb-10 text-sm font-medium">
+                <p className="text-navy-950 dark:text-white/50 dark:text-zinc-400 leading-relaxed mb-10 text-sm font-medium">
                   {modalData.message}
                 </p>
 
@@ -923,7 +923,7 @@ export function AdminDashboard() {
                   <Button 
                     variant="outline" 
                     onClick={() => setShowConfirmModal(false)}
-                    className="flex-1 h-14 rounded-2xl border-sand-200 text-navy-950 hover:bg-sand-50"
+                    className="flex-1 h-14 rounded-2xl border-sand-200 dark:border-zinc-800 text-navy-950 dark:text-white hover:bg-sand-50 dark:hover:bg-zinc-800"
                   >
                     Cancel
                   </Button>
@@ -933,7 +933,7 @@ export function AdminDashboard() {
                     className={`flex-1 h-14 rounded-2xl border-none font-bold ${
                       modalData.title.includes('SHUTDOWN') || modalData.title.includes('Shutdown')
                         ? "bg-red-600 hover:bg-red-700 text-white"
-                        : "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950 shadow-luxury"
+                        : "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950 dark:text-white shadow-luxury"
                     }`}
                   >
                     Confirm
@@ -947,7 +947,7 @@ export function AdminDashboard() {
       {/* MASTER SERVICE SWITCH */}
       <div className={`p-8 rounded-[3rem] border-2 transition-all mb-12 ${
         guideServiceEnabled 
-          ? "bg-white border-sand-100 shadow-sm" 
+          ? "bg-white dark:bg-zinc-900 border-sand-100 dark:border-zinc-800/50 shadow-sm" 
           : "bg-red-50/50 border-red-200 shadow-lg shadow-red-500/5"
       }`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -959,14 +959,14 @@ export function AdminDashboard() {
             </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-2xl font-bold text-navy-950">Tour Guide Service</h3>
+                <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Tour Guide Service</h3>
                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                   guideServiceEnabled ? "bg-green-100 text-green-700" : "bg-red-600 text-white"
                 }`}>
                   {guideServiceEnabled ? "System Active" : "Service Shut Down"}
                 </span>
               </div>
-              <p className="text-navy-950/40 text-sm max-w-xl">
+              <p className="text-navy-950 dark:text-white/40 dark:text-zinc-500 text-sm max-w-xl">
                 {guideServiceEnabled 
                   ? "The expert network is currently operational. All public pages, registration flows, and booking systems are live."
                   : "The entire guide service is currently offline. No experts or tours are visible to travellers, and registration is disabled."
@@ -985,10 +985,10 @@ export function AdminDashboard() {
                <motion.span 
                  animate={{ x: guideServiceEnabled ? 52 : 4 }}
                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                 className="inline-block h-9 w-9 rounded-full bg-white shadow-xl ring-2 ring-white/10"
+                 className="inline-block h-9 w-9 rounded-full bg-white dark:bg-zinc-900 shadow-xl ring-2 ring-white/10"
                />
              </div>
-             <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em]">Master System Switch</p>
+             <p className="text-[10px] font-bold text-navy-950 dark:text-white/30 dark:text-zinc-600 uppercase tracking-[0.2em]">Master System Switch</p>
           </div>
         </div>
       </div>
@@ -996,7 +996,7 @@ export function AdminDashboard() {
       {/* MASTER OTP VERIFICATION CONTROL */}
       <div className={`p-8 rounded-[3rem] border-2 transition-all mb-12 ${
         requireOtpForSignup
-          ? "bg-white border-sand-100 shadow-sm"
+          ? "bg-white dark:bg-zinc-900 border-sand-100 dark:border-zinc-800/50 shadow-sm"
           : "bg-amber-50/50 border-amber-200 shadow-lg shadow-amber-500/5"
       }`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -1008,14 +1008,14 @@ export function AdminDashboard() {
             </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-2xl font-bold text-navy-950">OTP Verification for Signup</h3>
+                <h3 className="text-2xl font-bold text-navy-950 dark:text-white">OTP Verification for Signup</h3>
                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                   requireOtpForSignup ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                 }`}>
                   {requireOtpForSignup ? "Required" : "Disabled"}
                 </span>
               </div>
-              <p className="text-navy-950/40 text-sm max-w-xl">
+              <p className="text-navy-950 dark:text-white/40 dark:text-zinc-500 text-sm max-w-xl">
                 {requireOtpForSignup
                   ? "New users must verify their email or phone via a 6-digit OTP before their account is created. Recommended for production."
                   : "New users are registered instantly without any verification step. Accounts are created immediately on form submission."
@@ -1034,32 +1034,32 @@ export function AdminDashboard() {
               <motion.span
                 animate={{ x: requireOtpForSignup ? 52 : 4 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="inline-block h-9 w-9 rounded-full bg-white shadow-xl ring-2 ring-white/10"
+                className="inline-block h-9 w-9 rounded-full bg-white dark:bg-zinc-900 shadow-xl ring-2 ring-white/10"
               />
             </div>
-            <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em]">Auth Control Switch</p>
+            <p className="text-[10px] font-bold text-navy-950 dark:text-white/30 dark:text-zinc-600 uppercase tracking-[0.2em]">Auth Control Switch</p>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 bg-white p-8 rounded-[3rem] border border-sand-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-sand-100 dark:border-zinc-800/50 shadow-sm">
         <div>
-          <h3 className="text-2xl font-bold text-navy-950">Expert Guide Management</h3>
-          <p className="text-sm text-navy-950/40">Review, verify, and manage platform visibility for Hampi experts.</p>
+          <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Expert Guide Management</h3>
+          <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Review, verify, and manage platform visibility for Hampi experts.</p>
         </div>
         <div className="flex items-center gap-6">
            <div className="flex gap-4">
               <div className="text-center">
-                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Total Experts</p>
-                <p className="text-xl font-bold text-navy-950">{allGuides.length}</p>
+                <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">Total Experts</p>
+                <p className="text-xl font-bold text-navy-950 dark:text-white">{allGuides.length}</p>
               </div>
-              <div className="w-px h-10 bg-sand-200" />
+              <div className="w-px h-10 bg-sand-200 dark:bg-zinc-800" />
               <div className="text-center">
-                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Active</p>
+                <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">Active</p>
                 <p className="text-xl font-bold text-green-600">{allGuides.filter(g => g.isActive).length}</p>
               </div>
            </div>
-           <div className="w-px h-10 bg-sand-200" />
+           <div className="w-px h-10 bg-sand-200 dark:bg-zinc-800" />
            <Button 
              variant={allGuides.some(g => !g.isActive) ? "primary" : "outline"}
              onClick={() => handleAllGuidesStatus(allGuides.some(g => !g.isActive))}
@@ -1084,8 +1084,8 @@ export function AdminDashboard() {
             key={guide.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`bg-white rounded-[2.5rem] border transition-all duration-500 overflow-hidden relative ${
-              !guide.isActive ? 'opacity-70 border-dashed border-sand-300' : 'border-sand-200 shadow-sm'
+            className={`bg-white dark:bg-zinc-900 rounded-[2.5rem] border transition-all duration-500 overflow-hidden relative ${
+              !guide.isActive ? 'opacity-70 border-dashed border-sand-300' : 'border-sand-200 dark:border-zinc-800 shadow-sm'
             }`}
           >
             {/* INDIVIDUAL TOGGLE (Prominent Position) */}
@@ -1109,14 +1109,14 @@ export function AdminDashboard() {
             <div className="p-8">
               <div className="flex flex-col lg:flex-row justify-between gap-10">
                 <div className="flex-grow flex gap-6">
-                  <div className="w-24 h-24 rounded-[2rem] bg-sand-100 flex items-center justify-center overflow-hidden border border-sand-200">
+                  <div className="w-24 h-24 rounded-[2rem] bg-sand-100 dark:bg-zinc-800/50 flex items-center justify-center overflow-hidden border border-sand-200 dark:border-zinc-800">
                     {guide.user?.avatar ? <img src={guide.user.avatar} className="w-full h-full object-cover rounded-2xl" /> : <User className="w-10 h-10 text-sand-300" />}
                   </div>
                   <div className="flex-grow">
                     <div className="flex items-center gap-3 mb-1">
-                      <h4 className="text-2xl font-bold text-navy-950">{guide.user?.name}</h4>
+                      <h4 className="text-2xl font-bold text-navy-950 dark:text-white">{guide.user?.name}</h4>
                     </div>
-                    <p className="text-navy-950/40 text-sm mb-4">{guide.user?.email}</p>
+                    <p className="text-navy-950 dark:text-white/40 dark:text-zinc-500 text-sm mb-4">{guide.user?.email}</p>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-navy-50 text-navy-600 rounded-full text-[10px] font-bold uppercase tracking-widest">{guide.yearsExperience} Years Exp.</span>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
@@ -1158,7 +1158,7 @@ export function AdminDashboard() {
                           {guide.fraudFlags && guide.fraudFlags.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1.5">
                               {guide.fraudFlags.map((flag: string) => (
-                                <span key={flag} className="px-2 py-0.5 bg-white/60 border border-current/20 rounded text-[9px] font-mono font-bold uppercase">
+                                <span key={flag} className="px-2 py-0.5 bg-white dark:bg-zinc-900/60 border border-current/20 rounded text-[9px] font-mono font-bold uppercase">
                                   {flag.replace(/_/g, ' ')}
                                 </span>
                               ))}
@@ -1170,9 +1170,9 @@ export function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex-grow lg:max-w-md bg-sand-50/50 rounded-3xl p-6 border border-sand-100">
+                <div className="flex-grow lg:max-w-md bg-sand-50 dark:bg-zinc-950/50 rounded-3xl p-6 border border-sand-100 dark:border-zinc-800/50">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest flex items-center gap-2">
+                    <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                       <ShieldCheck className="w-3.5 h-3.5" /> Identity Documents
                     </p>
                   </div>
@@ -1180,8 +1180,8 @@ export function AdminDashboard() {
                     <div className="space-y-3">
                       <div className="flex gap-6">
                         <div className="flex-grow space-y-2">
-                          <p className="text-xs font-bold text-navy-950">{guide.idType}</p>
-                          <p className="font-mono text-xs text-navy-950/60 blur-[3px] hover:blur-none transition-all duration-300 select-all cursor-pointer" title="Hover to reveal number">
+                          <p className="text-xs font-bold text-navy-950 dark:text-white">{guide.idType}</p>
+                          <p className="font-mono text-xs text-navy-950 dark:text-white/60 dark:text-zinc-400 blur-[3px] hover:blur-none transition-all duration-300 select-all cursor-pointer" title="Hover to reveal number">
                             {guide.idNumber}
                           </p>
                         </div>
@@ -1195,7 +1195,7 @@ export function AdminDashboard() {
                                 number: guide.idNumber || 'N/A'
                               });
                             }}
-                            className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 hover:border-gold-500 transition-colors group relative"
+                            className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 dark:border-zinc-800 hover:border-gold-500 transition-colors group relative"
                           >
                             <KycImage 
                               src={guide.idImage} 
@@ -1208,7 +1208,7 @@ export function AdminDashboard() {
                             </div>
                           </button>
                         ) : (
-                          <div className="w-20 h-20 rounded-xl bg-sand-100 border border-sand-200 flex items-center justify-center text-[10px] font-bold text-navy-950/40 uppercase tracking-widest text-center px-2">
+                          <div className="w-20 h-20 rounded-xl bg-sand-100 dark:bg-zinc-800/50 border border-sand-200 dark:border-zinc-800 flex items-center justify-center text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest text-center px-2">
                             No Image
                           </div>
                         )}
@@ -1220,7 +1220,7 @@ export function AdminDashboard() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-navy-950/30 italic">No documents uploaded yet.</p>
+                    <p className="text-sm text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">No documents uploaded yet.</p>
                   )}
                 </div>
 
@@ -1259,7 +1259,7 @@ export function AdminDashboard() {
           </motion.div>
         ))}
         {allGuides.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-[3rem] border border-sand-100 italic text-navy-950/30">
+          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-[3rem] border border-sand-100 dark:border-zinc-800/50 italic text-navy-950 dark:text-white/30 dark:text-zinc-600">
             No expert guides found on the platform.
           </div>
         )}
@@ -1268,9 +1268,9 @@ export function AdminDashboard() {
   );
 
   const renderUsers = () => (
-    <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
-      <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-        <h3 className="text-xl font-bold text-navy-950">Platform Users</h3>
+    <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+      <div className="p-8 border-b border-sand-100 dark:border-zinc-800/50 flex items-center justify-between">
+        <h3 className="text-xl font-bold text-navy-950 dark:text-white">Platform Users</h3>
         <Button 
           onClick={() => setEditingUser({ name: '', email: '', role: 'TRAVELLER', id: 'new' })}
           className="bg-navy-950 text-white gap-2"
@@ -1282,7 +1282,7 @@ export function AdminDashboard() {
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+            <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
               <th className="px-8 py-4">User</th>
               <th className="px-8 py-4">Role</th>
               <th className="px-8 py-4">Joined</th>
@@ -1292,15 +1292,15 @@ export function AdminDashboard() {
           </thead>
           <tbody className="divide-y divide-sand-100">
             {(allUsers || []).map((user) => (
-              <tr key={user.id} className="hover:bg-sand-50/30 transition-colors">
+              <tr key={user.id} className="hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gold-100 text-gold-700 rounded-full flex items-center justify-center font-bold">
                       {user.name ? user.name[0] : '?'}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy-950">{user.name || 'Unknown User'}</p>
-                      <p className="text-xs text-navy-950/40">{user.email}</p>
+                      <p className="text-sm font-bold text-navy-950 dark:text-white">{user.name || 'Unknown User'}</p>
+                      <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">{user.email}</p>
                     </div>
                   </div>
                 </td>
@@ -1308,12 +1308,12 @@ export function AdminDashboard() {
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     user.role === 'ADMIN' ? 'bg-navy-950 text-white' : 
                     user.role === 'RESORT_OWNER' ? 'bg-gold-100 text-gold-700' : 
-                    'bg-sand-100 text-navy-950/60'
+                    'bg-sand-100 dark:bg-zinc-800/50 text-navy-950 dark:text-white/60 dark:text-zinc-400'
                   }`}>
                     {user.role}
                   </span>
                 </td>
-                <td className="px-8 py-6 text-sm text-navy-950/60">{new Date(user.createdAt).toLocaleDateString()}</td>
+                <td className="px-8 py-6 text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400">{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td className="px-8 py-6">
                   <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
@@ -1343,7 +1343,7 @@ export function AdminDashboard() {
             ))}
             {(!allUsers || allUsers.length === 0) && (
               <tr>
-                <td colSpan={5} className="px-8 py-20 text-center text-navy-950/30 italic">
+                <td colSpan={5} className="px-8 py-20 text-center text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">
                   No users found on the platform.
                 </td>
               </tr>
@@ -1355,9 +1355,9 @@ export function AdminDashboard() {
   );
 
   const renderBookings = () => (
-    <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
-      <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-        <h3 className="text-xl font-bold text-navy-950">Global Bookings</h3>
+    <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+      <div className="p-8 border-b border-sand-100 dark:border-zinc-800/50 flex items-center justify-between">
+        <h3 className="text-xl font-bold text-navy-950 dark:text-white">Global Bookings</h3>
         <Button variant="outline" onClick={handleExportCSV} className="gap-2 rounded-xl hover:bg-navy-950 hover:text-white transition-all">
           <Download className="w-4 h-4" />
           Export CSV
@@ -1366,7 +1366,7 @@ export function AdminDashboard() {
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+            <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
               <th className="px-8 py-4">Reference</th>
               <th className="px-8 py-4">Guest</th>
               <th className="px-8 py-4">Resort & Room</th>
@@ -1377,25 +1377,25 @@ export function AdminDashboard() {
           </thead>
           <tbody className="divide-y divide-sand-100">
             {allBookings.map((booking) => (
-              <tr key={booking.id} className="hover:bg-sand-50/30 transition-colors">
+              <tr key={booking.id} className="hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors">
                 <td className="px-8 py-6">
                   <span className="font-mono font-bold text-gold-700">{booking.referenceNumber}</span>
                 </td>
                 <td className="px-8 py-6">
-                  <p className="text-sm font-bold text-navy-950">{booking.user?.name || "Guest"}</p>
-                  <p className="text-xs text-navy-950/40">{booking.user?.email}</p>
+                  <p className="text-sm font-bold text-navy-950 dark:text-white">{booking.user?.name || "Guest"}</p>
+                  <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">{booking.user?.email}</p>
                 </td>
                 <td className="px-8 py-6">
-                  <p className="text-sm font-bold text-navy-950">{booking.resort?.name}</p>
-                  <p className="text-xs text-navy-950/40">{booking.room?.name || booking.roomType?.name || "Standard Stay"}</p>
+                  <p className="text-sm font-bold text-navy-950 dark:text-white">{booking.resort?.name}</p>
+                  <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">{booking.room?.name || booking.roomType?.name || "Standard Stay"}</p>
                 </td>
                 <td className="px-8 py-6">
                   <div className="text-xs">
-                    <p className="font-bold text-navy-950">{new Date(booking.checkIn).toLocaleDateString()}</p>
-                    <p className="text-navy-950/40">to {new Date(booking.checkOut).toLocaleDateString()}</p>
+                    <p className="font-bold text-navy-950 dark:text-white">{new Date(booking.checkIn).toLocaleDateString()}</p>
+                    <p className="text-navy-950 dark:text-white/40 dark:text-zinc-500">to {new Date(booking.checkOut).toLocaleDateString()}</p>
                   </div>
                 </td>
-                <td className="px-8 py-6 text-sm font-bold text-navy-950">
+                <td className="px-8 py-6 text-sm font-bold text-navy-950 dark:text-white">
                   ₹{booking.totalPrice?.toLocaleString()}
                 </td>
                 <td className="px-8 py-6">
@@ -1411,7 +1411,7 @@ export function AdminDashboard() {
             ))}
             {allBookings.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-8 py-20 text-center text-navy-950/30 italic">
+                <td colSpan={6} className="px-8 py-20 text-center text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">
                   No bookings found on the platform.
                 </td>
               </tr>
@@ -1424,11 +1424,11 @@ export function AdminDashboard() {
 
   const renderPayouts = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-navy-950">Verify Resort Payouts</h3>
-            <p className="text-sm text-navy-950/40">Audit and release funds to resort owners after guest checkout.</p>
+            <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Verify Resort Payouts</h3>
+            <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Audit and release funds to resort owners after guest checkout.</p>
           </div>
           <div className="bg-emerald-50 text-emerald-700 px-6 py-3 rounded-2xl">
             <p className="text-[10px] font-bold uppercase tracking-widest">Total Pending</p>
@@ -1439,7 +1439,7 @@ export function AdminDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+              <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
                 <th className="px-8 py-4">Resort</th>
                 <th className="px-8 py-4">Booking Ref</th>
                 <th className="px-8 py-4">Amount</th>
@@ -1449,10 +1449,10 @@ export function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-sand-100">
               {pendingPayouts.map((payout) => (
-                <tr key={payout.id} className="hover:bg-sand-50/30 transition-colors">
-                  <td className="px-8 py-6 font-bold text-navy-950">{payout.resort}</td>
+                <tr key={payout.id} className="hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors">
+                  <td className="px-8 py-6 font-bold text-navy-950 dark:text-white">{payout.resort}</td>
                   <td className="px-8 py-6 font-mono text-gold-700">{payout.ref}</td>
-                  <td className="px-8 py-6 font-bold text-navy-950">₹{payout.amount.toLocaleString()}</td>
+                  <td className="px-8 py-6 font-bold text-navy-950 dark:text-white">₹{payout.amount.toLocaleString()}</td>
                   <td className="px-8 py-6">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
                       payout.status === 'READY' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
@@ -1473,7 +1473,7 @@ export function AdminDashboard() {
               ))}
               {pendingPayouts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center text-navy-950/30 italic">
+                  <td colSpan={5} className="px-8 py-20 text-center text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">
                     No pending payouts found in the system.
                   </td>
                 </tr>
@@ -1489,7 +1489,7 @@ export function AdminDashboard() {
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-navy-950 rounded-[3rem] p-12 text-white shadow-luxury">
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
+          <div className="w-16 h-16 bg-white dark:bg-zinc-900/10 rounded-2xl flex items-center justify-center">
             <Mail className="w-8 h-8 text-gold-400" />
           </div>
           <div>
@@ -1504,7 +1504,7 @@ export function AdminDashboard() {
             <input 
               type="text" 
               placeholder="e.g. Discover the Secrets of Vijayanagara..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors"
+              className="w-full bg-white dark:bg-zinc-900/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors"
             />
           </div>
           <div>
@@ -1512,7 +1512,7 @@ export function AdminDashboard() {
             <textarea 
               rows={10}
               placeholder="Dear Luxury Traveler, experience Hampi like never before..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors resize-none"
+              className="w-full bg-white dark:bg-zinc-900/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors resize-none"
             />
           </div>
           <div className="flex items-center justify-between pt-4">
@@ -1524,7 +1524,7 @@ export function AdminDashboard() {
                  <CalendarDays className="w-4 h-4" /> Scheduled: Instant
                </span>
             </div>
-            <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-12 rounded-2xl font-bold shadow-gold">
+            <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white h-14 px-12 rounded-2xl font-bold shadow-gold">
               Send Broadcast Now
             </Button>
           </div>
@@ -1536,34 +1536,34 @@ export function AdminDashboard() {
   const renderSecurity = () => (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <ShieldCheck className="w-8 h-8 text-emerald-600" />
             <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Secure</span>
           </div>
-          <h4 className="text-sm font-bold text-navy-950 mb-1">System Health</h4>
-          <p className="text-2xl font-bold text-navy-950">100% Online</p>
-          <div className="mt-4 w-full bg-sand-100 h-1 rounded-full overflow-hidden">
+          <h4 className="text-sm font-bold text-navy-950 dark:text-white mb-1">System Health</h4>
+          <p className="text-2xl font-bold text-navy-950 dark:text-white">100% Online</p>
+          <div className="mt-4 w-full bg-sand-100 dark:bg-zinc-800/50 h-1 rounded-full overflow-hidden">
             <div className="bg-emerald-500 h-full w-[100%]" />
           </div>
         </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <Users className="w-8 h-8 text-blue-600" />
             <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Active</span>
           </div>
-          <h4 className="text-sm font-bold text-navy-950 mb-1">Live Sessions</h4>
-          <p className="text-2xl font-bold text-navy-950">{securityData.activeSessions} Users</p>
-          <p className="text-[10px] text-navy-950/40 mt-1 uppercase">Across 3 continents</p>
+          <h4 className="text-sm font-bold text-navy-950 dark:text-white mb-1">Live Sessions</h4>
+          <p className="text-2xl font-bold text-navy-950 dark:text-white">{securityData.activeSessions} Users</p>
+          <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 mt-1 uppercase">Across 3 continents</p>
         </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-sand-200 dark:border-zinc-800 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <AlertCircle className="w-8 h-8 text-gold-600" />
             <span className="bg-gold-50 text-gold-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Normal</span>
           </div>
-          <h4 className="text-sm font-bold text-navy-950 mb-1">Threat Level</h4>
-          <p className="text-2xl font-bold text-navy-950">Zero Threats</p>
-          <p className="text-[10px] text-navy-950/40 mt-1 uppercase">Last scan: Just now</p>
+          <h4 className="text-sm font-bold text-navy-950 dark:text-white mb-1">Threat Level</h4>
+          <p className="text-2xl font-bold text-navy-950 dark:text-white">Zero Threats</p>
+          <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 mt-1 uppercase">Last scan: Just now</p>
         </div>
       </div>
 
@@ -1590,11 +1590,11 @@ export function AdminDashboard() {
 
   const renderOtpLogs = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-navy-950">OTP Verification Logs</h3>
-            <p className="text-sm text-navy-950/40">Real-time audit trail of all identity verification attempts.</p>
+            <h3 className="text-2xl font-bold text-navy-950 dark:text-white">OTP Verification Logs</h3>
+            <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Real-time audit trail of all identity verification attempts.</p>
           </div>
           <div className="flex gap-3">
             <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold">
@@ -1608,7 +1608,7 @@ export function AdminDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+              <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Channel</th>
                 <th className="px-6 py-4">Target</th>
@@ -1619,13 +1619,13 @@ export function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-sand-100">
               {otpLogs.map((log) => (
-                <tr key={log.id} className={`hover:bg-sand-50/30 transition-colors ${
+                <tr key={log.id} className={`hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors ${
                   log.attempts >= 3 ? 'bg-red-50/20' : ''
                 }`}>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-bold text-navy-950">{log.user?.name || 'Unregistered'}</p>
-                      <p className="text-xs text-navy-950/40">{log.user?.role || '—'}</p>
+                      <p className="text-sm font-bold text-navy-950 dark:text-white">{log.user?.name || 'Unregistered'}</p>
+                      <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">{log.user?.role || '—'}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -1637,13 +1637,13 @@ export function AdminDashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-xs font-mono text-navy-950/70">{log.email || log.phone || '—'}</p>
+                    <p className="text-xs font-mono text-navy-950 dark:text-white/70">{log.email || log.phone || '—'}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                       log.attempts >= 4 ? 'bg-red-100 text-red-700' :
                       log.attempts >= 2 ? 'bg-amber-100 text-amber-700' :
-                      'bg-sand-100 text-navy-950/60'
+                      'bg-sand-100 dark:bg-zinc-800/50 text-navy-950 dark:text-white/60 dark:text-zinc-400'
                     }`}>
                       {log.attempts}/5
                     </span>
@@ -1659,13 +1659,13 @@ export function AdminDashboard() {
                       <span className="text-xs font-bold text-amber-600">Pending</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-xs text-navy-950/40">
+                  <td className="px-6 py-4 text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">
                     {new Date(log.expiresAt).toLocaleTimeString()}
                   </td>
                 </tr>
               ))}
               {otpLogs.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-20 text-center text-navy-950/30 italic">No OTP verification records yet.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-20 text-center text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">No OTP verification records yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -1676,20 +1676,20 @@ export function AdminDashboard() {
 
   const renderAuditLogs = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-navy-950">Verification Audit Logs</h3>
-            <p className="text-sm text-navy-950/40">Immutable log of all user verification changes, document submissions, and admin actions.</p>
+            <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Verification Audit Logs</h3>
+            <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Immutable log of all user verification changes, document submissions, and admin actions.</p>
           </div>
-          <div className="px-4 py-2 bg-navy-50 text-navy-950/60 rounded-xl text-xs font-bold">
+          <div className="px-4 py-2 bg-navy-50 text-navy-950 dark:text-white/60 dark:text-zinc-400 rounded-xl text-xs font-bold">
             {auditLogs.length} Records
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+              <tr className="bg-sand-50 dark:bg-zinc-950/50 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
                 <th className="px-6 py-4">Timestamp</th>
                 <th className="px-6 py-4">Actor</th>
                 <th className="px-6 py-4">Target User</th>
@@ -1700,19 +1700,19 @@ export function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-sand-100">
               {auditLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-sand-50/30 transition-colors">
-                  <td className="px-6 py-4 text-xs font-mono text-navy-950/70">
+                <tr key={log.id} className="hover:bg-sand-50 dark:hover:bg-zinc-800/30 transition-colors">
+                  <td className="px-6 py-4 text-xs font-mono text-navy-950 dark:text-white/70">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-navy-950">
+                    <p className="text-sm font-bold text-navy-950 dark:text-white">
                       {log.adminId === 'USER_SELF' ? 'User Self' : log.adminName || 'Admin'}
                     </p>
-                    <p className="text-[10px] text-navy-950/40 font-mono">{log.adminId}</p>
+                    <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 font-mono">{log.adminId}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-navy-950">{log.targetName || 'Guide'}</p>
-                    <p className="text-[10px] text-navy-950/40 font-mono">{log.targetUserId}</p>
+                    <p className="text-sm font-bold text-navy-950 dark:text-white">{log.targetName || 'Guide'}</p>
+                    <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 font-mono">{log.targetUserId}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className={cn(
@@ -1727,9 +1727,9 @@ export function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4 text-xs">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-navy-950/40 font-bold uppercase">{log.previousStatus || 'NONE'}</span>
-                      <span className="text-navy-950/30">→</span>
-                      <span className="text-navy-950 font-bold uppercase">{log.newStatus}</span>
+                      <span className="text-navy-950 dark:text-white/40 dark:text-zinc-500 font-bold uppercase">{log.previousStatus || 'NONE'}</span>
+                      <span className="text-navy-950 dark:text-white/30 dark:text-zinc-600">→</span>
+                      <span className="text-navy-950 dark:text-white font-bold uppercase">{log.newStatus}</span>
                     </div>
                     {log.rejectionReason && (
                       <p className="text-[10px] text-red-600 italic mt-1 max-w-[200px] truncate" title={log.rejectionReason}>
@@ -1737,7 +1737,7 @@ export function AdminDashboard() {
                       </p>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-xs text-navy-950/50">
+                  <td className="px-6 py-4 text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">
                     <p className="font-mono">{log.ipAddress || 'Unknown IP'}</p>
                     <p className="text-[9px] max-w-[150px] truncate" title={log.userAgent}>
                       {log.userAgent || 'Unknown Agent'}
@@ -1747,7 +1747,7 @@ export function AdminDashboard() {
               ))}
               {auditLogs.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-navy-950/30 italic">
+                  <td colSpan={6} className="px-6 py-20 text-center text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">
                     No verification audit records found.
                   </td>
                 </tr>
@@ -1761,11 +1761,11 @@ export function AdminDashboard() {
 
   const renderReviews = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between mb-8">
            <div>
-              <h3 className="text-2xl font-bold text-navy-950">Review Moderation</h3>
-              <p className="text-sm text-navy-950/40">Moderate flagged or inappropriate community reviews.</p>
+              <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Review Moderation</h3>
+              <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Moderate flagged or inappropriate community reviews.</p>
            </div>
            <div className="px-6 py-2 bg-red-50 text-red-700 rounded-xl text-xs font-bold uppercase tracking-widest">
               {flaggedReviews.length} Flagged
@@ -1774,21 +1774,21 @@ export function AdminDashboard() {
 
         <div className="grid grid-cols-1 gap-6">
            {flaggedReviews.length > 0 ? flaggedReviews.map((review: any) => (
-             <div key={review.id} className="p-8 rounded-[2rem] border border-sand-100 bg-sand-50/30 flex flex-col md:flex-row gap-8 items-start">
+             <div key={review.id} className="p-8 rounded-[2rem] border border-sand-100 dark:border-zinc-800/50 bg-sand-50 dark:bg-zinc-950/30 flex flex-col md:flex-row gap-8 items-start">
                 <div className="flex-grow">
                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-navy-950 border border-sand-200">
+                      <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center font-bold text-navy-950 dark:text-white border border-sand-200 dark:border-zinc-800">
                          {review.user?.name[0]}
                       </div>
                       <div>
-                         <p className="text-sm font-bold text-navy-950">{review.user?.name}</p>
+                         <p className="text-sm font-bold text-navy-950 dark:text-white">{review.user?.name}</p>
                          <div className="flex gap-1 text-gold-500 mt-0.5">
                             {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-3 h-3 fill-current", i >= review.rating && "text-sand-200 fill-none")} />)}
                          </div>
                       </div>
                    </div>
-                   <p className="text-sm text-navy-950/70 italic leading-relaxed mb-4">"{review.comment}"</p>
-                   <div className="flex items-center gap-4 text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
+                   <p className="text-sm text-navy-950 dark:text-white/70 italic leading-relaxed mb-4">"{review.comment}"</p>
+                   <div className="flex items-center gap-4 text-[10px] font-bold text-navy-950 dark:text-white/30 dark:text-zinc-600 uppercase tracking-widest">
                       <span>Flagged for: {review.flagReason || 'Inappropriate Content'}</span>
                       <span>•</span>
                       <span>Posted on {review.resort?.name}</span>
@@ -1800,7 +1800,7 @@ export function AdminDashboard() {
                 </div>
              </div>
            )) : (
-             <div className="text-center py-20 text-navy-950/30 italic">No reviews currently flagged for moderation.</div>
+             <div className="text-center py-20 text-navy-950 dark:text-white/30 dark:text-zinc-600 italic">No reviews currently flagged for moderation.</div>
            )}
         </div>
       </div>
@@ -1809,11 +1809,11 @@ export function AdminDashboard() {
 
   const renderCommissions = () => (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] p-10 border border-sand-200 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-10 border border-sand-200 dark:border-zinc-800 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
-            <h3 className="text-2xl font-bold text-navy-950">Platform Commissions</h3>
-            <p className="text-sm text-navy-950/40">Manage global revenue splits and partner fee structures.</p>
+            <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Platform Commissions</h3>
+            <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Manage global revenue splits and partner fee structures.</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="bg-navy-950 text-white p-6 rounded-[2rem] flex items-center gap-6 shadow-xl border border-white/10">
@@ -1824,7 +1824,7 @@ export function AdminDashboard() {
                         type="number" 
                         value={defaultCommissionRate}
                         onChange={(e) => setDefaultCommissionRate(parseFloat(e.target.value))}
-                        className="w-20 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xl font-bold outline-none focus:border-gold-400"
+                        className="w-20 bg-white dark:bg-zinc-900/10 border border-white/20 rounded-xl px-3 py-2 text-xl font-bold outline-none focus:border-gold-400"
                      />
                      <span className="text-xl font-bold text-gold-400">%</span>
                   </div>
@@ -1832,18 +1832,18 @@ export function AdminDashboard() {
                <Button 
                   onClick={handleUpdateGlobalCommission}
                   isLoading={isSavingGlobalCommission}
-                  className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-6 rounded-2xl font-bold shadow-lg"
+                  className="bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white h-14 px-6 rounded-2xl font-bold shadow-lg"
                >
                   Update Global
                </Button>
             </div>
             
-            <div className="bg-sand-50 border border-sand-200 p-6 rounded-[2rem] flex items-center gap-6">
+            <div className="bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 p-6 rounded-[2rem] flex items-center gap-6">
               <div>
-                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Network Average</p>
-                <p className="text-3xl font-bold text-navy-950">{(activeResorts.reduce((acc, r) => acc + (r.commissionRate || 7), 0) / (activeResorts.length || 1)).toFixed(1)}%</p>
+                <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest mb-1">Network Average</p>
+                <p className="text-3xl font-bold text-navy-950 dark:text-white">{(activeResorts.reduce((acc, r) => acc + (r.commissionRate || 7), 0) / (activeResorts.length || 1)).toFixed(1)}%</p>
               </div>
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-sand-100 shadow-sm">
+              <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-2xl flex items-center justify-center border border-sand-100 dark:border-zinc-800/50 shadow-sm">
                  <TrendingUp className="w-6 h-6 text-gold-600" />
               </div>
             </div>
@@ -1852,20 +1852,20 @@ export function AdminDashboard() {
 
         <div className="grid grid-cols-1 gap-4">
           {activeResorts.map(resort => (
-            <div key={resort.id} className="p-6 rounded-2xl border border-sand-100 bg-sand-50/30 flex items-center justify-between hover:bg-sand-50 transition-colors">
+            <div key={resort.id} className="p-6 rounded-2xl border border-sand-100 dark:border-zinc-800/50 bg-sand-50 dark:bg-zinc-950/30 flex items-center justify-between hover:bg-sand-50 dark:hover:bg-zinc-800 transition-colors">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl overflow-hidden border border-sand-200">
+                <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden border border-sand-200 dark:border-zinc-800">
                   <img src={resort.images?.[0] || ""} className="w-full h-full object-cover rounded-xl" alt="" />
                 </div>
                 <div>
-                  <p className="font-bold text-navy-950">{resort.name}</p>
-                  <p className="text-xs text-navy-950/40 uppercase font-bold tracking-widest">{resort.locationArea}</p>
+                  <p className="font-bold text-navy-950 dark:text-white">{resort.name}</p>
+                  <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase font-bold tracking-widest">{resort.locationArea}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-8">
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Current Rate</p>
+                  <p className="text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">Current Rate</p>
                   {editingCommissionId === resort.id ? (
                     <div className="flex items-center gap-2 mt-1">
                       <input 
@@ -1873,14 +1873,14 @@ export function AdminDashboard() {
                         autoFocus
                         value={newCommissionRate}
                         onChange={(e) => setNewCommissionRate(parseFloat(e.target.value))}
-                        className="w-16 h-10 bg-white border-2 border-gold-500 rounded-lg px-2 text-sm font-bold outline-none"
+                        className="w-16 h-10 bg-white dark:bg-zinc-900 border-2 border-gold-500 rounded-lg px-2 text-sm font-bold outline-none"
                       />
                       <button onClick={() => handleUpdateCommission(resort.id)} className="w-10 h-10 bg-navy-950 text-white rounded-lg flex items-center justify-center">
                         {isSavingCommission ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xl font-bold text-navy-950 mt-1">{resort.commissionRate || 7.0}%</p>
+                    <p className="text-xl font-bold text-navy-950 dark:text-white mt-1">{resort.commissionRate || 7.0}%</p>
                   )}
                 </div>
                 <Button 
@@ -1889,7 +1889,7 @@ export function AdminDashboard() {
                     setEditingCommissionId(resort.id);
                     setNewCommissionRate(resort.commissionRate || 7.0);
                   }}
-                  className="rounded-xl border-sand-200 text-xs h-10"
+                  className="rounded-xl border-sand-200 dark:border-zinc-800 text-xs h-10"
                 >
                   Change Rate
                 </Button>
@@ -1902,7 +1902,7 @@ export function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
+    <div className="min-h-screen bg-sand-50 dark:bg-zinc-950/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-7xl">
         <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
@@ -1910,13 +1910,13 @@ export function AdminDashboard() {
               <ShieldCheck className="w-5 h-5" />
               <span className="text-xs font-bold uppercase tracking-widest">Administrator Portal</span>
             </div>
-            <h1 className="text-4xl font-serif font-bold text-navy-950">Command Center</h1>
+            <h1 className="text-4xl font-serif font-bold text-navy-950 dark:text-white">Command Center</h1>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Live: Real-time Status Syncing</span>
               <button 
                 onClick={fetchInitialData}
-                className="ml-4 text-[10px] font-bold text-navy-950/40 hover:text-gold-600 uppercase tracking-widest border-b border-transparent hover:border-gold-600 transition-all"
+                className="ml-4 text-[10px] font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 uppercase tracking-widest border-b border-transparent hover:border-gold-600 transition-all"
               >
                 Sync Now
               </button>
@@ -1924,7 +1924,7 @@ export function AdminDashboard() {
           </div>
 
           {/* Sub Navigation */}
-          <nav className="flex items-center bg-white p-1.5 rounded-2xl border border-sand-200 shadow-sm">
+          <nav className="flex items-center bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-sand-200 dark:border-zinc-800 shadow-sm">
             {[
               { id: "overview", label: "Overview", icon: LayoutDashboard },
               { id: "properties", label: "Properties", icon: Building2 },
@@ -1942,7 +1942,7 @@ export function AdminDashboard() {
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
                   activeTab === tab.id 
                     ? "bg-navy-950 text-white shadow-lg" 
-                    : "text-navy-950/40 hover:text-navy-950 hover:bg-sand-50"
+                    : "text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-navy-950 dark:text-white hover:bg-sand-50 dark:hover:bg-zinc-800"
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -1997,35 +1997,35 @@ export function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-luxury p-10 border border-sand-100"
+              className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-luxury p-10 border border-sand-100 dark:border-zinc-800/50"
             >
-              <h3 className="text-2xl font-serif font-bold text-navy-950 mb-8">Edit Platform User</h3>
+              <h3 className="text-2xl font-serif font-bold text-navy-950 dark:text-white mb-8">Edit Platform User</h3>
               <form onSubmit={handleUpdateUser} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Full Name</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1">Full Name</label>
                     <input 
                       type="text" 
                       value={editingUser.name}
                       onChange={e => setEditingUser({...editingUser, name: e.target.value})}
-                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                      className="w-full h-14 bg-sand-50 dark:bg-zinc-950 border-2 border-sand-200 dark:border-zinc-800 rounded-xl px-4 font-bold text-navy-950 dark:text-white outline-none focus:border-gold-500 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Email Address</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1">Email Address</label>
                     <input 
                       type="email" 
                       value={editingUser.email}
                       onChange={e => setEditingUser({...editingUser, email: e.target.value})}
-                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                      className="w-full h-14 bg-sand-50 dark:bg-zinc-950 border-2 border-sand-200 dark:border-zinc-800 rounded-xl px-4 font-bold text-navy-950 dark:text-white outline-none focus:border-gold-500 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Platform Role</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1">Platform Role</label>
                     <select 
                       value={editingUser.role}
                       onChange={e => setEditingUser({...editingUser, role: e.target.value})}
-                      className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
+                      className="w-full h-14 bg-sand-50 dark:bg-zinc-950 border-2 border-sand-200 dark:border-zinc-800 rounded-xl px-4 font-bold text-navy-950 dark:text-white outline-none focus:border-gold-500 transition-all"
                     >
                       <option value="TRAVELLER">Traveler</option>
                       <option value="RESORT_OWNER">Resort Owner</option>
@@ -2073,10 +2073,10 @@ export function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-luxury p-8 border border-sand-100 flex flex-col md:flex-row gap-8 overflow-hidden z-10"
+              className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-luxury p-8 border border-sand-100 dark:border-zinc-800/50 flex flex-col md:flex-row gap-8 overflow-hidden z-10"
             >
               {/* Left Column: Image with interactive controls */}
-              <div className="flex-1 flex flex-col justify-center items-center bg-sand-50 rounded-[2rem] p-4 relative min-h-[300px] max-h-[500px] overflow-hidden select-none">
+              <div className="flex-1 flex flex-col justify-center items-center bg-sand-50 dark:bg-zinc-950 rounded-[2rem] p-4 relative min-h-[300px] max-h-[500px] overflow-hidden select-none">
                 <KycImage 
                   src={selectedIdImage} 
                   alt="Identity Document" 
@@ -2085,7 +2085,7 @@ export function AdminDashboard() {
                 />
                 {/* Watermark Overlay */}
                 <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-center opacity-10">
-                  <p className="text-2xl md:text-4xl font-bold uppercase tracking-widest text-navy-950 rotate-12 text-center whitespace-nowrap">
+                  <p className="text-2xl md:text-4xl font-bold uppercase tracking-widest text-navy-950 dark:text-white rotate-12 text-center whitespace-nowrap">
                     HampiStays Secure Verification
                   </p>
                 </div>
@@ -2096,24 +2096,24 @@ export function AdminDashboard() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <ShieldCheck className="w-6 h-6 text-gold-500" />
-                    <h3 className="text-xl font-serif font-bold text-navy-950">Document Details</h3>
+                    <h3 className="text-xl font-serif font-bold text-navy-950 dark:text-white">Document Details</h3>
                   </div>
 
                   {selectedIdDetails && (
-                    <div className="space-y-4 py-4 border-t border-b border-sand-100">
+                    <div className="space-y-4 py-4 border-t border-b border-sand-100 dark:border-zinc-800/50">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Guide Name</span>
-                        <p className="font-bold text-navy-950">{selectedIdDetails.name}</p>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 block mb-1">Guide Name</span>
+                        <p className="font-bold text-navy-950 dark:text-white">{selectedIdDetails.name}</p>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Document Type</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 block mb-1">Document Type</span>
                         <span className="px-3 py-1 bg-gold-50 text-gold-700 rounded-full text-xs font-bold uppercase tracking-wider">
                           {selectedIdDetails.type}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 block mb-1">Document Number</span>
-                        <p className="font-mono text-sm font-bold text-navy-950 bg-sand-50 px-3 py-2 rounded-xl border border-sand-100 inline-block">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 block mb-1">Document Number</span>
+                        <p className="font-mono text-sm font-bold text-navy-950 dark:text-white bg-sand-50 dark:bg-zinc-950 px-3 py-2 rounded-xl border border-sand-100 dark:border-zinc-800/50 inline-block">
                           {selectedIdDetails.number}
                         </p>
                       </div>
@@ -2126,7 +2126,7 @@ export function AdminDashboard() {
                     href={getKycImageUrl(selectedIdImage, "w_1200,q_auto,f_auto")} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full h-12 bg-sand-100 text-navy-950 rounded-xl font-bold hover:bg-sand-200 transition-colors text-xs uppercase tracking-widest"
+                    className="flex items-center justify-center gap-2 w-full h-12 bg-sand-100 dark:bg-zinc-800/50 text-navy-950 dark:text-white rounded-xl font-bold hover:bg-sand-200 dark:hover:bg-zinc-600 transition-colors text-xs uppercase tracking-widest"
                   >
                     <ExternalLink className="w-4 h-4" /> Open Original
                   </a>
@@ -2158,26 +2158,26 @@ export function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-luxury p-10 border border-sand-100 z-10"
+              className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-luxury p-10 border border-sand-100 dark:border-zinc-800/50 z-10"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
                   <XCircle className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-serif font-bold text-navy-950">Reject Verification</h3>
-                  <p className="text-xs text-navy-950/40">Provide a reason for document rejection</p>
+                  <h3 className="text-xl font-serif font-bold text-navy-950 dark:text-white">Reject Verification</h3>
+                  <p className="text-xs text-navy-950 dark:text-white/40 dark:text-zinc-500">Provide a reason for document rejection</p>
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1 block mb-2">Rejection Reason</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 block mb-2">Rejection Reason</label>
                   <textarea 
                     value={rejectionReasonInput}
                     onChange={e => setRejectionReasonInput(e.target.value)}
                     placeholder="e.g. The uploaded Aadhar card photo is too blurry or crop is incomplete. Please re-upload a clear image."
-                    className="w-full h-32 bg-sand-50 border-2 border-sand-200 rounded-xl p-4 font-medium text-navy-950 outline-none focus:border-red-500 transition-all placeholder:text-navy-950/20 text-sm resize-none"
+                    className="w-full h-32 bg-sand-50 dark:bg-zinc-950 border-2 border-sand-200 dark:border-zinc-800 rounded-xl p-4 font-medium text-navy-950 dark:text-white outline-none focus:border-red-500 transition-all placeholder:text-navy-950 dark:text-white/20 dark:text-zinc-700 text-sm resize-none"
                   />
                 </div>
 

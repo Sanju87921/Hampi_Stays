@@ -81,7 +81,7 @@ export function RangeSlider({
 
       <div className="relative h-6 flex items-center" ref={trackRef}>
         {/* Track background */}
-        <div className="absolute w-full h-1.5 bg-sand-200 rounded-full" />
+        <div className="absolute w-full h-1.5 bg-sand-200 dark:bg-zinc-800 rounded-full" />
 
         {/* Active range */}
         <div
@@ -94,7 +94,7 @@ export function RangeSlider({
           type="button"
           aria-label="Minimum price"
           className={cn(
-            "absolute w-5 h-5 bg-white border-2 border-gold-500 rounded-full shadow-md cursor-grab transition-transform focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2",
+            "absolute w-5 h-5 bg-white dark:bg-zinc-900 border-2 border-gold-500 rounded-full shadow-md cursor-grab transition-transform focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2",
             dragging === "min" && "scale-125 cursor-grabbing"
           )}
           style={{ left: `${minPercent}%`, transform: "translateX(-50%)" }}
@@ -107,7 +107,7 @@ export function RangeSlider({
           type="button"
           aria-label="Maximum price"
           className={cn(
-            "absolute w-5 h-5 bg-white border-2 border-gold-500 rounded-full shadow-md cursor-grab transition-transform focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2",
+            "absolute w-5 h-5 bg-white dark:bg-zinc-900 border-2 border-gold-500 rounded-full shadow-md cursor-grab transition-transform focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2",
             dragging === "max" && "scale-125 cursor-grabbing"
           )}
           style={{ left: `${maxPercent}%`, transform: "translateX(-50%)" }}

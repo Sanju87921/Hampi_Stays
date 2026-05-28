@@ -100,7 +100,7 @@ export const ResortCard = memo(function ResortCard({
           rotateY: typeof window !== 'undefined' && window.matchMedia("(hover: hover)").matches ? rotateY : 0,
           transformStyle: "preserve-3d",
         }}
-        className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100 flex flex-col cursor-default"
+        className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100 dark:border-zinc-800/50 flex flex-col cursor-default"
       >
         {/* Image */}
         <Link to={`/resorts/${resort.slug}`} className="relative aspect-[4/3] overflow-hidden block" style={{ transform: "translateZ(30px)" }}>
@@ -135,7 +135,7 @@ export const ResortCard = memo(function ResortCard({
             type="button"
             aria-label="Add to favourites"
             onClick={handleToggleWishlist}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/40 transition-colors shadow-sm z-20"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white dark:bg-zinc-900/20 backdrop-blur-md flex items-center justify-center hover:bg-white dark:bg-zinc-900/40 transition-colors shadow-sm z-20"
             style={{ transform: "translateZ(50px)" }}
           >
             <Heart className={cn("w-5 h-5 transition-all duration-300", isFav ? "fill-gold-500 text-gold-500 scale-110" : "text-white")} />
@@ -152,7 +152,7 @@ export const ResortCard = memo(function ResortCard({
         {/* Content */}
         <div className="p-6 flex-grow flex flex-col justify-between" style={{ transform: "translateZ(20px)" }}>
           <div>
-            <div className="flex items-center gap-1.5 text-navy-950/50 mb-2">
+            <div className="flex items-center gap-1.5 text-navy-950 dark:text-white/50 dark:text-zinc-400 mb-2">
               <MapPin className="w-4 h-4 text-gold-500 flex-shrink-0" />
               <span className="text-sm font-medium tracking-wide">
                 {resort.location?.area || (resort as any).locationArea || "Hampi"}, Hampi
@@ -160,33 +160,33 @@ export const ResortCard = memo(function ResortCard({
             </div>
 
             <Link to={`/resorts/${resort.slug}`}>
-              <h3 className="text-xl font-bold font-serif text-navy-950 group-hover:text-gold-600 transition-colors duration-300 mb-4 leading-snug">
+              <h3 className="text-xl font-bold font-serif text-navy-950 dark:text-white group-hover:text-gold-600 transition-colors duration-300 mb-4 leading-snug">
                 {resort.name}
               </h3>
             </Link>
 
             <div className="flex flex-wrap gap-2 mb-5">
               {(resort.amenities || []).slice(0, 3).map((a) => (
-                <span key={a} className="px-3 py-1 bg-sand-50 text-navy-950/60 text-xs font-semibold rounded-lg border border-sand-100">
+                <span key={a} className="px-3 py-1 bg-sand-50 dark:bg-zinc-950 text-navy-950 dark:text-white/60 dark:text-zinc-400 text-xs font-semibold rounded-lg border border-sand-100 dark:border-zinc-800/50">
                   {a}
                 </span>
               ))}
               {(resort.amenities || []).length > 3 && (
-                <span className="px-3 py-1 bg-sand-50 text-navy-950/50 text-xs font-semibold rounded-lg border border-sand-100">
+                <span className="px-3 py-1 bg-sand-50 dark:bg-zinc-950 text-navy-950 dark:text-white/50 dark:text-zinc-400 text-xs font-semibold rounded-lg border border-sand-100 dark:border-zinc-800/50">
                   +{(resort.amenities || []).length - 3} more
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-end justify-between pt-5 border-t border-sand-100">
+          <div className="flex items-end justify-between pt-5 border-t border-sand-100 dark:border-zinc-800/50">
             <div>
               <span className="block text-[11px] text-navy-800/40 uppercase tracking-widest font-bold mb-0.5">From</span>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-serif font-bold text-navy-950">
+                <span className="text-2xl font-serif font-bold text-navy-950 dark:text-white">
                   ₹{resort.pricePerNight.toLocaleString("en-IN")}
                 </span>
-                <span className="text-sm font-medium text-navy-950/50">/night</span>
+                <span className="text-sm font-medium text-navy-950 dark:text-white/50 dark:text-zinc-400">/night</span>
               </div>
             </div>
 
@@ -202,7 +202,7 @@ export const ResortCard = memo(function ResortCard({
                     "text-xs font-bold px-3 py-2 rounded-xl border transition-all duration-200",
                     isInCompare
                       ? "bg-navy-800 text-white border-navy-800"
-                      : "border-sand-300 text-navy-950/60 hover:border-navy-600 hover:text-navy-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                      : "border-sand-300 text-navy-950 dark:text-white/60 dark:text-zinc-400 hover:border-navy-600 hover:text-navy-800 disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
                   {isInCompare ? (

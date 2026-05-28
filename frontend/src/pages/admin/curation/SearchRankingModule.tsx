@@ -46,43 +46,43 @@ const SearchRankingModule = () => {
       {activeTab === 'algorithm' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl border border-sand-200 p-6">
-              <h4 className="font-bold text-navy-950 mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-sand-200 dark:border-zinc-800 p-6">
+              <h4 className="font-bold text-navy-950 dark:text-white mb-6 flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-gold-500" /> Core Discovery Algorithm
               </h4>
               <div className="space-y-6">
                 {algorithmWeights.map(alg => (
                   <div key={alg.id}>
                     <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2 text-sm font-bold text-navy-950">
-                        <div className="w-8 h-8 rounded-full bg-sand-100 flex items-center justify-center text-navy-600">{alg.icon}</div>
+                      <div className="flex items-center gap-2 text-sm font-bold text-navy-950 dark:text-white">
+                        <div className="w-8 h-8 rounded-full bg-sand-100 dark:bg-zinc-800/50 flex items-center justify-center text-navy-600">{alg.icon}</div>
                         {alg.name}
                       </div>
                       <span className="text-xs font-mono font-bold text-gold-600">{alg.weight}%</span>
                     </div>
-                    <div className="h-2 bg-sand-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-sand-100 dark:bg-zinc-800/50 rounded-full overflow-hidden">
                       <div className="h-full bg-navy-950 rounded-full" style={{ width: `${alg.weight}%` }}></div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-8 pt-6 border-t border-sand-100 flex justify-end">
+              <div className="mt-8 pt-6 border-t border-sand-100 dark:border-zinc-800/50 flex justify-end">
                 <Button onClick={saveAlgorithm} className="bg-navy-950 text-white">Save Algorithm Configuration</Button>
               </div>
             </div>
           </div>
           <div className="space-y-6">
-            <div className="bg-sand-50 rounded-2xl border border-sand-200 p-6">
-              <h4 className="font-bold text-navy-950 mb-4 flex items-center gap-2">
+            <div className="bg-sand-50 dark:bg-zinc-950 rounded-2xl border border-sand-200 dark:border-zinc-800 p-6">
+              <h4 className="font-bold text-navy-950 dark:text-white mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-600" /> Ranking Analytics
               </h4>
               <div className="space-y-4">
-                <div className="bg-white p-4 rounded-xl border border-sand-100">
-                  <p className="text-xs text-navy-950/50 font-bold uppercase tracking-widest mb-1">Top Searched Term</p>
-                  <p className="text-xl font-bold text-navy-950">"Luxury Pool Villa"</p>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-sand-100 dark:border-zinc-800/50">
+                  <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400 font-bold uppercase tracking-widest mb-1">Top Searched Term</p>
+                  <p className="text-xl font-bold text-navy-950 dark:text-white">"Luxury Pool Villa"</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-sand-100">
-                  <p className="text-xs text-navy-950/50 font-bold uppercase tracking-widest mb-1">Conversion Rate</p>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-sand-100 dark:border-zinc-800/50">
+                  <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400 font-bold uppercase tracking-widest mb-1">Conversion Rate</p>
                   <p className="text-xl font-bold text-emerald-600">8.4% <span className="text-xs text-emerald-600/50 ml-1">+1.2%</span></p>
                 </div>
               </div>
@@ -92,29 +92,29 @@ const SearchRankingModule = () => {
       )}
 
       {activeTab === 'manual' && (
-        <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
-          <div className="p-6 border-b border-sand-100 bg-sand-50/50 flex justify-between items-center">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-sand-200 dark:border-zinc-800 overflow-hidden">
+          <div className="p-6 border-b border-sand-100 dark:border-zinc-800/50 bg-sand-50 dark:bg-zinc-950/50 flex justify-between items-center">
             <div>
-              <h4 className="font-bold text-navy-950">Manual Search Priority</h4>
-              <p className="text-xs text-navy-950/60 mt-1">Drag and drop to override algorithm ranking for top spots.</p>
+              <h4 className="font-bold text-navy-950 dark:text-white">Manual Search Priority</h4>
+              <p className="text-xs text-navy-950 dark:text-white/60 dark:text-zinc-400 mt-1">Drag and drop to override algorithm ranking for top spots.</p>
             </div>
             <Button onClick={saveOrdering} className="bg-gold-500 text-white hover:bg-gold-600">Save Ordering</Button>
           </div>
           <div className="p-4 space-y-2">
             {manualPriorityList.map((resort, idx) => (
-              <div key={resort.id} className="flex items-center gap-4 p-4 bg-white border border-sand-200 rounded-xl hover:border-gold-300 hover:shadow-md transition-all cursor-move group">
+              <div key={resort.id} className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl hover:border-gold-300 hover:shadow-md transition-all cursor-move group">
                 <GripVertical className="w-5 h-5 text-sand-400 group-hover:text-gold-500" />
                 <div className="w-8 h-8 rounded-full bg-navy-950 text-white flex items-center justify-center font-bold text-xs">
                   #{idx + 1}
                 </div>
                 <div className="flex-1">
-                  <h5 className="font-bold text-navy-950">{resort.name}</h5>
-                  <p className="text-xs text-navy-950/50">{resort.type}</p>
+                  <h5 className="font-bold text-navy-950 dark:text-white">{resort.name}</h5>
+                  <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">{resort.type}</p>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-navy-950/50 uppercase tracking-widest">Search Score</p>
-                    <p className="font-bold text-navy-950 font-mono">{resort.score}</p>
+                    <p className="text-[10px] font-bold text-navy-950 dark:text-white/50 dark:text-zinc-400 uppercase tracking-widest">Search Score</p>
+                    <p className="font-bold text-navy-950 dark:text-white font-mono">{resort.score}</p>
                   </div>
                   {resort.trend === 'up' ? (
                     <ArrowUpCircle className="w-5 h-5 text-emerald-500" />
@@ -124,7 +124,7 @@ const SearchRankingModule = () => {
                 </div>
               </div>
             ))}
-            <div className="p-6 text-center border-2 border-dashed border-sand-200 rounded-xl text-navy-950/40 text-sm font-semibold">
+            <div className="p-6 text-center border-2 border-dashed border-sand-200 dark:border-zinc-800 rounded-xl text-navy-950 dark:text-white/40 dark:text-zinc-500 text-sm font-semibold">
               Algorithm continues ranking from spot #5...
             </div>
           </div>

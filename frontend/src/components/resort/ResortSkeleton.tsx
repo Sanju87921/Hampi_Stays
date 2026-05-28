@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 
 export function ResortCardSkeleton() {
   return (
-    <div className="bg-white rounded-[2.5rem] border border-sand-100 overflow-hidden shadow-sm flex flex-col">
-      <div className="relative h-72 w-full bg-sand-100 overflow-hidden">
+    <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-sand-100 dark:border-zinc-800/50 overflow-hidden shadow-sm flex flex-col">
+      <div className="relative h-72 w-full bg-sand-100 dark:bg-zinc-800/50 overflow-hidden">
         <motion.div
           animate={{
             x: ["-100%", "100%"],
@@ -18,18 +18,18 @@ export function ResortCardSkeleton() {
       </div>
       <div className="p-8 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="h-4 w-24 bg-sand-100 rounded-full" />
-          <div className="h-4 w-12 bg-sand-100 rounded-full" />
+          <div className="h-4 w-24 bg-sand-100 dark:bg-zinc-800/50 rounded-full" />
+          <div className="h-4 w-12 bg-sand-100 dark:bg-zinc-800/50 rounded-full" />
         </div>
-        <div className="h-8 w-3/4 bg-sand-100 rounded-lg" />
-        <div className="h-4 w-full bg-sand-100 rounded-md" />
-        <div className="h-4 w-2/3 bg-sand-100 rounded-md" />
+        <div className="h-8 w-3/4 bg-sand-100 dark:bg-zinc-800/50 rounded-lg" />
+        <div className="h-4 w-full bg-sand-100 dark:bg-zinc-800/50 rounded-md" />
+        <div className="h-4 w-2/3 bg-sand-100 dark:bg-zinc-800/50 rounded-md" />
         <div className="pt-6 flex items-center justify-between border-t border-sand-50">
           <div className="space-y-2">
-            <div className="h-6 w-20 bg-sand-100 rounded-md" />
-            <div className="h-3 w-16 bg-sand-100 rounded-full" />
+            <div className="h-6 w-20 bg-sand-100 dark:bg-zinc-800/50 rounded-md" />
+            <div className="h-3 w-16 bg-sand-100 dark:bg-zinc-800/50 rounded-full" />
           </div>
-          <div className="h-12 w-32 bg-sand-100 rounded-2xl" />
+          <div className="h-12 w-32 bg-sand-100 dark:bg-zinc-800/50 rounded-2xl" />
         </div>
       </div>
     </div>
