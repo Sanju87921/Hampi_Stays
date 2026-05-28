@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { API_BASE_URL } from "../config/api";
 import { apiClient } from "../utils/apiClient";
 import { sanitizePhoneNumber } from "../utils/phone";
@@ -45,7 +45,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerifying, _setIsVerifying] = useState(false);
+  const isVerifyingRef = useRef(false);
+  const setIsVerifying = (val: boolean) => { isVerifyingRef.current = val; _setIsVerifying(val); };
   const [showAuthModal, _setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
   const [authMessage, setAuthMessage] = useState<string | null>(null);
@@ -55,7 +57,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    const handleUnauthorized = () => {
+        const handleUnauthorized = async () => {
+      // Prevent race conditions during app load or existing refresh cycles
+      if (isVerifyingRef.current) return;
+      
+      const token = localStorage.getItem('hampi-token');
+      if (!token) {
+        logout();
+        if (!window.location.pathname.includes('/login')) window.location.href = '/login?expired=true';
+        return;
+      }
+
+      try {
+        setIsVerifying(true);
+        const refreshData = await apiClient.post<any>('/auth/refresh', { token });
+        if (refreshData?.token) {
+          localStorage.setItem("hampi-token", refreshData.token);
+          const data = await apiClient.get<any>('/auth/me', {
+            headers: { 'Authorization': "Bearer " }
+          });
+          if (data?.user) {
+            const sanitized = { ...data.user, phone: sanitizePhoneNumber(data.user.phone) };
+            setUser(sanitized);
+            localStorage.setItem("hampi-user", JSON.stringify(sanitized));
+            setIsVerifying(false);
+            return; // Successfully refreshed! Avoid logout.
+          }
+        }
+      } catch (err) {
+        console.warn("Token refresh failed during unauthorized event", err);
+      }
+      
+      setIsVerifying(false);
       logout();
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login?expired=true';
@@ -294,3 +327,5 @@ export function useAuth() {
   }
   return context;
 }
+
+
