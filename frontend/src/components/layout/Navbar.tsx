@@ -48,7 +48,7 @@ export function Navbar() {
   const isDashboard = location.pathname.startsWith("/dashboard");
 
   const navLinks = isDashboard 
-    ? user?.role === 'GUIDE'
+    ? user?.role?.toUpperCase() === 'GUIDE'
       ? [
           { name: t("navbar.dashboard"), path: "/dashboard" },
           { name: "My Tours", path: "/dashboard?tab=tours" },
@@ -56,7 +56,7 @@ export function Navbar() {
           { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
           { name: "Settings", path: "/dashboard?tab=settings" },
         ]
-      : user?.role === 'TRAVELLER'
+      : user?.role?.toUpperCase() === 'TRAVELLER'
         ? [
             { name: t("navbar.dashboard"), path: "/dashboard" },
             { name: "Book Stays", path: "/resorts" },
@@ -65,7 +65,7 @@ export function Navbar() {
             { name: "Notifications", path: "/dashboard/notifications" },
             { name: t("navbar.profile"), path: "/dashboard/profile" },
           ]
-        : user?.role === 'ADMIN'
+        : user?.role?.toUpperCase() === 'ADMIN'
           ? [
               { name: "Profile", path: "/dashboard?tab=profile" },
               { name: "Settings", path: "/dashboard?tab=settings" },
@@ -102,7 +102,7 @@ export function Navbar() {
                     {/* Logo & Admin Badge */}
           <div className="flex items-center gap-4 flex-1 md:flex-none z-10">
             <Link 
-              to={user?.role === 'RESORT_OWNER' || user?.role === 'ADMIN' ? "/dashboard" : "/"} 
+              to={user?.role?.toUpperCase() === 'RESORT_OWNER' || user?.role?.toUpperCase() === 'ADMIN' ? "/dashboard" : "/"} 
               className="flex items-center justify-center md:justify-start"
             >
               <img 
@@ -119,7 +119,7 @@ export function Navbar() {
                 )}
               />
             </Link>
-            {user?.role === 'ADMIN' && (
+            {user?.role?.toUpperCase() === 'ADMIN' && (
                             <div className={cn(
                 "hidden md:flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all duration-300",
                 isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white/10 text-white border-white/20 backdrop-blur-md"
@@ -311,6 +311,8 @@ export function Navbar() {
     </motion.nav>
   );
 }
+
+
 
 
 

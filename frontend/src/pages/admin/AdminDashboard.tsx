@@ -1961,7 +1961,8 @@ export function AdminDashboard() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
-            {activeTab === "overview" && renderOverview()}
+            <ErrorBoundary>
+              {activeTab === "overview" && renderOverview()}
             {activeTab === "properties" && renderProperties()}
             {activeTab === "content" && <BlogModule />}
             {activeTab === "guides" && renderGuides()}
@@ -2203,4 +2204,5 @@ export function AdminDashboard() {
     </div>
   );
 }
+
 
