@@ -1,3 +1,5 @@
+import { ResortIndexer } from '../../search/indexing/resortIndexer.js';
+import { triggerAlgoliaSync } from '../../search/indexing/sync.js';
 import { Resend } from "resend";
 import { logSecureError, logSecureWarn, logSecureInfo } from "../../logging/logger.js";
 import { decryptGuide, decryptUser, generateSignedKycUrlWorker, verifySignedKycUrlWorker, runKycFraudCheckWorker, decrypt } from "../../utils/cryptoEngine.js";
@@ -855,3 +857,11 @@ export const getAdminStats = async (c) => {\n  const getPrisma = c.get("getPrism
     return c.json(settings);
   } catch (err) { return c.json({ error: err.message }, 500); }
 };\n\n
+export const syncAlgoliaSearch = async (c) => {
+  const result = await triggerAlgoliaSync(c.env);
+  if (result.success) {
+    return c.json({ message: `Successfully synced ${result.count} resorts to Algolia` });
+  } else {
+    return c.json({ error: result.error }, 500);
+  }
+};
