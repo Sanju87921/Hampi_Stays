@@ -11,8 +11,8 @@ export const initSentry = () => {
   Sentry.init({
     dsn,
     integrations: [
-      new Sentry.BrowserTracing(),
-      new Sentry.Replay(),
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
     ],
     // Performance Monitoring
     tracesSampleRate: 1.0, 

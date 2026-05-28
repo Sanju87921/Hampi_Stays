@@ -21,6 +21,9 @@ import appleSignin from 'apple-signin-auth';
 import crypto from 'crypto';
 import { setupBookingRoutes } from "./routes/bookings/index.js";
 import { setupAuthRoutes } from "./routes/auth/index.js";
+import { setupCouponRoutes } from "./routes/coupons/index.js";
+import { setupReferralRoutes } from "./routes/referrals/index.js";
+
 import { Resend } from 'resend';
 import { validateCouponCode } from './utils/couponEngine.js';
 import { 
@@ -188,6 +191,9 @@ app.use('/upload/signature', async (c, next) => { if (c.req.method === 'OPTIONS'
 
 
 // --- Routes ---
+
+setupCouponRoutes(app, authMiddleware, adminMiddleware);
+setupReferralRoutes(app, authMiddleware);
 
 app.get('/health', (c) => {
   const key = c.env.ENCRYPTION_KEY;

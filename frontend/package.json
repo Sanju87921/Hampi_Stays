@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",
+    "@sentry/react": "^10.54.0",
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/react-query": "^5.100.10",
     "@types/leaflet": "^1.9.21",
@@ -27,6 +28,7 @@
     "jspdf-autotable": "^5.0.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
+    "posthog-js": "^1.376.3",
     "qrcode": "^1.5.4",
     "react": "^19.2.5",
     "react-apple-signin-auth": "^1.1.2",
