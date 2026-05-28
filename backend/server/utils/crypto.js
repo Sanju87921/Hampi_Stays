@@ -34,9 +34,8 @@ function getKey(customKey) {
     throw new Error('ENCRYPTION_KEY must be set in production');
   }
 
-  // Stable, deterministic 32-byte development key matching .env for seamless local/cloud sync
-  keyCache = Buffer.from('15193fa55735bb1bae85abf1eba39e815e6c5fd4ba2fbc633b438738faf0511f', 'hex');
-  return keyCache;
+  // Fallback requires env key
+  throw new Error('ENCRYPTION_KEY must be set in environment variables');
 }
 
 /**
@@ -157,7 +156,8 @@ export function sanitizePhoneNumber(phone) {
  */
 export function generateSignedKycUrl(guideId) {
   const expires = Math.floor(Date.now() / 1000) + 300; // 5 minutes validity
-  const secret = process.env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
+  const secret = process.env.JWT_SECRET || (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production' ? 'dev_jwt_secret_fallback' : null);
+  if (!secret) throw new Error('JWT_SECRET is missing');
   const dataToSign = `${guideId}:${expires}`;
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(dataToSign);
@@ -172,7 +172,8 @@ export function verifySignedKycUrl(guideId, expires, token) {
   if (Math.floor(Date.now() / 1000) > parseInt(expires)) {
     return false;
   }
-  const secret = process.env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
+  const secret = process.env.JWT_SECRET || (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production' ? 'dev_jwt_secret_fallback' : null);
+  if (!secret) throw new Error('JWT_SECRET is missing');
   const dataToSign = `${guideId}:${expires}`;
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(dataToSign);
