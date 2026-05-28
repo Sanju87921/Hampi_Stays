@@ -22,7 +22,7 @@ export const MetaTags = ({
   canonicalUrl,
   noindex = false
 }: MetaTagsProps) => {
-  const fullTitle = \`\${title} | HampiStays\`;
+  const fullTitle = `${title} | HampiStays`;
 
   return (
     <Helmet>

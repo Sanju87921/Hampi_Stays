@@ -35,7 +35,7 @@ export const generateGeoMetadata = (categorySlug) => {
   };
 
   return metaMap[categorySlug] || {
-    title: \`Best Stays for \${categorySlug.replace(/-/g, ' ')} | HampiStays\`,
+    title: `Best Stays for ${categorySlug.replace(/-/g, ' ')} | HampiStays`,
     description: 'Find your perfect accommodation in Hampi.',
     h1: categorySlug.replace(/-/g, ' ').toUpperCase(),
     faqs: []
