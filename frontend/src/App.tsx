@@ -37,6 +37,8 @@ const DashboardSelector = lazy(() => import("./components/shared/DashboardSelect
 const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
 const CurationDashboard = lazy(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
+const AdminProfilePage = lazy(() => import("./pages/admin/AdminProfilePage").then(m => ({ default: m.AdminProfilePage })));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
@@ -218,6 +220,22 @@ function AnimatedRoutes() {
                 }
               />
               <Route
+                path="/admin/profile"
+                element={
+                  <ProtectedRoute>
+                    <AdminProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute>
+                    <AdminSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/curation"
                 element={
                   <ProtectedRoute>
@@ -305,6 +323,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

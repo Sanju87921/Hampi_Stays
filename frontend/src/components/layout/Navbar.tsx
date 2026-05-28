@@ -67,8 +67,8 @@ export function Navbar() {
           ]
         : user?.role?.toUpperCase() === 'ADMIN'
           ? [
-              { name: "Profile", path: "/dashboard?tab=profile" },
-              { name: "Settings", path: "/dashboard?tab=settings" },
+              { name: "Profile", path: "/admin/profile" },
+              { name: "Settings", path: "/admin/settings" },
             ]
           : [
             { name: t("navbar.dashboard"), path: "/dashboard" },
