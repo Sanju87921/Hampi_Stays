@@ -149,15 +149,6 @@ export function Navbar() {
               <LanguageSwitcher />
               {isAuthenticated ? (
                 <div className="flex items-center gap-6">
-                  <Link
-                    to="/dashboard"
-                    className={cn(
-                      "text-[12px] uppercase tracking-[0.15em] font-bold transition-all duration-300 hover:text-gold-500",
-                      isScrolled ? "text-navy-950" : "text-gold-400"
-                    )}
-                  >
-                    Dashboard
-                  </Link>
                   <button
                     onClick={logout}
                     className={cn(
@@ -282,16 +273,15 @@ export function Navbar() {
                     </button>
                   </>
                 ) : (
-                  <Button 
-                    size="lg" 
-                    className="w-full h-14 sm:h-16 rounded-2xl border-none shadow-gold text-sm"
+                  <button
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      navigate("/dashboard");
+                      logout();
                     }}
+                    className="w-full h-14 sm:h-16 rounded-2xl border border-navy-200 text-navy-950 font-bold text-sm uppercase tracking-[0.15em] hover:bg-navy-950 hover:text-white transition-all duration-300"
                   >
-                    Go to Dashboard
-                  </Button>
+                    Logout
+                  </button>
                 )}
               </div>
             </div>
