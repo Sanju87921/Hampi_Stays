@@ -26,6 +26,7 @@ import { setupReferralRoutes } from "./routes/referrals/index.js";
 import { setupSeoRoutes } from "./routes/seo/index.js";
 import { setupContentRoutes } from "./routes/content/index.js";
 import { setupCurationRoutes } from "./routes/curation/index.js";
+import { setupAdminRoutes } from "./routes/admin/index.js";
 
 
 
@@ -207,6 +208,7 @@ setupReferralRoutes(app, authMiddleware);
 setupSeoRoutes(app);
 setupContentRoutes(app, authMiddleware, adminMiddleware);
 setupCurationRoutes(app, authMiddleware, adminMiddleware);
+setupAdminRoutes(app, authMiddleware, adminMiddleware);
 app.route('/auth', setupAuthRoutes(authMiddleware));
 
 app.get('/health', (c) => {
