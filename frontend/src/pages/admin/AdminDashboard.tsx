@@ -5,16 +5,16 @@ import {
   ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
   TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
-  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX
+  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
-import { UserManagement } from "./components/UserManagement";
+import { BlogModule } from "./BlogModule";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
   if (!idImage) return "";
@@ -1926,6 +1926,7 @@ export function AdminDashboard() {
             {[
               { id: "overview", label: "Overview", icon: LayoutDashboard },
               { id: "properties", label: "Properties", icon: Building2 },
+              { id: "content", label: "Blog Content", icon: FileText },
               { id: "guides", label: "Guides", icon: Award },
               { id: "users", label: "Users", icon: Users },
               { id: "bookings", label: "Bookings", icon: CalendarDays },
@@ -1962,6 +1963,7 @@ export function AdminDashboard() {
           >
             {activeTab === "overview" && renderOverview()}
             {activeTab === "properties" && renderProperties()}
+            {activeTab === "content" && <BlogModule />}
             {activeTab === "guides" && renderGuides()}
             {activeTab === "users" && <UserManagement />}
             {activeTab === "bookings" && renderBookings()}
