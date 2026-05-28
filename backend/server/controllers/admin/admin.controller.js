@@ -31,7 +31,9 @@ export const getAdminStats = async (c) => {
       avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const getAdminUsers = async (c) => {
+};
+
+export const getAdminUsers = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const role = c.req.query('role');
@@ -95,7 +97,9 @@ export const getAdminStats = async (c) => {
       totalPages: Math.ceil(totalCount / limit)
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const deleteAdminUser = async (c) => {
+};
+
+export const deleteAdminUser = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -103,7 +107,9 @@ export const getAdminStats = async (c) => {
     await prisma.user.delete({ where: { id } });
     return c.json({ success: true });
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const getPendingResorts = async (c) => {
+};
+
+export const getPendingResorts = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -159,7 +165,9 @@ export const getAdminStats = async (c) => {
 
     return c.json(mappedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const getActiveResorts = async (c) => {
+};
+
+export const getActiveResorts = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -215,7 +223,9 @@ export const getAdminStats = async (c) => {
 
     return c.json(mappedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateResortStatus = async (c) => {
+};
+
+export const updateResortStatus = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -224,7 +234,9 @@ export const getAdminStats = async (c) => {
     const resort = await prisma.resort.update({ where: { id }, data: { status } });
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateResortCommission = async (c) => {
+};
+
+export const updateResortCommission = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -233,7 +245,9 @@ export const getAdminStats = async (c) => {
     const resort = await prisma.resort.update({ where: { id }, data: { commissionRate } });
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateResortFeature = async (c) => {
+};
+
+export const updateResortFeature = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -242,7 +256,9 @@ export const getAdminStats = async (c) => {
     const resort = await prisma.resort.update({ where: { id }, data: { isFeatured } });
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const getAdminGuides = async (c) => {
+};
+
+export const getAdminGuides = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -265,7 +281,9 @@ export const getAdminStats = async (c) => {
 
     return c.json(decryptedGuides);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateGuideStatus = async (c) => {
+};
+
+export const updateGuideStatus = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -440,7 +458,9 @@ export const getAdminStats = async (c) => {
     }
     return c.json(decryptedGuide);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const getKycImage = async (c) => {
+};
+
+export const getKycImage = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -473,7 +493,9 @@ export const getAdminStats = async (c) => {
   }
 
   return c.redirect(redirectUrl);
-};\n\nexport const getAuditLogs = async (c) => {
+};
+
+export const getAuditLogs = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -482,7 +504,9 @@ export const getAdminStats = async (c) => {
     });
     return c.json(logs);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const toggleGuideActive = async (c) => {
+};
+
+export const toggleGuideActive = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -491,7 +515,11 @@ export const getAdminStats = async (c) => {
     const guide = await prisma.guideProfile.update({ where: { id }, data: { isActive } });
     return c.json(guide);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\n};\n\nexport const getFlaggedReviews = async (c) => {
+};
+
+};
+
+export const getFlaggedReviews = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
@@ -671,7 +699,9 @@ export const getAdminStats = async (c) => {
     }
     return c.json({ error: err.message }, 500); 
   }
-};\n\nexport const getCoupons = async (c) => {
+};
+
+export const getCoupons = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -680,7 +710,9 @@ export const getAdminStats = async (c) => {
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const createCoupon = async (c) => {
+};
+
+export const createCoupon = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -726,7 +758,9 @@ export const getAdminStats = async (c) => {
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const toggleCoupon = async (c) => {
+};
+
+export const toggleCoupon = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -737,7 +771,9 @@ export const getAdminStats = async (c) => {
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const deleteCoupon = async (c) => {
+};
+
+export const deleteCoupon = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -747,7 +783,9 @@ export const getAdminStats = async (c) => {
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const getCouponAnalytics = async (c) => {
+};
+
+export const getCouponAnalytics = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   try {
@@ -779,7 +817,9 @@ export const getAdminStats = async (c) => {
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const getHeroSlides = async (c) => {
+};
+
+export const getHeroSlides = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const includeAll = c.req.query('all') === 'true';
@@ -799,7 +839,9 @@ export const getAdminStats = async (c) => {
     console.error('[HeroSlides] GET error:', err.message);
     return c.json({ error: err.message }, 500);
   }
-};\n\nexport const createHeroSlide = async (c) => {
+};
+
+export const createHeroSlide = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
@@ -807,7 +849,9 @@ export const getAdminStats = async (c) => {
     const slide = await prisma.homepageHero.create({ data });
     return c.json(slide);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateHeroSlide = async (c) => {
+};
+
+export const updateHeroSlide = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -816,7 +860,9 @@ export const getAdminStats = async (c) => {
     const slide = await prisma.homepageHero.update({ where: { id }, data });
     return c.json(slide);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const deleteHeroSlide = async (c) => {
+};
+
+export const deleteHeroSlide = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -824,7 +870,9 @@ export const getAdminStats = async (c) => {
     await prisma.homepageHero.delete({ where: { id } });
     return c.json({ success: true });
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const reorderHeroSlides = async (c) => {
+};
+
+export const reorderHeroSlides = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const { ids } = await c.req.json();
@@ -836,7 +884,9 @@ export const getAdminStats = async (c) => {
     await prisma.$transaction(queries);
     return c.json({ success: true });
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\nexport const updateSettings = async (c) => {
+};
+
+export const updateSettings = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const { guideServiceEnabled, defaultCommissionRate, requireOtpForSignup } = await c.req.json();
@@ -881,7 +931,9 @@ export const getAdminStats = async (c) => {
 
     return c.json(settings);
   } catch (err) { return c.json({ error: err.message }, 500); }
-};\n\n
+};
+
+
 export const syncAlgoliaSearch = async (c) => {
   const result = await triggerAlgoliaSync(c.env);
   if (result.success) {
