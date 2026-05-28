@@ -13,6 +13,8 @@ import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
 import { BlogModule } from "./BlogModule";
+import { UserManagement } from "./components/UserManagement";
+import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 
 type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content";
 
@@ -2204,6 +2206,7 @@ export function AdminDashboard() {
     </div>
   );
 }
+
 
 
 
