@@ -1974,6 +1974,7 @@ export function AdminDashboard() {
             {activeTab === "reviews" && renderReviews()}
             {activeTab === "commissions" && renderCommissions()}
             {activeTab === "audit-logs" && renderAuditLogs()}
+            </ErrorBoundary>
           </motion.div>
         )}
       </div>
@@ -2202,3 +2203,4 @@ export function AdminDashboard() {
     </div>
   );
 }
+

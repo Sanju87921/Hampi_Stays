@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 
 type Role = 'TRAVELLER' | 'RESORT_OWNER' | 'GUIDE' | 'ADMIN';
 
+import { ErrorBoundary } from '../../../components/shared/ErrorBoundary';
+
 export function UserManagement() {
   const [activeRole, setActiveRole] = useState<Role>('TRAVELLER');
   const [users, setUsers] = useState<any[]>([]);
@@ -64,6 +66,7 @@ export function UserManagement() {
   ];
 
   return (
+    <ErrorBoundary>
     <div className="space-y-6">
       {/* Top Header & Analytics */}
       <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -138,20 +141,21 @@ export function UserManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-sand-100">
-                {users.map(user => (
-                  <tr key={user.id} className="hover:bg-sand-50/30 transition-colors group">
+                {Array.isArray(users) && users.map(user => (
+                  user ? (
+                  <tr key={user?.id} className="hover:bg-sand-50/30 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gold-100 text-gold-700 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
-                          {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : (user.name ? user.name[0] : '?')}
+                          {user?.avatar ? <img src={user?.avatar} className="w-full h-full object-cover" /> : (user?.name ? user?.name[0] : '?')}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-navy-950 flex items-center gap-2">
-                            {user.name}
-                            {user.role === 'ADMIN' && <Shield className="w-3 h-3 text-red-500" />}
+                            {user?.name}
+                            {user?.role === 'ADMIN' && <Shield className="w-3 h-3 text-red-500" />}
                           </p>
-                          <p className="text-xs text-navy-950/60 mt-0.5">{user.email}</p>
-                          <p className="text-[10px] text-navy-950/40 mt-1 uppercase tracking-wider">Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-navy-950/60 mt-0.5">{user?.email}</p>
+                          <p className="text-[10px] text-navy-950/40 mt-1 uppercase tracking-wider">Joined: {new Date(user?.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </td>
@@ -159,24 +163,24 @@ export function UserManagement() {
                       {activeRole === 'TRAVELLER' && (
                         <div className="flex gap-4 text-xs font-bold text-navy-950/60">
                           <div className="bg-sand-100 px-3 py-1.5 rounded-lg text-center">
-                            <p className="text-navy-950 text-base">{user._count?.bookings || 0}</p>
+                            <p className="text-navy-950 text-base">{user?._count?.bookings || 0}</p>
                             <p className="text-[9px] uppercase tracking-wider">Bookings</p>
                           </div>
                           <div className="bg-sand-100 px-3 py-1.5 rounded-lg text-center">
-                            <p className="text-navy-950 text-base">{user._count?.wishlist || 0}</p>
+                            <p className="text-navy-950 text-base">{user?._count?.wishlist || 0}</p>
                             <p className="text-[9px] uppercase tracking-wider">Wishlist</p>
                           </div>
                         </div>
                       )}
                       {activeRole === 'RESORT_OWNER' && (
                         <div>
-                          <p className="text-sm font-bold text-navy-950">{user.ownerProfile?.businessName || 'No Company Name'}</p>
+                          <p className="text-sm font-bold text-navy-950">{user?.ownerProfile?.businessName || 'No Company Name'}</p>
                           <div className="flex items-center gap-3 mt-1.5">
                             <span className="text-[10px] font-bold text-navy-950/60 bg-sand-100 px-2 py-0.5 rounded-md">
-                              {user.ownerProfile?._count?.resorts || 0} Resorts
+                              {user?.ownerProfile?._count?.resorts || 0} Resorts
                             </span>
                             <span className="text-[10px] font-bold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-md">
-                              {user.ownerProfile?.commissionRate || 7}% Comm.
+                              {user?.ownerProfile?.commissionRate || 7}% Comm.
                             </span>
                           </div>
                         </div>
@@ -184,10 +188,10 @@ export function UserManagement() {
                       {activeRole === 'GUIDE' && (
                         <div>
                           <p className="text-xs text-navy-950/60 font-bold mb-1">
-                            {user.guideProfile?.specialties?.[0] || 'General Guide'}
+                            {user?.guideProfile?.specialties?.[0] || 'General Guide'}
                           </p>
                           <div className="flex gap-1 flex-wrap">
-                            {(user.guideProfile?.languages || []).slice(0, 3).map((l: string) => (
+                            {(user?.guideProfile?.languages || []).slice(0, 3).map((l: string) => (
                               <span key={l} className="text-[9px] bg-navy-50 text-navy-700 px-1.5 py-0.5 rounded border border-navy-100 uppercase tracking-widest">{l}</span>
                             ))}
                           </div>
@@ -201,7 +205,7 @@ export function UserManagement() {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-2">
-                        {user.deletedAt ? (
+                        {user?.deletedAt ? (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-red-600">
                             <XCircle className="w-3 h-3" /> SUSPENDED
                           </span>
@@ -210,7 +214,7 @@ export function UserManagement() {
                             <CheckCircle className="w-3 h-3" /> ACTIVE
                           </span>
                         )}
-                        {(user.verifiedEmail || user.isEmailVerified) ? (
+                        {(user?.verifiedEmail || user?.isEmailVerified) ? (
                           <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600">
                             <Shield className="w-3 h-3" /> VERIFIED
                           </span>
@@ -226,14 +230,15 @@ export function UserManagement() {
                         <Button 
                           variant="outline" 
                           className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteUser(user.id, user.name)}
-                          isLoading={processingId === user.id}
+                          onClick={() => handleDeleteUser(user?.id, user?.name)}
+                          isLoading={processingId === user?.id}
                         >
                           Delete
                         </Button>
                       </div>
                     </td>
                   </tr>
+                  ) : null
                 ))}
               </tbody>
             </table>
@@ -268,5 +273,7 @@ export function UserManagement() {
         )}
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
+
