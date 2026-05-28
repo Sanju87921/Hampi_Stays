@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2 } from 'lucide-react';
+import { Globe, Bell, ShieldAlert, Sliders, Check, Loader2 } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -96,29 +96,7 @@ export function AdminSettingsPage() {
                 </select>
                 {isUpdatingLanguage && <Loader2 className="w-4 h-4 animate-spin text-navy-950  absolute top-10 right-3" />}
               </div>
-              
-              <div className="space-y-3 relative">
-                <label className="text-sm font-bold text-navy-950  flex items-center">
-                  <Moon className="w-4 h-4 mr-2 text-navy-950  " />
-                  Dashboard Theme
-                </label>
-                <div className={`flex bg-sand-50  p-1 rounded-xl border border-sand-200  transition-colors ${isUpdatingTheme ? 'opacity-50 pointer-events-none' : ''}`}>
-                  {['light', 'dark', 'system'].map((t) => (
-                    <button 
-                      key={t}
-                      onClick={() => updatePreference('theme', t)}
-                      className={`flex-1 py-2 text-sm font-bold capitalize transition-colors rounded-lg ${
-                        theme === t
-                          ? 'bg-white  text-navy-950  shadow-sm' 
-                          : 'text-navy-950   hover:text-navy-950 :text-white'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                {isUpdatingTheme && <Loader2 className="w-4 h-4 animate-spin text-navy-950  absolute top-10 -right-2" />}
-              </div>
+
             </div>
           </motion.div>
 
