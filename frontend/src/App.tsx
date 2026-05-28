@@ -43,6 +43,8 @@ const AdminProfilePage = lazyWithRetry(() => import("./pages/admin/AdminProfileP
 const AdminSettingsPage = lazyWithRetry(() => import("./pages/admin/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import { AuthModal } from "./components/auth/AuthModal";
 import { useAuth } from "./context/AuthContext";
 import { useSystem } from "./context/SystemContext";
 
