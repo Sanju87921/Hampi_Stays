@@ -1,120 +1,70 @@
 const fs = require('fs');
 const path = require('path');
 
-// Strategy: restore the STATIC luxury values that the dark: classes used to provide.
-// The admin was always dark-navy themed - these were not light/dark alternates,
-// they were the ONLY styling. We restore them as permanent static values.
-
-const FILE_REPLACEMENTS = {
-  'frontend/src/components/layout/Navbar.tsx': [
-    // Administrator badge - transparent glass when not scrolled
-    [
-      `isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white  text-white border-white/20 backdrop-blur-md"`,
-      `isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white/10 text-white border-white/20 backdrop-blur-md"`
-    ],
-    // Mobile menu backdrop
-    [
-      `"absolute top-full left-0 right-0 bg-sand-50  backdrop-blur-2xl shadow-luxury border-t border-sand-200  flex flex-col md:hidden overflow-hidden"`,
-      `"absolute top-full left-0 right-0 bg-sand-50/95 backdrop-blur-2xl shadow-luxury border-t border-sand-200 flex flex-col md:hidden overflow-hidden"`
-    ],
-    // Logout button - unscrolled
-    [
-      `": "border-white/20 text-white hover:bg-white "`,
-      `": "border-white/20 text-white hover:bg-white/10"`
-    ],
-    // Book Now button - unscrolled
-    [
-      `": "bg-gold-500 text-navy-950  hover:bg-white  hover:text-navy-950  shadow-2xl shadow-gold-500/20"`,
-      `": "bg-gold-500 text-navy-950 hover:bg-white/90 hover:text-navy-950 shadow-2xl shadow-gold-500/20"`
-    ],
-  ],
-
-  'frontend/src/pages/admin/AdminDashboard.tsx': [
-    // Command center buttons (Verify Payouts, Newsletter, Reviews) — white/translucent on navy
-    [
-      `"w-full bg-white  hover:bg-white  border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"`,
-      `"w-full bg-white/10 hover:bg-white/20 border border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"`
-    ],
-    [
-      `"w-full bg-white  hover:bg-white  border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"`,
-      `"w-full bg-white/10 hover:bg-white/20 border border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"`
-    ],
-  ],
-};
-
-// Generic global replacements across ALL admin files
-const GLOBAL_REPLACEMENTS = [
-  // bg-zinc-900 → bg-navy-950 (primary dark luxury surface)
-  [/\bbg-zinc-900\b/g, 'bg-navy-950'],
-  // bg-zinc-950 → bg-navy-950 (deepest surface)
-  [/\bbg-zinc-950\b/g, 'bg-navy-950'],
-  // bg-zinc-800 → bg-navy-800 (card surface)
-  [/\bbg-zinc-800\b/g, 'bg-navy-800'],
-  // border-zinc-800 → border-navy-800
-  [/\bborder-zinc-800\b/g, 'border-navy-800'],
-  // border-zinc-700 → border-navy-700
-  [/\bborder-zinc-700\b/g, 'border-navy-700'],
-  // text-zinc-400 → text-sand-300
-  [/\btext-zinc-400\b/g, 'text-sand-300'],
-  // text-zinc-300 → text-sand-200
-  [/\btext-zinc-300\b/g, 'text-sand-200'],
-  // text-zinc-500 → text-navy-400
-  [/\btext-zinc-500\b/g, 'text-navy-400'],
-  // text-zinc-600 → text-navy-500  
-  [/\btext-zinc-600\b/g, 'text-navy-500'],
-];
-
-const ADMIN_DIRS = [
-  'frontend/src/pages/admin',
-  'frontend/src/components/admin',
-  'frontend/src/components/layout/Navbar.tsx',
+// Mapping: dark zinc/black backgrounds → luxury sand/white equivalents
+const luxuryReplacements = [
+  // Backgrounds
+  [/\bbg-zinc-950\b/g,   'bg-sand-50'],
+  [/\bbg-zinc-900\b/g,   'bg-white'],
+  [/\bbg-zinc-800\b/g,   'bg-sand-100'],
+  [/\bbg-zinc-800\/50\b/g, 'bg-sand-100/50'],
+  [/\bbg-zinc-700\b/g,   'bg-sand-200'],
+  [/\bbg-black\b/g,      'bg-sand-50'],
+  // Borders
+  [/\bborder-zinc-800\b/g,    'border-sand-200'],
+  [/\bborder-zinc-800\/50\b/g,'border-sand-200/50'],
+  [/\bborder-zinc-700\b/g,    'border-sand-200'],
+  // Text
+  [/\btext-zinc-400\b/g,  'text-navy-950/60'],
+  [/\btext-zinc-500\b/g,  'text-navy-950/50'],
+  [/\btext-zinc-300\b/g,  'text-navy-950/70'],
+  [/\btext-zinc-200\b/g,  'text-navy-950/80'],
+  // Hover backgrounds
+  [/\bhover:bg-zinc-800\b/g,     'hover:bg-sand-100'],
+  [/\bhover:bg-zinc-700\b/g,     'hover:bg-sand-200'],
+  [/\bhover:bg-zinc-900\/50\b/g, 'hover:bg-sand-50'],
 ];
 
 function processFile(filePath) {
-  if (!fs.existsSync(filePath)) return;
   let content = fs.readFileSync(filePath, 'utf8');
   let modified = false;
 
-  // File-specific replacements
-  const fileKey = filePath.replace(/\\/g, '/');
-  if (FILE_REPLACEMENTS[fileKey]) {
-    for (const [from, to] of FILE_REPLACEMENTS[fileKey]) {
-      if (content.includes(from)) {
-        content = content.split(from).join(to);
-        modified = true;
-      }
-    }
+  // Step 1: Remove ALL dark: prefixed Tailwind classes (fixed regex bug)
+  const cleaned = content.replace(/(?:hover:|focus:|active:|group-hover:)?dark:[a-zA-Z0-9\-\/\[\]\.\%]+/g, '');
+  if (cleaned !== content) {
+    content = cleaned;
+    modified = true;
   }
 
-  // Global replacements only for admin files
-  for (const [pattern, replacement] of GLOBAL_REPLACEMENTS) {
-    if (pattern.test(content)) {
-      content = content.replace(pattern, replacement);
+  // Step 2: Replace remaining zinc/dark backgrounds with luxury equivalents
+  for (const [pattern, replacement] of luxuryReplacements) {
+    const next = content.replace(pattern, replacement);
+    if (next !== content) {
+      content = next;
       modified = true;
     }
   }
 
+  // Step 3: Clean up double spaces in className strings
+  content = content.replace(/ {2,}/g, ' ');
+
   if (modified) {
     fs.writeFileSync(filePath, content, 'utf8');
-    console.log(`✅ Restored: ${filePath}`);
+    console.log(`✓ Cleaned: ${path.basename(filePath)}`);
   }
 }
 
-function processDir(dirPath) {
-  if (!fs.existsSync(dirPath)) return;
-  const stat = fs.statSync(dirPath);
-  if (stat.isFile()) {
-    processFile(dirPath);
-    return;
-  }
-  const entries = fs.readdirSync(dirPath);
+function processDir(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
-    processDir(path.join(dirPath, entry));
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      processDir(fullPath);
+    } else if (/\.(tsx|ts|css)$/.test(entry.name)) {
+      processFile(fullPath);
+    }
   }
 }
 
-for (const target of ADMIN_DIRS) {
-  processDir(target);
-}
-
-console.log('\n✅ Luxury admin styling restored.');
+processDir(path.join(__dirname, 'frontend/src'));
+console.log('\n✅ Admin luxury theme restoration complete.');
