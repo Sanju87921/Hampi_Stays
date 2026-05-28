@@ -37,7 +37,7 @@ export function AdminProfilePage() {
                     <Shield className="w-3 h-3 text-white" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-navy-950 mb-1">{user?.firstName || 'Admin'} {user?.lastName || 'User'}</h2>
+                <h2 className="text-2xl font-bold text-navy-950 mb-1">{user?.name || 'Admin User'}</h2>
                 <p className="text-sm font-medium text-navy-950/50 uppercase tracking-widest mb-6">Operations Console</p>
                 
                 <div className="w-full space-y-4 text-left">
