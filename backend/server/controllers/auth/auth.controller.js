@@ -186,26 +186,9 @@ export const register = async (c) => {
       devOtp: (c.env.NODE_ENV !== 'production' || isTest) ? otp : undefined
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
-// Helper: compute profile completion status based on role and fields
-function computeProfileCompletion(user) {
-  if (!user) return 'INCOMPLETE';
-  const name = user.name && user.name.trim();
-  const email = user.email && user.email.trim();
-  const phone = user.phone && user.phone.trim();
-  const location = user.location && user.location.trim();
-  const avatar = user.avatar && user.avatar.trim();
-  const hasKyc = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
-  if (user.role === 'TRAVELLER') {
-    return (name && email && phone && location && avatar) ? 'COMPLETE' : 'INCOMPLETE';
-  } else if (user.role === 'GUIDE') {
-    return (name && phone && location && avatar && hasKyc) ? 'COMPLETE' : 'INCOMPLETE';
-  } else if (user.role === 'RESORT_OWNER') {
-    return (name && email && phone && location && avatar && hasKyc) ? 'COMPLETE' : 'INCOMPLETE';
-  }
-  return (name && email) ? 'COMPLETE' : 'INCOMPLETE';
-}
+
 
 export const login = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -236,7 +219,7 @@ export const login = async (c) => {
     logSecureError('LOGIN_ERROR', 'Unexpected login error', { email: lowerEmail, error: err });
     return c.json({ error: 'An unexpected security error occurred' }, 500); 
   }
-});
+};
 
 export const getMe = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -251,7 +234,7 @@ export const getMe = async (c) => {
     logSecureError('AUTH_ME_ERROR', 'Failed to retrieve profile in /auth/me', { userId: payload.userId, error: err });
     return c.json({ error: 'An unexpected security error occurred' }, 500); 
   }
-});
+};
 
 export const forgotPassword = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -330,7 +313,7 @@ export const forgotPassword = async (c) => {
       devResetLink: c.env.NODE_ENV !== 'production' ? resetLink : undefined
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
 export const resetPassword = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -390,7 +373,7 @@ export const resetPassword = async (c) => {
       message: 'Your password has been successfully reset. You can now log in with your new password.'
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
 export const googleAuth = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -461,7 +444,7 @@ export const googleAuth = async (c) => {
     logSecureError('GOOGLE_AUTH_ERROR', 'Google OAuth verification failed', { error: err });
     return c.json({ error: 'An unexpected security error occurred during Google Sign-In' }, 500); 
   }
-});
+};
 
 export const appleAuth = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -527,7 +510,7 @@ export const appleAuth = async (c) => {
     logSecureError('APPLE_AUTH_ERROR', 'Apple verification failed', { error: err });
     return c.json({ error: 'An unexpected security error occurred during Apple Sign-In' }, 500); 
   }
-});
+};
 
 export const sendOtp = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -568,7 +551,7 @@ export const sendOtp = async (c) => {
       devOtp: c.env.NODE_ENV !== 'production' ? otp : undefined 
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
 export const sendEmailOtp = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -624,7 +607,7 @@ export const sendEmailOtp = async (c) => {
       devOtp: (c.env.NODE_ENV !== 'production' || isTestAccount) ? otp : undefined 
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
 export const sendMobileOtp = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -685,7 +668,7 @@ export const sendMobileOtp = async (c) => {
       devOtp: (c.env.NODE_ENV !== 'production' || isTestAccount) ? otp : undefined 
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
-});
+};
 
 export const verifyOtp = async (c) => {
   const getPrisma = c.get('getPrisma');

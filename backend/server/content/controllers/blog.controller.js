@@ -1,4 +1,4 @@
-import { getPrisma } from '../../../config/prisma.js';
+import { getPrisma } from '../../config/prisma.js';
 
 export const getBlogPosts = async (c) => {
   const prisma = getPrisma(c.env);

@@ -1,6 +1,6 @@
-import { getPrisma } from '../../../config/prisma.js';
-import { AppError } from '../../../utils/errors/index.js';
-import { logSecureInfo } from '../../../logging/logger.js';
+import { getPrisma } from '../../config/prisma.js';
+import { AppError } from '../../utils/errors/index.js';
+import { logSecureInfo } from '../../logging/logger.js';
 
 export class ReferralService {
   constructor(env) {

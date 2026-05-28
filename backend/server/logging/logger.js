@@ -1,4 +1,4 @@
-import { maskPhoneNumber, maskEmail } from './validation.js';
+import { maskPhoneNumber, maskEmail } from '../utils/validation.js';
 
 /**
  * Enterprise Secure Logger for HampiStays
