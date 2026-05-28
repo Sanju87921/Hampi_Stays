@@ -200,6 +200,7 @@ setupCouponRoutes(app, authMiddleware, adminMiddleware);
 setupReferralRoutes(app, authMiddleware);
 setupSeoRoutes(app);
 setupContentRoutes(app, authMiddleware, adminMiddleware);
+app.route('/auth', setupAuthRoutes(authMiddleware));
 
 app.get('/health', (c) => {
   const key = c.env.ENCRYPTION_KEY;
