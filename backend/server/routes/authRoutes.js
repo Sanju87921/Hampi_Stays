@@ -38,6 +38,7 @@ router.post('/google', authLimiter, authController.googleAuth);
 router.post('/apple', authLimiter, authController.appleAuth);
 router.post('/check-email', authController.checkEmail);
 router.get('/me', authenticate, authController.getMe);
+router.post('/refresh', authController.refreshToken);
 
 // OTP Routes
 router.post('/send-email-otp', otpSendLimiter, otpController.sendEmailOtp);

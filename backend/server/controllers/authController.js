@@ -541,3 +541,30 @@ export const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+
+export const refreshToken = async (req, res, next) => {
+  try {
+    const tokenStr = req.headers.authorization?.split(' ')[1] || req.body.token || req.body.refreshToken;
+    if (!tokenStr) {
+      return res.status(401).json({ error: 'Refresh token required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tokenStr, JWT_SECRET, { ignoreExpiration: true });
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const newToken = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.json({ token: newToken });
+  } catch (error) {
+    next(error);
+  }
+};

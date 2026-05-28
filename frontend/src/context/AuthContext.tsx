@@ -95,7 +95,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (err: any) {
           console.warn("Session verification failed:", err.message);
           if (err.status === 401 || err.status === 403) {
-            logout();
+            try {
+              // Attempt to refresh session
+              const refreshData = await apiClient.post<{ token: string }>('/auth/refresh', { token });
+              if (refreshData?.token) {
+                localStorage.setItem("hampi-token", refreshData.token);
+                const retryData = await apiClient.get<{ user: User }>('/auth/me', {
+                  headers: { 'Authorization': `Bearer ${refreshData.token}` }
+                });
+                if (retryData?.user) {
+                  const sanitized = { ...retryData.user, phone: sanitizePhoneNumber(retryData.user.phone) };
+                  setUser(sanitized);
+                  localStorage.setItem("hampi-user", JSON.stringify(sanitized));
+                  return; // Successfully refreshed
+                }
+              }
+              logout();
+            } catch (refreshErr) {
+              console.warn("Token refresh failed", refreshErr);
+              logout();
+            }
           }
         } finally {
           setIsVerifying(false);
@@ -248,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user, 
       isLoading,
       isVerifying,
-      isAuthenticated: !!user && !isVerifying, 
+      isAuthenticated: !!user,
       login, 
       loginWithOtp,
       loginWithGoogle, 
