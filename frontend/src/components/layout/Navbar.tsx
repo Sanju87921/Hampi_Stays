@@ -45,7 +45,7 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
 
   const navLinks = isDashboard 
     ? user?.role?.toUpperCase() === 'GUIDE'
@@ -102,7 +102,7 @@ export function Navbar() {
                     {/* Logo & Admin Badge */}
           <div className="flex items-center gap-4 flex-1 md:flex-none z-10">
             <Link 
-              to={user?.role?.toUpperCase() === 'RESORT_OWNER' || user?.role?.toUpperCase() === 'ADMIN' ? "/dashboard" : "/"} 
+              to={user?.role?.toUpperCase() === 'ADMIN' ? "/admin" : user?.role?.toUpperCase() === 'RESORT_OWNER' ? "/dashboard" : "/"} 
               className="flex items-center justify-center md:justify-start"
             >
               <img 

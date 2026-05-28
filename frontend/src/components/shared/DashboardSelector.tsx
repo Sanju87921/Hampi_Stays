@@ -1,7 +1,7 @@
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { TravelerDashboard } from "../../pages/traveler/TravelerDashboard";
 import { OwnerDashboard } from "../../pages/owner/OwnerDashboard";
-import { AdminDashboard } from "../../pages/admin/AdminDashboard";
 import { GuideDashboard } from "../../pages/owner/GuideDashboard";
 
 export function DashboardSelector() {
@@ -10,8 +10,10 @@ export function DashboardSelector() {
   // Ensure role check is case-insensitive and robust
   const role = user?.role?.toUpperCase();
 
+  // ADMIN users are redirected to the Admin Gateway landing page
+  // The Command Center (/admin/dashboard) is accessed from there
   if (role === "ADMIN") {
-    return <AdminDashboard />;
+    return <Navigate to="/admin" replace />;
   }
 
   if (role === "RESORT_OWNER") {

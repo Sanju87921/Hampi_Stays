@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 export function Hero() {
   const { scrollY } = useScroll();
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role?.toUpperCase() === "ADMIN";
   const { t } = useTranslation();
 
   const hampiImagesFallback = [
@@ -183,7 +183,7 @@ export function Hero() {
           <motion.div variants={textVariant} className="w-full flex justify-center">
             {isAdmin ? (
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                <Link to="/dashboard">
+                <Link to="/admin/dashboard">
                   <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/20 group">
                     <ShieldCheck className="w-5 h-5" />
                     Enter Command Center
