@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Resend } from 'resend';
-import { logSecureError, logSecureWarn, logSecureInfo } from '../../utils/logger.js';
+import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
 import { validateCouponCode } from '../../utils/couponEngine.js';
 
 export const getUserBookings = async (c) => {

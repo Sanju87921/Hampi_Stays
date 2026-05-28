@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { validateAndCleanEmail } from '../../utils/validation.js';
 import { normalizeUserResponse } from '../../utils/normalizer.js';
-import { logSecureError, logSecureWarn, logSecureInfo } from '../../utils/logger.js';
+import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 

@@ -1,13 +1,20 @@
+
+import { getPrisma } from './config/prisma.js';
+import { securityMiddleware } from './middleware/security.middleware.js';
+import { authMiddleware } from './middleware/auth.middleware.js';
+import { adminMiddleware } from './middleware/admin.middleware.js';
+import { globalLimiter, authLimiter, otpLimiter, bookingLimiter, uploadLimiter } from './middleware/rateLimiter.middleware.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
+import { loggingMiddleware } from './middleware/logging.middleware.js';
+import { globalErrorHandler } from './middleware/errorHandler.middleware.js';
 import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { encrypt, decrypt, setEncryptionKey, sanitizePhoneNumber } from './utils/crypto.js';
 import { normalizeUserResponse } from './utils/normalizer.js';
-import { logSecureError, logSecureWarn, logSecureInfo } from './utils/logger.js';
+import { logSecureError, logSecureWarn, logSecureInfo } from './logging/logger.js';
 import { validateAndCleanName, validateAndCleanEmail, validateAndCleanPhone, validateAndCleanLocation } from './utils/validation.js';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
@@ -31,78 +38,7 @@ const app = new Hono({ strict: false }).basePath('/api');
 
 // --- Initialization ---
 let prismaInstance;
-const getPrisma = (env) => {
-  if (env.ENCRYPTION_KEY) {
-    setEncryptionKey(env.ENCRYPTION_KEY);
-  }
-  if (prismaInstance) return prismaInstance;
-  
-  // safeEncrypt: prevents double-encryption if the value is already in iv:authTag:cipher format
-  const safeEncrypt = (value) => {
-    if (!value) return value;
-    const parts = value.split(':');
-    if (parts.length === 3 && /^[0-9a-f]{24}$/i.test(parts[0]) && /^[0-9a-f]{32}$/i.test(parts[1])) {
-      return value; // already encrypted
-    }
-    return encrypt(value);
-  };
 
-  const safeSanitizeAndEncryptPhone = (value) => {
-    if (!value) return value;
-    const parts = value.split(':');
-    if (parts.length === 3 && /^[0-9a-f]{24}$/i.test(parts[0]) && /^[0-9a-f]{32}$/i.test(parts[1])) {
-      return value; // already encrypted
-    }
-    const sanitized = sanitizePhoneNumber(value);
-    if (!sanitized) return null;
-    return encrypt(sanitized);
-  };
-
-  prismaInstance = new PrismaClient({
-    datasources: { db: { url: env.DATABASE_URL } },
-  }).$extends(withAccelerate()).$extends({
-    query: {
-      user: {
-        async create({ args, query }) {
-          if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
-          if (args.data.location) args.data.location = safeEncrypt(args.data.location);
-          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
-          return query(args);
-        },
-        async update({ args, query }) {
-          if (args.data.phone) args.data.phone = safeSanitizeAndEncryptPhone(args.data.phone);
-          if (args.data.location) args.data.location = safeEncrypt(args.data.location);
-          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
-          return query(args);
-        },
-      },
-      resortOwner: {
-        async create({ args, query }) {
-          if (args.data.gstNumber) args.data.gstNumber = safeEncrypt(args.data.gstNumber);
-          return query(args);
-        },
-        async update({ args, query }) {
-          if (args.data.gstNumber) args.data.gstNumber = safeEncrypt(args.data.gstNumber);
-          return query(args);
-        },
-      },
-      guideProfile: {
-        async create({ args, query }) {
-          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
-          return query(args);
-        },
-        async update({ args, query }) {
-          if (args.data.idNumber) args.data.idNumber = safeEncrypt(args.data.idNumber);
-          return query(args);
-        },
-      },
-    },
-    // NOTE: result.compute is NOT used here because it is silently bypassed in the
-    // Cloudflare Workers Edge runtime. Decryption is handled explicitly via decryptUser().
-  });
-  
-  return prismaInstance;
-};
 
 /**
  * Explicitly decrypt PII fields on a raw user object returned from Prisma.
@@ -216,59 +152,11 @@ const runKycFraudCheckWorker = async (userId, idNumber, idImage, prisma) => {
   return { score, flags };
 };
 
-// --- Edge Rate Limiting & Abuse Protection ---
-const rateLimitCache = new Map();
 
-const getClientIp = (c) => c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
-
-const createRateLimiter = (options = {}) => {
-  const windowMs = options.windowMs || 60 * 1000;
-  const maxRequests = options.maxRequests || 100;
-  
-  return async (c, next) => {
-    const ip = getClientIp(c);
-    const key = `${ip}:${options.name || 'global'}`;
-    const now = Date.now();
-    let record = rateLimitCache.get(key);
-    
-    if (!record) {
-      record = { count: 1, resetTime: now + windowMs };
-      rateLimitCache.set(key, record);
-    } else {
-      if (now > record.resetTime) {
-        record.count = 1;
-        record.resetTime = now + windowMs;
-      } else {
-        record.count++;
-      }
-    }
-
-    if (record.count > maxRequests) {
-      console.warn(`[ABUSE DETECTED] Rate limit exceeded for IP: ${ip} on limiter: ${options.name}`);
-      return c.json({ 
-        error: options.message || "Too many requests detected. Please wait a moment before trying again." 
-      }, 429);
-    }
-
-    // Clean up stale cache randomly (5% chance per request) to prevent isolate memory leaks
-    if (Math.random() < 0.05) {
-      for (const [k, v] of rateLimitCache.entries()) {
-        if (now > v.resetTime) rateLimitCache.delete(k);
-      }
-    }
-
-    await next();
-  };
-};
-
-const authLimiter = createRateLimiter({ name: 'auth', windowMs: 15 * 60 * 1000, maxRequests: 5, message: "Too many login attempts. Please wait 15 minutes." });
-const otpLimiter = createRateLimiter({ name: 'otp', windowMs: 10 * 60 * 1000, maxRequests: 3, message: "Too many OTP requests. Please wait 10 minutes." });
-const bookingLimiter = createRateLimiter({ name: 'booking', windowMs: 10 * 60 * 1000, maxRequests: 10, message: "Too many booking attempts. Please slow down." });
-const uploadLimiter = createRateLimiter({ name: 'upload', windowMs: 60 * 60 * 1000, maxRequests: 30, message: "Upload limit reached. Try again later." });
-const globalLimiter = createRateLimiter({ name: 'global', windowMs: 1 * 60 * 1000, maxRequests: 300, message: "Too many requests detected. Please wait a moment before trying again." });
 
 // --- Middleware ---
-app.use('*', logger());
+app.use('*', loggingMiddleware());
+app.onError(globalErrorHandler);
 
 // CORS MUST be first — before rate limiters — so OPTIONS preflight always gets CORS headers
 app.use('*', async (c, next) => {
@@ -294,34 +182,10 @@ app.use('/auth/forgot-password', async (c, next) => { if (c.req.method === 'OPTI
 app.use('/bookings', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return bookingLimiter(c, next); });
 app.use('/upload/signature', async (c, next) => { if (c.req.method === 'OPTIONS') return next(); return uploadLimiter(c, next); });
 
-// Auth Middlewares
-const authMiddleware = async (c, next) => {
-  let token = null;
-  const authHeader = c.req.header('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else {
-    token = c.req.query('auth_token');
-  }
 
-  if (!token) return c.json({ error: 'Unauthorized' }, 401);
-  try {
-    const secret = c.env.JWT_SECRET;
-    if (!secret) throw new Error("JWT_SECRET not configured");
-    const decoded = jwt.verify(token, secret);
-    c.set('user', decoded);
-    await next();
-  } catch (err) { 
-    console.error("Auth Middleware Error:", err.message);
-    return c.json({ error: 'Invalid or expired token' }, 401); 
-  }
-};
 
-const adminMiddleware = async (c, next) => {
-  const user = c.get('user');
-  if (user?.role !== 'ADMIN') return c.json({ error: 'Forbidden: Admin access required' }, 403);
-  await next();
-};
+
+
 
 // --- Routes ---
 

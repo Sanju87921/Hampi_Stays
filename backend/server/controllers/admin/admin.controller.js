@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { logSecureError, logSecureWarn, logSecureInfo } from "../../utils/logger.js";
+import { logSecureError, logSecureWarn, logSecureInfo } from "../../logging/logger.js";
 import { decryptGuide, decryptUser, generateSignedKycUrlWorker, verifySignedKycUrlWorker, runKycFraudCheckWorker, decrypt } from "../../utils/cryptoEngine.js";
 
 export const getAdminStats = async (c) => {\n  const getPrisma = c.get("getPrisma");

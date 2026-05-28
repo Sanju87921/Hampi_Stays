@@ -1,5 +1,5 @@
 import { verifyPaymentSignature } from '../../services/payments/verification.service.js';
-import { logSecureError, logSecureInfo } from '../../utils/logger.js';
+import { logSecureError, logSecureInfo } from '../../logging/logger.js';
 import { Resend } from 'resend';
 
 export const verifyPayment = async (c) => {
