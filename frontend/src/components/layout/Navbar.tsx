@@ -175,7 +175,7 @@ export function Navbar() {
  "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
  isScrolled 
  ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" 
- : "border-white/20 text-white hover:bg-white "
+ : "border-white/30 text-white hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
  )}
  >
  Logout
