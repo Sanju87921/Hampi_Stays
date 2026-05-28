@@ -1,4 +1,4 @@
-import { getPrisma } from '../../config/prisma.js';
+
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -30,6 +30,7 @@ export function computeProfileCompletion(user) {
 
 export const register = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { name, email, password, role, phone, verificationType } = await c.req.json();
   const lowerEmail = email.toLowerCase();
@@ -193,6 +194,7 @@ export const register = async (c) => {
 
 export const login = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { email, password } = await c.req.json();
   const lowerEmail = validateAndCleanEmail(email);
@@ -224,6 +226,7 @@ export const login = async (c) => {
 
 export const getMe = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const payload = c.get('user');
   try {
@@ -239,6 +242,7 @@ export const getMe = async (c) => {
 
 export const forgotPassword = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { email } = await c.req.json();
   const normalizedEmail = email.toLowerCase();
@@ -318,6 +322,7 @@ export const forgotPassword = async (c) => {
 
 export const resetPassword = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { token, email, password } = await c.req.json();
   const normalizedEmail = email.toLowerCase();
@@ -378,6 +383,7 @@ export const resetPassword = async (c) => {
 
 export const googleAuth = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { credential, role } = await c.req.json();
   try {
@@ -449,6 +455,7 @@ export const googleAuth = async (c) => {
 
 export const appleAuth = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { id_token, user: userDetails, role } = await c.req.json();
   try {
@@ -515,6 +522,7 @@ export const appleAuth = async (c) => {
 
 export const sendOtp = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { email, userId } = await c.req.json();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -556,6 +564,7 @@ export const sendOtp = async (c) => {
 
 export const sendEmailOtp = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { email } = await c.req.json();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -612,6 +621,7 @@ export const sendEmailOtp = async (c) => {
 
 export const sendMobileOtp = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { phone } = await c.req.json();
   if (!phone || !/^[6-9]\d{9}$/.test(phone.replace(/\D/g, '').slice(-10))) {
@@ -673,6 +683,7 @@ export const sendMobileOtp = async (c) => {
 
 export const verifyOtp = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const { otp, email, phone, otpType } = await c.req.json();
   const lowerEmail = email?.toLowerCase();
@@ -813,6 +824,7 @@ export const verifyOtp = async (c) => {
 
 export const refreshToken = async (c) => {
   
+  const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   try {
     const body = await c.req.json().catch(() => ({}));

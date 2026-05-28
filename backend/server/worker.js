@@ -162,6 +162,11 @@ const runKycFraudCheckWorker = async (userId, idNumber, idImage, prisma) => {
 
 
 // --- Middleware ---
+// Inject getPrisma factory into context so extracted controllers can use c.get('getPrisma')
+app.use('*', async (c, next) => {
+  c.set('getPrisma', getPrisma);
+  await next();
+});
 app.use('*', loggingMiddleware());
 app.onError(globalErrorHandler);
 
