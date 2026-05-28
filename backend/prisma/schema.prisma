@@ -1,7 +1,7 @@
 generator client {
-  provider      = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
-  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+  binaryTargets   = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -11,44 +11,50 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(cuid())
-  email            String            @unique
-  name             String
-  passwordHash     String
-  role             Role              @default(TRAVELLER)
-  avatar           String?
-  phone            String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  idImage          String?
-  idNumber         String?
-  idType           String?
-  isEmailVerified  Boolean           @default(false)
-  isMobileVerified Boolean           @default(false)
-  verifiedEmail    Boolean           @default(false)
-  verifiedPhone    Boolean           @default(false)
+  id                      String             @id @default(cuid())
+  email                   String             @unique
+  name                    String
+  passwordHash            String
+  role                    Role               @default(TRAVELLER)
+  avatar                  String?
+  phone                   String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  idImage                 String?
+  idNumber                String?
+  idType                  String?
+  isEmailVerified         Boolean            @default(false)
+  mfaSecret               String?
+  isMfaEnabled            Boolean            @default(false)
+  theme                   String             @default("light")
+  language                String             @default("en-US")
+  isMobileVerified        Boolean            @default(false)
+  verifiedEmail           Boolean            @default(false)
+  verifiedPhone           Boolean            @default(false)
   verificationCompletedAt DateTime?
-  kycStatus        String?           @default("NOT_SUBMITTED")
-  kycRejectionReason String?
-  deletedAt        DateTime?
-  fraudScore       Int               @default(0)
-  fraudFlags       String[]          @default([])
-  location         String?
-  bookings         Booking[]
-  guideBookings    GuideBooking[]
-  guideProfile     GuideProfile?
-  messages         Message[]
-  notifications    Notification[]
-  otpVerifications OtpVerification[]
-  ownerProfile     ResortOwner?
-  reviews          Review[]
-  staffProfile     StaffMember?
-  wishlist         Wishlist[]
-  couponRedemptions  CouponRedemption[]
-  referralsSent      Referral[]         @relation("Referrer")
-  referralsReceived  Referral[]         @relation("ReferredUser")
-  rewardCredits      RewardCredit[]
-  blogPosts          BlogPost[]         @relation("BlogAuthor")
+  kycStatus               String?            @default("NOT_SUBMITTED")
+  kycRejectionReason      String?
+  deletedAt               DateTime?
+  fraudScore              Int                @default(0)
+  fraudFlags              String[]           @default([])
+  location                String?
+  bookings                Booking[]
+  guideBookings           GuideBooking[]
+  guideProfile            GuideProfile?
+  messages                Message[]
+  notifications           Notification[]
+  otpVerifications        OtpVerification[]
+  ownerProfile            ResortOwner?
+  reviews                 Review[]
+  staffProfile            StaffMember?
+  wishlist                Wishlist[]
+  couponRedemptions       CouponRedemption[]
+  referralsSent           Referral[]         @relation("Referrer")
+  referralsReceived       Referral[]         @relation("ReferredUser")
+  rewardCredits           RewardCredit[]
+  blogPosts               BlogPost[]         @relation("BlogAuthor")
+  adminSessions           AdminSession[]
+  auditLogs               AuditLog[]
 
   @@map("users")
 }
@@ -70,43 +76,43 @@ model OtpVerification {
 }
 
 model Resort {
-  id             String         @id @default(cuid())
-  slug           String         @unique
-  name           String
-  tagline        String
-  description    String
-  type           String
-  locationArea   String
-  locationLat    Float
-  locationLng    Float
-  images         String[]
-  amenities      String[]
-  rating         Float          @default(0)
-  reviewCount    Int            @default(0)
-  pricePerNight  Float
-  isFeatured     Boolean        @default(false)
-  isVerified     Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  ownerId        String
-  categories     String[]       @default([])
-  houseRules     String[]
-  mealPackages   Json?
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  name             String
+  tagline          String
+  description      String
+  type             String
+  locationArea     String
+  locationLat      Float
+  locationLng      Float
+  images           String[]
+  amenities        String[]
+  rating           Float           @default(0)
+  reviewCount      Int             @default(0)
+  pricePerNight    Float
+  isFeatured       Boolean         @default(false)
+  isVerified       Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  ownerId          String
+  categories       String[]        @default([])
+  houseRules       String[]
+  mealPackages     Json?
   verificationDocs Json?
-  status         ResortStatus   @default(PENDING)
-  deletedAt      DateTime?
-  commissionRate Float          @default(7.0)
-  boostScore     Int            @default(0)
-  bookings       Booking[]
-  discountCodes  DiscountCode[]
-  invitations    Invitation[]
-  owner          ResortOwner    @relation(fields: [ownerId], references: [id])
-  reviews        Review[]
-  roomTypes      Room[]
-  staff          StaffMember[]
-  wishlist       Wishlist[]
-  resortAmenities ResortAmenity[]
-  coupons        Coupon[]       @relation("ResortCoupons")
+  status           ResortStatus    @default(PENDING)
+  deletedAt        DateTime?
+  commissionRate   Float           @default(7.0)
+  boostScore       Int             @default(0)
+  bookings         Booking[]
+  discountCodes    DiscountCode[]
+  invitations      Invitation[]
+  owner            ResortOwner     @relation(fields: [ownerId], references: [id])
+  reviews          Review[]
+  roomTypes        Room[]
+  staff            StaffMember[]
+  wishlist         Wishlist[]
+  resortAmenities  ResortAmenity[]
+  coupons          Coupon[]        @relation("ResortCoupons")
 
   @@index([status])
   @@index([pricePerNight])
@@ -149,14 +155,18 @@ model RoomPriceOverride {
 }
 
 model SystemSettings {
-  id                    String   @id @default(cuid())
-  guideServiceEnabled   Boolean  @default(true)
-  defaultCommissionRate Float    @default(7.0)
-  requireOtpForSignup   Boolean  @default(true)
-  updatedBy             String?
-  updatedAt             DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  guideServiceEnabled     Boolean  @default(true)
+  defaultCommissionRate   Float    @default(7.0)
+  requireOtpForSignup     Boolean  @default(true)
+  maintenanceMode         Boolean  @default(false)
+  detailedAuditLogging    Boolean  @default(true)
+  notifyNewUsers          Boolean  @default(true)
+  notifyHighValueBookings Boolean  @default(true)
+  notifySystemAlerts      Boolean  @default(true)
+  updatedBy               String?
+  updatedAt               DateTime @updatedAt
 }
-
 
 model RoomBlocking {
   id     String   @id @default(cuid())
@@ -190,25 +200,25 @@ model DiscountCode {
 }
 
 model Booking {
-  id              String        @id @default(cuid())
-  checkIn         DateTime
-  checkOut        DateTime
-  guests          Int
-  totalPrice      Float
-  status          BookingStatus @default(PENDING)
-  specialRequests String?
-  referenceNumber String        @unique
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  userId          String
-  resortId        String
-  roomId          String?
-  commissionRate  Float         @default(7.0)
-  resort          Resort        @relation(fields: [resortId], references: [id])
-  room            Room?         @relation(fields: [roomId], references: [id])
-  user            User          @relation(fields: [userId], references: [id])
-  messages        Message[]
-  couponRedemption  CouponRedemption?
+  id               String            @id @default(cuid())
+  checkIn          DateTime
+  checkOut         DateTime
+  guests           Int
+  totalPrice       Float
+  status           BookingStatus     @default(PENDING)
+  specialRequests  String?
+  referenceNumber  String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userId           String
+  resortId         String
+  roomId           String?
+  commissionRate   Float             @default(7.0)
+  resort           Resort            @relation(fields: [resortId], references: [id])
+  room             Room?             @relation(fields: [roomId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  messages         Message[]
+  couponRedemption CouponRedemption?
 
   @@index([resortId])
   @@index([userId])
@@ -258,23 +268,23 @@ model Notification {
 }
 
 model BlogPost {
-  id              String   @id @default(cuid())
-  slug            String   @unique
+  id              String    @id @default(cuid())
+  slug            String    @unique
   title           String
-  content         String   @db.Text
+  content         String    @db.Text
   excerpt         String?
   featuredImage   String?
   authorId        String
   categoryId      String?
   publishedAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   metaTitle       String?
   metaDescription String?
-  isFeatured      Boolean  @default(false)
-  tags            String[] @default([])
+  isFeatured      Boolean   @default(false)
+  tags            String[]  @default([])
 
-  author          User     @relation("BlogAuthor", fields: [authorId], references: [id])
+  author User @relation("BlogAuthor", fields: [authorId], references: [id])
 
   @@index([slug])
   @@index([publishedAt])
@@ -426,17 +436,17 @@ enum ResortStatus {
 }
 
 model PendingVerification {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  name             String
-  phone            String
-  passwordHash     String
-  role             Role     @default(TRAVELLER)
-  otpHash          String
-  otpType          String   // "email" or "mobile"
-  expiresAt        DateTime
-  attempts         Int      @default(0)
-  createdAt        DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  phone        String
+  passwordHash String
+  role         Role     @default(TRAVELLER)
+  otpHash      String
+  otpType      String // "email" or "mobile"
+  expiresAt    DateTime
+  attempts     Int      @default(0)
+  createdAt    DateTime @default(now())
 
   @@map("pending_verifications")
 }
@@ -447,8 +457,8 @@ model VerificationAudit {
   adminName       String?
   targetUserId    String
   targetName      String?
-  targetType      String   // "GUIDE" or "RESORT"
-  action          String   // "APPROVED", "REJECTED", "SUBMITTED"
+  targetType      String // "GUIDE" or "RESORT"
+  action          String // "APPROVED", "REJECTED", "SUBMITTED"
   rejectionReason String?
   previousStatus  String?
   newStatus       String
@@ -481,7 +491,7 @@ model ResortAmenity {
   id          String   @id @default(cuid())
   resortId    String
   name        String
-  type        String   // "PREDEFINED" | "CUSTOM"
+  type        String // "PREDEFINED" | "CUSTOM"
   icon        String?
   description String?
   createdAt   DateTime @default(now())
@@ -491,117 +501,147 @@ model ResortAmenity {
 }
 
 model Coupon {
-  id               String   @id @default(cuid())
-  code             String   @unique
-  type             String   // PERCENTAGE, FLAT, REFERRAL, FIRST_BOOKING, REWARD
-  discountValue    Float
-  minBookingAmt    Float?
-  maxDiscountAmt   Float?
-  validFrom        DateTime
-  validUntil       DateTime
-  maxUsesTotal     Int?
-  maxUsesPerUser   Int      @default(1)
-  currentUses      Int      @default(0)
-  isActive         Boolean  @default(true)
-  
-  resortId         String?  
-  roomId           String?
-  region           String?
-  userRole         String?
-  onlyFirstTime    Boolean  @default(false)
-  
-  redemptions      CouponRedemption[]
-  resort           Resort?  @relation("ResortCoupons", fields: [resortId], references: [id])
-  
+  id             String   @id @default(cuid())
+  code           String   @unique
+  type           String // PERCENTAGE, FLAT, REFERRAL, FIRST_BOOKING, REWARD
+  discountValue  Float
+  minBookingAmt  Float?
+  maxDiscountAmt Float?
+  validFrom      DateTime
+  validUntil     DateTime
+  maxUsesTotal   Int?
+  maxUsesPerUser Int      @default(1)
+  currentUses    Int      @default(0)
+  isActive       Boolean  @default(true)
+
+  resortId      String?
+  roomId        String?
+  region        String?
+  userRole      String?
+  onlyFirstTime Boolean @default(false)
+
+  redemptions CouponRedemption[]
+  resort      Resort?            @relation("ResortCoupons", fields: [resortId], references: [id])
+
   @@map("coupons")
 }
 
 model CouponRedemption {
-  id           String   @id @default(cuid())
-  couponId     String
-  userId       String
-  bookingId    String?  @unique
-  discountAmt  Float
-  redeemedAt   DateTime @default(now())
-  
-  coupon       Coupon   @relation(fields: [couponId], references: [id])
-  user         User     @relation(fields: [userId], references: [id])
-  booking      Booking? @relation(fields: [bookingId], references: [id])
-  
+  id          String   @id @default(cuid())
+  couponId    String
+  userId      String
+  bookingId   String?  @unique
+  discountAmt Float
+  redeemedAt  DateTime @default(now())
+
+  coupon  Coupon   @relation(fields: [couponId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
   @@unique([couponId, userId, bookingId])
   @@map("coupon_redemptions")
 }
 
 model Referral {
-  id              String   @id @default(cuid())
-  referrerId      String
-  referredUserId  String   @unique
-  referralCode    String
-  status          String   @default("PENDING") // PENDING, COMPLETED
-  rewardAmount    Float    @default(0)
-  createdAt       DateTime @default(now())
-  completedAt     DateTime?
-  
-  referrer        User     @relation("Referrer", fields: [referrerId], references: [id])
-  referredUser    User     @relation("ReferredUser", fields: [referredUserId], references: [id])
-  
+  id             String    @id @default(cuid())
+  referrerId     String
+  referredUserId String    @unique
+  referralCode   String
+  status         String    @default("PENDING") // PENDING, COMPLETED
+  rewardAmount   Float     @default(0)
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  referrer     User @relation("Referrer", fields: [referrerId], references: [id])
+  referredUser User @relation("ReferredUser", fields: [referredUserId], references: [id])
+
   @@map("referrals")
 }
 
 model RewardCredit {
-  id            String   @id @default(cuid())
-  userId        String
-  amount        Float
-  source        String   // REFERRAL, CASHBACK, PROMOTION
-  status        String   @default("AVAILABLE") // AVAILABLE, USED, EXPIRED
-  expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  usedAt        DateTime?
-  
-  user          User     @relation(fields: [userId], references: [id])
-  
+  id        String    @id @default(cuid())
+  userId    String
+  amount    Float
+  source    String // REFERRAL, CASHBACK, PROMOTION
+  status    String    @default("AVAILABLE") // AVAILABLE, USED, EXPIRED
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
   @@map("reward_credits")
 }
 
 model SeasonalCampaign {
-  id          String   @id @default(cuid())
-  title       String
-  subtitle    String?
-  bannerUrl   String?
-  startsAt    DateTime
-  endsAt      DateTime
-  isActive    Boolean  @default(true)
-  priority    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  bannerUrl String?
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("seasonal_campaigns")
 }
 
 model SponsoredPlacement {
-  id          String   @id @default(cuid())
-  resortId    String
-  placement   String
-  priority    Int
-  startsAt    DateTime
-  endsAt      DateTime
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  resortId  String
+  placement String
+  priority  Int
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   @@map("sponsored_placements")
 }
 
 model CuratedExperience {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  imageUrl      String?
-  price         Float
-  duration      String
-  location      String
-  isFeatured    Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  price       Float
+  duration    String
+  location    String
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   @@map("curated_experiences")
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  lastSeen  DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_sessions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }

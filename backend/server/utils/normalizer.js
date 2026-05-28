@@ -86,6 +86,8 @@ export function normalizeUserResponse(user) {
     idImage: decryptedIdImage, 
     isEmailVerified: !!user.isEmailVerified || !!user.verifiedEmail,
     isMobileVerified: !!user.isMobileVerified || !!user.verifiedPhone,
-    profileCompletionStatus
+    profileCompletionStatus,
+    theme: user.theme || 'light',
+    language: user.language || 'en-US'
   };
 }

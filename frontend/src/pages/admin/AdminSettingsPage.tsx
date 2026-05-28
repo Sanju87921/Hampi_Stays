@@ -21,13 +21,7 @@ export function AdminSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      // Create a specific endpoint if needed, or we just map it.
-      // Since we just have the POST/PATCH `/admin/settings` which also acts as an init.
-      // We can do a dummy update to fetch or we can create a GET if we added one. 
-      // The worker route `on(['POST', 'PATCH'], '/admin/settings')` implies we can fetch or just hit POST.
-      // I'll assume we can use the `app.get('/admin/stats')` or we need a GET for settings.
-      // Since we might not have a clean GET /admin/settings in the backend, I'll just post an empty object.
-      const data = await apiClient.post<any>('/admin/settings', {});
+      const data = await apiClient.get<any>('/admin/settings');
       setSettings(data);
     } catch (err) {
       toast.error('Failed to load global settings');

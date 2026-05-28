@@ -25,17 +25,30 @@ export function AdminProfilePage() {
 
   // Data states
   const [sessions, setSessions] = useState<any[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [sessionError, setSessionError] = useState(false);
 
   useEffect(() => {
     fetchSessions();
   }, []);
 
   const fetchSessions = async () => {
+    setIsLoadingSessions(true);
+    setSessionError(false);
     try {
-      const data = await apiClient.get<any[]>('/admin/security/sessions');
-      setSessions(data);
+      const data = await apiClient.get<{ success: boolean, sessions: any[] }>('/admin/security/sessions');
+      if (data && Array.isArray(data.sessions)) {
+        setSessions(data.sessions);
+      } else if (Array.isArray(data)) {
+        setSessions(data); // Fallback if backend isn't updated yet
+      } else {
+        setSessions([]);
+      }
     } catch (err) {
+      setSessionError(true);
       toast.error('Failed to load session activity');
+    } finally {
+      setIsLoadingSessions(false);
     }
   };
 
@@ -221,8 +234,18 @@ export function AdminProfilePage() {
               </h3>
               
               <div className="space-y-4">
-                {sessions.length === 0 ? (
-                   <div className="p-4 text-center text-navy-950/50">Loading sessions...</div>
+                {isLoadingSessions ? (
+                   <div className="p-4 text-center text-navy-950/50 flex flex-col items-center">
+                     <Loader2 className="w-6 h-6 animate-spin text-gold-500 mb-2" />
+                     Loading sessions...
+                   </div>
+                ) : sessionError ? (
+                   <div className="p-4 text-center bg-red-50 text-red-600 rounded-xl">
+                     <p className="mb-2 font-semibold">Failed to load session activity</p>
+                     <button onClick={fetchSessions} className="px-4 py-2 bg-red-100 rounded-lg font-bold text-xs uppercase hover:bg-red-200">Retry</button>
+                   </div>
+                ) : !Array.isArray(sessions) || sessions.length === 0 ? (
+                   <div className="p-4 text-center text-navy-950/50">No active sessions found.</div>
                 ) : (
                   sessions.map((session, i) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-sand-50 rounded-xl">
