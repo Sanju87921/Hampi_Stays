@@ -7,7 +7,6 @@ import { AuthProvider } from './context/AuthContext'
 import { WishlistProvider } from './context/WishlistContext'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { SystemProvider } from './context/SystemContext'
-import { ThemeProvider } from './context/ThemeContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient({
@@ -30,9 +29,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <SystemProvider>
             <WishlistProvider>
-              <ThemeProvider>
-                <App />
-              </ThemeProvider>
+              <App />
             </WishlistProvider>
           </SystemProvider>
         </AuthProvider>

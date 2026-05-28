@@ -18,10 +18,10 @@ export function SortBar({ sort, onSortChange, view, onViewChange, total }: SortB
   ];
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-sand-200 dark:border-zinc-800 p-3 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm mb-6">
+    <div className="bg-white  rounded-3xl border border-sand-200  p-3 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm mb-6">
       <div className="flex items-center gap-4 px-4 py-2">
-        <span className="text-sm font-bold text-navy-950 dark:text-white">
-          {total} <span className="text-navy-950 dark:text-white/40 dark:text-zinc-500">Sanctuaries found</span>
+        <span className="text-sm font-bold text-navy-950 ">
+          {total} <span className="text-navy-950  ">Sanctuaries found</span>
         </span>
       </div>
 
@@ -31,7 +31,7 @@ export function SortBar({ sort, onSortChange, view, onViewChange, total }: SortB
           <select
             value={sort}
             onChange={(e) => onSortChange(e.target.value as SortOption)}
-            className="w-full sm:w-48 appearance-none bg-sand-50 dark:bg-zinc-950 border border-sand-100 dark:border-zinc-800/50 rounded-2xl px-5 py-3 text-sm font-bold text-navy-950 dark:text-white cursor-pointer hover:bg-sand-100 dark:hover:bg-zinc-700 transition-colors outline-none pr-10"
+            className="w-full sm:w-48 appearance-none bg-sand-50  border border-sand-100  rounded-2xl px-5 py-3 text-sm font-bold text-navy-950  cursor-pointer hover:bg-sand-100 :bg-zinc-700 transition-colors outline-none pr-10"
           >
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -39,17 +39,17 @@ export function SortBar({ sort, onSortChange, view, onViewChange, total }: SortB
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 dark:text-white/40 dark:text-zinc-500 pointer-events-none" />
+          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950   pointer-events-none" />
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center bg-sand-50 dark:bg-zinc-950 p-1.5 rounded-2xl border border-sand-100 dark:border-zinc-800/50">
+        <div className="flex items-center bg-sand-50  p-1.5 rounded-2xl border border-sand-100 ">
           <button
             onClick={() => onViewChange("list")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               view === "list"
-                ? "bg-white dark:bg-zinc-900 text-navy-950 dark:text-white shadow-sm"
-                : "text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-navy-950 dark:text-white"
+                ? "bg-white  text-navy-950  shadow-sm"
+                : "text-navy-950   hover:text-navy-950 "
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -59,8 +59,8 @@ export function SortBar({ sort, onSortChange, view, onViewChange, total }: SortB
             onClick={() => onViewChange("map")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               view === "map"
-                ? "bg-white dark:bg-zinc-900 text-navy-950 dark:text-white shadow-sm"
-                : "text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-navy-950 dark:text-white"
+                ? "bg-white  text-navy-950  shadow-sm"
+                : "text-navy-950   hover:text-navy-950 "
             }`}
           >
             <MapIcon className="w-4 h-4" />

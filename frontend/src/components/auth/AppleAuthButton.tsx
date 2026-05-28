@@ -90,7 +90,7 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Slide to Continu
             <motion.span
               animate={{ x: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="text-[13px] font-black uppercase tracking-[0.2em] text-navy-950 dark:text-white/40 dark:text-zinc-500"
+              className="text-[13px] font-black uppercase tracking-[0.2em] text-navy-950  "
             >
               {isLoading ? "Unlocking..." : text}
             </motion.span>
@@ -130,7 +130,7 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Slide to Continu
           onDragEnd={handleDragEnd}
           className={cn(
             "absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 rounded-2xl flex items-center justify-center z-20 cursor-grab active:cursor-grabbing transition-all",
-            isSuccess ? "bg-navy-950 shadow-2xl" : "bg-white dark:bg-zinc-900 shadow-premium border border-slate-100 hover:bg-slate-50"
+            isSuccess ? "bg-navy-950 shadow-2xl" : "bg-white  shadow-premium border border-slate-100 hover:bg-slate-50"
           )}
         >
           <motion.div style={{ color: iconColor }}>

@@ -48,7 +48,7 @@ export const CheckoutCoupon = ({ resortId, totalAmount, onValidationSuccess }: C
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900/5 border border-[#C5A059]/20 p-6 rounded-2xl backdrop-blur-md">
+    <div className="bg-white  border border-[#C5A059]/20 p-6 rounded-2xl backdrop-blur-md">
       <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
         <Tag className="w-5 h-5 text-[#C5A059]" />
         Have a Promo Code?

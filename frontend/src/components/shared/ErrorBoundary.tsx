@@ -79,7 +79,7 @@ export class ErrorBoundary extends Component<Props, State> {
       // Stale chunk / new deployment detected
       if (this.state.isChunkError) {
         return (
-          <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50 dark:bg-zinc-950 rounded-3xl">
+          <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50  rounded-3xl">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -88,10 +88,10 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Wifi className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-serif font-bold text-navy-950 dark:text-white mb-3">
+              <h2 className="text-2xl font-serif font-bold text-navy-950  mb-3">
                 New Version Available
               </h2>
-              <p className="text-sm text-navy-950/60 dark:text-zinc-400 mb-8 leading-relaxed">
+              <p className="text-sm text-navy-950/60  mb-8 leading-relaxed">
                 HampiStays was updated in the background.
                 <br />
                 Refreshing automatically in a moment…
@@ -110,7 +110,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Generic runtime error
       return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50 dark:bg-zinc-950 rounded-3xl border border-sand-200 dark:border-zinc-800">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-sand-50  rounded-3xl border border-sand-200 ">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -120,16 +120,16 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-8 h-8" />
             </div>
 
-            <h2 className="text-2xl font-serif font-bold text-navy-950 dark:text-white mb-3">
+            <h2 className="text-2xl font-serif font-bold text-navy-950  mb-3">
               Something went wrong
             </h2>
-            <p className="text-sm text-navy-950/60 dark:text-zinc-400 mb-8 leading-relaxed">
+            <p className="text-sm text-navy-950/60  mb-8 leading-relaxed">
               We encountered an unexpected error while loading this module.
               Our team has been notified. Please try refreshing the page.
             </p>
 
             {this.state.error && (
-              <div className="text-left bg-white dark:bg-zinc-900 p-4 rounded-xl border border-red-100 mb-8 overflow-auto max-h-48 text-xs font-mono text-red-900 shadow-sm">
+              <div className="text-left bg-white  p-4 rounded-xl border border-red-100 mb-8 overflow-auto max-h-48 text-xs font-mono text-red-900 shadow-sm">
                 <strong>{this.state.error.toString()}</strong>
               </div>
             )}

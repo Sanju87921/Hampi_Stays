@@ -1,19 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Anti-flash theme hydration — must run before body renders -->
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem('hampi-theme');
-          var resolved = saved;
-          if (!saved || saved === 'system') {
-            resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          }
-          document.documentElement.classList.add(resolved);
-        } catch(e) {}
-      })();
-    </script>
+    
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />

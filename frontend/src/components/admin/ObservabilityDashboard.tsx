@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Activity, Server, AlertCircle, Clock, Zap, Database, TrendingUp, ShieldAlert } from 'lucide-react';
 
 const MetricCard = ({ title, value, status, icon: Icon, trend }: any) => (
-  <div className="bg-white dark:bg-zinc-900/5 border border-[#C5A059]/20 p-6 rounded-2xl backdrop-blur-md">
+  <div className="bg-white  border border-[#C5A059]/20 p-6 rounded-2xl backdrop-blur-md">
     <div className="flex justify-between items-start mb-4">
       <div className={`p-3 rounded-xl ${status === 'healthy' ? 'bg-green-500/10 text-green-400' : status === 'warning' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'}`}>
         <Icon className="w-6 h-6" />
@@ -56,7 +56,7 @@ export const ObservabilityDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        <div className="bg-white dark:bg-zinc-900/5 border border-[#C5A059]/20 p-8 rounded-3xl">
+        <div className="bg-white  border border-[#C5A059]/20 p-8 rounded-3xl">
           <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#C5A059]" />
             Business Funnels (PostHog)
@@ -67,7 +67,7 @@ export const ObservabilityDashboard = () => {
                 <span className="text-slate-300">Booking Conversion Rate</span>
                 <span className="text-white font-medium">{metrics.bookingConversion}</span>
               </div>
-              <div className="h-2 bg-white dark:bg-zinc-900/10 rounded-full overflow-hidden">
+              <div className="h-2 bg-white  rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-[#C5A059] to-yellow-300 w-[14.2%]"></div>
               </div>
             </div>
@@ -76,14 +76,14 @@ export const ObservabilityDashboard = () => {
                 <span className="text-slate-300">Payment Verification Success</span>
                 <span className="text-white font-medium">{metrics.paymentSuccess}</span>
               </div>
-              <div className="h-2 bg-white dark:bg-zinc-900/10 rounded-full overflow-hidden">
+              <div className="h-2 bg-white  rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-green-500 to-emerald-300 w-[98.5%]"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900/5 border border-red-500/20 p-8 rounded-3xl relative overflow-hidden">
+        <div className="bg-white  border border-red-500/20 p-8 rounded-3xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-32 bg-red-500/5 rounded-full blur-3xl"></div>
           <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2 relative z-10">
             <ShieldAlert className="w-5 h-5 text-red-400" />

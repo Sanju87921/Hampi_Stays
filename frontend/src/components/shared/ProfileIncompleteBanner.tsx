@@ -70,7 +70,7 @@ export function ProfileIncompleteBanner() {
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gold-500/5 rounded-full blur-[50px] -ml-16 -mb-16" />
 
           <div className="flex-grow flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative z-10">
-            <div className="w-16 h-16 bg-white dark:bg-zinc-900/10 rounded-2xl flex items-center justify-center shrink-0 border border-white/10 backdrop-blur-md">
+            <div className="w-16 h-16 bg-white  rounded-2xl flex items-center justify-center shrink-0 border border-white/10 backdrop-blur-md">
               <UserCircle className="w-8 h-8 text-gold-400" />
             </div>
             
@@ -96,7 +96,7 @@ export function ProfileIncompleteBanner() {
 
           <div className="p-6 md:pr-12 relative z-10 w-full md:w-auto">
             <Link to={user?.role === 'GUIDE' ? "/dashboard?tab=profile" : "/dashboard/profile"}>
-              <button className="w-full md:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950 dark:text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-gold flex items-center justify-center gap-2 group">
+              <button className="w-full md:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950  px-8 py-4 rounded-2xl font-bold transition-all shadow-gold flex items-center justify-center gap-2 group">
                 Update Profile
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>

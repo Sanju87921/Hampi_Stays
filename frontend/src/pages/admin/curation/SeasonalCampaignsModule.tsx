@@ -94,35 +94,35 @@ const SeasonalCampaignsModule = () => {
 
   if (isEditing) {
     return (
-      <div className="bg-sand-50 dark:bg-zinc-950/50 p-6 rounded-2xl border border-sand-200 dark:border-zinc-800">
-        <h3 className="text-xl font-bold text-navy-950 dark:text-white mb-6">{editingItem ? 'Edit Campaign' : 'New Campaign'}</h3>
+      <div className="bg-sand-50  p-6 rounded-2xl border border-sand-200 ">
+        <h3 className="text-xl font-bold text-navy-950  mb-6">{editingItem ? 'Edit Campaign' : 'New Campaign'}</h3>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Title</label>
-            <input required type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+            <label className="text-xs font-bold text-navy-950   uppercase">Title</label>
+            <input required type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
           </div>
           <div>
-            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Subtitle</label>
-            <input type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+            <label className="text-xs font-bold text-navy-950   uppercase">Subtitle</label>
+            <input type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
           </div>
           <div>
-            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Banner URL</label>
-            <input type="url" value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+            <label className="text-xs font-bold text-navy-950   uppercase">Banner URL</label>
+            <input type="url" value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Start Date</label>
-              <input required type="date" value={startsAt} onChange={e => setStartsAt(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950   uppercase">Start Date</label>
+              <input required type="date" value={startsAt} onChange={e => setStartsAt(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
             </div>
             <div>
-              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">End Date</label>
-              <input required type="date" value={endsAt} onChange={e => setEndsAt(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950   uppercase">End Date</label>
+              <input required type="date" value={endsAt} onChange={e => setEndsAt(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
             </div>
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Priority (Higher is first)</label>
-              <input type="number" value={priority} onChange={e => setPriority(parseInt(e.target.value))} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950   uppercase">Priority (Higher is first)</label>
+              <input type="number" value={priority} onChange={e => setPriority(parseInt(e.target.value))} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
             </div>
             <div className="flex items-center gap-2 mt-6">
               <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-5 h-5" />
@@ -147,21 +147,21 @@ const SeasonalCampaignsModule = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {campaigns.map(camp => (
-          <div key={camp.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-sand-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+          <div key={camp.id} className="bg-white  rounded-2xl border border-sand-200  overflow-hidden flex flex-col">
             {camp.bannerUrl && (
-              <div className="h-32 bg-sand-200 dark:bg-zinc-800">
+              <div className="h-32 bg-sand-200 ">
                 <img src={camp.bannerUrl} alt={camp.title} className="w-full h-full object-cover" />
               </div>
             )}
             <div className="p-5 flex-1">
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-bold text-navy-950 dark:text-white">{camp.title}</h4>
+                <h4 className="font-bold text-navy-950 ">{camp.title}</h4>
                 <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${camp.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                   {camp.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              <p className="text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400 mb-4">{camp.subtitle}</p>
-              <div className="flex items-center gap-2 text-xs font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase mb-4">
+              <p className="text-sm text-navy-950   mb-4">{camp.subtitle}</p>
+              <div className="flex items-center gap-2 text-xs font-bold text-navy-950   uppercase mb-4">
                 <Calendar className="w-3 h-3" />
                 {new Date(camp.startsAt).toLocaleDateString()} - {new Date(camp.endsAt).toLocaleDateString()}
               </div>

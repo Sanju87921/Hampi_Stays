@@ -39,12 +39,12 @@ export function CompareBar({ items, onRemove, onClear }: CompareBarProps) {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                className="flex-shrink-0 flex items-center gap-3 bg-white dark:bg-zinc-900/5 border border-white/10 rounded-2xl pl-4 pr-2 py-2 group"
+                className="flex-shrink-0 flex items-center gap-3 bg-white  border border-white/10 rounded-2xl pl-4 pr-2 py-2 group"
               >
                 <span className="text-xs font-bold whitespace-nowrap">{item.resortName}</span>
                 <button
                   onClick={() => onRemove(item.resortId)}
-                  className="p-1.5 hover:bg-white dark:bg-zinc-900/10 rounded-lg transition-colors text-white/40 hover:text-white"
+                  className="p-1.5 hover:bg-white  rounded-lg transition-colors text-white/40 hover:text-white"
                 >
                   <X className="w-3 h-3" />
                 </button>

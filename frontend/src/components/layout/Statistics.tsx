@@ -25,7 +25,7 @@ export function Statistics() {
       .catch(err => console.error("Stats fetch failed", err));
   }, []);
   return (
-    <section className="py-24 bg-sand-50 dark:bg-zinc-950 relative overflow-hidden">
+    <section className="py-24 bg-sand-50  relative overflow-hidden">
       {/* Subtle bottom border with gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sand-300 to-transparent" />
       
@@ -43,7 +43,7 @@ export function Statistics() {
               <div className="text-5xl md:text-6xl font-serif font-bold text-gold-600 mb-3 group-hover:scale-105 transition-transform duration-500">
                 {stat.value}
               </div>
-              <div className="text-sm font-semibold text-navy-950 dark:text-white/50 dark:text-zinc-400 uppercase tracking-[0.2em]">
+              <div className="text-sm font-semibold text-navy-950   uppercase tracking-[0.2em]">
                 {stat.label}
               </div>
             </motion.div>

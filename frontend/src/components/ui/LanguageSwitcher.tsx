@@ -39,24 +39,24 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     <div className={cn("relative z-50", className)} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-sand-100 dark:hover:bg-zinc-700/50 transition-colors border border-transparent hover:border-sand-200 dark:border-zinc-800"
+        className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-sand-100 :bg-zinc-700/50 transition-colors border border-transparent hover:border-sand-200 "
       >
-        <Globe className="w-4 h-4 text-navy-950 dark:text-white/70" />
-        <span className="text-sm font-bold text-navy-950 dark:text-white tracking-wider">
+        <Globe className="w-4 h-4 text-navy-950 " />
+        <span className="text-sm font-bold text-navy-950  tracking-wider">
           {currentLanguage.short}
         </span>
-        <ChevronDown className="w-3 h-3 text-navy-950 dark:text-white/50 dark:text-zinc-400" />
+        <ChevronDown className="w-3 h-3 text-navy-950  " />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-2xl shadow-luxury overflow-hidden flex flex-col py-2">
+        <div className="absolute right-0 top-full mt-2 w-32 bg-white  border border-sand-200  rounded-2xl shadow-luxury overflow-hidden flex flex-col py-2">
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => changeLanguage(lang.code)}
               className={cn(
-                "px-4 py-2 text-sm text-left hover:bg-sand-50 dark:hover:bg-zinc-800 transition-colors font-medium",
-                i18n.language === lang.code ? "text-gold-700 bg-sand-50 dark:bg-zinc-950/50" : "text-navy-950 dark:text-white/70"
+                "px-4 py-2 text-sm text-left hover:bg-sand-50 :bg-zinc-800 transition-colors font-medium",
+                i18n.language === lang.code ? "text-gold-700 bg-sand-50 " : "text-navy-950 "
               )}
             >
               {lang.label}

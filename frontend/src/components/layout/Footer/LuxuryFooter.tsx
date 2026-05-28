@@ -15,7 +15,7 @@ export function LuxuryFooter() {
   };
 
   return (
-    <footer className="bg-sand-50 dark:bg-zinc-950 border-t border-sand-200 dark:border-zinc-800 pt-32 pb-16 overflow-hidden relative">
+    <footer className="bg-sand-50  border-t border-sand-200  pt-32 pb-16 overflow-hidden relative">
       {/* Cinematic subtle glow */}
       <div className="absolute top-0 left-1/4 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
       
@@ -31,13 +31,13 @@ export function LuxuryFooter() {
                 className="h-44 md:h-40 w-auto object-contain transition-transform duration-700 group-hover:scale-105" 
               />
             </Link>
-            <p className="text-navy-950 dark:text-white/70 text-lg md:text-xl font-serif italic leading-relaxed max-w-md mx-auto lg:mx-0">
+            <p className="text-navy-950  text-lg md:text-xl font-serif italic leading-relaxed max-w-md mx-auto lg:mx-0">
               "Where the whispers of history meet the embrace of modern luxury. Experience Hampi through a different lens."
             </p>
           </div>
 
           <div className="lg:col-span-7 flex justify-end w-full">
-            <div className="w-full max-w-xl bg-white dark:bg-zinc-900 p-10 rounded-[3rem] shadow-luxury border border-sand-100 dark:border-zinc-800/50 relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
+            <div className="w-full max-w-xl bg-white  p-10 rounded-[3rem] shadow-luxury border border-sand-100  relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gold-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
               
               <AnimatePresence mode="wait">
@@ -50,7 +50,7 @@ export function LuxuryFooter() {
                     className="relative z-10"
                   >
                     <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold-600 mb-2">The Exclusive Newsletter</h4>
-                    <h3 className="text-2xl font-serif font-bold text-navy-950 dark:text-white mb-6">Receive Rare Narratives</h3>
+                    <h3 className="text-2xl font-serif font-bold text-navy-950  mb-6">Receive Rare Narratives</h3>
                     <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
                       <input 
                         type="email" 
@@ -58,9 +58,9 @@ export function LuxuryFooter() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com" 
-                        className="flex-grow bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 transition-all"
+                        className="flex-grow bg-sand-50  border border-sand-200  rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 transition-all"
                       />
-                      <button type="submit" className="bg-navy-950 text-white px-10 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950 dark:text-white transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2">
+                      <button type="submit" className="bg-navy-950 text-white px-10 py-4 rounded-2xl font-bold text-sm hover:bg-gold-500 hover:text-navy-950  transition-all shadow-lg hover:shadow-gold/20 flex items-center justify-center gap-2">
                         Subscribe
                         <ArrowRight className="w-4 h-4" />
                       </button>
@@ -76,8 +76,8 @@ export function LuxuryFooter() {
                     <div className="w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                       <CheckCircle2 className="w-8 h-8 text-gold-600" />
                     </div>
-                    <h3 className="text-2xl font-serif font-bold text-navy-950 dark:text-white mb-2">Welcome to the Inner Circle</h3>
-                    <p className="text-navy-950 dark:text-white/40 dark:text-zinc-500 text-sm font-medium">Rare narratives will soon find their way to you.</p>
+                    <h3 className="text-2xl font-serif font-bold text-navy-950  mb-2">Welcome to the Inner Circle</h3>
+                    <p className="text-navy-950   text-sm font-medium">Rare narratives will soon find their way to you.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -86,82 +86,82 @@ export function LuxuryFooter() {
         </div>
 
         {/* Middle Area: Navigation */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 lg:gap-8 mb-24 border-y border-sand-200 dark:border-zinc-800/50 py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 lg:gap-8 mb-24 border-y border-sand-200  py-20">
           <div>
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950 dark:text-white/30 dark:text-zinc-600 mb-10">Discover</h5>
+            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Discover</h5>
             <ul className="space-y-5">
-              <li><Link to="/resorts" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/resorts" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Resorts
               </Link></li>
-              <li><Link to="/gallery" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/gallery" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Gallery
               </Link></li>
             </ul>
           </div>
           <div>
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950 dark:text-white/30 dark:text-zinc-600 mb-10">Company</h5>
+            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Company</h5>
             <ul className="space-y-5">
-              <li><Link to="/contact" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/contact" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Contact
               </Link></li>
-              <li><a href="#" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><a href="#" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Careers
               </a></li>
             </ul>
           </div>
           <div>
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950 dark:text-white/30 dark:text-zinc-600 mb-10">Legal</h5>
+            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Legal</h5>
             <ul className="space-y-5">
-              <li><Link to="/privacy" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/privacy" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Privacy Policy
               </Link></li>
-              <li><Link to="/terms" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/terms" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Terms
               </Link></li>
-              <li><Link to="/cookies" className="text-navy-950 dark:text-white font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/cookies" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Cookies
               </Link></li>
             </ul>
           </div>
           <div>
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950 dark:text-white/30 dark:text-zinc-600 mb-10">Contact</h5>
+            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Contact</h5>
             <ul className="space-y-6">
               <li className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold uppercase text-gold-600 tracking-widest">Phone</span>
-                <span className="text-navy-950 dark:text-white font-bold text-base">+91 98765 43210</span>
+                <span className="text-navy-950  font-bold text-base">+91 98765 43210</span>
               </li>
               <li className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold uppercase text-gold-600 tracking-widest">Email</span>
-                <span className="text-navy-950 dark:text-white font-bold text-base">stay@hampistays.com</span>
+                <span className="text-navy-950  font-bold text-base">stay@hampistays.com</span>
               </li>
               <li className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold uppercase text-gold-600 tracking-widest">Location</span>
-                <span className="text-navy-950 dark:text-white font-bold text-sm leading-relaxed max-w-[200px]">Heritage Route, Kamalapura, Hampi, Karnataka</span>
+                <span className="text-navy-950  font-bold text-sm leading-relaxed max-w-[200px]">Heritage Route, Kamalapura, Hampi, Karnataka</span>
               </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-sand-200 dark:border-zinc-800/60 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs font-bold text-navy-950 dark:text-white/40 dark:text-zinc-500 uppercase tracking-widest">
+        <div className="pt-8 border-t border-sand-200  flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-xs font-bold text-navy-950   uppercase tracking-widest">
             © {new Date().getFullYear()} HampiStays — Crafted in Hampi, India
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 transition-colors" aria-label="Instagram">
+            <a href="#" className="text-navy-950   hover:text-gold-600 transition-colors" aria-label="Instagram">
               <Globe className="w-5 h-5" />
             </a>
-            <a href="#" className="text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 transition-colors" aria-label="Twitter">
+            <a href="#" className="text-navy-950   hover:text-gold-600 transition-colors" aria-label="Twitter">
               <Share2 className="w-5 h-5" />
             </a>
-            <a href="#" className="text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 transition-colors" aria-label="Facebook">
+            <a href="#" className="text-navy-950   hover:text-gold-600 transition-colors" aria-label="Facebook">
               <MessageCircle className="w-5 h-5" />
             </a>
           </div>

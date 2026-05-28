@@ -27,7 +27,7 @@ export const DiscoveryPanel = ({ onSelectCollection }: { onSelectCollection: (id
               trackFrontendEvent('discovery_collection_clicked', { collectionId: collection.id });
               onSelectCollection(collection.id);
             }}
-            className="group cursor-pointer bg-white dark:bg-zinc-900/5 border border-white/10 p-6 rounded-3xl hover:bg-white dark:bg-zinc-900/10 hover:border-[#C5A059]/30 transition-all text-center flex flex-col items-center justify-center backdrop-blur-md"
+            className="group cursor-pointer bg-white  border border-white/10 p-6 rounded-3xl hover:bg-white  hover:border-[#C5A059]/30 transition-all text-center flex flex-col items-center justify-center backdrop-blur-md"
           >
             <div className={`p-4 rounded-full ${collection.bg} ${collection.color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
               <collection.icon className="w-8 h-8" />

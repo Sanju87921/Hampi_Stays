@@ -29,7 +29,7 @@ export function FeaturedResorts() {
   };
 
   if (isLoading) return (
-    <div className="py-20 flex justify-center bg-sand-50 dark:bg-zinc-950">
+    <div className="py-20 flex justify-center bg-sand-50 ">
       <Loader2 className="w-10 h-10 animate-spin text-gold-600" />
     </div>
   );
@@ -37,7 +37,7 @@ export function FeaturedResorts() {
   if (resorts.length === 0) return null;
 
   return (
-    <section className="py-32 md:py-48 bg-sand-50 dark:bg-zinc-950 relative overflow-hidden">
+    <section className="py-32 md:py-48 bg-sand-50  relative overflow-hidden">
       <div className="absolute -top-40 -right-40 w-64 h-64 md:w-96 md:h-96 bg-gold-200/20 rounded-full blur-[100px] opacity-60 pointer-events-none" />
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
@@ -57,7 +57,7 @@ export function FeaturedResorts() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-5xl lg:text-7xl font-serif text-navy-950 dark:text-white font-bold mb-6 leading-[1.1]"
+              className="text-4xl md:text-5xl lg:text-7xl font-serif text-navy-950  font-bold mb-6 leading-[1.1]"
             >
               Handpicked Sanctuaries
             </motion.h2>
@@ -82,7 +82,7 @@ export function FeaturedResorts() {
             <Link to="/resorts">
               <Button
                 variant="outline"
-                className="group flex items-center gap-3 border-navy-200/50 text-navy-950 dark:text-white hover:border-gold-500 hover:bg-gold-500 hover:text-white transition-all duration-500 px-8 py-4 rounded-full text-xs tracking-widest uppercase font-bold shadow-sm hover:shadow-gold"
+                className="group flex items-center gap-3 border-navy-200/50 text-navy-950  hover:border-gold-500 hover:bg-gold-500 hover:text-white transition-all duration-500 px-8 py-4 rounded-full text-xs tracking-widest uppercase font-bold shadow-sm hover:shadow-gold"
               >
                 View Collection
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -122,12 +122,12 @@ export function FeaturedResorts() {
 
                 {/* Top Actions */}
                 <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-20">
-                  <span className="bg-white dark:bg-zinc-900/15 backdrop-blur-md border border-white/20 px-4 py-1.5 text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-sm rounded-full">
+                  <span className="bg-white  backdrop-blur-md border border-white/20 px-4 py-1.5 text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-sm rounded-full">
                     Signature
                   </span>
                   <button
                     onClick={(e) => handleToggleFavorite(e, resort.id)}
-                    className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900/10 backdrop-blur-md flex items-center justify-center hover:bg-white dark:bg-zinc-900/20 transition-colors shadow-sm group/btn"
+                    className="w-10 h-10 rounded-full bg-white  backdrop-blur-md flex items-center justify-center hover:bg-white  transition-colors shadow-sm group/btn"
                     aria-label="Toggle favourite"
                   >
                     <Heart
@@ -161,7 +161,7 @@ export function FeaturedResorts() {
                         4.9
                       </span>
                     </div>
-                    <span className="w-1 h-1 rounded-full bg-white dark:bg-zinc-900/30" />
+                    <span className="w-1 h-1 rounded-full bg-white " />
                     <span className="text-sm text-white/70 font-medium">
                       Starting ₹{resort.pricePerNight}/night
                     </span>
@@ -173,7 +173,7 @@ export function FeaturedResorts() {
                       <Link to={`/resorts/${resort.slug}`} className="block w-full">
                         <Button
                           variant="primary"
-                          className="w-full bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 dark:text-white rounded-full border border-white/10 py-5 uppercase tracking-widest text-xs font-bold transition-all duration-500 shadow-luxury hover:shadow-gold"
+                          className="w-full bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950  rounded-full border border-white/10 py-5 uppercase tracking-widest text-xs font-bold transition-all duration-500 shadow-luxury hover:shadow-gold"
                         >
                           Explore Sanctuary
                         </Button>

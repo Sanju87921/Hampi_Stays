@@ -220,7 +220,7 @@ const HeroModule = () => {
     return (
       <div className="py-16 flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-4 border-gold-400 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-navy-950 dark:text-white/50 dark:text-zinc-400 font-medium">Loading hero slides...</p>
+        <p className="text-sm text-navy-950   font-medium">Loading hero slides...</p>
       </div>
     );
   }
@@ -233,8 +233,8 @@ const HeroModule = () => {
           <span className="text-2xl">⚠️</span>
         </div>
         <div>
-          <h3 className="font-bold text-navy-950 dark:text-white text-lg mb-2">Hero Slides Unavailable</h3>
-          <p className="text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400 leading-relaxed">{loadError}</p>
+          <h3 className="font-bold text-navy-950  text-lg mb-2">Hero Slides Unavailable</h3>
+          <p className="text-sm text-navy-950   leading-relaxed">{loadError}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -244,7 +244,7 @@ const HeroModule = () => {
             Retry
           </button>
         </div>
-        <div className="text-[10px] text-navy-950 dark:text-white/30 dark:text-zinc-600 font-mono bg-sand-50 dark:bg-zinc-950 px-3 py-2 rounded-xl border border-sand-200 dark:border-zinc-800 text-left max-w-full break-all">
+        <div className="text-[10px] text-navy-950   font-mono bg-sand-50  px-3 py-2 rounded-xl border border-sand-200  text-left max-w-full break-all">
           {loadError}
         </div>
       </div>
@@ -254,14 +254,14 @@ const HeroModule = () => {
   return (
     <div className="space-y-8">
       {/* Live Preview */}
-      <div className="rounded-2xl overflow-hidden border border-sand-200 dark:border-zinc-800 bg-navy-950 relative h-[260px] md:h-[320px]">
+      <div className="rounded-2xl overflow-hidden border border-sand-200  bg-navy-950 relative h-[260px] md:h-[320px]">
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
           <Monitor className="w-4 h-4 text-gold-400" />
           <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">Live Preview</span>
         </div>
         <div className="absolute top-4 right-4 z-20 flex gap-2">
           <button onClick={() => { setPreviewPlaying(!previewPlaying); if (!previewPlaying) setPreviewIdx(0); }}
-            className="bg-white dark:bg-zinc-900/10 backdrop-blur-md border border-white/20 text-white p-2 rounded-xl hover:bg-white dark:bg-zinc-900/20 transition-colors">
+            className="bg-white  backdrop-blur-md border border-white/20 text-white p-2 rounded-xl hover:bg-white  transition-colors">
             {previewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
         </div>
@@ -285,22 +285,22 @@ const HeroModule = () => {
           <div className="absolute bottom-6 right-6 z-10 flex gap-1.5">
             {activeSlides.map((_, i) => (
               <button key={i} onClick={() => { setPreviewIdx(i); setPreviewPlaying(false); }}
-                className={`w-2 h-2 rounded-full transition-all ${i === previewIdx % activeSlides.length ? 'bg-gold-400 w-6' : 'bg-white dark:bg-zinc-900/40'}`} />
+                className={`w-2 h-2 rounded-full transition-all ${i === previewIdx % activeSlides.length ? 'bg-gold-400 w-6' : 'bg-white '}`} />
             ))}
           </div>
         )}
       </div>
 
       {/* Rotation Speed */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-sand-50 dark:bg-zinc-950 rounded-2xl p-5 border border-sand-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-sand-50  rounded-2xl p-5 border border-sand-200 ">
         <div>
-          <p className="text-sm font-bold text-navy-950 dark:text-white">Rotation Speed</p>
-          <p className="text-xs text-navy-950 dark:text-white/50 dark:text-zinc-400">Time each slide is displayed before transitioning</p>
+          <p className="text-sm font-bold text-navy-950 ">Rotation Speed</p>
+          <p className="text-xs text-navy-950  ">Time each slide is displayed before transitioning</p>
         </div>
         <div className="flex items-center gap-3">
           {[2, 3, 4, 5, 7].map(s => (
             <button key={s} onClick={() => setRotationSpeed(s)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${rotationSpeed === s ? 'bg-navy-950 text-white shadow-md' : 'bg-white dark:bg-zinc-900 text-navy-950 dark:text-white/60 dark:text-zinc-400 border border-sand-200 dark:border-zinc-800 hover:bg-sand-100 dark:hover:bg-zinc-700'}`}>
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${rotationSpeed === s ? 'bg-navy-950 text-white shadow-md' : 'bg-white  text-navy-950   border border-sand-200  hover:bg-sand-100 :bg-zinc-700'}`}>
               {s}s
             </button>
           ))}
@@ -310,7 +310,7 @@ const HeroModule = () => {
       {/* Slide Manager */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-          <p className="text-sm font-bold text-navy-950 dark:text-white">{slides.length} Slides · {activeSlides.length} Active</p>
+          <p className="text-sm font-bold text-navy-950 ">{slides.length} Slides · {activeSlides.length} Active</p>
           <div className="flex items-center gap-3">
             <input 
               type="file" 
@@ -322,7 +322,7 @@ const HeroModule = () => {
             <button 
               onClick={() => fileInputRef.current?.click()} 
               disabled={isUploading}
-              className="bg-white dark:bg-zinc-900 hover:bg-sand-50 dark:hover:bg-zinc-800 text-navy-950 dark:text-white border border-sand-200 dark:border-zinc-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+              className="bg-white  hover:bg-sand-50 :bg-zinc-800 text-navy-950  border border-sand-200  px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
             >
               {isUploading ? <div className="w-3.5 h-3.5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
               Add Slide
@@ -335,13 +335,13 @@ const HeroModule = () => {
         
         <div className="space-y-3">
           {slides.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-sand-50 dark:bg-zinc-950/50 rounded-2xl border-2 border-dashed border-sand-200 dark:border-zinc-800 gap-6">
-              <div className="w-20 h-20 rounded-full bg-white dark:bg-zinc-900 shadow-lg border border-sand-200 dark:border-zinc-800 flex items-center justify-center">
-                <Monitor className="w-8 h-8 text-navy-950 dark:text-white/20 dark:text-zinc-700" />
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-sand-50  rounded-2xl border-2 border-dashed border-sand-200  gap-6">
+              <div className="w-20 h-20 rounded-full bg-white  shadow-lg border border-sand-200  flex items-center justify-center">
+                <Monitor className="w-8 h-8 text-navy-950  " />
               </div>
               <div>
-                <h3 className="font-bold text-navy-950 dark:text-white text-lg mb-2">No Hero Slides Yet</h3>
-                <p className="text-sm text-navy-950 dark:text-white/50 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                <h3 className="font-bold text-navy-950  text-lg mb-2">No Hero Slides Yet</h3>
+                <p className="text-sm text-navy-950   max-w-xs mx-auto leading-relaxed">
                   Your homepage carousel is empty. Upload a stunning image of Hampi to create your first hero slide.
                 </p>
               </div>
@@ -356,9 +356,9 @@ const HeroModule = () => {
             </div>
           ) : (
             slides.map((slide, idx) => (
-              <motion.div key={slide.id} layout className={`flex flex-col sm:flex-row sm:items-center gap-4 p-3 rounded-2xl border transition-all ${slide.isActive ? 'bg-white dark:bg-zinc-900 border-sand-200 dark:border-zinc-800' : 'bg-sand-50 dark:bg-zinc-950/50 border-sand-100 dark:border-zinc-800/50 opacity-70'}`}>
+              <motion.div key={slide.id} layout className={`flex flex-col sm:flex-row sm:items-center gap-4 p-3 rounded-2xl border transition-all ${slide.isActive ? 'bg-white  border-sand-200 ' : 'bg-sand-50  border-sand-100  opacity-70'}`}>
                 {/* Thumbnail */}
-                <div className="w-full sm:w-32 h-32 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-sand-200 dark:bg-zinc-800 relative">
+                <div className="w-full sm:w-32 h-32 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-sand-200  relative">
                   <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" />
                   <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-navy-950/70 backdrop-blur text-gold-400 text-[8px] font-bold rounded-md">#{idx + 1}</div>
                   {!slide.isActive && (
@@ -374,7 +374,7 @@ const HeroModule = () => {
                         value={editForm.title || ''} 
                         onChange={e => setEditForm({...editForm, title: e.target.value})} 
                         placeholder="Slide Title"
-                        className="w-full text-sm font-medium text-navy-950 dark:text-white bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-400" 
+                        className="w-full text-sm font-medium text-navy-950  bg-sand-50  border border-sand-200  rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-400" 
                         autoFocus 
                       />
                       <div className="flex items-center gap-2">
@@ -382,10 +382,10 @@ const HeroModule = () => {
                           value={editForm.subtitle || ''} 
                           onChange={e => setEditForm({...editForm, subtitle: e.target.value})} 
                           placeholder="Subtitle (e.g. Discover)"
-                          className="flex-1 text-xs text-navy-950 dark:text-white bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-400" 
+                          className="flex-1 text-xs text-navy-950  bg-sand-50  border border-sand-200  rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-400" 
                         />
                         <button onClick={() => saveEdit(slide.id)} className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"><Check className="w-4 h-4" /></button>
-                        <button onClick={() => setEditingId(null)} className="p-1.5 bg-sand-200 dark:bg-zinc-800 hover:bg-sand-300 text-navy-950 dark:text-white rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+                        <button onClick={() => setEditingId(null)} className="p-1.5 bg-sand-200  hover:bg-sand-300 text-navy-950  rounded-lg transition-colors"><X className="w-4 h-4" /></button>
                       </div>
                     </div>
                   ) : (
@@ -393,28 +393,28 @@ const HeroModule = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-[10px] font-bold text-gold-600 uppercase tracking-widest mb-0.5">{slide.subtitle || 'Discover'}</p>
-                          <p className="text-sm font-semibold text-navy-950 dark:text-white truncate">{slide.title}</p>
+                          <p className="text-sm font-semibold text-navy-950  truncate">{slide.title}</p>
                         </div>
-                        <button onClick={() => startEdit(slide)} className="p-1.5 text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:text-gold-600 bg-sand-50 dark:bg-zinc-950 hover:bg-sand-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => startEdit(slide)} className="p-1.5 text-navy-950   hover:text-gold-600 bg-sand-50  hover:bg-sand-100 :bg-zinc-700 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                       </div>
-                      <p className="text-[10px] text-navy-950 dark:text-white/40 dark:text-zinc-500 mt-2 truncate font-mono bg-sand-50 dark:bg-zinc-950 px-1.5 py-0.5 rounded inline-block max-w-full">{slide.imageUrl}</p>
+                      <p className="text-[10px] text-navy-950   mt-2 truncate font-mono bg-sand-50  px-1.5 py-0.5 rounded inline-block max-w-full">{slide.imageUrl}</p>
                     </div>
                   )}
                 </div>
                 
                 {/* Controls */}
-                <div className="flex items-center gap-1.5 shrink-0 sm:flex-col pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-sand-100 dark:border-zinc-800/50 sm:pl-3">
-                  <div className="flex gap-1 bg-sand-50 dark:bg-zinc-950 p-1 rounded-xl">
-                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1.5 rounded-lg hover:bg-white dark:bg-zinc-900 hover:shadow-sm disabled:opacity-30 transition-all"><ChevronUp className="w-4 h-4 text-navy-950 dark:text-white/60 dark:text-zinc-400" /></button>
-                    <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1.5 rounded-lg hover:bg-white dark:bg-zinc-900 hover:shadow-sm disabled:opacity-30 transition-all"><ChevronDown className="w-4 h-4 text-navy-950 dark:text-white/60 dark:text-zinc-400" /></button>
+                <div className="flex items-center gap-1.5 shrink-0 sm:flex-col pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-sand-100  sm:pl-3">
+                  <div className="flex gap-1 bg-sand-50  p-1 rounded-xl">
+                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1.5 rounded-lg hover:bg-white  hover:shadow-sm disabled:opacity-30 transition-all"><ChevronUp className="w-4 h-4 text-navy-950  " /></button>
+                    <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1.5 rounded-lg hover:bg-white  hover:shadow-sm disabled:opacity-30 transition-all"><ChevronDown className="w-4 h-4 text-navy-950  " /></button>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => toggle(slide)}
                       title={slide.isActive ? "Deactivate (Set as Draft)" : "Activate (Publish)"}
-                      className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 text-navy-950 dark:text-white/40 dark:text-zinc-500 hover:bg-sand-50 dark:hover:bg-zinc-800'}`}>
+                      className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white  border border-sand-200  text-navy-950   hover:bg-sand-50 :bg-zinc-800'}`}>
                       {slide.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
-                    <button onClick={() => deleteSlide(slide.id)} title="Delete Slide" className="p-2 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm">
+                    <button onClick={() => deleteSlide(slide.id)} title="Delete Slide" className="p-2 bg-white  border border-sand-200  text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
