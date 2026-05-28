@@ -163,21 +163,41 @@ export const setupCurationRoutes = (app, authMiddleware, adminMiddleware) => {
   curation.get('/search-ranking', async (c) => {
     const prisma = c.get('getPrisma')(c.env);
     try {
-      const resorts = await prisma.resort.findMany({
-        where: { status: 'APPROVED' },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          type: true,
-          rating: true,
-          reviewCount: true,
-          boostScore: true,
-          locationArea: true,
-          images: true,
-        },
-        orderBy: [{ boostScore: 'desc' }, { rating: 'desc' }]
-      });
+      let resorts;
+      try {
+        resorts = await prisma.resort.findMany({
+          where: { status: 'APPROVED' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            type: true,
+            rating: true,
+            reviewCount: true,
+            boostScore: true,
+            locationArea: true,
+            images: true,
+          },
+          orderBy: [{ boostScore: 'desc' }, { rating: 'desc' }]
+        });
+      } catch (_colErr) {
+        // boostScore column may not exist yet in production DB — fall back
+        resorts = await prisma.resort.findMany({
+          where: { status: 'APPROVED' },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            type: true,
+            rating: true,
+            reviewCount: true,
+            locationArea: true,
+            images: true,
+          },
+          orderBy: { rating: 'desc' }
+        });
+        resorts = resorts.map(r => ({ ...r, boostScore: 0 }));
+      }
       return c.json(resorts);
     } catch (err) {
       return c.json({ error: 'Failed to fetch search ranking' }, 500);
