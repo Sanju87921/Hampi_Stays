@@ -124,21 +124,21 @@ export function BlogModule() {
   return (
     <div className="space-y-8">
       {!isEditorOpen ? (
-        <div className="bg-white  rounded-[2.5rem] p-8 border border-sand-200  shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
             <div>
-              <h3 className="text-2xl font-bold text-navy-950 ">Blog Content</h3>
-              <p className="text-sm text-navy-950  ">Manage SEO destination guides and organic marketing content.</p>
+              <h3 className="text-2xl font-bold text-navy-950 dark:text-white">Blog Content</h3>
+              <p className="text-sm text-navy-950 dark:text-white/40 dark:text-zinc-500">Manage SEO destination guides and organic marketing content.</p>
             </div>
             <div className="flex gap-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950  " />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 dark:text-white/30 dark:text-zinc-600" />
                 <input 
                   type="text" 
                   placeholder="Search articles..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="pl-12 pr-4 h-12 bg-sand-50  border border-sand-200  rounded-xl text-sm focus:outline-none focus:border-gold-500 w-64 transition-colors"
+                  className="pl-12 pr-4 h-12 bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:border-gold-500 w-64 transition-colors"
                 />
               </div>
               <Button onClick={() => handleOpenEditor()} className="bg-navy-950 text-white h-12 rounded-xl px-6 gap-2">
@@ -154,19 +154,19 @@ export function BlogModule() {
           ) : filteredPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosts.map(post => (
-                <div key={post.id} className="bg-sand-50  border border-sand-100  rounded-2xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full">
-                  <div className="h-40 relative overflow-hidden bg-sand-200 ">
+                <div key={post.id} className="bg-sand-50 dark:bg-zinc-950/50 border border-sand-100 dark:border-zinc-800/50 rounded-2xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full">
+                  <div className="h-40 relative overflow-hidden bg-sand-200 dark:bg-zinc-800">
                     {post.coverImage ? (
                       <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={post.title} />
                     ) : (
-                      <div className="flex items-center justify-center w-full h-full text-navy-950  ">
+                      <div className="flex items-center justify-center w-full h-full text-navy-950 dark:text-white/20 dark:text-zinc-700">
                         <FileText className="w-12 h-12" />
                       </div>
                     )}
                     <div className="absolute top-4 right-4">
                       <span className={cn(
                         "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm",
-                        post.published ? "bg-emerald-500 text-white" : "bg-sand-300 text-navy-950 "
+                        post.published ? "bg-emerald-500 text-white" : "bg-sand-300 text-navy-950 dark:text-white"
                       )}>
                         {post.published ? "Published" : "Draft"}
                       </span>
@@ -177,19 +177,19 @@ export function BlogModule() {
                       <Calendar className="w-3 h-3" />
                       {new Date(post.createdAt).toLocaleDateString()}
                     </p>
-                    <h4 className="text-lg font-bold text-navy-950  mb-2 line-clamp-2">{post.title}</h4>
-                    <p className="text-sm text-navy-950   line-clamp-2 mb-6 flex-grow">{post.excerpt || post.content.replace(/<[^>]+>/g, '').substring(0, 100)}</p>
+                    <h4 className="text-lg font-bold text-navy-950 dark:text-white mb-2 line-clamp-2">{post.title}</h4>
+                    <p className="text-sm text-navy-950 dark:text-white/50 dark:text-zinc-400 line-clamp-2 mb-6 flex-grow">{post.excerpt || post.content.replace(/<[^>]+>/g, '').substring(0, 100)}</p>
                     
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-sand-200 ">
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-sand-200 dark:border-zinc-800/50">
                       <div className="flex gap-2">
-                        <button onClick={() => handleOpenEditor(post)} className="w-10 h-10 rounded-xl bg-white  border border-sand-200  text-navy-950  flex items-center justify-center hover:bg-sand-100 :bg-zinc-700 transition-colors" title="Edit">
+                        <button onClick={() => handleOpenEditor(post)} className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 text-navy-950 dark:text-white flex items-center justify-center hover:bg-sand-100 dark:hover:bg-zinc-700 transition-colors" title="Edit">
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeletePost(post.id, post.title)} className="w-10 h-10 rounded-xl bg-white  border border-sand-200  text-red-600 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors" title="Delete">
+                        <button onClick={() => handleDeletePost(post.id, post.title)} className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 text-red-600 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors" title="Delete">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[10px] font-bold text-navy-950   uppercase tracking-widest hover:text-gold-600 transition-colors">
+                      <a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[10px] font-bold text-navy-950 dark:text-white/50 dark:text-zinc-400 uppercase tracking-widest hover:text-gold-600 transition-colors">
                         Preview <Eye className="w-3 h-3" />
                       </a>
                     </div>
@@ -198,10 +198,10 @@ export function BlogModule() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-sand-50  rounded-2xl border border-dashed border-sand-200 ">
-              <FileText className="w-12 h-12 text-navy-950   mx-auto mb-4" />
-              <h4 className="text-lg font-bold text-navy-950  mb-2">No Articles Found</h4>
-              <p className="text-navy-950   max-w-sm mx-auto mb-6">Create your first blog post to start driving organic traffic.</p>
+            <div className="text-center py-20 bg-sand-50 dark:bg-zinc-950 rounded-2xl border border-dashed border-sand-200 dark:border-zinc-800">
+              <FileText className="w-12 h-12 text-navy-950 dark:text-white/20 dark:text-zinc-700 mx-auto mb-4" />
+              <h4 className="text-lg font-bold text-navy-950 dark:text-white mb-2">No Articles Found</h4>
+              <p className="text-navy-950 dark:text-white/50 dark:text-zinc-400 max-w-sm mx-auto mb-6">Create your first blog post to start driving organic traffic.</p>
               <Button onClick={() => handleOpenEditor()} className="bg-navy-950 text-white rounded-xl mx-auto">Create Article</Button>
             </div>
           )}
@@ -210,10 +210,10 @@ export function BlogModule() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white  rounded-[2.5rem] p-8 border border-sand-200  shadow-sm"
+          className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-sand-200 dark:border-zinc-800 shadow-sm"
         >
-          <div className="flex items-center justify-between mb-8 pb-6 border-b border-sand-100 ">
-            <h3 className="text-2xl font-bold text-navy-950 ">{editingPost ? "Edit Article" : "New Article"}</h3>
+          <div className="flex items-center justify-between mb-8 pb-6 border-b border-sand-100 dark:border-zinc-800/50">
+            <h3 className="text-2xl font-bold text-navy-950 dark:text-white">{editingPost ? "Edit Article" : "New Article"}</h3>
             <Button variant="outline" onClick={() => setIsEditorOpen(false)} className="rounded-xl">Cancel</Button>
           </div>
 
@@ -221,111 +221,111 @@ export function BlogModule() {
             {/* Left Column: Main Editor */}
             <div className="lg:col-span-2 space-y-6">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-2 block">Article Title *</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-2 block">Article Title *</label>
                 <input 
                   type="text" 
                   required
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  className="w-full h-14 bg-sand-50  border border-sand-200  rounded-xl px-4 font-bold text-navy-950  outline-none focus:border-gold-500 text-lg"
+                  className="w-full h-14 bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-xl px-4 font-bold text-navy-950 dark:text-white outline-none focus:border-gold-500 text-lg"
                   placeholder="Enter an engaging title..."
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-2 block">Content (HTML/Markdown) *</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-2 block">Content (HTML/Markdown) *</label>
                 <textarea 
                   required
                   value={content}
                   onChange={e => setContent(e.target.value)}
-                  className="w-full h-[500px] bg-sand-50  border border-sand-200  rounded-xl p-4 text-navy-950  outline-none focus:border-gold-500 font-mono text-sm resize-y"
+                  className="w-full h-[500px] bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-xl p-4 text-navy-950 dark:text-white outline-none focus:border-gold-500 font-mono text-sm resize-y"
                   placeholder="Write your article content here..."
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-2 block">Excerpt (Short Summary)</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-2 block">Excerpt (Short Summary)</label>
                 <textarea 
                   value={excerpt}
                   onChange={e => setExcerpt(e.target.value)}
-                  className="w-full h-24 bg-sand-50  border border-sand-200  rounded-xl p-4 text-navy-950  outline-none focus:border-gold-500 text-sm resize-none"
+                  className="w-full h-24 bg-sand-50 dark:bg-zinc-950 border border-sand-200 dark:border-zinc-800 rounded-xl p-4 text-navy-950 dark:text-white outline-none focus:border-gold-500 text-sm resize-none"
                   placeholder="Brief summary for blog listings..."
                 />
               </div>
             </div>
 
             {/* Right Column: Meta & SEO */}
-            <div className="space-y-6 bg-sand-50  p-6 rounded-2xl border border-sand-100 ">
-              <div className="flex items-center justify-between bg-white  p-4 rounded-xl border border-sand-200  shadow-sm">
+            <div className="space-y-6 bg-sand-50 dark:bg-zinc-950/50 p-6 rounded-2xl border border-sand-100 dark:border-zinc-800/50">
+              <div className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-sand-200 dark:border-zinc-800 shadow-sm">
                 <div>
-                  <p className="font-bold text-navy-950 ">Publish Status</p>
-                  <p className="text-[10px] text-navy-950   uppercase tracking-widest">{published ? "Live on site" : "Hidden draft"}</p>
+                  <p className="font-bold text-navy-950 dark:text-white">Publish Status</p>
+                  <p className="text-[10px] text-navy-950 dark:text-white/50 dark:text-zinc-400 uppercase tracking-widest">{published ? "Live on site" : "Hidden draft"}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" checked={published} onChange={e => setPublished(e.target.checked)} />
-                  <div className="w-11 h-6 bg-sand-200  peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white  after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-11 h-6 bg-sand-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-zinc-900 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-2 block">Cover Image URL</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-2 block">Cover Image URL</label>
                 <input 
                   type="url" 
                   value={coverImage}
                   onChange={e => setCoverImage(e.target.value)}
-                  className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4 text-sm outline-none focus:border-gold-500"
+                  className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4 text-sm outline-none focus:border-gold-500"
                   placeholder="https://..."
                 />
                 {coverImage && (
-                  <div className="mt-3 h-32 rounded-xl overflow-hidden border border-sand-200 ">
+                  <div className="mt-3 h-32 rounded-xl overflow-hidden border border-sand-200 dark:border-zinc-800">
                     <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
                   </div>
                 )}
               </div>
 
-              <div className="pt-6 border-t border-sand-200  space-y-4">
+              <div className="pt-6 border-t border-sand-200 dark:border-zinc-800 space-y-4">
                 <div className="flex items-center gap-2 text-gold-600 mb-2">
                   <Globe className="w-4 h-4" />
                   <span className="font-bold text-sm">SEO Settings</span>
                 </div>
                 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-1 block">Custom Slug</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-1 block">Custom Slug</label>
                   <input 
                     type="text" 
                     value={slug}
                     onChange={e => setSlug(e.target.value)}
-                    className="w-full h-10 bg-white  border border-sand-200  rounded-lg px-3 text-xs outline-none focus:border-gold-500"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-lg px-3 text-xs outline-none focus:border-gold-500"
                     placeholder="Auto-generated if empty"
                   />
                 </div>
                 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-1 block">Meta Title</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-1 block">Meta Title</label>
                   <input 
                     type="text" 
                     value={seoTitle}
                     onChange={e => setSeoTitle(e.target.value)}
-                    className="w-full h-10 bg-white  border border-sand-200  rounded-lg px-3 text-xs outline-none focus:border-gold-500"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-lg px-3 text-xs outline-none focus:border-gold-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-1 block">Meta Description</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-1 block">Meta Description</label>
                   <textarea 
                     value={seoDescription}
                     onChange={e => setSeoDescription(e.target.value)}
-                    className="w-full h-20 bg-white  border border-sand-200  rounded-lg p-3 text-xs outline-none focus:border-gold-500 resize-none"
+                    className="w-full h-20 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-lg p-3 text-xs outline-none focus:border-gold-500 resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950   ml-1 mb-1 block">Keywords (comma separated)</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 dark:text-white/40 dark:text-zinc-500 ml-1 mb-1 block">Keywords (comma separated)</label>
                   <input 
                     type="text" 
                     value={keywords}
                     onChange={e => setKeywords(e.target.value)}
-                    className="w-full h-10 bg-white  border border-sand-200  rounded-lg px-3 text-xs outline-none focus:border-gold-500"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-lg px-3 text-xs outline-none focus:border-gold-500"
                   />
                 </div>
               </div>
@@ -333,7 +333,7 @@ export function BlogModule() {
               <Button 
                 type="submit" 
                 isLoading={isSaving}
-                className="w-full h-14 bg-gold-500 hover:bg-gold-600 text-navy-950  rounded-xl shadow-luxury mt-6 font-bold text-lg"
+                className="w-full h-14 bg-gold-500 hover:bg-gold-600 text-navy-950 dark:text-white rounded-xl shadow-luxury mt-6 font-bold text-lg"
               >
                 {editingPost ? "Save Changes" : "Publish Article"}
               </Button>

@@ -97,43 +97,43 @@ const CuratedExperiencesModule = () => {
 
   if (isEditing) {
     return (
-      <div className="bg-sand-50  p-6 rounded-2xl border border-sand-200 ">
-        <h3 className="text-xl font-bold text-navy-950  mb-6">{editingItem ? 'Edit Experience' : 'New Curated Experience'}</h3>
+      <div className="bg-sand-50 dark:bg-zinc-950/50 p-6 rounded-2xl border border-sand-200 dark:border-zinc-800">
+        <h3 className="text-xl font-bold text-navy-950 dark:text-white mb-6">{editingItem ? 'Edit Experience' : 'New Curated Experience'}</h3>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-navy-950   uppercase">Experience Title</label>
-            <input required type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
+            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Experience Title</label>
+            <input required type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
           </div>
           <div>
-            <label className="text-xs font-bold text-navy-950   uppercase">Description</label>
-            <textarea required value={description} onChange={e => setDescription(e.target.value)} className="w-full h-24 bg-white  border border-sand-200  rounded-xl px-4 py-3 resize-none" />
+            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Description</label>
+            <textarea required value={description} onChange={e => setDescription(e.target.value)} className="w-full h-24 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4 py-3 resize-none" />
           </div>
           <div>
-            <label className="text-xs font-bold text-navy-950   uppercase">Image URL</label>
-            <input type="url" value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
+            <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Image URL</label>
+            <input type="url" value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-bold text-navy-950   uppercase">Price (₹)</label>
-              <input required type="number" value={price} onChange={e => setPrice(parseFloat(e.target.value))} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Price (₹)</label>
+              <input required type="number" value={price} onChange={e => setPrice(parseFloat(e.target.value))} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
             </div>
             <div>
-              <label className="text-xs font-bold text-navy-950   uppercase">Duration (e.g., 2 Hours)</label>
-              <input required type="text" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Duration (e.g., 2 Hours)</label>
+              <input required type="text" value={duration} onChange={e => setDuration(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
             </div>
             <div>
-              <label className="text-xs font-bold text-navy-950   uppercase">Location</label>
-              <input required type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full h-12 bg-white  border border-sand-200  rounded-xl px-4" />
+              <label className="text-xs font-bold text-navy-950 dark:text-white/60 dark:text-zinc-400 uppercase">Location</label>
+              <input required type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full h-12 bg-white dark:bg-zinc-900 border border-sand-200 dark:border-zinc-800 rounded-xl px-4" />
             </div>
           </div>
           <div className="flex items-center gap-6 mt-6">
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="w-5 h-5" />
-              <label className="font-bold text-navy-950 ">Featured Collection</label>
+              <label className="font-bold text-navy-950 dark:text-white">Featured Collection</label>
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-5 h-5" />
-              <label className="font-bold text-navy-950 ">Active & Bookable</label>
+              <label className="font-bold text-navy-950 dark:text-white">Active & Bookable</label>
             </div>
           </div>
           <div className="flex gap-4 pt-4">
@@ -149,8 +149,8 @@ const CuratedExperiencesModule = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="font-bold text-navy-950  text-lg">Hampi Experiences</h3>
-          <p className="text-sm text-navy-950  ">Manage heritage walks, coracle rides, and tours.</p>
+          <h3 className="font-bold text-navy-950 dark:text-white text-lg">Hampi Experiences</h3>
+          <p className="text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400">Manage heritage walks, coracle rides, and tours.</p>
         </div>
         <Button onClick={() => handleOpenEditor()} className="bg-navy-950 text-white gap-2">
           <Plus className="w-4 h-4" /> Create Experience
@@ -159,12 +159,12 @@ const CuratedExperiencesModule = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {experiences.map(exp => (
-          <div key={exp.id} className="bg-white  rounded-2xl border border-sand-200  overflow-hidden flex flex-col group">
-            <div className="h-48 bg-sand-200  relative">
+          <div key={exp.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-sand-200 dark:border-zinc-800 overflow-hidden flex flex-col group">
+            <div className="h-48 bg-sand-200 dark:bg-zinc-800 relative">
               {exp.imageUrl ? (
                 <img src={exp.imageUrl} alt={exp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-navy-950  ">
+                <div className="w-full h-full flex items-center justify-center text-navy-950 dark:text-white/20 dark:text-zinc-700">
                   <Map className="w-12 h-12" />
                 </div>
               )}
@@ -175,17 +175,17 @@ const CuratedExperiencesModule = () => {
               )}
             </div>
             <div className="p-5 flex-1 flex flex-col">
-              <h4 className="font-bold text-navy-950  text-xl mb-2">{exp.title}</h4>
-              <p className="text-sm text-navy-950   mb-4 line-clamp-2">{exp.description}</p>
+              <h4 className="font-bold text-navy-950 dark:text-white text-xl mb-2">{exp.title}</h4>
+              <p className="text-sm text-navy-950 dark:text-white/60 dark:text-zinc-400 mb-4 line-clamp-2">{exp.description}</p>
               
-              <div className="grid grid-cols-2 gap-3 mb-6 bg-sand-50  p-3 rounded-xl">
-                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950 ">
+              <div className="grid grid-cols-2 gap-3 mb-6 bg-sand-50 dark:bg-zinc-950/50 p-3 rounded-xl">
+                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950 dark:text-white">
                   <Clock className="w-4 h-4 text-gold-600" /> {exp.duration}
                 </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950 ">
+                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950 dark:text-white">
                   <IndianRupee className="w-4 h-4 text-emerald-600" /> {exp.price} / person
                 </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950  col-span-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-navy-950 dark:text-white col-span-2">
                   <MapPin className="w-4 h-4 text-navy-400" /> {exp.location}
                 </div>
               </div>

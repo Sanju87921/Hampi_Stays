@@ -90,7 +90,7 @@ export function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
         isScrolled
-          ? "bg-sand-50  backdrop-blur-2xl border-b border-sand-200  shadow-sm py-2 md:py-1.5"
+          ? "bg-sand-50 dark:bg-zinc-950/90 backdrop-blur-2xl border-b border-sand-200 dark:border-zinc-800/60 shadow-sm py-2 md:py-1.5"
           : "bg-gradient-to-b from-navy-950/80 via-navy-950/30 to-transparent py-4 md:py-[1.15rem]"
       )}
     >
@@ -122,7 +122,7 @@ export function Navbar() {
             {user?.role?.toUpperCase() === 'ADMIN' && (
                             <div className={cn(
                 "hidden md:flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all duration-300",
-                isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white  text-white border-white/20 backdrop-blur-md"
+                isScrolled ? "bg-navy-950 text-white border-navy-950 shadow-md" : "bg-white dark:bg-zinc-900/10 text-white border-white/20 backdrop-blur-md"
               )}>
                 <div className="relative flex h-2 w-2 mr-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -145,7 +145,7 @@ export function Navbar() {
                   className={cn(
                     "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
                     isScrolled 
-                      ? "text-navy-950  hover:text-gold-600" 
+                      ? "text-navy-950 dark:text-white hover:text-gold-600" 
                       : "text-white hover:text-gold-400"
                   )}
                 >
@@ -174,8 +174,8 @@ export function Navbar() {
                     className={cn(
                       "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
                       isScrolled 
-                        ? "border-navy-200 text-navy-950  hover:bg-navy-950 hover:text-white" 
-                        : "border-white/20 text-white hover:bg-white "
+                        ? "border-navy-200 text-navy-950 dark:text-white hover:bg-navy-950 hover:text-white" 
+                        : "border-white/20 text-white hover:bg-white dark:bg-zinc-900/10"
                     )}
                   >
                     Logout
@@ -187,7 +187,7 @@ export function Navbar() {
                     to="/login"
                     className={cn(
                       "text-[12px] uppercase tracking-[0.15em] font-bold transition-all duration-300 hover:opacity-70",
-                      isScrolled ? "text-navy-950 " : "text-white"
+                      isScrolled ? "text-navy-950 dark:text-white" : "text-white"
                     )}
                   >
                     {t("navbar.signIn")}
@@ -197,8 +197,8 @@ export function Navbar() {
                     className={cn(
                       "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
                       isScrolled 
-                        ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950  shadow-2xl shadow-navy-950/20" 
-                        : "bg-gold-500 text-navy-950  hover:bg-white  hover:text-navy-950  shadow-2xl shadow-gold-500/20"
+                        ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 dark:text-white shadow-2xl shadow-navy-950/20" 
+                        : "bg-gold-500 text-navy-950 dark:text-white hover:bg-white dark:bg-zinc-900 hover:text-navy-950 dark:text-white shadow-2xl shadow-gold-500/20"
                     )}
                     onClick={() => {
                       protect(
@@ -219,9 +219,9 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
-                <X className={cn("w-6 h-6", isScrolled ? "text-navy-950 " : "text-white")} />
+                <X className={cn("w-6 h-6", isScrolled ? "text-navy-950 dark:text-white" : "text-white")} />
               ) : (
-                <Menu className={cn("w-6 h-6", isScrolled ? "text-navy-950 " : "text-white")} />
+                <Menu className={cn("w-6 h-6", isScrolled ? "text-navy-950 dark:text-white" : "text-white")} />
               )}
             </button>
           </div>
@@ -235,7 +235,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 right-0 bg-sand-50  backdrop-blur-2xl shadow-luxury border-t border-sand-200  flex flex-col md:hidden overflow-hidden"
+            className="absolute top-full left-0 right-0 bg-sand-50 dark:bg-zinc-950/95 backdrop-blur-2xl shadow-luxury border-t border-sand-200 dark:border-zinc-800/50 flex flex-col md:hidden overflow-hidden"
           >
             <div className="py-8 px-6 flex flex-col gap-6">
               <Link 
@@ -256,7 +256,7 @@ export function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className="text-navy-950  font-serif text-xl sm:text-2xl font-bold border-b border-sand-200  pb-3 sm:pb-4 hover:text-gold-600 transition-colors"
+                  className="text-navy-950 dark:text-white font-serif text-xl sm:text-2xl font-bold border-b border-sand-200 dark:border-zinc-800/60 pb-3 sm:pb-4 hover:text-gold-600 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.name}
@@ -273,7 +273,7 @@ export function Navbar() {
                         setIsMobileMenuOpen(false);
                         navigate("/login");
                       }}
-                      className="w-full text-center font-bold text-navy-950  py-4 rounded-2xl border border-sand-200  hover:border-gold-400 transition-colors block text-sm"
+                      className="w-full text-center font-bold text-navy-950 dark:text-white py-4 rounded-2xl border border-sand-200 dark:border-zinc-800 hover:border-gold-400 transition-colors block text-sm"
                     >
                       {t("navbar.signIn")}
                     </button>
@@ -298,7 +298,7 @@ export function Navbar() {
                       setIsMobileMenuOpen(false);
                       logout();
                     }}
-                    className="w-full h-14 sm:h-16 rounded-2xl border border-navy-200 text-navy-950  font-bold text-sm uppercase tracking-[0.15em] hover:bg-navy-950 hover:text-white transition-all duration-300"
+                    className="w-full h-14 sm:h-16 rounded-2xl border border-navy-200 text-navy-950 dark:text-white font-bold text-sm uppercase tracking-[0.15em] hover:bg-navy-950 hover:text-white transition-all duration-300"
                   >
                     Logout
                   </button>

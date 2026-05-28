@@ -238,4 +238,27 @@ img {
     color: var(--color-navy-800);
   }
 }
-
+
+/* ── Dark Mode Global Overrides ── */
+.dark body {
+  background-color: #0a0a0a;
+  color: #f4f4f5;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f4f4f5;
+}
+
+.dark p {
+  color: #a1a1aa;
+}
+
+/* Smooth global transition for theme switch */
+html {
+  transition: background-color 0.25s ease;
+}
