@@ -96,6 +96,7 @@ model Resort {
   status         ResortStatus   @default(PENDING)
   deletedAt      DateTime?
   commissionRate Float          @default(7.0)
+  boostScore     Int            @default(0)
   bookings       Booking[]
   discountCodes  DiscountCode[]
   invitations    Invitation[]
