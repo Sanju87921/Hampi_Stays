@@ -1145,13 +1145,31 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
       where: { ownerId: owner.id },
       include: { 
         roomTypes: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            pricePerNight: true,
+            capacity: true,
+            availableCount: true,
+            images: true,
             priceOverrides: true,
             blockings: true
           }
         }, 
         bookings: { 
-          include: { user: true, room: true },
+          select: {
+            id: true,
+            status: true,
+            totalPrice: true,
+            checkIn: true,
+            checkOut: true,
+            guests: true,
+            referenceNumber: true,
+            commissionRate: true,
+            user: { select: { name: true } },
+            room: { select: { name: true } }
+          },
           orderBy: { createdAt: 'desc' }
         },
         discountCodes: true
