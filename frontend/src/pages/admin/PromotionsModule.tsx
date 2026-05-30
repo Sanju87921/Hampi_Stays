@@ -170,72 +170,74 @@ export function PromotionsModule() {
       </div>
 
       {isEditing && (
-        <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm mb-6">
-          <h3 className="text-lg font-bold text-navy-950 mb-4">{editingPromo.id ? 'Edit Offer' : 'New Offer'}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Offer Name *</label>
-              <input type="text" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                value={editingPromo.name || ''} 
-                onChange={e => setEditingPromo({...editingPromo, name: e.target.value})} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/40 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-4xl m-auto">
+            <h3 className="text-xl font-serif text-navy-950 mb-6">{editingPromo.id ? 'Edit Offer' : 'New Offer'}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Offer Name *</label>
+                <input type="text" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  value={editingPromo.name || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Promo Code</label>
+                <input type="text" className="w-full px-4 py-2 border border-sand-200 rounded-lg uppercase" 
+                  placeholder="Leave blank for auto-apply"
+                  value={editingPromo.code || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, code: e.target.value.toUpperCase()})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Discount Type *</label>
+                <select className="w-full px-4 py-2 border border-sand-200 rounded-lg"
+                  value={editingPromo.discountType || 'percentage'}
+                  onChange={e => setEditingPromo({...editingPromo, discountType: e.target.value as 'percentage'|'flat'})}>
+                  <option value="percentage">Percentage (%)</option>
+                  <option value="flat">Flat Amount (₹)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Discount Value *</label>
+                <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  value={editingPromo.discountValue || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, discountValue: Number(e.target.value)})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Min. Booking Amount (₹)</label>
+                <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  value={editingPromo.minBookingAmount || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, minBookingAmount: Number(e.target.value) || null})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Max Discount (₹)</label>
+                <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  value={editingPromo.maxDiscount || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, maxDiscount: Number(e.target.value) || null})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Usage Limit</label>
+                <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  placeholder="Leave empty for unlimited"
+                  value={editingPromo.usageLimit || ''} 
+                  onChange={e => setEditingPromo({...editingPromo, usageLimit: Number(e.target.value) || null})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-950 mb-1">Priority (Higher wins)</label>
+                <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
+                  value={editingPromo.priority || 1} 
+                  onChange={e => setEditingPromo({...editingPromo, priority: Number(e.target.value)})} />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <input type="checkbox" id="firstBookingOnly" 
+                  checked={editingPromo.firstBookingOnly || false} 
+                  onChange={e => setEditingPromo({...editingPromo, firstBookingOnly: e.target.checked})} />
+                <label htmlFor="firstBookingOnly" className="text-sm font-medium text-navy-950">First Booking Only</label>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Promo Code</label>
-              <input type="text" className="w-full px-4 py-2 border border-sand-200 rounded-lg uppercase" 
-                placeholder="Leave blank for auto-apply"
-                value={editingPromo.code || ''} 
-                onChange={e => setEditingPromo({...editingPromo, code: e.target.value.toUpperCase()})} />
+            <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-sand-200">
+              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button className="bg-navy-950 text-white" onClick={handleSave}>Save Offer</Button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Discount Type *</label>
-              <select className="w-full px-4 py-2 border border-sand-200 rounded-lg"
-                value={editingPromo.discountType || 'percentage'}
-                onChange={e => setEditingPromo({...editingPromo, discountType: e.target.value as 'percentage'|'flat'})}>
-                <option value="percentage">Percentage (%)</option>
-                <option value="flat">Flat Amount (₹)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Discount Value *</label>
-              <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                value={editingPromo.discountValue || ''} 
-                onChange={e => setEditingPromo({...editingPromo, discountValue: Number(e.target.value)})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Min. Booking Amount (₹)</label>
-              <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                value={editingPromo.minBookingAmount || ''} 
-                onChange={e => setEditingPromo({...editingPromo, minBookingAmount: Number(e.target.value) || null})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Max Discount (₹)</label>
-              <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                value={editingPromo.maxDiscount || ''} 
-                onChange={e => setEditingPromo({...editingPromo, maxDiscount: Number(e.target.value) || null})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Usage Limit</label>
-              <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                placeholder="Leave empty for unlimited"
-                value={editingPromo.usageLimit || ''} 
-                onChange={e => setEditingPromo({...editingPromo, usageLimit: Number(e.target.value) || null})} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-navy-950 mb-1">Priority (Higher wins)</label>
-              <input type="number" className="w-full px-4 py-2 border border-sand-200 rounded-lg" 
-                value={editingPromo.priority || 1} 
-                onChange={e => setEditingPromo({...editingPromo, priority: Number(e.target.value)})} />
-            </div>
-            <div className="flex items-center space-x-2 pt-6">
-              <input type="checkbox" id="firstBookingOnly" 
-                checked={editingPromo.firstBookingOnly || false} 
-                onChange={e => setEditingPromo({...editingPromo, firstBookingOnly: e.target.checked})} />
-              <label htmlFor="firstBookingOnly" className="text-sm font-medium text-navy-950">First Booking Only</label>
-            </div>
-          </div>
-          <div className="flex justify-end gap-4 mt-6">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            <Button className="bg-navy-950 text-white" onClick={handleSave}>Save Offer</Button>
           </div>
         </div>
       )}
