@@ -92,6 +92,12 @@ export function Hero() {
               alt={imageLabels[currentImageIndex]}
               className="absolute inset-0 w-full h-full object-cover"
               loading="eager"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (!target.src.includes('hero.png')) {
+                  target.src = '/images/hero.png';
+                }
+              }}
             />
           </AnimatePresence>
           

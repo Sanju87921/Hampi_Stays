@@ -72,6 +72,9 @@ model OtpVerification {
   createdAt DateTime @default(now())
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([email])
+  @@index([phone])
+  @@index([expiresAt])
   @@map("otp_verifications")
 }
 
@@ -119,6 +122,7 @@ model Resort {
   @@index([rating])
   @@index([type])
   @@index([isFeatured])
+  @@index([ownerId])
   @@map("resorts")
 }
 
@@ -235,6 +239,7 @@ model Booking {
   @@index([resortId])
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
   @@map("bookings")
 }
 
@@ -363,6 +368,9 @@ model GuideBooking {
   guide           GuideProfile  @relation(fields: [guideId], references: [id])
   user            User          @relation(fields: [userId], references: [id])
 
+  @@index([guideId])
+  @@index([userId])
+  @@index([date])
   @@map("guide_bookings")
 }
 
@@ -551,6 +559,8 @@ model CouponRedemption {
   booking Booking? @relation(fields: [bookingId], references: [id])
 
   @@unique([couponId, userId, bookingId])
+  @@index([couponId])
+  @@index([userId])
   @@map("coupon_redemptions")
 }
 
@@ -655,5 +665,7 @@ model AuditLog {
 
   admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+  @@index([adminId])
+  @@index([createdAt])
   @@map("audit_logs")
 }

@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import * as authController from '../../controllers/auth/auth.controller.js';
+import { validateRegister, validateLogin, validateOtp } from '../../validators/auth.validator.js';
 
 const authRoutes = new Hono();
 
-authRoutes.post('/register', authController.register);
-authRoutes.post('/login', authController.login);
+authRoutes.post('/register', validateRegister, authController.register);
+authRoutes.post('/login', validateLogin, authController.login);
 // authMiddleware will be applied in worker.js before routing to getMe, or we can apply it here if we extract it.
 // To avoid extracting authMiddleware right now (Phase 7), we will pass it from worker.js as c.get('authMiddleware')?
 // Hono allows middleware on routes. But since authMiddleware is not extracted, we can just apply it in worker.js for /auth/me or pass it.
@@ -22,7 +23,7 @@ authRoutes.post('/apple', authController.appleAuth);
 authRoutes.post('/send-otp', authController.sendOtp);
 authRoutes.post('/send-email-otp', authController.sendEmailOtp);
 authRoutes.post('/send-mobile-otp', authController.sendMobileOtp);
-authRoutes.post('/verify-otp', authController.verifyOtp);
+authRoutes.post('/verify-otp', validateOtp, authController.verifyOtp);
 authRoutes.post('/refresh', authController.refreshToken);
 
 export default authRoutes;

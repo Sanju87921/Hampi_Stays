@@ -14,4 +14,4 @@ RAZORPAY_KEY_ID = "rzp_test_Snxno5G3tcQKcs"
 port = 5000
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["*/5 * * * *"]

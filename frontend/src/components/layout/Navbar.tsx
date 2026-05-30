@@ -243,7 +243,14 @@ export function Navbar() {
  className="mb-4 self-center flex flex-col items-center gap-2"
  onClick={() => setIsMobileMenuOpen(false)}
  >
- <img src="/logo-full.png" alt="HampiStays" className="h-28 w-auto object-contain" />
+ <img src="/logo-full.png" alt="HampiStays" className="h-28 w-auto object-contain" onError={(e) => {
+  const target = e.target as HTMLImageElement;
+  if (!target.src.includes('logo.png')) {
+    target.src = "/logo.png";
+  } else {
+    target.style.display = 'none';
+  }
+ }} />
  {isAuthenticated && (
  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />

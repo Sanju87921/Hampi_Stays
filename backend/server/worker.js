@@ -12,6 +12,7 @@ import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { discoveryCache, featuredCache, staticCache } from './middleware/cache.middleware.js';
 import { encrypt, decrypt, setEncryptionKey, sanitizePhoneNumber } from './utils/crypto.js';
 import { normalizeUserResponse } from './utils/normalizer.js';
 import { logSecureError, logSecureWarn, logSecureInfo } from './logging/logger.js';
@@ -21,6 +22,7 @@ import appleSignin from 'apple-signin-auth';
 import crypto from 'crypto';
 import { setupBookingRoutes } from "./routes/bookings/index.js";
 import { setupAuthRoutes } from "./routes/auth/index.js";
+import { setupPaymentRoutes } from "./routes/payments/index.js";
 import { setupCouponRoutes } from "./routes/coupons/index.js";
 import { setupReferralRoutes } from "./routes/referrals/index.js";
 import { setupSeoRoutes } from "./routes/seo/index.js";
@@ -82,88 +84,7 @@ const decryptGuide = (guide) => {
   return out;
 };
 
-const generateSignedKycUrlWorker = (guideId, env) => {
-  const expires = Math.floor(Date.now() / 1000) + 300; // 5 minutes validity
-  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
-  const dataToSign = `${guideId}:${expires}`;
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(dataToSign);
-  const token = hmac.digest('hex');
-  return `/api/admin/kyc-image/${guideId}?expires=${expires}&token=${token}`;
-};
-
-const verifySignedKycUrlWorker = (guideId, expires, token, env) => {
-  if (Math.floor(Date.now() / 1000) > parseInt(expires)) {
-    return false;
-  }
-  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
-  const dataToSign = `${guideId}:${expires}`;
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(dataToSign);
-  const expectedToken = hmac.digest('hex');
-  return token === expectedToken;
-};
-
-const runKycFraudCheckWorker = async (userId, idNumber, idImage, prisma) => {
-  const flags = [];
-  let score = 0;
-
-  if (!idNumber) return { score, flags };
-
-  const targetIdClean = idNumber.replace(/[\s-]/g, '').toLowerCase();
-
-  // Fetch all active users
-  const allUsers = await prisma.user.findMany({
-    where: {
-      id: { not: userId },
-      deletedAt: null
-    },
-    select: {
-      id: true,
-      email: true,
-      idNumber: true,
-      idImage: true
-    }
-  });
-
-  for (const otherUser of allUsers) {
-    if (otherUser.idNumber) {
-      const decIdNum = decrypt(otherUser.idNumber);
-      if (decIdNum) {
-        const cleanDecIdNum = decIdNum.replace(/[\s-]/g, '').toLowerCase();
-        if (cleanDecIdNum === targetIdClean) {
-          flags.push('DUPLICATE_ID_NUMBER');
-          score = Math.max(score, 90);
-        }
-      }
-    }
-
-    if (idImage && otherUser.idImage) {
-      const decImg = decrypt(otherUser.idImage);
-      if (decImg === idImage) {
-        flags.push('REUSED_DOCUMENT_IMAGE');
-        score = Math.max(score, 95);
-      }
-    }
-  }
-
-  // Count rejection history
-  const auditCount = await prisma.verificationAudit.count({
-    where: {
-      targetUserId: userId,
-      action: 'REJECTED'
-    }
-  });
-
-  if (auditCount >= 3) {
-    flags.push('REPEATED_REJECTIONS');
-    score = Math.max(score, 60);
-  }
-
-  return { score, flags };
-};
-
-
+import { generateSignedKycUrlWorker, verifySignedKycUrlWorker, runKycFraudCheckWorker } from './services/kyc.service.js';
 
 // --- Middleware ---
 // Inject getPrisma factory into context so extracted controllers can use c.get('getPrisma')
@@ -205,6 +126,8 @@ app.use('/upload/signature', async (c, next) => { if (c.req.method === 'OPTIONS'
 
 // --- Routes ---
 
+setupBookingRoutes(app, authMiddleware);
+setupPaymentRoutes(app, authMiddleware);
 setupCouponRoutes(app, authMiddleware, adminMiddleware);
 setupReferralRoutes(app, authMiddleware);
 setupSeoRoutes(app);
@@ -246,7 +169,7 @@ app.get('/settings', async (c) => {
     if (!settings) {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true, defaultCommissionRate: 7.0, requireOtpForSignup: true } });
     }
-    let verificationSettings = await prisma.verificationSettings.findFirst(); if (!verificationSettings) { verificationSettings = await prisma.verificationSettings.create({ data: { travellerRequirements: ['EMAIL', 'PHONE'], resortOwnerRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'BUSINESS_REG'], guideRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'GUIDE_LICENSE'] } }); } return c.json({ ...settings, verificationSettings }, 200, {
+    let verificationSettings = await prisma.verificationSettings.findFirst(); if (!verificationSettings) { verificationSettings = await prisma.verificationSettings.create({ data: { travellerRequirements: ['EMAIL', 'PHONE'], resortOwnerRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'PAN'], guideRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'GUIDE_LICENSE'] } }); } return c.json({ ...settings, verificationSettings }, 200, {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
@@ -943,7 +866,7 @@ app.get('/users/:id/wishlist', authMiddleware, async (c) => {
 });
 
 // Resorts
-app.get('/resorts/featured', async (c) => {
+app.get('/resorts/featured', featuredCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
@@ -974,7 +897,7 @@ app.get('/resorts/featured', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.get('/resorts', async (c) => {
+app.get('/resorts', discoveryCache, async (c) => {
   const prisma = getPrisma(c.env);
   const { 
     minPrice, maxPrice, type, category, 
@@ -1066,7 +989,7 @@ app.get('/resorts', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.get('/resorts/categories', async (c) => {
+app.get('/resorts/categories', staticCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
@@ -1078,7 +1001,7 @@ app.get('/resorts/categories', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.get('/resorts/:slug', async (c) => {
+app.get('/resorts/:slug', discoveryCache, async (c) => {
   const prisma = getPrisma(c.env);
   const slug = c.req.param('slug');
   try {
@@ -1990,6 +1913,30 @@ async function processUpcomingStays(env) {
   } catch (error) {
     console.error("Scheduled task error:", error);
   }
+  }
+}
+
+async function cleanupPendingBookings(env) {
+  const prisma = getPrisma(env);
+  try {
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const expiredBookings = await prisma.booking.updateMany({
+      where: {
+        status: 'PENDING',
+        createdAt: {
+          lt: fifteenMinsAgo
+        }
+      },
+      data: {
+        status: 'CANCELLED'
+      }
+    });
+    if (expiredBookings.count > 0) {
+      console.log(`Cleaned up ${expiredBookings.count} expired pending bookings to free up inventory.`);
+    }
+  } catch (error) {
+    console.error("Cleanup pending bookings task error:", error);
+  }
 }
 
 async function cleanupPendingVerifications(env) {
@@ -2002,8 +1949,6 @@ async function cleanupPendingVerifications(env) {
         }
       }
     });
-setupAuthRoutes(app, authMiddleware);
-setupBookingRoutes(app, authMiddleware);
     if (expired.count > 0) {
       console.log(`Cleaned up ${expired.count} expired pending registrations.`);
     }
@@ -2017,7 +1962,8 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(Promise.all([
       processUpcomingStays(env),
-      cleanupPendingVerifications(env)
+      cleanupPendingVerifications(env),
+      cleanupPendingBookings(env)
     ]));
   }
 };

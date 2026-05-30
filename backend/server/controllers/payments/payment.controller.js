@@ -1,6 +1,7 @@
 import { verifyPaymentSignature } from '../../services/payments/verification.service.js';
 import { logSecureError, logSecureInfo } from '../../logging/logger.js';
 import { Resend } from 'resend';
+import crypto from 'crypto';
 
 export const verifyPayment = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -64,6 +65,62 @@ export const verifyPayment = async (c) => {
 };
 
 export const handleWebhook = async (c) => {
-  // Webhook handler stub
-  return c.json({ status: 'ok' });
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const signature = c.req.header('x-razorpay-signature');
+  const rawBody = await c.req.text();
+  const secret = c.env.RAZORPAY_WEBHOOK_SECRET || c.env.RAZORPAY_KEY_SECRET;
+
+  if (!signature || !secret) {
+    logSecureError('WEBHOOK_FAILED', 'Missing signature or webhook secret', {});
+    return c.json({ error: 'Missing signature or secret' }, 400);
+  }
+
+  try {
+    const expectedSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    if (expectedSignature !== signature) {
+      logSecureError('WEBHOOK_VERIFICATION_FAILED', 'Invalid Razorpay Webhook Signature', {});
+      return c.json({ error: 'Invalid signature' }, 400);
+    }
+
+    const payload = JSON.parse(rawBody);
+    const event = payload.event;
+    
+    // Attempt to extract reference number (receipt) from payment or order entity
+    const paymentEntity = payload.payload?.payment?.entity;
+    const orderEntity = payload.payload?.order?.entity;
+    // We typically store the referenceNumber in order.receipt or payment.notes.receipt
+    const ref = orderEntity?.receipt || paymentEntity?.notes?.receipt || paymentEntity?.description;
+
+    if (!ref) {
+      return c.json({ status: 'ok', msg: 'No reference found in webhook payload' });
+    }
+
+    if (event === 'payment.captured' || event === 'payment.authorized' || event === 'order.paid') {
+      const booking = await prisma.booking.findUnique({ where: { referenceNumber: ref } });
+      
+      // Reconcile double payments or missed callbacks
+      if (booking && booking.status === 'PENDING') {
+         await prisma.booking.update({
+           where: { referenceNumber: ref },
+           data: { status: 'PAID' }
+         });
+         logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically reconciled via webhook to PAID', { ref });
+      }
+    } else if (event === 'payment.failed') {
+      const booking = await prisma.booking.findUnique({ where: { referenceNumber: ref } });
+      if (booking && booking.status === 'PENDING') {
+         await prisma.booking.update({
+           where: { referenceNumber: ref },
+           data: { status: 'CANCELLED' } // Release inventory
+         });
+         logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically cancelled via failed webhook', { ref });
+      }
+    }
+
+    return c.json({ status: 'ok' });
+  } catch (err) {
+    logSecureError('WEBHOOK_ERROR', err.message, { error: err });
+    return c.json({ error: err.message }, 500);
+  }
 };

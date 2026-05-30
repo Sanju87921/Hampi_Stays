@@ -428,58 +428,73 @@ app.get('/admin/resorts/pending', authMiddleware, adminMiddleware, async (c) => 
 
 app.get('/admin/resorts/active', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+  const skip = (page - 1) * limit;
+
   try {
-    const resorts = await prisma.resort.findMany({
-      where: { status: 'APPROVED' },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        tagline: true,
-        description: true,
-        type: true,
-        locationArea: true,
-        locationLat: true,
-        locationLng: true,
-        images: true,
-        amenities: true,
-        rating: true,
-        reviewCount: true,
-        pricePerNight: true,
-        isFeatured: true,
-        isVerified: true,
-        createdAt: true,
-        updatedAt: true,
-        ownerId: true,
-        categories: true,
-        houseRules: true,
-        mealPackages: true,
-        status: true,
-        commissionRate: true,
-        owner: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-                phone: true,
-                createdAt: true
+    const [totalCount, resorts] = await Promise.all([
+      prisma.resort.count({ where: { status: 'APPROVED' } }),
+      prisma.resort.findMany({
+        where: { status: 'APPROVED' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          tagline: true,
+          description: true,
+          type: true,
+          locationArea: true,
+          locationLat: true,
+          locationLng: true,
+          images: true,
+          amenities: true,
+          rating: true,
+          reviewCount: true,
+          pricePerNight: true,
+          isFeatured: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          ownerId: true,
+          categories: true,
+          houseRules: true,
+          mealPackages: true,
+          status: true,
+          commissionRate: true,
+          owner: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                  phone: true,
+                  createdAt: true
+                }
               }
             }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
     
     const mappedResorts = resorts.map(r => ({
       ...r,
       category: r.categories[0] || null
     }));
 
-    return c.json(mappedResorts);
+    return c.json({
+      data: mappedResorts,
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit)
+    });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -797,11 +812,27 @@ app.get('/admin/kyc-image/:id', authMiddleware, adminMiddleware, async (c) => {
 
 app.get('/admin/audit-logs', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+  const skip = (page - 1) * limit;
+
   try {
-    const logs = await prisma.verificationAudit.findMany({
-      orderBy: { createdAt: 'desc' }
+    const [totalCount, logs] = await Promise.all([
+      prisma.verificationAudit.count(),
+      prisma.verificationAudit.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+    
+    return c.json({
+      data: logs,
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit)
     });
-    return c.json(logs);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

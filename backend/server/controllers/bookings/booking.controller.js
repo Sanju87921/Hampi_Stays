@@ -44,47 +44,63 @@ export const getUserBookings = async (c) => {
 export const getAllBookingsAdmin = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+  const skip = (page - 1) * limit;
+
   try {
-    const bookings = await prisma.booking.findMany({
-      select: {
-        id: true,
-        checkIn: true,
-        checkOut: true,
-        guests: true,
-        totalPrice: true,
-        status: true,
-        specialRequests: true,
-        referenceNumber: true,
-        createdAt: true,
-        updatedAt: true,
-        userId: true,
-        resortId: true,
-        roomId: true,
-        commissionRate: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
+    const [totalCount, bookings] = await Promise.all([
+      prisma.booking.count(),
+      prisma.booking.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          checkIn: true,
+          checkOut: true,
+          guests: true,
+          totalPrice: true,
+          status: true,
+          specialRequests: true,
+          referenceNumber: true,
+          createdAt: true,
+          updatedAt: true,
+          userId: true,
+          resortId: true,
+          roomId: true,
+          commissionRate: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true
+            }
+          },
+          resort: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          room: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         },
-        resort: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        room: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    return c.json({
+      data: bookings,
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit)
     });
-    return c.json(bookings);
   } catch (err) { return c.json({ error: err.message }, 500); }
 };
 
