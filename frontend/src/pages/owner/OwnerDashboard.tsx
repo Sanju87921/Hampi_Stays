@@ -1141,7 +1141,7 @@ export function OwnerDashboard() {
                       {(resort.mealPackages || []).map((pkg: any, i: number) => (
                         <div key={i} className="p-4 rounded-2xl border border-white/10 bg-white/5">
                           <div className="flex justify-between items-center mb-1">
-                            <p className="font-bold">{pkg.name}</p>
+                            <p className="font-bold text-gold-400">{pkg.name}</p>
                             <span className="text-gold-400 font-bold">₹{pkg.price}</span>
                           </div>
                           <p className="text-[10px] text-white/40 italic">{pkg.description}</p>
