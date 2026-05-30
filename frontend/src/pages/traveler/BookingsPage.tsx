@@ -525,24 +525,40 @@ export function BookingsPage() {
                       </div>
                     </div>
 
-                    {/* Add-ons & Meal Packages */}
+                    {/* Add-ons & Meal Packages & Promotions */}
                     {(() => {
                       const text = booking.specialRequests;
-                      if (!text) return null;
                       
-                      const mealMatch = text.match(/^\[Selected Meals:\s*([^\]]+)\]/);
+                      const hasPromotion = booking.promotionName && booking.discountAmount;
+                      const hasText = !!text;
+                      
+                      if (!hasText && !hasPromotion) return null;
+                      
+                      const mealMatch = text ? text.match(/^\[Selected Meals:\s*([^\]]+)\]/) : null;
                       let meals: string[] = [];
-                      let remainingText = text;
+                      let remainingText = text || "";
                       if (mealMatch) {
                         meals = mealMatch[1].split(";").map(m => m.trim());
-                        remainingText = text.replace(mealMatch[0], "").trim();
+                        remainingText = text!.replace(mealMatch[0], "").trim();
                       }
+                      
                       const requests = remainingText.split(";").map(r => r.trim()).filter(Boolean);
                       
-                      if (meals.length === 0 && requests.length === 0) return null;
+                      if (meals.length === 0 && requests.length === 0 && !hasPromotion) return null;
                       
                       return (
                         <div className="mb-8 p-6 bg-sand-50/60 rounded-3xl border border-sand-100/50 space-y-4">
+                          {hasPromotion && (
+                            <div>
+                              <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold mb-2">Offer Applied</p>
+                              <div className="flex flex-wrap gap-2">
+                                <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-xs font-semibold text-green-800 rounded-xl flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  {booking.promotionName} (Saved: ₹{booking.discountAmount})
+                                </span>
+                              </div>
+                            </div>
+                          )}
                           {meals.length > 0 && (
                             <div>
                               <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold mb-2">Curated Meal Packages</p>

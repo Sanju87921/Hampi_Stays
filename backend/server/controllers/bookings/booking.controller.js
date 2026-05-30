@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
-import { validateCouponCode } from '../../utils/couponEngine.js';
 
 export const getUserBookings = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -179,23 +178,51 @@ export const createBooking = async (c) => {
       
       const computedTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
 
-      // Secure Coupon Discount Calculation on Backend
+      // Secure Promotion Discount Calculation on Backend
       let discountAmount = 0;
       let finalAmount = computedTotal;
+      let promotionId = null;
+      let promotionName = null;
+      
       if (couponCode) {
-        const couponResult = await validateCouponCode(tx, {
-          code: couponCode,
-          userId: payload.userId,
-          resortId,
-          originalAmount: computedTotal
+        const promotion = await tx.promotion.findUnique({
+          where: { code: couponCode.toUpperCase() }
         });
 
-        if (!couponResult.valid) {
-          throw new Error(`COUPON_INVALID:${couponResult.error}`);
+        if (!promotion) throw new Error("COUPON_INVALID:Invalid promotion code");
+        if (!promotion.active) throw new Error("COUPON_INVALID:Promotion is disabled");
+        
+        const now = new Date();
+        if (promotion.validFrom && new Date(promotion.validFrom) > now) throw new Error("COUPON_INVALID:Promotion not yet active");
+        if (promotion.validUntil && new Date(promotion.validUntil) < now) throw new Error("COUPON_INVALID:Promotion expired");
+        if (promotion.usageLimit && promotion.usageCount >= promotion.usageLimit) throw new Error("COUPON_INVALID:Promotion usage limit reached");
+        if (promotion.minBookingAmount && computedTotal < promotion.minBookingAmount) throw new Error(`COUPON_INVALID:Minimum booking amount is ₹${promotion.minBookingAmount}`);
+        
+        if (promotion.firstBookingOnly && payload.userId) {
+          const userBookingsCount = await tx.booking.count({ where: { userId: payload.userId } });
+          if (userBookingsCount > 0) throw new Error("COUPON_INVALID:Promotion valid for first booking only");
         }
 
-        discountAmount = couponResult.discountAmount;
-        finalAmount = couponResult.finalAmount;
+        if (promotion.discountType === 'PERCENTAGE') {
+          discountAmount = computedTotal * (promotion.discountValue / 100);
+          if (promotion.maxDiscount && discountAmount > promotion.maxDiscount) {
+            discountAmount = promotion.maxDiscount;
+          }
+        } else {
+          discountAmount = promotion.discountValue;
+        }
+
+        if (discountAmount > computedTotal) discountAmount = computedTotal;
+        finalAmount = computedTotal - discountAmount;
+        
+        promotionId = promotion.id;
+        promotionName = promotion.name;
+
+        // Increment usage count safely
+        await tx.promotion.update({
+          where: { id: promotion.id },
+          data: { usageCount: { increment: 1 } }
+        });
       }
 
       const refNum = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -229,7 +256,10 @@ export const createBooking = async (c) => {
           specialRequests: finalSpecialRequests,
           referenceNumber: refNum,
           commissionRate: resort.commissionRate || 7.0,
-          status: 'PENDING'
+          status: 'PENDING',
+          promotionId: promotionId,
+          promotionName: promotionName,
+          discountAmount: discountAmount > 0 ? discountAmount : null
         }
       });
 

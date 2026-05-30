@@ -23,6 +23,9 @@ export interface Booking {
     name: string;
   };
   specialRequests?: string;
+  promotionId?: string;
+  promotionName?: string;
+  discountAmount?: number;
 }
 
 export interface Message {

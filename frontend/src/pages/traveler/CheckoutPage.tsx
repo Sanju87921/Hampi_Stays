@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useLocation, Navigate, useNavigate } from "react-router-dom";
@@ -7,7 +9,7 @@ import {
   ChevronRight, Info, MapPin,
   Calendar as CalIcon, Users, Shield,
   Plane, Utensils, Heart, Clock,
-  Globe, CheckCircle2, Wallet
+  Globe, CheckCircle2, Wallet, Tag, Percent, IndianRupee, Sparkles
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -54,9 +56,16 @@ export function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountAmount: number;
-    description: string;
+    name: string;
   } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [activePromotions, setActivePromotions] = useState<any[]>([]);
+
+  useEffect(() => {
+    apiClient.get<any[]>('/promotions/active')
+      .then(data => setActivePromotions(data || []))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -103,32 +112,50 @@ export function CheckoutPage() {
   const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
   const finalPrice = Math.max(0, grandTotal - (appliedCoupon?.discountAmount || 0));
 
-  const handleApplyCoupon = async () => {
-    if (!couponCodeInput.trim()) return;
+  const handleApplyCoupon = async (codeToApply: string = couponCodeInput) => {
+    if (!codeToApply.trim()) return;
     setIsValidatingCoupon(true);
     try {
-      const response = await apiClient.post<any>('/coupons/validate', {
-        code: couponCodeInput.trim().toUpperCase(),
-        resortId: bookingData.resortId,
-        originalAmount: grandTotal
+      const response = await apiClient.post<any>('/promotions/validate', {
+        code: codeToApply.trim().toUpperCase(),
+        bookingAmount: grandTotal,
+        userId: user?.id
       });
-      if (response.valid) {
+      
+      if (!response.error && response.discountAmount !== undefined) {
         setAppliedCoupon({
           code: response.code,
           discountAmount: response.discountAmount,
-          description: response.description
+          name: response.name
         });
-        toast.success(`Coupon "${response.code}" applied successfully!`);
+        setCouponCodeInput("");
+        toast.success(`🎉 ${response.name} applied successfully!`);
       } else {
-        toast.error(response.error || "Invalid coupon code");
+        toast.error(response.error || "Invalid promotion code");
+        if (appliedCoupon && appliedCoupon.code === codeToApply.toUpperCase()) {
+            setAppliedCoupon(null);
+        }
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.error || err.message || "Failed to validate coupon";
+      const errMsg = err.response?.data?.error || err.message || "Failed to validate promotion";
       toast.error(errMsg);
     } finally {
       setIsValidatingCoupon(false);
     }
   };
+
+  // Auto-apply the best promotion when the grand total changes or active promotions load
+  useEffect(() => {
+    if (activePromotions.length > 0 && !appliedCoupon && !isValidatingCoupon) {
+      // Priority is already sorted from backend (descending)
+      // Find the first promotion that matches the minimum booking amount
+      const bestPromo = activePromotions.find(p => !p.minBookingAmount || grandTotal >= p.minBookingAmount);
+      if (bestPromo && bestPromo.code) {
+        // Automatically try to apply it
+        handleApplyCoupon(bestPromo.code);
+      }
+    }
+  }, [activePromotions, grandTotal, user]); // Run when these change
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
@@ -170,6 +197,9 @@ export function CheckoutPage() {
         addInsurance,
         airportPickup: airportPickupCost > 0,
         selectedMeals,
+        promotionId: appliedCoupon ? activePromotions.find(p => p.code === appliedCoupon.code)?.id : null,
+        promotionName: appliedCoupon?.name || null,
+        discountAmount: appliedCoupon?.discountAmount || 0,
         couponCode: appliedCoupon?.code || null
       });
 
@@ -497,14 +527,45 @@ export function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Coupon Code Input */}
+                {/* Promotions & Offers */}
                 <div className="mb-6 pt-4 border-t border-sand-100">
-                  <p className="text-xs font-bold text-navy-950/40 uppercase tracking-widest mb-3">Promo & Offer Code</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-gold-600" />
+                    <p className="text-xs font-bold text-navy-950/40 uppercase tracking-widest">Available Offers</p>
+                  </div>
+                  
+                  {activePromotions.length > 0 && !appliedCoupon && (
+                    <div className="space-y-2 mb-4">
+                      {activePromotions.map(promo => (
+                        <div key={promo.id} className="p-3 rounded-xl border border-sand-200 bg-white hover:border-gold-300 transition cursor-pointer"
+                             onClick={() => handleApplyCoupon(promo.code)}>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-bold text-navy-950 flex items-center gap-1.5">
+                                🎉 {promo.name}
+                              </p>
+                              <p className="text-xs text-navy-950/60 mt-0.5">
+                                {promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`} 
+                                {promo.minBookingAmount ? ` on bookings above ₹${promo.minBookingAmount}` : ''}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 px-2 py-1 rounded-md border border-gold-100">
+                              {promo.code}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {appliedCoupon ? (
-                    <div className="p-4 rounded-2xl bg-gold-50/50 border border-gold-200 flex items-center justify-between gap-3">
+                    <div className="p-4 rounded-2xl bg-gold-50/50 border border-gold-200 flex items-center justify-between gap-3 shadow-sm">
                       <div>
-                        <p className="text-sm font-bold text-navy-950">{appliedCoupon.code}</p>
-                        <p className="text-xs text-navy-950/60 mt-0.5">{appliedCoupon.description}</p>
+                        <p className="text-sm font-bold text-navy-950 flex items-center gap-2">
+                          🎉 {appliedCoupon.name}
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold tracking-widest uppercase">Applied</span>
+                        </p>
+                        <p className="text-xs text-navy-950/60 mt-1">Discount of {fmt(appliedCoupon.discountAmount)} applied to total.</p>
                       </div>
                       <button onClick={handleRemoveCoupon} className="text-xs font-bold text-red-600 hover:text-red-700 uppercase tracking-wider underline shrink-0">
                         Remove
@@ -514,16 +575,16 @@ export function CheckoutPage() {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="ENTER CODE"
+                        placeholder="ENTER PROMO CODE"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
                         disabled={isValidatingCoupon}
-                        className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl border border-sand-200 focus:outline-none focus:border-gold-500 bg-sand-50/50 transition-colors uppercase"
+                        className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl border border-sand-200 focus:outline-none focus:border-gold-500 bg-white transition-colors uppercase"
                       />
                       <button
-                        onClick={handleApplyCoupon}
+                        onClick={() => handleApplyCoupon(couponCodeInput)}
                         disabled={isValidatingCoupon || !couponCodeInput.trim()}
-                        className="px-5 py-2 text-xs font-bold text-white bg-gold-600 hover:bg-gold-700 rounded-xl transition disabled:opacity-50 uppercase tracking-widest"
+                        className="px-5 py-2 text-xs font-bold text-white bg-navy-950 hover:bg-navy-900 rounded-xl transition disabled:opacity-50 uppercase tracking-widest"
                       >
                         {isValidatingCoupon ? "..." : "Apply"}
                       </button>
@@ -567,7 +628,7 @@ export function CheckoutPage() {
                   )}
                   {appliedCoupon && (
                     <div className="flex justify-between text-gold-600 font-bold bg-gold-50/30 p-2 rounded-xl border border-gold-100/50">
-                      <span>Discount ({appliedCoupon.code})</span>
+                      <span>Discount ({appliedCoupon.name})</span>
                       <span>-{fmt(appliedCoupon.discountAmount)}</span>
                     </div>
                   )}
