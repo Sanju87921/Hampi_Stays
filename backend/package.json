@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.2",
+    "@hono/zod-validator": "^0.8.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^6.19.3",
     "@prisma/extension-accelerate": "^2.0.2",
