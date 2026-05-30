@@ -93,6 +93,9 @@ export interface Resort {
   isVerified: boolean;
   createdAt: string; // ISO date string
   mealPackages?: { name: string; price: number; description: string; }[];
+  categories?: string[];
+  category?: string;
+  locationArea?: string;
 }
 
 export interface NearbyAttraction {

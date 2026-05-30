@@ -2,17 +2,17 @@
 // ResortCard — Luxury resort card for listing page
 // ============================================================
 
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Star, MapPin, Heart, Check } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { PremiumIcon } from "../ui/PremiumIcon";
 import type { Resort } from "../../types/resort";
-import { useAuth } from "../../context/AuthContext";
+// useAuth import removed
 import { useWishlist } from "../../context/WishlistContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
-import { apiClient } from "../../utils/apiClient";
+// apiClient import removed
 import { optimizeImage } from "../../utils/image";
 
 interface ResortCardProps {
@@ -46,7 +46,6 @@ export const ResortCard = memo(function ResortCard({
   onCompareToggle,
   compareDisabled = false,
 }: ResortCardProps) {
-  const { user } = useAuth();
   const { isFavorite, toggleWishlist } = useWishlist();
   const { protect } = useProtectedAction();
   const [imgError, setImgError] = useState(false);
@@ -103,11 +102,13 @@ export const ResortCard = memo(function ResortCard({
         className="group bg-white  rounded-2xl overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100  flex flex-col cursor-default"
       >
         {/* Image */}
-        <Link to={`/resorts/${resort.slug}`} className="relative aspect-[4/3] overflow-hidden block" style={{ transform: "translateZ(30px)" }}>
+        <Link to={`/resorts/${resort.slug}`} className="relative aspect-[4/3] overflow-hidden block bg-sand-100" style={{ transform: "translateZ(30px)" }}>
           <img
             src={optimizeImage(imgError ? "/images/hampi-1.png" : resort.images[0], 600)}
             alt={resort.name}
             loading="lazy"
+            width="600"
+            height="450"
             onError={() => setImgError(true)}
             className="w-full h-full object-cover transition-transform duration-1000 ease-[0.16,1,0.3,1] group-hover:scale-105"
           />
@@ -123,7 +124,7 @@ export const ResortCard = memo(function ResortCard({
             <span className={cn("px-3 py-1 rounded-full text-[9px] font-bold border uppercase tracking-wider", TYPE_COLORS[resort.type])}>
               {TYPE_LABELS[resort.type]}
             </span>
-            {(Array.isArray(resort.categories) ? resort.categories : (resort.category ? [resort.category] : [])).map((cat) => (
+            {(resort.categories || (resort.category ? [resort.category] : [])).map((cat) => (
               <span key={cat} className="bg-navy-950/85 text-gold-400 border border-gold-500/30 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-xs">
                 {cat}
               </span>
@@ -155,7 +156,7 @@ export const ResortCard = memo(function ResortCard({
             <div className="flex items-center gap-1.5 text-navy-950   mb-2">
               <MapPin className="w-4 h-4 text-gold-500 flex-shrink-0" />
               <span className="text-sm font-medium tracking-wide">
-                {resort.location?.area || (resort as any).locationArea || "Hampi"}, Hampi
+                {resort.location?.area || resort.locationArea || "Hampi"}, Hampi
               </span>
             </div>
 
