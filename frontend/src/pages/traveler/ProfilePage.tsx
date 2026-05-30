@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
-import { Camera, ShieldCheck, Check, Upload, AlertCircle, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, ShieldCheck, Check, Upload, AlertCircle, Loader2, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -94,6 +94,12 @@ export function ProfilePage() {
   const [savedData, setSavedData] = useState<ProfileFormData>(buildFormData(user));
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Bank Account State
+  const [bankData, setBankData] = useState<any>(null);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankFormData, setBankFormData] = useState({ accountHolderName: "", bankName: "", accountNumber: "", ifscCode: "" });
+  const [isSavingBank, setIsSavingBank] = useState(false);
+
   // Fetch fresh data from server on mount to override any stale localStorage
   useEffect(() => {
     const fetchLatestUser = async () => {
@@ -104,6 +110,11 @@ export function ProfilePage() {
         const fresh = buildFormData(freshUser);
         setFormData(fresh);
         setSavedData(fresh);
+        
+        if (user?.role === 'RESORT_OWNER') {
+          const bank = await apiClient.get<any>('/owner/bank-account').catch(() => null);
+          if (bank) setBankData(bank);
+        }
       } catch (err) {
         console.error("Failed to refresh user data:", err);
       }
@@ -167,13 +178,27 @@ export function ProfilePage() {
       setSavedData(fresh);
       setIsEditing(false);
       setShowSuccess(true);
-      toast.success("✓ Your profile has been updated successfully.");
-      setTimeout(() => setShowSuccess(false), 4000);
-    } catch (err) {
-      console.error("Profile update failed:", err);
-      toast.error("Failed to save changes. Please try again.");
+      setTimeout(() => setShowSuccess(false), 3000);
+      toast.success("Profile updated successfully!");
+    } catch {
+      toast.error("Failed to update profile. Please try again.");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleBankSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingBank(true);
+    try {
+      const updatedBank = await apiClient.patch<any>('/owner/bank-account', bankFormData);
+      setBankData(updatedBank);
+      toast.success("Bank details updated successfully!");
+      setShowBankModal(false);
+    } catch {
+      toast.error("Failed to update bank details");
+    } finally {
+      setIsSavingBank(false);
     }
   };
 
@@ -348,17 +373,51 @@ export function ProfilePage() {
               <div className='space-y-6'>
                 <h3 className='text-xl font-bold text-navy-950'>Bank Account</h3>
                 <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100 space-y-4'>
-                  <Input label='Account Holder' defaultValue={user?.name} disabled />
-                  <Input label='Bank Name' placeholder='HDFC Bank' disabled />
-                  <Input label='Account Number' placeholder='**** **** 1234' disabled />
-                  <Input label='IFSC Code' placeholder='HDFC0001234' disabled />
-                  <Button className='w-full'>Update Bank Details</Button>
+                  <Input label='Account Holder' defaultValue={bankData?.accountHolderName || user?.name} disabled />
+                  <Input label='Bank Name' placeholder='HDFC Bank' value={bankData?.bankName || ''} disabled />
+                  <Input label='Account Number' placeholder='**** **** 1234' value={bankData?.accountNumber || ''} disabled />
+                  <Input label='IFSC Code' placeholder='HDFC0001234' value={bankData?.ifscCode || ''} disabled />
+                  <Button className='w-full' onClick={() => {
+                    setBankFormData({
+                      accountHolderName: bankData?.accountHolderName || user?.name || "",
+                      bankName: bankData?.bankName || "",
+                      accountNumber: bankData?.accountNumber || "",
+                      ifscCode: bankData?.ifscCode || ""
+                    });
+                    setShowBankModal(true);
+                  }}>Update Bank Details</Button>
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {showBankModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm" onClick={() => setShowBankModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-white rounded-[2rem] w-full max-w-lg overflow-hidden p-8 border border-sand-100 shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-bold text-navy-950">Update Bank Details</h3>
+                <button onClick={() => setShowBankModal(false)} className="p-2 hover:bg-sand-50 rounded-full transition-colors"><X className="w-6 h-6 text-navy-950/40" /></button>
+              </div>
+              
+              <form onSubmit={handleBankSave} className="space-y-6">
+                <Input label="Account Holder Name" value={bankFormData.accountHolderName} onChange={(e) => setBankFormData({ ...bankFormData, accountHolderName: e.target.value })} required />
+                <Input label="Bank Name" value={bankFormData.bankName} onChange={(e) => setBankFormData({ ...bankFormData, bankName: e.target.value })} required />
+                <Input label="Account Number" type="password" value={bankFormData.accountNumber} onChange={(e) => setBankFormData({ ...bankFormData, accountNumber: e.target.value })} required />
+                <Input label="IFSC Code" value={bankFormData.ifscCode} onChange={(e) => setBankFormData({ ...bankFormData, ifscCode: e.target.value.toUpperCase() })} required />
+                
+                <div className="flex justify-end gap-3 pt-6 border-t border-sand-100">
+                  <Button type="button" variant="outline" onClick={() => setShowBankModal(false)} className="rounded-xl px-8 border-sand-200">Cancel</Button>
+                  <Button type="submit" isLoading={isSavingBank} className="rounded-xl px-8 bg-navy-950 text-white hover:bg-navy-900 shadow-lg">Save Details</Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

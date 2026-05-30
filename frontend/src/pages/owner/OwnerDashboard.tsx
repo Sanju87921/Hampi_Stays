@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { luxuryConfirm } from "../../utils/luxuryConfirm";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -170,11 +171,11 @@ export function OwnerDashboard() {
       });
       setShowBlockRoom(false);
       setBlockingFormData({ date: "", reason: "", roomId: "" });
-      alert("Room successfully blocked.");
+      toast.success("Room successfully blocked.");
       fetchResorts();
     } catch (error) {
       console.error(error);
-      alert("Failed to block room.");
+      toast.error("Failed to block room.");
     }
   };
 
@@ -189,19 +190,41 @@ export function OwnerDashboard() {
       });
       setShowEditBooking(false);
       setEditingBooking(null);
+      toast.success("Booking updated");
       fetchResorts();
     } catch (error) {
       console.error(error);
-      alert("Failed to update booking.");
+      toast.error("Failed to update booking.");
     }
   };
 
   const handleDeletePhoto = async (resortId: string, photoUrl: string) => {
     try {
-      await apiClient.delete(`/resorts/${resortId}/photos`, { url: photoUrl });
+      await apiClient.delete(`/resorts/${resortId}/photos`, { data: { url: photoUrl } });
       fetchResorts();
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleDeleteRoomPhoto = async (roomId: string, photoUrl: string) => {
+    try {
+      await apiClient.delete(`/rooms/${roomId}/photos`, { data: { url: photoUrl } });
+      fetchResorts();
+      toast.success("Photo deleted.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete photo.");
+    }
+  };
+
+  const handleDeleteResort = async (resortId: string) => {
+    try {
+      await apiClient.delete(`/resorts/${resortId}`);
+      setActiveResortIdx(0);
+      fetchResorts();
+    } catch (err) {
+      toast.error("Failed to delete resort.");
     }
   };
 
@@ -829,18 +852,14 @@ export function OwnerDashboard() {
               <Plus className="w-4 h-4 mr-2" /> Add Property
             </Button>
             <Button 
-              variant="outline" 
-              className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 whitespace-nowrap"
-              onClick={async () => {
-                if (window.confirm("Are you sure you want to permanently delete this resort and all its data? This cannot be undone.")) {
-                  try {
-                    await apiClient.delete(`/resorts/${resort.id}`);
-                    setActiveResortIdx(0);
-                    fetchResorts();
-                  } catch (err) {
-                    toast.error("Failed to delete resort.");
-                  }
-                }
+              variant="outline"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+              onClick={() => {
+                luxuryConfirm({
+                  title: "Delete Resort",
+                  description: "Are you sure you want to permanently delete this resort and all its data? This cannot be undone.",
+                  onConfirm: () => handleDeleteResort(resort.id)
+                });
               }}
             >
               <Trash2 className="w-4 h-4 mr-2" /> Delete Property
@@ -1022,14 +1041,11 @@ export function OwnerDashboard() {
                                   <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
                                     <img src={img} className="w-full h-full object-cover rounded-xl" />
                                     <button 
-                                      onClick={async () => {
-                                        if (window.confirm("Delete this room photo?")) {
-                                          try {
-                                            await apiClient.delete(`/rooms/${room.id}/photos`, { data: { url: img } });
-                                            fetchResorts();
-                                            toast.success("Photo deleted.");
-                                          } catch (err: any) { toast.error(err.response?.data?.message || "Error deleting photo"); }
-                                        }
+                                      onClick={() => {
+                                        luxuryConfirm({
+                                          title: "Delete Room Photo",
+                                          onConfirm: () => handleDeleteRoomPhoto(room.id, img)
+                                        });
                                       }}
                                       className="absolute inset-0 bg-red-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                                     >
@@ -1108,11 +1124,12 @@ export function OwnerDashboard() {
                           <img src={img} className="w-full h-full object-cover rounded-2xl" />
                           <button 
                             onClick={() => {
-                              if (window.confirm("Delete this property photo?")) {
-                                handleDeletePhoto(resort.id, img);
-                              }
+                              luxuryConfirm({
+                                title: "Delete Property Photo",
+                                onConfirm: () => handleDeletePhoto(resort.id, img)
+                              });
                             }} 
-                            className="absolute top-3 right-3 p-2.5 bg-white/90 rounded-xl text-red-500 shadow-lg transition-all hover:bg-red-500 hover:text-white"
+                            className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg text-red-500 shadow-sm transition-all hover:bg-red-500 hover:text-white"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
