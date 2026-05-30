@@ -783,10 +783,31 @@ export function OwnerDashboard() {
             </Button>
             <Button 
               variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "bookings" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=bookings")}
+            >
+              <CalendarCheck className="w-4 h-4 mr-2" /> Bookings
+            </Button>
+            <Button 
+              variant="outline" 
               className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "finance" && "bg-navy-950 text-white")}
               onClick={() => navigate("/dashboard?tab=finance")}
             >
               <IndianRupee className="w-4 h-4 mr-2" /> Finance & Payouts
+            </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "reviews" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=reviews")}
+            >
+              <Star className="w-4 h-4 mr-2" /> Reviews
+            </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "settings" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=settings")}
+            >
+              <Building2 className="w-4 h-4 mr-2" /> Settings
             </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
@@ -1707,17 +1728,137 @@ export function OwnerDashboard() {
               </div>
             )}
 
+            {activeTab === "bookings" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Bookings Management</h2>
+                    <p className="text-sm text-navy-950/40 mt-1">View, search, and manage all resort reservations.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Input placeholder="Search guests..." className="w-64" />
+                    <Button variant="outline" className="rounded-xl px-6">Filter</Button>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-sand-100 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                        <th className="py-4 font-bold">Booking Ref</th>
+                        <th className="py-4 font-bold">Guest</th>
+                        <th className="py-4 font-bold">Check-In</th>
+                        <th className="py-4 font-bold">Check-Out</th>
+                        <th className="py-4 font-bold">Amount</th>
+                        <th className="py-4 font-bold">Status</th>
+                        <th className="py-4 font-bold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                      {resort.bookings?.map((b: any) => (
+                        <tr key={b.id} className="border-b border-sand-50/50 hover:bg-sand-50/30">
+                          <td className="py-4 font-bold text-navy-950">{b.referenceNumber}</td>
+                          <td className="py-4 text-navy-950">{b.user?.name}</td>
+                          <td className="py-4 text-navy-950/70">{new Date(b.checkIn).toLocaleDateString()}</td>
+                          <td className="py-4 text-navy-950/70">{new Date(b.checkOut).toLocaleDateString()}</td>
+                          <td className="py-4 font-bold text-navy-950">₹{b.totalPrice.toLocaleString()}</td>
+                          <td className="py-4">
+                            <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.status === 'CONFIRMED' ? "bg-green-100 text-green-700" : "bg-sand-100 text-navy-950")}>{b.status}</span>
+                          </td>
+                          <td className="py-4">
+                             <button className="text-gold-600 hover:text-gold-700 font-bold text-xs uppercase tracking-widest" onClick={() => {
+                               setShowBookingsModal(true);
+                             }}>View</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Pagination */}
+                <div className="flex items-center justify-between pt-4 border-t border-sand-100">
+                  <p className="text-xs text-navy-950/40 font-bold uppercase tracking-widest">Showing 1 to {resort.bookings?.length || 0} of {resort.bookings?.length || 0} entries</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="rounded-lg h-8 px-3" disabled>Previous</Button>
+                    <Button variant="outline" size="sm" className="rounded-lg h-8 px-3 bg-navy-950 text-white border-navy-950">1</Button>
+                    <Button variant="outline" size="sm" className="rounded-lg h-8 px-3" disabled>Next</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Guest Reviews</h2>
+                    <p className="text-sm text-navy-950/40 mt-1">Read and respond to feedback from your past guests.</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gold-50 rounded-xl text-gold-700 font-bold">
+                    <Star className="w-5 h-5 fill-current" /> {resort.rating || "N/A"} / 5
+                  </div>
+                </div>
+                
+                <div className="space-y-6">
+                  {resort.reviews?.length > 0 ? resort.reviews.map((review: any) => (
+                    <div key={review.id} className="p-6 rounded-2xl border border-sand-100 bg-sand-50/30 flex gap-6">
+                      <div className="w-12 h-12 bg-white border border-sand-200 rounded-full flex items-center justify-center font-bold text-navy-950 shrink-0">
+                         {review.user?.name?.[0] || "G"}
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-bold text-navy-950">{review.user?.name || "Guest"}</p>
+                          <span className="text-xs text-navy-950/40 font-bold uppercase tracking-widest">{new Date(review.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex gap-1 text-gold-500 mb-3">
+                          {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < review.rating ? "fill-current" : "text-sand-200")} />)}
+                        </div>
+                        <p className="text-sm text-navy-950/70 italic mb-4">{review.comment}</p>
+                        <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4">Reply to Review</Button>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center py-16 text-navy-950/30 italic">No reviews received yet.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === "settings" && (
               <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
-                <h2 className="text-2xl font-serif font-bold text-navy-950 mb-8">Business Settings</h2>
-                <div className="space-y-8">
-                  <div className="grid grid-cols-2 gap-8">
-                    <Input label="Business Name" value={resort.name} readOnly />
-                    <Input label="GST Number" placeholder="Not set" />
+                <h2 className="text-2xl font-serif font-bold text-navy-950 mb-8">Property Management</h2>
+                <div className="space-y-10">
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-navy-950 border-b border-sand-100 pb-2">Basic Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="Resort Name" value={resort.name} readOnly />
+                      <Input label="Category" value={resort.category || resort.type} readOnly className="capitalize" />
+                      <Input label="Location Area" value={resort.locationArea} readOnly />
+                      <Input label="GST Number" placeholder="Not set" />
+                      <Input label="Contact Email" value={user?.email} readOnly />
+                      <Input label="Contact Phone" placeholder="Not set" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-navy-950 uppercase tracking-widest">Description</label>
+                      <textarea className="w-full bg-sand-50/50 border border-sand-200 rounded-2xl p-4 h-32 focus:outline-none focus:border-gold-500 transition-colors resize-none text-navy-950" value={resort.description || ""} readOnly />
+                    </div>
                   </div>
-                  <Input label="Business Email" value={user?.email} readOnly />
-                  <div className="pt-4">
-                    <Button className="rounded-2xl px-10">Save Changes</Button>
+                  
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-navy-950 border-b border-sand-100 pb-2">Operations & Policies</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="Check-In Time" placeholder="e.g. 14:00" defaultValue="14:00" />
+                      <Input label="Check-Out Time" placeholder="e.g. 11:00" defaultValue="11:00" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-navy-950 uppercase tracking-widest">House Rules</label>
+                      <textarea className="w-full bg-sand-50/50 border border-sand-200 rounded-2xl p-4 h-24 focus:outline-none focus:border-gold-500 transition-colors resize-none text-navy-950" placeholder="e.g. No smoking, no pets allowed." defaultValue="No smoking indoors. Valid ID required." />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-sand-100 flex justify-end">
+                    <Button className="rounded-2xl px-10 shadow-gold">Save Property Changes</Button>
                   </div>
                 </div>
               </div>
