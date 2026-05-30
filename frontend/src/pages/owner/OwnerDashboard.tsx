@@ -57,6 +57,17 @@ export function OwnerDashboard() {
   const [inviteRole, setInviteRole] = useState("RECEPTIONIST");
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  
+  // New States for Edit / Block functionalities
+  const [showEditRoom, setShowEditRoom] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [showBlockRoom, setShowBlockRoom] = useState(false);
+  const [blockingFormData, setBlockingFormData] = useState({ date: "", reason: "", roomId: "" });
+  
+  const [showEditBooking, setShowEditBooking] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<any | null>(null);
+  const [bookingFormData, setBookingFormData] = useState({ checkIn: "", checkOut: "", guests: "", roomId: "", totalPrice: "" });
+
   const [housekeeping, setHousekeeping] = useState([
     { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
     { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
@@ -120,6 +131,64 @@ export function OwnerDashboard() {
       console.error(error);
     } finally {
       setIsLoadingAddingRoom(false);
+    }
+  };
+
+  const handleEditRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRoomId) return;
+    setIsLoadingAddingRoom(true);
+    try {
+      await apiClient.patch(`/rooms/${editingRoomId}`, {
+        ...roomFormData,
+        pricePerNight: parseFloat(roomFormData.pricePerNight),
+        capacity: parseInt(roomFormData.capacity),
+        availableCount: parseInt(roomFormData.availableCount)
+      });
+      setShowEditRoom(false);
+      setEditingRoomId(null);
+      setRoomFormData({ name: "", description: "", pricePerNight: "", capacity: "2", availableCount: "1" });
+      fetchResorts();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingAddingRoom(false);
+    }
+  };
+
+  const handleBlockRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!blockingFormData.roomId) return;
+    try {
+      await apiClient.post(`/rooms/${blockingFormData.roomId}/blockings`, {
+        date: blockingFormData.date,
+        reason: blockingFormData.reason
+      });
+      setShowBlockRoom(false);
+      setBlockingFormData({ date: "", reason: "", roomId: "" });
+      alert("Room successfully blocked.");
+      fetchResorts();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to block room.");
+    }
+  };
+
+  const handleEditBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBooking) return;
+    try {
+      await apiClient.patch(`/bookings/${editingBooking.id}`, {
+        ...bookingFormData,
+        guests: parseInt(bookingFormData.guests),
+        totalPrice: parseFloat(bookingFormData.totalPrice)
+      });
+      setShowEditBooking(false);
+      setEditingBooking(null);
+      fetchResorts();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update booking.");
     }
   };
 
@@ -712,6 +781,13 @@ export function OwnerDashboard() {
             >
               <TrendingUp className="w-4 h-4 mr-2" /> Analytics
             </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "finance" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=finance")}
+            >
+              <IndianRupee className="w-4 h-4 mr-2" /> Finance & Payouts
+            </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
             </Button>
@@ -878,6 +954,27 @@ export function OwnerDashboard() {
                             <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-navy-950/40">
                               <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Max {room.capacity}</span>
                               <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> {room.availableCount} Available</span>
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                              <Button 
+                                variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-sand-200"
+                                onClick={() => { 
+                                  setEditingRoomId(room.id); 
+                                  setRoomFormData({ name: room.name, description: room.description, pricePerNight: room.pricePerNight.toString(), capacity: room.capacity.toString(), availableCount: room.availableCount.toString() }); 
+                                  setShowEditRoom(true); 
+                                }}
+                              >
+                                Edit Room
+                              </Button>
+                              <Button 
+                                variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-red-200 text-red-600 hover:bg-red-50"
+                                onClick={() => { 
+                                  setBlockingFormData(prev => ({...prev, roomId: room.id})); 
+                                  setShowBlockRoom(true); 
+                                }}
+                              >
+                                Block Inventory
+                              </Button>
                             </div>
                             
                             {/* Room Photos Manager */}
@@ -1552,6 +1649,64 @@ export function OwnerDashboard() {
               </div>
             )}
 
+            {activeTab === "finance" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12 space-y-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Finance & Payouts</h2>
+                    <p className="text-sm text-navy-950/40 mt-1">Track your earnings, platform commissions, and payout schedules.</p>
+                  </div>
+                  <Button className="rounded-xl px-6">Download CSV</Button>
+                </div>
+                
+                {/* Payout Tracking Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {['Pending', 'Processing', 'Paid', 'Failed'].map((status) => (
+                    <div key={status} className="p-6 rounded-3xl border border-sand-100 bg-sand-50/50">
+                      <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-2">{status} Payouts</p>
+                      <p className="text-2xl font-bold text-navy-950">
+                        ₹{resort.bookings?.filter((b: any) => b.payoutStatus === status.toUpperCase()).reduce((acc: number, b: any) => acc + (b.totalPrice * 0.93), 0).toLocaleString() || 0}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Ledger Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-sand-100 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                        <th className="py-4 font-bold">Booking Ref</th>
+                        <th className="py-4 font-bold">Guest</th>
+                        <th className="py-4 font-bold">Total Amount</th>
+                        <th className="py-4 font-bold">Commission (7%)</th>
+                        <th className="py-4 font-bold">Net Earnings</th>
+                        <th className="py-4 font-bold">Payment Status</th>
+                        <th className="py-4 font-bold">Payout Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                      {resort.bookings?.map((b: any) => (
+                        <tr key={b.id} className="border-b border-sand-50/50 hover:bg-sand-50/30">
+                          <td className="py-4 font-medium text-navy-950">{b.referenceNumber}</td>
+                          <td className="py-4 text-navy-950/70">{b.user?.name}</td>
+                          <td className="py-4 font-bold text-navy-950">₹{b.totalPrice.toLocaleString()}</td>
+                          <td className="py-4 text-red-600 font-medium">-₹{(b.totalPrice * 0.07).toLocaleString()}</td>
+                          <td className="py-4 text-green-600 font-bold">₹{(b.totalPrice * 0.93).toLocaleString()}</td>
+                          <td className="py-4">
+                            <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.paymentStatus === 'PAID' ? "bg-green-100 text-green-700" : "bg-sand-100 text-navy-950")}>{b.paymentStatus || 'PENDING'}</span>
+                          </td>
+                          <td className="py-4">
+                            <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.payoutStatus === 'PAID' ? "bg-green-100 text-green-700" : "bg-gold-100 text-gold-700")}>{b.payoutStatus || 'PENDING'}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {activeTab === "settings" && (
               <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
                 <h2 className="text-2xl font-serif font-bold text-navy-950 mb-8">Business Settings</h2>
@@ -1664,7 +1819,19 @@ export function OwnerDashboard() {
                             >
                               Message
                             </Button>
-                             <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">History</Button>
+                              <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">History</Button>
+                              <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200 text-gold-600 hover:bg-gold-50" onClick={() => {
+                                setEditingBooking(booking);
+                                setBookingFormData({
+                                  checkIn: booking.checkIn.split('T')[0],
+                                  checkOut: booking.checkOut.split('T')[0],
+                                  guests: booking.guests.toString(),
+                                  roomId: booking.roomId || '',
+                                  totalPrice: booking.totalPrice.toString()
+                                });
+                                setShowBookingsModal(false);
+                                setShowEditBooking(true);
+                              }}>Edit Booking</Button>
                           </div>
                         </div>
 
@@ -1796,6 +1963,65 @@ export function OwnerDashboard() {
                   </div>
                 )}
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showEditRoom && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowEditRoom(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl">
+              <h2 className="text-2xl font-serif font-bold text-navy-950 mb-6">Edit Room</h2>
+              <form onSubmit={handleEditRoom} className="space-y-4">
+                <Input label="Room Name" value={roomFormData.name} onChange={e => setRoomFormData({...roomFormData, name: e.target.value})} required />
+                <Input label="Description" value={roomFormData.description} onChange={e => setRoomFormData({...roomFormData, description: e.target.value})} />
+                <Input label="Price Per Night" type="number" value={roomFormData.pricePerNight} onChange={e => setRoomFormData({...roomFormData, pricePerNight: e.target.value})} required />
+                <Input label="Capacity" type="number" value={roomFormData.capacity} onChange={e => setRoomFormData({...roomFormData, capacity: e.target.value})} required />
+                <Input label="Available Count" type="number" value={roomFormData.availableCount} onChange={e => setRoomFormData({...roomFormData, availableCount: e.target.value})} required />
+                <div className="flex gap-4 mt-6">
+                  <Button type="submit" className="flex-1" isLoading={isAddingRoom}>Save Changes</Button>
+                  <Button variant="outline" className="flex-1" onClick={() => setShowEditRoom(false)}>Cancel</Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {showBlockRoom && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowBlockRoom(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-10 max-w-md w-full shadow-2xl">
+              <h2 className="text-2xl font-serif font-bold text-navy-950 mb-6">Block Room Inventory</h2>
+              <form onSubmit={handleBlockRoom} className="space-y-4">
+                <Input label="Date" type="date" value={blockingFormData.date} onChange={e => setBlockingFormData({...blockingFormData, date: e.target.value})} required />
+                <Input label="Reason (Optional)" value={blockingFormData.reason} onChange={e => setBlockingFormData({...blockingFormData, reason: e.target.value})} />
+                <div className="flex gap-4 mt-6">
+                  <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white">Block Room</Button>
+                  <Button variant="outline" className="flex-1" onClick={() => setShowBlockRoom(false)}>Cancel</Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {showEditBooking && editingBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowEditBooking(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl">
+              <h2 className="text-2xl font-serif font-bold text-navy-950 mb-6">Edit Booking</h2>
+              <form onSubmit={handleEditBooking} className="space-y-4">
+                <Input label="Check-In" type="date" value={bookingFormData.checkIn} onChange={e => setBookingFormData({...bookingFormData, checkIn: e.target.value})} />
+                <Input label="Check-Out" type="date" value={bookingFormData.checkOut} onChange={e => setBookingFormData({...bookingFormData, checkOut: e.target.value})} />
+                <Input label="Guests" type="number" value={bookingFormData.guests} onChange={e => setBookingFormData({...bookingFormData, guests: e.target.value})} />
+                <Input label="Total Price" type="number" value={bookingFormData.totalPrice} onChange={e => setBookingFormData({...bookingFormData, totalPrice: e.target.value})} />
+                <div className="flex gap-4 mt-6">
+                  <Button type="submit" className="flex-1">Save Changes</Button>
+                  <Button variant="outline" className="flex-1" onClick={() => setShowEditBooking(false)}>Cancel</Button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

@@ -1167,6 +1167,8 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
             guests: true,
             referenceNumber: true,
             commissionRate: true,
+            paymentStatus: true,
+            payoutStatus: true,
             user: { select: { name: true } },
             room: { select: { name: true } }
           },
@@ -2005,6 +2007,80 @@ async function cleanupPendingVerifications(env) {
     console.error("Cleanup pending verifications task error:", error);
   }
 }
+
+app.post('/resorts/:id/rooms', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const room = await prisma.room.create({
+      data: {
+        resortId,
+        name: body.name,
+        description: body.description,
+        pricePerNight: body.pricePerNight,
+        capacity: body.capacity,
+        availableCount: body.availableCount,
+        images: []
+      }
+    });
+    return c.json(room, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/rooms/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const updated = await prisma.room.update({
+      where: { id },
+      data: {
+        name: body.name,
+        description: body.description,
+        capacity: body.capacity !== undefined ? parseInt(body.capacity) : undefined,
+        pricePerNight: body.pricePerNight !== undefined ? parseFloat(body.pricePerNight) : undefined,
+        availableCount: body.availableCount !== undefined ? parseInt(body.availableCount) : undefined
+      }
+    });
+    return c.json(updated);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.post('/rooms/:id/blockings', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const roomId = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const blocking = await prisma.roomBlocking.create({
+      data: {
+        roomId,
+        date: new Date(body.date),
+        reason: body.reason
+      }
+    });
+    return c.json(blocking, 201);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.patch('/bookings/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: {
+        checkIn: body.checkIn ? new Date(body.checkIn) : undefined,
+        checkOut: body.checkOut ? new Date(body.checkOut) : undefined,
+        roomId: body.roomId,
+        guests: body.guests ? parseInt(body.guests) : undefined,
+        totalPrice: body.totalPrice ? parseFloat(body.totalPrice) : undefined
+      }
+    });
+    return c.json(updated);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
 
 export default {
   fetch: app.fetch,
