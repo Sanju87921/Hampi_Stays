@@ -13,10 +13,11 @@ import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
 import { BlogModule } from "./BlogModule";
+import { PromotionsModule } from "./PromotionsModule";
 import { UserManagement } from "./components/UserManagement";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -171,7 +172,7 @@ export function AdminDashboard() {
 
  useEffect(() => {
  let interval: ReturnType<typeof setInterval>;
- const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions', 'audit-logs', 'guides'];
+ const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions', 'audit-logs', 'guides', 'promotions'];
  
  if (pollTabs.includes(activeTab)) {
  // Pulse: Fast 10s refresh for admin command center
@@ -1928,6 +1929,7 @@ export function AdminDashboard() {
  {[
  { id: "overview", label: "Overview", icon: LayoutDashboard },
  { id: "properties", label: "Properties", icon: Building2 },
+ { id: "promotions", label: "Promotions", icon: Tag },
  { id: "content", label: "Blog Content", icon: FileText },
  { id: "guides", label: "Guides", icon: Award },
  { id: "users", label: "Users", icon: Users },
@@ -1966,6 +1968,7 @@ export function AdminDashboard() {
  <ErrorBoundary>
  {activeTab === "overview" && renderOverview()}
  {activeTab === "properties" && renderProperties()}
+ {activeTab === "promotions" && <PromotionsModule />}
  {activeTab === "content" && <BlogModule />}
  {activeTab === "guides" && renderGuides()}
  {activeTab === "users" && <UserManagement />}

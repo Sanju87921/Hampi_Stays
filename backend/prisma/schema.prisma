@@ -232,6 +232,11 @@ model Booking {
   commissionRate   Float             @default(7.0)
   paymentStatus    String            @default("PENDING")
   payoutStatus     String            @default("PENDING")
+
+  promotionId      String?
+  promotionName    String?
+  discountAmount   Float?
+
   resort           Resort            @relation(fields: [resortId], references: [id])
   room             Room?             @relation(fields: [roomId], references: [id])
   user             User              @relation(fields: [userId], references: [id])

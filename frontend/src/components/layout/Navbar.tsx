@@ -76,6 +76,8 @@ export function Navbar() {
  : [
  { name: t("navbar.resorts"), path: "/resorts" },
  { name: t("navbar.discover"), path: "/discovery" },
+ ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard") || "Dashboard", path: "/dashboard" }] : []),
+ ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: "Command Center", path: "/admin" }] : []),
  ];
 
  return (
