@@ -6,7 +6,6 @@ import { Tag, Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Percent, Indian
 import { Button } from '../../components/ui/Button';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 interface Promotion {
   id: string;
@@ -135,27 +134,37 @@ export function PromotionsModule() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm overflow-x-auto">
           <h3 className="text-lg font-bold text-navy-950 mb-4">Promotion Usage</h3>
-          <div className="h-64 min-w-[400px]">
-            <BarChart width={500} height={250} data={usageData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-              <Bar dataKey="usage" fill="#0A0F1E" radius={[4, 4, 0, 0]} barSize={32} />
-            </BarChart>
+          <div className="h-64 flex items-end gap-4 min-w-[400px] border-b border-sand-200 pb-2">
+            {usageData.length > 0 ? usageData.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col justify-end items-center h-full group">
+                <div className="w-full max-w-[40px] bg-navy-950 rounded-t-md group-hover:bg-gold-500 transition-colors relative" style={{ height: `${Math.max((d.usage / (Math.max(...usageData.map(u => u.usage)) || 1)) * 100, 5)}%` }}>
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-navy-950 text-white text-xs px-2 py-1 rounded">
+                    {d.usage}
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-500 mt-2 truncate w-full text-center">{d.name}</span>
+              </div>
+            )) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">No usage data</div>
+            )}
           </div>
         </div>
         
         <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm overflow-x-auto">
-          <h3 className="text-lg font-bold text-navy-950 mb-4">Revenue Generated with Offers</h3>
-          <div className="h-64 min-w-[400px]">
-            <LineChart width={500} height={250} data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
-              <Tooltip cursor={{ stroke: '#9CA3AF' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(val: number) => [`₹${val.toLocaleString()}`, 'Revenue']} />
-              <Line type="monotone" dataKey="revenue" stroke="#B8860B" strokeWidth={3} dot={{ r: 4, fill: '#B8860B', strokeWidth: 2, stroke: '#FFFFFF' }} activeDot={{ r: 6 }} />
-            </LineChart>
+          <h3 className="text-lg font-bold text-navy-950 mb-4">Revenue Generated</h3>
+          <div className="h-64 flex items-end gap-4 min-w-[400px] border-b border-sand-200 pb-2">
+            {revenueData.length > 0 ? revenueData.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col justify-end items-center h-full group">
+                <div className="w-full max-w-[40px] bg-gold-500 rounded-t-md group-hover:bg-gold-400 transition-colors relative" style={{ height: `${Math.max((d.revenue / (Math.max(...revenueData.map(u => u.revenue)) || 1)) * 100, 5)}%` }}>
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-navy-950 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                    ₹{d.revenue.toLocaleString()}
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-500 mt-2 truncate w-full text-center">{d.name}</span>
+              </div>
+            )) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">No revenue data</div>
+            )}
           </div>
         </div>
       </div>
