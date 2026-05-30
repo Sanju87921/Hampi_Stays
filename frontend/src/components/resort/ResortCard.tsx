@@ -139,7 +139,7 @@ export const ResortCard = memo(function ResortCard({
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white  backdrop-blur-md flex items-center justify-center hover:bg-white  transition-colors shadow-sm z-20"
             style={{ transform: "translateZ(50px)" }}
           >
-            <Heart className={cn("w-5 h-5 transition-all duration-300", isFav ? "fill-gold-500 text-gold-500 scale-110" : "text-white")} />
+            <Heart className={cn("w-5 h-5 transition-all duration-300", isFav ? "fill-gold-500 text-gold-500 scale-110" : "text-navy-950/40")} />
           </button>
 
           {/* Rating badge on hover */}
