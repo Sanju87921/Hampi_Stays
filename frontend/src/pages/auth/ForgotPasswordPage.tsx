@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { apiClient } from "../../utils/apiClient";
-
+import { CinematicLogo } from "../../components/ui/CinematicLogo";
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -150,7 +150,7 @@ export function ForgotPasswordPage() {
 
             <motion.div variants={itemVariant} className="flex justify-center mb-4 mt-2">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
+                <CinematicLogo size="md" />
               </Link>
             </motion.div>
 
