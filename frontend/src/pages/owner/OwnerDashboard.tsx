@@ -776,7 +776,13 @@ export function OwnerDashboard() {
             >
               <CalIcon className="w-4 h-4 mr-2" /> Manage Pricing
             </Button>
-
+            <Button 
+              variant="outline" 
+              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
+              onClick={() => navigate("/dashboard/profile")}
+            >
+              <Users className="w-4 h-4 mr-2" /> My Profile
+            </Button>
             <Button 
               variant="outline" 
               className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "staff" && "bg-navy-950 text-white")}
