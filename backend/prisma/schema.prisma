@@ -324,8 +324,39 @@ model ResortOwner {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resorts      Resort[]
+  kycDocuments KycDocument[]
+  bankAccount  BankAccount?
 
   @@map("resort_owners")
+}
+
+model KycDocument {
+  id           String      @id @default(cuid())
+  ownerId      String
+  type         String      // AADHAAR, PAN
+  documentUrl  String
+  status       String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  rejectedReason String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  owner        ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("kyc_documents")
+}
+
+model BankAccount {
+  id            String      @id @default(cuid())
+  ownerId       String      @unique
+  accountHolder String
+  bankName      String
+  accountNumber String
+  ifsc          String
+  status        String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  owner         ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("bank_accounts")
 }
 
 model GuideProfile {

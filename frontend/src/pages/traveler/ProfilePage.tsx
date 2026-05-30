@@ -319,6 +319,46 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+      {user?.role === 'RESORT_OWNER' && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className='max-w-4xl mx-auto mt-12 mb-20 px-4 md:px-6'>
+          <div className='bg-white rounded-[2.5rem] p-10 md:p-14 shadow-sm border border-sand-100'>
+            <h2 className='text-3xl font-serif text-navy-950 font-bold mb-8'>Verification & KYC Center</h2>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+              <div className='space-y-6'>
+                <h3 className='text-xl font-bold text-navy-950'>Identity Status</h3>
+                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100 space-y-4'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm text-navy-950/60 font-bold'>Email Verification</span>
+                    <span className='px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full'>VERIFIED</span>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm text-navy-950/60 font-bold'>Phone OTP</span>
+                    <span className='px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full'>VERIFIED</span>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm text-navy-950/60 font-bold'>Aadhaar</span>
+                    <span className='px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full'>PENDING</span>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm text-navy-950/60 font-bold'>PAN</span>
+                    <span className='px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full'>REJECTED</span>
+                  </div>
+                </div>
+              </div>
+              <div className='space-y-6'>
+                <h3 className='text-xl font-bold text-navy-950'>Bank Account</h3>
+                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100 space-y-4'>
+                  <Input label='Account Holder' defaultValue={user?.name} disabled />
+                  <Input label='Bank Name' placeholder='HDFC Bank' disabled />
+                  <Input label='Account Number' placeholder='**** **** 1234' disabled />
+                  <Input label='IFSC Code' placeholder='HDFC0001234' disabled />
+                  <Button className='w-full'>Update Bank Details</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
