@@ -211,7 +211,7 @@ export function AdminDashboard() {
  break;
  case 'audit-logs':
  const aLogs = await apiClient.get<any[]>('/admin/audit-logs');
- setAuditLogs(aLogs);
+ setAuditLogs(Array.isArray(aLogs?.data) ? aLogs.data : (Array.isArray(aLogs) ? aLogs : []));
  break;
  case 'guides':
  const gds = await apiClient.get<any[]>('/admin/guides');
@@ -282,7 +282,7 @@ export function AdminDashboard() {
  break;
  case 'audit-logs':
  const audit = await apiClient.get<any[]>('/admin/audit-logs');
- setAuditLogs(audit);
+ setAuditLogs(Array.isArray(audit?.data) ? audit.data : (Array.isArray(audit) ? audit : []));
  break;
  }
  } catch (err) {
