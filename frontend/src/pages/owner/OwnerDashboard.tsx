@@ -68,6 +68,10 @@ export function OwnerDashboard() {
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
   const [bookingFormData, setBookingFormData] = useState({ checkIn: "", checkOut: "", guests: "", roomId: "", totalPrice: "" });
 
+  // Dining Modal States
+  const [showDiningModal, setShowDiningModal] = useState(false);
+  const [diningPackages, setDiningPackages] = useState<any[]>([]);
+
   const [housekeeping, setHousekeeping] = useState([
     { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
     { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
@@ -625,6 +629,18 @@ export function OwnerDashboard() {
     return () => clearInterval(interval);
   }, [activeTab, activeMessageBooking]);
 
+  const handleSaveDining = async () => {
+    if (!resort) return;
+    try {
+      await apiClient.patch(`/resorts/${resort.id}/meal-packages`, diningPackages);
+      toast.success("Meal packages updated");
+      setShowDiningModal(false);
+      fetchResorts();
+    } catch (err) {
+      toast.error("Failed to update meal packages");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-sand-50 pt-24 pb-12">
@@ -760,13 +776,7 @@ export function OwnerDashboard() {
             >
               <CalIcon className="w-4 h-4 mr-2" /> Manage Pricing
             </Button>
-            <Button 
-              variant="outline" 
-              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
-              onClick={() => navigate("/dashboard/profile")}
-            >
-              <Users className="w-4 h-4 mr-2" /> My Profile
-            </Button>
+
             <Button 
               variant="outline" 
               className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "staff" && "bg-navy-950 text-white")}
@@ -1150,7 +1160,10 @@ export function OwnerDashboard() {
                       {(!resort.mealPackages || resort.mealPackages.length === 0) && (
                         <p className="text-xs text-white/30 italic text-center py-4">No meal packages defined</p>
                       )}
-                      <Button variant="outline" className="w-full rounded-xl border-white/20 text-white hover:bg-white hover:text-navy-950 mt-4">
+                      <Button variant="outline" className="w-full rounded-xl border-white/20 text-white hover:bg-white hover:text-navy-950 mt-4" onClick={() => {
+                        setDiningPackages(resort.mealPackages || []);
+                        setShowDiningModal(true);
+                      }}>
                         Manage Dining
                       </Button>
                     </div>

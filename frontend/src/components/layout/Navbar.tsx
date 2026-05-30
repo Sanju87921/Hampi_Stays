@@ -72,10 +72,6 @@ export function Navbar() {
  ]
  : [
  { name: t("navbar.dashboard"), path: "/dashboard" },
- 
- 
- { name: t("navbar.profile"), path: "/dashboard/profile" },
- 
  ]
  : [
  { name: t("navbar.resorts"), path: "/resorts" },

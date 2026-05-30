@@ -2010,6 +2010,7 @@ async function cleanupPendingVerifications(env) {
   }
 }
 
+app.patch('/resorts/:id/meal-packages', authMiddleware, async (c) => { const prisma = getPrisma(c.env); const id = c.req.param('id'); const mealPackages = await c.req.json(); try { const resort = await prisma.resort.update({ where: { id }, data: { mealPackages } }); return c.json(resort); } catch (err) { return c.json({ error: err.message }, 500); } }); 
 app.post('/resorts/:id/rooms', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const resortId = c.req.param('id');
