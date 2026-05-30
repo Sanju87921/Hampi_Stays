@@ -203,7 +203,7 @@ export function AdminDashboard() {
  const pr = await apiClient.get<any[]>('/admin/resorts/pending');
  const ar = await apiClient.get<any[]>('/admin/resorts/active');
  setPendingResorts(pr);
- setActiveResorts(ar);
+ setActiveResorts(Array.isArray(ar?.data) ? ar.data : (Array.isArray(ar) ? ar : []));
  break;
  case 'users':
  const us = await apiClient.get<any[]>('/admin/users');
@@ -250,7 +250,7 @@ export function AdminDashboard() {
  apiClient.get<any[]>('/admin/resorts/active')
  ]);
  setPendingResorts(pending);
- setActiveResorts(active);
+ setActiveResorts(Array.isArray(active?.data) ? active.data : (Array.isArray(active) ? active : []));
  break;
  case 'users':
  const users = await apiClient.get<any[]>('/admin/users');
@@ -326,7 +326,7 @@ export function AdminDashboard() {
  apiClient.get<any[]>('/admin/resorts/active')
  ]);
  setPendingResorts(p);
- setActiveResorts(a);
+ setActiveResorts(Array.isArray(a?.data) ? a.data : (Array.isArray(a) ? a : []));
  } catch (err) {
  console.error(err);
  } finally {
