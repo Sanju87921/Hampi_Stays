@@ -244,6 +244,8 @@ model Booking {
   @@index([createdAt])
   @@index([checkIn])
   @@index([checkOut])
+  @@index([resortId, status])
+  @@index([checkIn, checkOut])
   @@map("bookings")
 }
 
