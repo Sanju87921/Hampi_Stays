@@ -1913,7 +1913,6 @@ async function processUpcomingStays(env) {
   } catch (error) {
     console.error("Scheduled task error:", error);
   }
-  }
 }
 
 async function cleanupPendingBookings(env) {
