@@ -543,7 +543,7 @@ export function AdminDashboard() {
  <div className="space-y-4">
  <Button 
  onClick={() => handleSystemTask('payouts')}
- className="w-full bg-white hover:bg-white border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+ className="w-full bg-white/5 hover:bg-white/10 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
  >
  <AlertCircle className="w-5 h-5" />
  Verify Payouts
@@ -552,7 +552,7 @@ export function AdminDashboard() {
  
  <Button 
  onClick={() => handleSystemTask('newsletter')}
- className="w-full bg-white hover:bg-white border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"
+ className="w-full bg-white/5 hover:bg-white/10 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"
  >
  <Mail className="w-5 h-5" />
  Send Newsletter
@@ -560,7 +560,7 @@ export function AdminDashboard() {
 
  <Button 
  onClick={() => handleSystemTask('reviews')}
- className="w-full bg-white hover:bg-white border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+ className="w-full bg-white/5 hover:bg-white/10 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
  >
  <Star className="w-5 h-5" />
  Moderate Reviews
@@ -1824,7 +1824,7 @@ export function AdminDashboard() {
  type="number" 
  value={defaultCommissionRate}
  onChange={(e) => setDefaultCommissionRate(parseFloat(e.target.value))}
- className="w-20 bg-white border border-white/20 rounded-xl px-3 py-2 text-xl font-bold outline-none focus:border-gold-400"
+ className="w-20 bg-white text-navy-950 border border-white/20 rounded-xl px-3 py-2 text-xl font-bold outline-none focus:border-gold-400"
  />
  <span className="text-xl font-bold text-gold-400">%</span>
  </div>
