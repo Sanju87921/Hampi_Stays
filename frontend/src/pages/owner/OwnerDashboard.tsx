@@ -881,14 +881,14 @@ export function OwnerDashboard() {
                 const today = new Date().toDateString();
                 return new Date(b.checkIn).toDateString() === today && b.status !== 'CANCELLED';
               }).length > 0 ? (
-                resort.bookings.filter((b: any) => {
+                resort.bookings?.filter((b: any) => {
                   const today = new Date().toDateString();
                   return new Date(b.checkIn).toDateString() === today && b.status !== 'CANCELLED';
                 }).map((booking: any) => (
                   <div key={booking.id} className="flex items-center justify-between p-5 rounded-2xl bg-sand-50/50 border border-sand-100 hover:border-green-300 transition-all group">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
-                        {booking.user?.name.charAt(0)}
+                        {(booking.user?.name?.charAt(0) || 'U')}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
@@ -920,18 +920,18 @@ export function OwnerDashboard() {
                 const today = new Date().toDateString();
                 return new Date(b.checkOut).toDateString() === today && b.status !== 'CANCELLED';
               }).length > 0 ? (
-                resort.bookings.filter((b: any) => {
+                resort.bookings?.filter((b: any) => {
                   const today = new Date().toDateString();
                   return new Date(b.checkOut).toDateString() === today && b.status !== 'CANCELLED';
                 }).map((booking: any) => (
                   <div key={booking.id} className="flex items-center justify-between p-5 rounded-2xl bg-sand-50/50 border border-sand-100 hover:border-red-300 transition-all group">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
-                        {booking.user?.name.charAt(0)}
+                        {(booking.user?.name?.charAt(0) || 'U')}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
-                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • Room {booking.id.slice(-4).toUpperCase()}</p>
+                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • Room {(booking.id || '').slice(-4).toUpperCase()}</p>
                       </div>
                     </div>
                     <Button variant="outline" size="sm" className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50">Invoice</Button>
@@ -981,7 +981,7 @@ export function OwnerDashboard() {
                                 variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-sand-200"
                                 onClick={() => { 
                                   setEditingRoomId(room.id); 
-                                  setRoomFormData({ name: room.name, description: room.description, pricePerNight: room.pricePerNight.toString(), capacity: room.capacity.toString(), availableCount: room.availableCount.toString() }); 
+                                  setRoomFormData({ name: room.name, description: room.description, pricePerNight: (room.pricePerNight || 0).toString(), capacity: (room.capacity || 0).toString(), availableCount: (room.availableCount || 0).toString() }); 
                                   setShowEditRoom(true); 
                                 }}
                               >
@@ -1117,7 +1117,7 @@ export function OwnerDashboard() {
                       {(resort.bookings?.length > 0 ? resort.bookings : []).slice(0, 4).map((booking: any) => (
                         <div key={booking.id} className="flex items-center gap-4 group cursor-pointer">
                           <div className="w-12 h-12 rounded-2xl bg-sand-50 flex items-center justify-center font-bold text-navy-950 border border-sand-100 group-hover:border-gold-300 transition-all">
-                            {booking.user?.name.charAt(0).toUpperCase()}
+                            {(booking.user?.name?.charAt(0) || 'U').toUpperCase()}
                           </div>
                           <div className="flex-grow">
                             <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
@@ -1170,7 +1170,7 @@ export function OwnerDashboard() {
                       <div key={booking.id} className="flex items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30">
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
-                            {booking.user?.name.charAt(0).toUpperCase()}
+                            {(booking.user?.name?.charAt(0) || 'U').toUpperCase()}
                           </div>
                           <div>
                             <p className="text-lg font-bold text-navy-950">{booking.user?.name}</p>
@@ -1559,7 +1559,7 @@ export function OwnerDashboard() {
                         <div className="flex items-center gap-4">
                           <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-sm", 
                             activeMessageBooking?.id === booking.id ? "bg-gold-500 text-navy-950" : "bg-sand-100 text-navy-950")}>
-                            {booking.user?.name[0]}
+                            {(booking.user?.name?.[0] || 'U')}
                           </div>
                           <div className="overflow-hidden">
                             <p className={cn("text-sm font-bold truncate", activeMessageBooking?.id === booking.id ? "text-white" : "text-navy-950")}>
@@ -1592,7 +1592,7 @@ export function OwnerDashboard() {
                       <div className="p-8 border-b border-sand-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
                         <div className="flex items-center gap-4">
                            <div className="w-14 h-14 rounded-2xl bg-navy-950 text-gold-500 flex items-center justify-center font-bold text-xl shadow-inner">
-                             {activeMessageBooking.user?.name[0]}
+                             {(activeMessageBooking.user?.name?.[0] || 'U')}
                            </div>
                            <div>
                              <p className="text-lg font-bold text-navy-950">{activeMessageBooking.user?.name}</p>
@@ -1686,7 +1686,7 @@ export function OwnerDashboard() {
                     <div key={status} className="p-6 rounded-3xl border border-sand-100 bg-sand-50/50">
                       <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-2">{status} Payouts</p>
                       <p className="text-2xl font-bold text-navy-950">
-                        ₹{resort.bookings?.filter((b: any) => b.payoutStatus === status.toUpperCase()).reduce((acc: number, b: any) => acc + (b.totalPrice * 0.93), 0).toLocaleString() || 0}
+                        ₹{resort.bookings?.filter((b: any) => b.payoutStatus === status.toUpperCase()).reduce((acc: number, b: any) => acc + ((b.totalPrice || 0) * 0.93), 0).toLocaleString() || 0}
                       </p>
                     </div>
                   ))}
@@ -1711,9 +1711,9 @@ export function OwnerDashboard() {
                         <tr key={b.id} className="border-b border-sand-50/50 hover:bg-sand-50/30">
                           <td className="py-4 font-medium text-navy-950">{b.referenceNumber}</td>
                           <td className="py-4 text-navy-950/70">{b.user?.name}</td>
-                          <td className="py-4 font-bold text-navy-950">₹{b.totalPrice.toLocaleString()}</td>
-                          <td className="py-4 text-red-600 font-medium">-₹{(b.totalPrice * 0.07).toLocaleString()}</td>
-                          <td className="py-4 text-green-600 font-bold">₹{(b.totalPrice * 0.93).toLocaleString()}</td>
+                          <td className="py-4 font-bold text-navy-950">₹{(b.totalPrice || 0).toLocaleString()}</td>
+                          <td className="py-4 text-red-600 font-medium">-₹{((b.totalPrice || 0) * 0.07).toLocaleString()}</td>
+                          <td className="py-4 text-green-600 font-bold">₹{((b.totalPrice || 0) * 0.93).toLocaleString()}</td>
                           <td className="py-4">
                             <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.paymentStatus === 'PAID' ? "bg-green-100 text-green-700" : "bg-sand-100 text-navy-950")}>{b.paymentStatus || 'PENDING'}</span>
                           </td>
@@ -1736,7 +1736,7 @@ export function OwnerDashboard() {
                     <p className="text-sm text-navy-950/40 mt-1">View, search, and manage all resort reservations.</p>
                   </div>
                   <div className="flex gap-3">
-                    <Input placeholder="Search guests..." className="w-64" />
+                    <Input label="" placeholder="Search guests..." className="w-64" />
                     <Button variant="outline" className="rounded-xl px-6">Filter</Button>
                   </div>
                 </div>
@@ -1761,7 +1761,7 @@ export function OwnerDashboard() {
                           <td className="py-4 text-navy-950">{b.user?.name}</td>
                           <td className="py-4 text-navy-950/70">{new Date(b.checkIn).toLocaleDateString()}</td>
                           <td className="py-4 text-navy-950/70">{new Date(b.checkOut).toLocaleDateString()}</td>
-                          <td className="py-4 font-bold text-navy-950">₹{b.totalPrice.toLocaleString()}</td>
+                          <td className="py-4 font-bold text-navy-950">₹{(b.totalPrice || 0).toLocaleString()}</td>
                           <td className="py-4">
                             <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.status === 'CONFIRMED' ? "bg-green-100 text-green-700" : "bg-sand-100 text-navy-950")}>{b.status}</span>
                           </td>
@@ -1922,7 +1922,7 @@ export function OwnerDashboard() {
                         <div className="w-full md:w-1/3 space-y-4">
                           <div className="flex items-center gap-4">
                             <div className="w-16 h-16 rounded-[1.5rem] bg-navy-950 flex items-center justify-center text-xl font-bold text-white shadow-lg">
-                              {booking.user?.name.charAt(0).toUpperCase()}
+                              {(booking.user?.name?.charAt(0) || 'U').toUpperCase()}
                             </div>
                             <div>
                               <p className="text-lg font-bold text-navy-950">{booking.user?.name}</p>
@@ -1964,11 +1964,11 @@ export function OwnerDashboard() {
                               <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200 text-gold-600 hover:bg-gold-50" onClick={() => {
                                 setEditingBooking(booking);
                                 setBookingFormData({
-                                  checkIn: booking.checkIn.split('T')[0],
-                                  checkOut: booking.checkOut.split('T')[0],
-                                  guests: booking.guests.toString(),
+                                  checkIn: (booking.checkIn || "").split('T')[0],
+                                  checkOut: (booking.checkOut || "").split('T')[0],
+                                  guests: (booking.guests || 0).toString(),
                                   roomId: booking.roomId || '',
-                                  totalPrice: booking.totalPrice.toString()
+                                  totalPrice: (booking.totalPrice || 0).toString()
                                 });
                                 setShowBookingsModal(false);
                                 setShowEditBooking(true);
