@@ -12,15 +12,27 @@ import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { toast } from "react-hot-toast";
+import { useSystem } from "../../context/SystemContext";
+import { useMemo } from "react";
 import imageCompression from "browser-image-compression";
 
 export function ResortSetupPage() {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { settings } = useSystem();
   const [isPublishing, setIsPublishing] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCategoryText, setCustomCategoryText] = useState("");
+
+  const requiredDocTypes = useMemo(() => {
+    const reqs = settings?.verificationSettings?.resortOwnerRequirements || [];
+    const docs = [];
+    if (reqs.includes('AADHAAR') || reqs.includes('ID_DOCUMENT')) docs.push('id_proof');
+    if (reqs.includes('BUSINESS_REG')) docs.push('gst_cert');
+    if (reqs.includes('BANK_DETAILS')) docs.push('property_tax');
+    return docs;
+  }, [settings]);
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("hampi-resort-setup-draft");
@@ -243,7 +255,7 @@ export function ResortSetupPage() {
                  p.description.trim() !== ""
                );
       case 7: {
-        const hasAllDocs = ["id_proof", "gst_cert", "property_tax"].every(type => 
+        const hasAllDocs = requiredDocTypes.every(type => 
           formData.documents.some(d => d.type === type)
         );
         return formData.images.length >= 3 && hasAllDocs;
@@ -262,7 +274,7 @@ export function ResortSetupPage() {
       if (step === 5 && formData.roomTypes.length === 0) msg = "Please add at least one room type.";
       if (step === 7) {
         if (formData.images.length < 3) msg = "Please upload at least 3 resort photos.";
-        else msg = "Please upload all three mandatory documents (ID, GST, and Property Tax).";
+        else msg = "Please upload all mandatory documents.";
       }
       toast.error(msg);
     }
@@ -278,7 +290,7 @@ export function ResortSetupPage() {
       return;
     }
     if (!isStepValid()) {
-      toast.error("Verification pending: Please ensure 3+ photos and all 3 documents are uploaded.");
+      toast.error("Verification pending: Please ensure 3+ photos and all mandatory documents are uploaded.");
       return;
     }
 
@@ -702,6 +714,7 @@ export function ResortSetupPage() {
                           { id: "gst_cert", label: "GST Registration Certificate", icon: FileText },
                           { id: "property_tax", label: "Property Tax Receipt / Deed", icon: FileText }
                         ].map(doc => {
+                          const isRequired = requiredDocTypes.includes(doc.id);
                           const isUploaded = formData.documents.some(d => d.type === doc.id);
                           return (
                             <div key={doc.id} className="p-5 rounded-2xl bg-sand-50 border border-sand-100 flex items-center justify-between">
@@ -709,8 +722,11 @@ export function ResortSetupPage() {
                                 <div className="p-3 bg-white rounded-xl border border-sand-200">
                                   <doc.icon className="w-5 h-5 text-gold-600" />
                                 </div>
-                                <span className="text-sm font-bold text-navy-950">
-                                  {isUploaded ? `${doc.label} (Uploaded)` : doc.label}
+                                <span className="text-sm font-bold text-navy-950 flex gap-2 items-center">
+                                  {doc.label}
+                                  {isRequired && !isUploaded && <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>}
+                                  {!isRequired && !isUploaded && <span className="text-[10px] text-navy-400 bg-sand-100 px-2 py-0.5 rounded-full uppercase tracking-wider">Optional</span>}
+                                  {isUploaded && <span className="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Uploaded</span>}
                                 </span>
                               </div>
                               <label className="flex items-center gap-2 text-gold-600 hover:text-gold-700 cursor-pointer">

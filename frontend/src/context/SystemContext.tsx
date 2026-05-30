@@ -7,6 +7,11 @@ interface SystemSettings {
   defaultCommissionRate: number;
   requireOtpForSignup: boolean;
   updatedBy?: string;
+  verificationSettings?: {
+    travellerRequirements: string[];
+    resortOwnerRequirements: string[];
+    guideRequirements: string[];
+  };
 }
 
 interface SystemContextType {

@@ -82,6 +82,20 @@ export function RegisterPage() {
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
+  const isEmailRequired = (() => {
+    if (!settings?.verificationSettings) return true;
+    if (role === 'owner') return settings.verificationSettings.resortOwnerRequirements?.includes('EMAIL');
+    if (role === 'guide') return settings.verificationSettings.guideRequirements?.includes('EMAIL');
+    return settings.verificationSettings.travellerRequirements?.includes('EMAIL');
+  })();
+
+  const isPhoneRequired = (() => {
+    if (!settings?.verificationSettings) return true;
+    if (role === 'owner') return settings.verificationSettings.resortOwnerRequirements?.includes('PHONE');
+    if (role === 'guide') return settings.verificationSettings.guideRequirements?.includes('PHONE');
+    return settings.verificationSettings.travellerRequirements?.includes('PHONE');
+  })();
+
   const handleNext = () => {
     if (role) setStep(2);
   };
@@ -509,25 +523,29 @@ export function RegisterPage() {
                       }
                       required
                     />
-                    <Input
-                      label="Email Address"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      required
-                    />
-                    <Input
-                      label="Phone Number"
-                      type="tel"
-                      placeholder="+91 XXXXX XXXXX"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      required
-                    />
+                    {isEmailRequired && (
+                      <Input
+                        label="Email Address"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        required
+                      />
+                    )}
+                    {isPhoneRequired && (
+                      <Input
+                        label="Phone Number"
+                        type="tel"
+                        placeholder="+91 XXXXX XXXXX"
+                        value={formData.phone}
+                        onChange={(e) =>
+                          setFormData({ ...formData, phone: e.target.value })
+                        }
+                        required
+                      />
+                    )}
                     <Input
                       label="Password"
                       type="password"

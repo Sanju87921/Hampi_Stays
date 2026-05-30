@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2 } from 'lucide-react';
+import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, User, Hotel, MapPin } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,9 @@ export function AdminSettingsPage() {
  const [settings, setSettings] = useState<any>(null);
  const [updatingToggle, setUpdatingToggle] = useState<string | null>(null);
 
+ const [verificationSettings, setVerificationSettings] = useState<any>(null);
+ const [updatingReq, setUpdatingReq] = useState<string | null>(null);
+
  useEffect(() => {
  fetchSettings();
  }, []);
@@ -22,9 +25,36 @@ export function AdminSettingsPage() {
  try {
  const data = await apiClient.get<any>('/admin/settings');
  setSettings(data);
+ const vData = await apiClient.get<any>('/admin/verification-settings');
+ setVerificationSettings(vData);
  } catch (err) {
  toast.error('Failed to load global settings');
  }
+ };
+
+ const toggleRequirement = async (role: 'traveller' | 'resortOwner' | 'guide', req: string) => {
+   if (!verificationSettings) return;
+   setUpdatingReq(`${role}-${req}`);
+   
+   const roleKey = `${role}Requirements`;
+   const currentList = verificationSettings[roleKey] || [];
+   const isEnabled = currentList.includes(req);
+   
+   const newList = isEnabled 
+     ? currentList.filter((item: string) => item !== req)
+     : [...currentList, req];
+       
+   try {
+     const data = await apiClient.post<any>('/admin/verification-settings', {
+       [roleKey]: newList
+     });
+     setVerificationSettings(data);
+     toast.success('Verification requirement updated');
+   } catch (err: any) {
+     toast.error(err.message || 'Failed to update requirement');
+   } finally {
+     setUpdatingReq(null);
+   }
  };
 
  const updatePreference = async (key: string, value: string) => {
@@ -140,6 +170,122 @@ export function AdminSettingsPage() {
  );
  })}
  </div>
+ </motion.div>
+
+ {/* Verification Requirements Center */}
+ <motion.div 
+   initial={{ opacity: 0, y: 20 }}
+   animate={{ opacity: 1, y: 0 }}
+   transition={{ delay: 0.15 }}
+   className="bg-white rounded-3xl p-8 shadow-sm border border-sand-200 transition-colors mb-6"
+ >
+   <div className="mb-6">
+     <h3 className="text-xl font-bold text-navy-950 flex items-center">
+       <ShieldCheck className="w-5 h-5 mr-3 text-gold-500" />
+       Verification Requirements
+     </h3>
+     <p className="text-sm text-navy-950 mt-1">Dynamically control which documents are required for onboarding.</p>
+   </div>
+   
+   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+     {/* Travellers */}
+     <div className="bg-sand-50 rounded-2xl p-5 border border-sand-200">
+       <h4 className="font-bold text-navy-950 flex items-center mb-4 pb-3 border-b border-sand-200">
+         <User className="w-4 h-4 mr-2" /> Travellers
+       </h4>
+       <div className="space-y-3">
+         {[
+           { id: 'MOBILE_OTP', label: 'Mobile OTP' },
+           { id: 'EMAIL_VERIFICATION', label: 'Email Verification' },
+           { id: 'GOVERNMENT_ID', label: 'Government ID' },
+           { id: 'AADHAAR', label: 'Aadhaar' },
+           { id: 'PASSPORT', label: 'Passport' }
+         ].map(req => {
+           const isActive = verificationSettings?.travellerRequirements?.includes(req.id);
+           const isUpdating = updatingReq === `traveller-${req.id}`;
+           return (
+             <div key={req.id} className="flex items-center justify-between">
+               <span className="text-xs font-semibold text-navy-950">{req.label}</span>
+               <button 
+                 disabled={!verificationSettings || isUpdating}
+                 onClick={() => toggleRequirement('traveller', req.id)}
+                 className={`w-9 h-5 rounded-full transition-colors relative flex items-center disabled:opacity-50 ${isActive ? 'bg-gold-500' : 'bg-sand-200'}`}
+               >
+                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'left-4' : 'left-0.5'}`} />
+                 {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-navy-950 absolute -left-5" />}
+               </button>
+             </div>
+           )
+         })}
+       </div>
+     </div>
+
+     {/* Resort Owners */}
+     <div className="bg-sand-50 rounded-2xl p-5 border border-sand-200">
+       <h4 className="font-bold text-navy-950 flex items-center mb-4 pb-3 border-b border-sand-200">
+         <Hotel className="w-4 h-4 mr-2" /> Resort Owners
+       </h4>
+       <div className="space-y-3">
+         {[
+           { id: 'AADHAAR', label: 'Aadhaar' },
+           { id: 'PAN', label: 'PAN' },
+           { id: 'PROPERTY_OWNERSHIP', label: 'Property Ownership Proof' },
+           { id: 'BANK_VERIFICATION', label: 'Bank Verification' },
+           { id: 'GST', label: 'GST Certificate' },
+           { id: 'TRADE_LICENSE', label: 'Trade License' },
+           { id: 'TOURISM_REGISTRATION', label: 'Tourism Registration' },
+           { id: 'FSSAI', label: 'FSSAI License' }
+         ].map(req => {
+           const isActive = verificationSettings?.resortOwnerRequirements?.includes(req.id);
+           const isUpdating = updatingReq === `resortOwner-${req.id}`;
+           return (
+             <div key={req.id} className="flex items-center justify-between">
+               <span className="text-xs font-semibold text-navy-950">{req.label}</span>
+               <button 
+                 disabled={!verificationSettings || isUpdating}
+                 onClick={() => toggleRequirement('resortOwner', req.id)}
+                 className={`w-9 h-5 rounded-full transition-colors relative flex items-center disabled:opacity-50 ${isActive ? 'bg-gold-500' : 'bg-sand-200'}`}
+               >
+                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'left-4' : 'left-0.5'}`} />
+                 {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-navy-950 absolute -left-5" />}
+               </button>
+             </div>
+           )
+         })}
+       </div>
+     </div>
+
+     {/* Local Guides */}
+     <div className="bg-sand-50 rounded-2xl p-5 border border-sand-200">
+       <h4 className="font-bold text-navy-950 flex items-center mb-4 pb-3 border-b border-sand-200">
+         <MapPin className="w-4 h-4 mr-2" /> Local Guides
+       </h4>
+       <div className="space-y-3">
+         {[
+           { id: 'AADHAAR', label: 'Aadhaar' },
+           { id: 'GUIDE_LICENSE', label: 'Guide License' },
+           { id: 'PAN', label: 'PAN' },
+           { id: 'BANK_VERIFICATION', label: 'Bank Verification' }
+         ].map(req => {
+           const isActive = verificationSettings?.guideRequirements?.includes(req.id);
+           const isUpdating = updatingReq === `guide-${req.id}`;
+           return (
+             <div key={req.id} className="flex items-center justify-between">
+               <span className="text-xs font-semibold text-navy-950">{req.label}</span>
+               <button 
+                 disabled={!verificationSettings || isUpdating}
+                 onClick={() => toggleRequirement('guide', req.id)}
+                 className={`w-9 h-5 rounded-full transition-colors relative flex items-center disabled:opacity-50 ${isActive ? 'bg-gold-500' : 'bg-sand-200'}`}
+               >
+                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'left-4' : 'left-0.5'}`} />
+                 {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-navy-950 absolute -left-5" />}
+               </button>
+             </div>
+           )
+         })}
+       </div>
+     </div>
+   </div>
  </motion.div>
 
  {/* Operational & Audit */}

@@ -246,7 +246,7 @@ app.get('/settings', async (c) => {
     if (!settings) {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true, defaultCommissionRate: 7.0, requireOtpForSignup: true } });
     }
-    return c.json(settings, 200, {
+    let verificationSettings = await prisma.verificationSettings.findFirst(); if (!verificationSettings) { verificationSettings = await prisma.verificationSettings.create({ data: { travellerRequirements: ['EMAIL', 'PHONE'], resortOwnerRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'BUSINESS_REG'], guideRequirements: ['EMAIL', 'PHONE', 'AADHAAR', 'GUIDE_LICENSE'] } }); } return c.json({ ...settings, verificationSettings }, 200, {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'

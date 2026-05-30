@@ -168,6 +168,18 @@ model SystemSettings {
   updatedAt               DateTime @updatedAt
 }
 
+model VerificationSettings {
+  id                      String   @id @default(cuid())
+  travellerRequirements   String[] @default(["MOBILE_OTP", "EMAIL_VERIFICATION"])
+  resortOwnerRequirements String[] @default(["AADHAAR", "PAN"])
+  guideRequirements       String[] @default(["AADHAAR"])
+  updatedBy               String?
+  updatedAt               DateTime @updatedAt
+
+  @@map("verification_settings")
+}
+
+
 model RoomBlocking {
   id     String   @id @default(cuid())
   date   DateTime

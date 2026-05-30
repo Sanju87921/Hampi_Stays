@@ -213,6 +213,86 @@ app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, as
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.get('/admin/verification-settings', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    let settings = await prisma.verificationSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.verificationSettings.create({
+        data: {
+          travellerRequirements: ['MOBILE_OTP', 'EMAIL_VERIFICATION'],
+          resortOwnerRequirements: ['AADHAAR', 'PAN'],
+          guideRequirements: ['AADHAAR']
+        }
+      });
+    }
+    return c.json(settings);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const payload = await c.req.json();
+  const userPayload = c.get('user');
+  
+  try {
+    let adminEmail = userPayload?.email;
+    if (!adminEmail && userPayload?.userId) {
+      const adminUser = await prisma.user.findUnique({ where: { id: userPayload.userId } });
+      if (adminUser) adminEmail = adminUser.email;
+    }
+    adminEmail = adminEmail || userPayload?.userId || 'system';
+
+    let settings = await prisma.verificationSettings.findFirst();
+    const data = {};
+    
+    if (payload.travellerRequirements !== undefined) data.travellerRequirements = payload.travellerRequirements;
+    if (payload.resortOwnerRequirements !== undefined) data.resortOwnerRequirements = payload.resortOwnerRequirements;
+    if (payload.guideRequirements !== undefined) data.guideRequirements = payload.guideRequirements;
+    
+    if (Object.keys(data).length > 0) {
+      data.updatedBy = adminEmail;
+    }
+
+    const previousSettings = settings ? { ...settings } : null;
+
+    if (settings) {
+      settings = await prisma.verificationSettings.update({
+        where: { id: settings.id },
+        data
+      });
+    } else {
+      settings = await prisma.verificationSettings.create({
+        data: {
+          ...data,
+          updatedBy: adminEmail
+        }
+      });
+    }
+
+    // Audit Logging
+    const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
+    const userAgent = c.req.header('user-agent') || null;
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: userPayload?.userId || 'system',
+          action: 'VERIFICATION_SETTINGS_UPDATED',
+          details: JSON.parse(JSON.stringify({ previous: previousSettings, new: data })),
+          ipAddress,
+          userAgent
+        }
+      });
+    } catch (err) {
+      console.error('Failed to insert audit log:', err);
+    }
+
+    return c.json(settings);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 // User Management
 app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);

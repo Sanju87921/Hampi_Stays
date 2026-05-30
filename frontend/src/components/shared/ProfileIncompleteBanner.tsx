@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { apiClient } from "../../utils/apiClient";
+import { useSystem } from "../../context/SystemContext";
 
 export function ProfileIncompleteBanner() {
   const { user } = useAuth();
+  const { settings } = useSystem();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -19,26 +21,39 @@ export function ProfileIncompleteBanner() {
       // Use backend-computed profileCompletionStatus if available
       if (user.profileCompletionStatus === 'COMPLETE') return false;
 
-      // 1. Strict Profile Requirements (No fields skipped)
+      // 1. Core Profile Requirements
       const hasFullName = !!(user.name && user.name.trim() !== "");
       const hasEmail = !!(user.email && user.email.trim() !== "");
       const hasPhone = !!(user.phone && user.phone.trim() !== "");
       const hasLocation = !!(user.location && user.location.trim() !== "");
       const hasAvatar = !!(user.avatar && user.avatar.trim() !== "");
+      const hasKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
 
-      // 2. Role-Specific Validation
+      const vSettings = settings?.verificationSettings;
+
+      // 2. Role-Specific Dynamic Validation
       if (user.role === 'RESORT_OWNER') {
-        const hasSubmittedKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
-        return !(hasFullName && hasEmail && hasPhone && hasLocation && hasAvatar && hasSubmittedKYC);
+        const reqs = vSettings?.resortOwnerRequirements || [];
+        if (reqs.includes('EMAIL') && !hasEmail) return true;
+        if (reqs.includes('PHONE') && !hasPhone) return true;
+        if (reqs.some(r => ['AADHAAR', 'ID_DOCUMENT', 'BUSINESS_REG', 'BANK_DETAILS'].includes(r)) && !hasKYC) return true;
+        return !(hasFullName && hasAvatar);
       }
 
       if (user.role === 'GUIDE') {
-        const hasSubmittedKYC = user.kycStatus === 'PENDING' || user.kycStatus === 'VERIFIED';
-        return !(hasFullName && hasPhone && hasLocation && hasAvatar && hasSubmittedKYC);
+        const reqs = vSettings?.guideRequirements || [];
+        if (reqs.includes('EMAIL') && !hasEmail) return true;
+        if (reqs.includes('PHONE') && !hasPhone) return true;
+        if (reqs.some(r => ['AADHAAR', 'ID_DOCUMENT', 'GUIDE_LICENSE', 'PASSPORT'].includes(r)) && !hasKYC) return true;
+        return !(hasFullName && hasAvatar);
       }
 
       // TRAVELLER Requirements
-      return !(hasFullName && hasEmail && hasPhone && hasLocation && hasAvatar);
+      const reqs = vSettings?.travellerRequirements || [];
+      if (reqs.includes('EMAIL') && !hasEmail) return true;
+      if (reqs.includes('PHONE') && !hasPhone) return true;
+      if (reqs.some(r => ['ID_DOCUMENT', 'PASSPORT'].includes(r)) && !hasKYC) return true;
+      return !(hasFullName && hasAvatar);
     };
 
     const isIncomplete = checkIncomplete();

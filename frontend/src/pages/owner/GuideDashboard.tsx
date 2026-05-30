@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
+import { useSystem } from "../../context/SystemContext";
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
 
@@ -64,6 +65,8 @@ export function GuideDashboard() {
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { settings } = useSystem();
+  const isIdRequired = settings?.verificationSettings?.guideRequirements?.some(req => ['AADHAAR', 'ID_DOCUMENT', 'GUIDE_LICENSE', 'PASSPORT'].includes(req));
   
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -867,7 +870,9 @@ export function GuideDashboard() {
           <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Identity Verification</h3>
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Document Type</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
+                Document Type {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
+              </label>
               <select 
                 value={profileForm.idType || ""} 
                 onChange={e => setProfileForm({...profileForm, idType: e.target.value})}
@@ -880,7 +885,9 @@ export function GuideDashboard() {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">ID Number</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
+                ID Number {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
+              </label>
               <input 
                 type="text"
                 placeholder="Enter document number"
@@ -890,7 +897,9 @@ export function GuideDashboard() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Upload Document Photo</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
+                Upload Document Photo {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
+              </label>
               <div className="relative group cursor-pointer">
                 <input 
                   type="file" 
