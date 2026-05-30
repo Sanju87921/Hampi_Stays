@@ -558,8 +558,55 @@ export function OwnerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center pt-24">
-        <Loader2 className="w-10 h-10 text-gold-600 animate-spin" />
+      <div className="min-h-screen bg-sand-50 pt-24 pb-12">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="animate-pulse space-y-12">
+            {/* Header Skeleton */}
+            <div className="flex flex-col md:flex-row justify-between gap-6">
+              <div>
+                <div className="h-10 w-64 bg-sand-200 rounded-lg mb-4"></div>
+                <div className="h-4 w-48 bg-sand-200 rounded"></div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <div className="h-12 w-32 bg-sand-200 rounded-xl"></div>
+                <div className="h-12 w-32 bg-sand-200 rounded-xl"></div>
+                <div className="h-12 w-32 bg-sand-200 rounded-xl"></div>
+                <div className="h-12 w-32 bg-sand-200 rounded-xl"></div>
+              </div>
+            </div>
+            {/* Stats Grid Skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-[2rem] border border-sand-100 h-36 flex flex-col justify-between">
+                  <div className="h-12 w-12 bg-sand-100 rounded-2xl"></div>
+                  <div>
+                    <div className="h-4 w-24 bg-sand-200 rounded mb-2"></div>
+                    <div className="h-8 w-32 bg-sand-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Split Section Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               <div className="h-96 bg-white rounded-[2.5rem] border border-sand-100 p-8">
+                  <div className="h-8 w-48 bg-sand-200 rounded mb-8"></div>
+                  <div className="space-y-4">
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                  </div>
+               </div>
+               <div className="h-96 bg-white rounded-[2.5rem] border border-sand-100 p-8">
+                  <div className="h-8 w-48 bg-sand-200 rounded mb-8"></div>
+                  <div className="space-y-4">
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                     <div className="h-16 bg-sand-100 rounded-2xl"></div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

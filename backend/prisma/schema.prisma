@@ -240,6 +240,8 @@ model Booking {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([checkIn])
+  @@index([checkOut])
   @@map("bookings")
 }
 
