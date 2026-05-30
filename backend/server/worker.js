@@ -30,6 +30,7 @@ import { setupContentRoutes } from "./routes/content/index.js";
 import { setupCurationRoutes } from "./routes/curation/index.js";
 import { setupHealthRoutes } from "./routes/health.js";
 import { setupAdminRoutes } from "./routes/admin/index.js";
+import { setupKycRoutes } from "./routes/kyc.js";
 import { setupAdminSecurityRoutes } from "./routes/admin/security.js";
 
 
@@ -134,6 +135,7 @@ setupSeoRoutes(app);
 setupContentRoutes(app, authMiddleware, adminMiddleware);
 setupCurationRoutes(app, authMiddleware, adminMiddleware);
 setupAdminRoutes(app, authMiddleware, adminMiddleware);
+setupKycRoutes(app, authMiddleware, adminMiddleware);
 setupAdminSecurityRoutes(app, authMiddleware, adminMiddleware);
 setupHealthRoutes(app);
 app.route('/auth', setupAuthRoutes(authMiddleware));
