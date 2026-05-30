@@ -6,7 +6,7 @@ import { Tag, Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Percent, Indian
 import { Button } from '../../components/ui/Button';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 interface Promotion {
   id: string;
@@ -133,33 +133,29 @@ export function PromotionsModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm">
+        <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm overflow-x-auto">
           <h3 className="text-lg font-bold text-navy-950 mb-4">Promotion Usage</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={usageData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="usage" fill="#0A0F1E" radius={[4, 4, 0, 0]} barSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-64 min-w-[400px]">
+            <BarChart width={500} height={250} data={usageData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Bar dataKey="usage" fill="#0A0F1E" radius={[4, 4, 0, 0]} barSize={32} />
+            </BarChart>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm">
+        <div className="bg-white p-6 rounded-2xl border border-sand-200 shadow-sm overflow-x-auto">
           <h3 className="text-lg font-bold text-navy-950 mb-4">Revenue Generated with Offers</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
-                <Tooltip cursor={{ stroke: '#9CA3AF' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(val: number) => [`₹${val.toLocaleString()}`, 'Revenue']} />
-                <Line type="monotone" dataKey="revenue" stroke="#B8860B" strokeWidth={3} dot={{ r: 4, fill: '#B8860B', strokeWidth: 2, stroke: '#FFFFFF' }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-64 min-w-[400px]">
+            <LineChart width={500} height={250} data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
+              <Tooltip cursor={{ stroke: '#9CA3AF' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(val: number) => [`₹${val.toLocaleString()}`, 'Revenue']} />
+              <Line type="monotone" dataKey="revenue" stroke="#B8860B" strokeWidth={3} dot={{ r: 4, fill: '#B8860B', strokeWidth: 2, stroke: '#FFFFFF' }} activeDot={{ r: 6 }} />
+            </LineChart>
           </div>
         </div>
       </div>
