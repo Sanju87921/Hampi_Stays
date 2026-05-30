@@ -54,7 +54,7 @@ export function Navbar() {
  { name: "My Tours", path: "/dashboard?tab=tours" },
  { name: t("navbar.profile"), path: "/dashboard?tab=profile" },
  { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
- { name: "Settings", path: "/dashboard?tab=settings" },
+ 
  ]
  : user?.role?.toUpperCase() === 'TRAVELLER'
  ? [
@@ -72,10 +72,10 @@ export function Navbar() {
  ]
  : [
  { name: t("navbar.dashboard"), path: "/dashboard" },
- { name: "Properties", path: "/dashboard?tab=properties" },
+ 
  { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
  { name: t("navbar.profile"), path: "/dashboard/profile" },
- { name: "Settings", path: "/dashboard?tab=settings" },
+ 
  ]
  : [
  { name: t("navbar.resorts"), path: "/resorts" },
