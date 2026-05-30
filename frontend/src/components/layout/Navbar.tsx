@@ -53,7 +53,7 @@ export function Navbar() {
  { name: t("navbar.dashboard"), path: "/dashboard" },
  { name: "My Tours", path: "/dashboard?tab=tours" },
  { name: t("navbar.profile"), path: "/dashboard?tab=profile" },
- { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
+ 
  
  ]
  : user?.role?.toUpperCase() === 'TRAVELLER'
@@ -73,7 +73,7 @@ export function Navbar() {
  : [
  { name: t("navbar.dashboard"), path: "/dashboard" },
  
- { name: t("navbar.bookings"), path: "/dashboard?tab=bookings" },
+ 
  { name: t("navbar.profile"), path: "/dashboard/profile" },
  
  ]
