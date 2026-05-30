@@ -2202,6 +2202,62 @@ export function OwnerDashboard() {
             </motion.div>
           </div>
         )}
+
+        {showDiningModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm" onClick={() => setShowDiningModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-10 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto border border-sand-100">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-serif font-bold text-navy-950">Manage Dining Packages</h2>
+                <button type="button" onClick={() => setShowDiningModal(false)} className="p-2 hover:bg-sand-50 rounded-full transition-colors"><X className="w-6 h-6 text-navy-950/40" /></button>
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                {diningPackages.map((pkg, idx) => (
+                  <div key={idx} className="p-6 border border-sand-200 bg-sand-50/30 rounded-2xl flex items-start gap-4">
+                    <div className="flex-1 space-y-4">
+                      <Input label="Package Name" value={pkg.name} onChange={(e) => {
+                        const newPkgs = [...diningPackages];
+                        newPkgs[idx].name = e.target.value;
+                        setDiningPackages(newPkgs);
+                      }} />
+                      <Input label="Price (₹)" type="number" value={pkg.price} onChange={(e) => {
+                        const newPkgs = [...diningPackages];
+                        newPkgs[idx].price = Number(e.target.value);
+                        setDiningPackages(newPkgs);
+                      }} />
+                      <Input label="Description" value={pkg.description} onChange={(e) => {
+                        const newPkgs = [...diningPackages];
+                        newPkgs[idx].description = e.target.value;
+                        setDiningPackages(newPkgs);
+                      }} />
+                    </div>
+                    <button type="button" onClick={() => {
+                      setDiningPackages(diningPackages.filter((_, i) => i !== idx));
+                    }} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0 border border-transparent hover:border-red-100">
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+                {diningPackages.length === 0 && (
+                  <div className="text-center py-12 text-navy-950/40 font-bold border-2 border-dashed border-sand-200 rounded-2xl">
+                    No dining packages added yet.
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-4 border-t border-sand-100 pt-6">
+                <Button variant="outline" className="flex-1 border-dashed border-2 border-sand-200 hover:border-navy-950 hover:bg-sand-50" onClick={() => {
+                  setDiningPackages([...diningPackages, { name: "", price: 0, description: "" }]);
+                }}>
+                  <Plus className="w-4 h-4 mr-2" /> Add Package
+                </Button>
+                <Button className="flex-1 bg-navy-950 text-white hover:bg-navy-900 shadow-luxury" onClick={handleSaveDining}>Save Changes</Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
