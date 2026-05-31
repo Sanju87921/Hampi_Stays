@@ -263,7 +263,8 @@ const HeroModule = () => {
  </div>
  <div className="absolute top-4 right-4 z-20 flex gap-2">
  <button onClick={() => { setPreviewPlaying(!previewPlaying); if (!previewPlaying) setPreviewIdx(0); }}
- className="bg-white backdrop-blur-md border border-white/20 text-white p-2 rounded-xl hover:bg-white transition-colors">
+ title={previewPlaying ? "Pause preview" : "Play preview"}
+ className="bg-white/20 backdrop-blur-md border border-white/20 text-white p-2 rounded-xl hover:bg-white/30 transition-colors">
  {previewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
  </button>
  </div>
