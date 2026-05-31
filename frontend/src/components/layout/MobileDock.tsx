@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, Calendar, User, Search } from "lucide-react";
+import { Home, Compass, Calendar, User, Search, Heart } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -16,10 +16,11 @@ export function MobileDock() {
   if (isOwner || isAdmin) return null;
 
   const items = [
-    { icon: Home, label: "Home", path: "/" },
+    { icon: Home, label: "Dashboard", path: "/dashboard" },
     { icon: Search, label: "Explore", path: "/resorts" },
     { icon: Calendar, label: "Bookings", path: "/dashboard/bookings" },
-    { icon: User, label: "Profile", path: isAuthenticated ? "/dashboard/profile" : "/register" },
+    { icon: Heart, label: "Wishlist", path: isAuthenticated ? "/dashboard/wishlist" : "/login" },
+    { icon: User, label: "Profile", path: isAuthenticated ? "/dashboard/profile" : "/login" },
   ];
 
   return (

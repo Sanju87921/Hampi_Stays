@@ -91,6 +91,8 @@ import { generateSignedKycUrlWorker, verifySignedKycUrlWorker, runKycFraudCheckW
 // --- Middleware ---
 // Inject getPrisma factory into context so extracted controllers can use c.get('getPrisma')
 app.use('*', async (c, next) => {
+  if (!c.env) c.env = {};
+  Object.assign(c.env, process.env);
   c.set('getPrisma', getPrisma);
   await next();
 });
@@ -1540,16 +1542,35 @@ app.patch('/bookings/:id/status', authMiddleware, async (c) => {
 // Cloudinary Upload Signature — uses native Web Crypto API for edge runtime compatibility
 app.get('/upload/signature', authMiddleware, async (c) => {
   try {
+    const uploadType = c.req.query('type') || 'default';
     const timestamp = Math.round(new Date().getTime() / 1000).toString();
-    const folder = 'hampi-stays';
+    const folder = uploadType === 'kyc' ? 'hampi-stays/kyc' : 'hampi-stays';
     const apiSecret = c.env.CLOUDINARY_API_SECRET;
     
     if (!apiSecret) {
       return c.json({ error: 'CLOUDINARY_API_SECRET is not configured' }, 500);
     }
 
-    // Cloudinary requires signature: sha1(folder=hampi-stays&timestamp=123456... + api_secret)
-    const signString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    let eager = '';
+    let paramsToSign = { folder, timestamp };
+
+    // Enforce authenticated access for KYC documents
+    if (uploadType === 'kyc') {
+      paramsToSign.type = 'authenticated';
+    }
+
+    // Apply strict optimizations to Resort & Room images via eager transformations
+    if (uploadType === 'resort' || uploadType === 'room') {
+      eager = 'c_fill,w_300,h_200,f_auto,q_auto|c_fill,w_800,h_600,f_auto,q_auto|c_fill,w_1200,h_800,f_auto,q_auto';
+      paramsToSign.eager = eager;
+    }
+
+    // Sort parameters alphabetically as required by Cloudinary for signatures
+    const signString = Object.keys(paramsToSign)
+      .sort()
+      .map(k => `${k}=${paramsToSign[k]}`)
+      .join('&') + apiSecret;
+
     const encoder = new TextEncoder();
     const data = encoder.encode(signString);
     const hashBuffer = await crypto.subtle.digest('SHA-1', data);
@@ -1561,7 +1582,9 @@ app.get('/upload/signature', authMiddleware, async (c) => {
       timestamp,
       cloud_name: c.env.CLOUDINARY_CLOUD_NAME,
       api_key: c.env.CLOUDINARY_API_KEY,
-      folder
+      folder,
+      eager,
+      type: paramsToSign.type || undefined
     });
   } catch (err) {
     console.error('Upload signature error:', err);

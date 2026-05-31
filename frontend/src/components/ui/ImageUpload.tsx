@@ -31,7 +31,7 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
       const token = localStorage.getItem("hampi-token");
       
       // 1. Get Signature
-      const sigRes = await fetch(`${API_BASE_URL}/upload/signature`, {
+      const sigRes = await fetch(`${API_BASE_URL}/upload/signature?type=resort`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (!sigRes.ok) throw new Error("Failed to get upload signature");
@@ -44,6 +44,9 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
       uploadFd.append('timestamp', sigData.timestamp);
       uploadFd.append('signature', sigData.signature);
       uploadFd.append('folder', sigData.folder);
+      if (sigData.eager) {
+        uploadFd.append('eager', sigData.eager);
+      }
 
       const response = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
         method: "POST",

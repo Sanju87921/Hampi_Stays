@@ -173,7 +173,7 @@ const HeroModule = () => {
 
  try {
  // Get signature
- const { signature, timestamp, cloud_name, api_key, folder } = await api.get('/upload/signature');
+ const { signature, timestamp, cloud_name, api_key, folder, eager } = await api.get('/upload/signature?type=resort');
  
  // Upload to Cloudinary
  const formData = new FormData();
@@ -182,6 +182,7 @@ const HeroModule = () => {
  formData.append('timestamp', timestamp.toString());
  formData.append('signature', signature);
  formData.append('folder', folder);
+ if (eager) formData.append('eager', eager);
 
  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, {
  method: 'POST',

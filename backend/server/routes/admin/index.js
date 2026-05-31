@@ -987,21 +987,54 @@ app.get('/admin/kyc-image/:id', authMiddleware, adminMiddleware, async (c) => {
 app.get('/admin/audit-logs', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   const page = Math.max(1, parseInt(c.req.query('page') || '1'));
-  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '50')));
   const skip = (page - 1) * limit;
 
   try {
-    const [totalCount, logs] = await Promise.all([
-      prisma.verificationAudit.count(),
-      prisma.verificationAudit.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      })
+    // We will fetch from both tables, unify, sort, and paginate in JS because of prisma's limitations across different models.
+    const [verificationAudits, generalAudits] = await Promise.all([
+      prisma.verificationAudit.findMany({ orderBy: { createdAt: 'desc' }, take: skip + limit }),
+      prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: skip + limit, include: { admin: { select: { name: true } } } })
     ]);
+
+    const unifiedAudits = [
+      ...verificationAudits.map(v => ({
+        id: v.id,
+        type: 'VERIFICATION',
+        adminId: v.adminId,
+        adminName: v.adminName,
+        targetUserId: v.targetUserId,
+        targetName: v.targetName,
+        action: v.action,
+        previousStatus: v.previousStatus,
+        newStatus: v.newStatus,
+        ipAddress: v.ipAddress,
+        userAgent: v.userAgent,
+        createdAt: v.createdAt
+      })),
+      ...generalAudits.map(g => ({
+        id: g.id,
+        type: 'SYSTEM',
+        adminId: g.adminId,
+        adminName: g.admin?.name || 'Admin',
+        targetUserId: null,
+        targetName: 'System',
+        action: g.action,
+        previousStatus: null,
+        newStatus: JSON.stringify(g.details)?.substring(0, 50) || 'N/A',
+        ipAddress: g.ipAddress,
+        userAgent: g.userAgent,
+        createdAt: g.createdAt
+      }))
+    ];
+
+    unifiedAudits.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
+    const totalCount = unifiedAudits.length;
+    const paginatedLogs = unifiedAudits.slice(skip, skip + limit);
+
     return c.json({
-      data: logs,
+      data: paginatedLogs,
       page,
       limit,
       totalCount,
@@ -1136,7 +1169,34 @@ app.patch('/admin/payouts/:payoutId/status', authMiddleware, adminMiddleware, as
 });
 app.get('/admin/security/stats', authMiddleware, adminMiddleware, (c) => c.json({ logs: [], activeSessions: 1 }));
 app.get('/admin/reviews/flagged', authMiddleware, adminMiddleware, (c) => c.json([]));
-app.get('/admin/otp-logs', authMiddleware, adminMiddleware, (c) => c.json([]));
+app.get('/admin/otp-logs', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '50')));
+  const skip = (page - 1) * limit;
+
+  try {
+    const [totalCount, logs] = await Promise.all([
+      prisma.otpVerification.count(),
+      prisma.otpVerification.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { name: true, role: true } } }
+      })
+    ]);
+    
+    return c.json({
+      data: logs,
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
 
 // Bookings & Payments
 app.post('/bookings', authMiddleware, async (c) => {

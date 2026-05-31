@@ -537,22 +537,27 @@ export function CheckoutPage() {
                   {activePromotions.length > 0 && !appliedCoupon && (
                     <div className="space-y-2 mb-4">
                       {activePromotions.map(promo => (
-                        <div key={promo.id} className="p-3 rounded-xl border border-sand-200 bg-white hover:border-gold-300 transition cursor-pointer"
-                             onClick={() => handleApplyCoupon(promo.code)}>
-                          <div className="flex justify-between items-start">
+                        <div key={promo.id} className="p-4 rounded-xl border border-sand-200 bg-white hover:border-gold-300 transition shadow-sm mb-3">
+                          <div className="flex justify-between items-start mb-3">
                             <div>
                               <p className="text-sm font-bold text-navy-950 flex items-center gap-1.5">
                                 🎉 {promo.name}
                               </p>
-                              <p className="text-xs text-navy-950/60 mt-0.5">
-                                {promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`} 
+                              <p className="text-xs text-navy-950/60 mt-1">
+                                {promo.description || (promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
                                 {promo.minBookingAmount ? ` on bookings above ₹${promo.minBookingAmount}` : ''}
                               </p>
                             </div>
-                            <span className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 px-2 py-1 rounded-md border border-gold-100">
+                            <span className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 px-2 py-1 rounded-md border border-gold-100 shrink-0">
                               {promo.code}
                             </span>
                           </div>
+                          <button
+                            onClick={(e) => { e.preventDefault(); handleApplyCoupon(promo.code); }}
+                            className="w-full py-2.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950 rounded-lg transition-colors border-none"
+                          >
+                            [ Apply Offer ]
+                          </button>
                         </div>
                       ))}
                     </div>

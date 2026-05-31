@@ -4,7 +4,7 @@ import {
   Calendar, Heart, User, LogOut, 
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
-  Phone, Compass, Shield
+  Phone, Compass, Shield, Download, Smartphone, Share
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -33,6 +33,8 @@ export function TravelerDashboard() {
   const [promoSettings, setPromoSettings] = useState<any>(null);
   const [hasGuideBooking, setHasGuideBooking] = useState(false);
   const [recommendedGuides, setRecommendedGuides] = useState<any[]>([]);
+  const [activePromotions, setActivePromotions] = useState<any[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +43,8 @@ export function TravelerDashboard() {
         const [bookingsData, wishlistData, notificationsData] = await Promise.all([
           apiClient.get<Booking[]>(`/users/bookings`),
           apiClient.get<any[]>(`/users/${user.id}/wishlist`),
-          apiClient.get<any[]>(`/users/notifications`).catch(() => [])
+          apiClient.get<any[]>(`/users/notifications`).catch(() => []),
+          apiClient.get<any[]>(`/promotions/active`).catch(() => [])
         ]);
 
         const normalizedWishlist = (wishlistData || []).map((r: any) => ({
@@ -58,6 +61,12 @@ export function TravelerDashboard() {
 
         setBookings(bookingsData);
         setWishlist(normalizedWishlist);
+        setActivePromotions(activePromos || []);
+        
+        try {
+          const viewed = JSON.parse(localStorage.getItem('recentlyViewedResorts') || '[]');
+          setRecentlyViewed(viewed.slice(0, 3));
+        } catch(e) {}
         if (notificationsData) {
           setUnreadCount(notificationsData.filter((n: any) => !n.isRead).length);
         }
@@ -544,6 +553,63 @@ export function TravelerDashboard() {
                   </Link>
                 </div>
               )}
+
+              {/* Active Promotions */}
+              {activePromotions.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Active Promotions</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activePromotions.slice(0, 2).map((promo: any) => (
+                      <div key={promo.id} className="p-5 rounded-[2rem] border border-sand-200 bg-white shadow-sm flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <p className="text-lg font-bold text-navy-950">🎉 {promo.name}</p>
+                            <span className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 px-2 py-1 rounded-md border border-gold-100">
+                              {promo.code}
+                            </span>
+                          </div>
+                          <p className="text-sm text-navy-950/60 mb-4">
+                            {promo.description || (promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
+                            {promo.minBookingAmount ? ` on bookings above ₹${promo.minBookingAmount}` : ''}
+                          </p>
+                        </div>
+                        <Link to="/resorts">
+                          <Button variant="outline" size="sm" className="w-full text-xs font-bold uppercase tracking-widest border-navy-950 text-navy-950">
+                            Explore Stays
+                          </Button>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recently Viewed */}
+              {recentlyViewed.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Recently Viewed</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {recentlyViewed.map((resort: any) => (
+                      <Link key={resort.id} to={`/resorts/${resort.slug}`} className="block group">
+                        <div className="bg-white rounded-3xl border border-sand-100 overflow-hidden shadow-sm hover:shadow-md transition">
+                          <div className="h-32 overflow-hidden">
+                            <img src={resort.images?.[0]} alt={resort.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          </div>
+                          <div className="p-4">
+                            <p className="font-bold text-navy-950 truncate text-sm">{resort.name}</p>
+                            <p className="text-[10px] text-navy-950/40 uppercase tracking-widest mt-1">Hampi, Karnataka</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </section>
 
             {/* Quick Actions / Recent Activity */}
@@ -912,6 +978,21 @@ export function TravelerDashboard() {
                     {new Date(showStayPassModal.checkIn).toLocaleDateString()} - {new Date(showStayPassModal.checkOut).toLocaleDateString()}
                   </span>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
+                  <Download className="w-3 h-3 mr-1.5" /> PDF
+                </Button>
+                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
+                  <Smartphone className="w-3 h-3 mr-1.5" /> Wallet
+                </Button>
+                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
+                  <Share className="w-3 h-3 mr-1.5" /> Share
+                </Button>
+                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
+                  <Phone className="w-3 h-3 mr-1.5" /> Contact
+                </Button>
               </div>
 
               <div className="text-[10px] text-navy-950/40 leading-relaxed max-w-xs mx-auto">

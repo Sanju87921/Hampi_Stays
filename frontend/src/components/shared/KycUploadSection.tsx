@@ -8,7 +8,7 @@ import { Button } from '../ui/Button';
 // Direct-to-Cloudinary Signed Upload Helper
 async function uploadFile(file: File): Promise<string> {
   const token = localStorage.getItem('hampi-token');
-  const sigRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8787/api'}/upload/signature`, {
+  const sigRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8787/api'}/upload/signature?type=kyc`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   if (!sigRes.ok) throw new Error('Failed to get upload signature');
@@ -20,6 +20,12 @@ async function uploadFile(file: File): Promise<string> {
   fd.append('timestamp', sigData.timestamp);
   fd.append('signature', sigData.signature);
   fd.append('folder', sigData.folder);
+  if (sigData.eager) {
+    fd.append('eager', sigData.eager);
+  }
+  if (sigData.type) {
+    fd.append('type', sigData.type);
+  }
 
   const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
     method: 'POST',

@@ -15,7 +15,11 @@ export async function validateCouponCode(prisma, { code, userId, resortId, origi
   }
   
   const cleanCode = code.trim().toUpperCase();
-  const promotion = await prisma.promotion.findUnique({ where: { code: cleanCode } });
+  const promotion = await prisma.promotion.findFirst({ 
+    where: { 
+      code: { equals: cleanCode, mode: 'insensitive' } 
+    } 
+  });
 
   if (!promotion) {
     return { valid: false, error: 'Coupon not found' };

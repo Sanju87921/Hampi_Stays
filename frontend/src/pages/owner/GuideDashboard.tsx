@@ -11,6 +11,8 @@ import {
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { useSystem } from "../../context/SystemContext";
+import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
+import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
 
@@ -33,6 +35,9 @@ async function uploadFile(file: File): Promise<string> {
   fd.append('timestamp', sigData.timestamp);
   fd.append('signature', sigData.signature);
   fd.append('folder', sigData.folder);
+  if (sigData.eager) {
+    fd.append('eager', sigData.eager);
+  }
 
   const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
     method: 'POST',
@@ -675,7 +680,7 @@ export function GuideDashboard() {
       </AnimatePresence>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {profile?.experiences?.map((exp: any) => (
+        {profile?.experiences?.length > 0 ? profile.experiences.map((exp: any) => (
           <motion.div 
             key={exp.id}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -774,8 +779,7 @@ export function GuideDashboard() {
               </div>
             </div>
           </motion.div>
-        ))}
-        {(!profile?.experiences || profile.experiences.length === 0) && !isAddingExperience && (
+        )) : (
           <div className="col-span-full py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-sand-200">
             <Briefcase className="w-16 h-16 text-sand-200 mx-auto mb-6" />
             <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">No Signature Tours Yet</h3>
@@ -1019,90 +1023,6 @@ export function GuideDashboard() {
       </div>
 
       <div className="lg:col-span-4 space-y-10">
-        <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
-          <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Identity Verification</h3>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
-                Document Type {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
-              </label>
-              <select 
-                value={profileForm.idType || ""} 
-                onChange={e => setProfileForm({...profileForm, idType: e.target.value})}
-                className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors appearance-none"
-              >
-                <option value="">Select ID Type</option>
-                <option value="Aadhar Card">Aadhar Card</option>
-                <option value="PAN Card">PAN Card</option>
-                <option value="Voter ID">Voter ID</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
-                ID Number {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
-              </label>
-              <input 
-                type="text"
-                placeholder="Enter document number"
-                value={profileForm.idNumber || ""}
-                onChange={e => setProfileForm({...profileForm, idNumber: e.target.value})}
-                className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">
-                Upload Document Photo {isIdRequired ? <span className="text-red-500">*</span> : <span className="text-navy-950/30">(Optional)</span>}
-              </label>
-              <div className="relative group cursor-pointer">
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setIsUploadingId(true);
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    try {
-                      const url = await uploadFile(file);
-                      if (url) setProfileForm({...profileForm, idImage: url});
-                    } catch (err) { console.error("Upload failed", err); }
-                    finally { setIsUploadingId(false); }
-                  }}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                />
-                <div className="h-32 rounded-2xl bg-sand-50 border-2 border-dashed border-sand-200 flex flex-center items-center justify-center overflow-hidden group-hover:border-gold-500 transition-colors">
-                  {isUploadingId ? (
-                    <Loader2 className="w-8 h-8 text-gold-500 animate-spin" />
-                  ) : profileForm.idImage ? (
-                    <img src={profileForm.idImage} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center">
-                      <Camera className="w-6 h-6 text-sand-300 mx-auto mb-2" />
-                      <span className="text-[10px] font-bold text-sand-400 uppercase tracking-widest">Click to upload</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className={`p-4 rounded-xl flex items-center gap-3 border ${
-              profile?.status === 'APPROVED' ? 'bg-green-50 border-green-100 text-green-700' :
-              profile?.status === 'PENDING' ? 'bg-gold-50 border-gold-100 text-gold-700' :
-              'bg-sand-50 border-sand-100 text-navy-950/40'
-            }`}>
-              {profile?.status === 'APPROVED' ? <CheckCircle2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
-              <div className="text-xs">
-                <p className="font-bold uppercase tracking-widest">Status: {profile?.status || 'Not Submitted'}</p>
-                <p className="opacity-70 mt-0.5">
-                  {profile?.status === 'APPROVED' ? 'Your identity is verified.' : 
-                   profile?.status === 'PENDING' ? 'Waiting for admin review.' :
-                   'Please provide ID to get verified.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
           <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Certifications</h3>
@@ -1152,12 +1072,12 @@ export function GuideDashboard() {
               <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30 gap-6">
                 <div className="flex items-center gap-5">
                   <div className="w-14 h-14 rounded-2xl bg-white border border-sand-200 flex items-center justify-center font-bold text-navy-950 overflow-hidden shrink-0">
-                    {booking.user.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user.name.charAt(0)}
+                    {booking.user?.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user?.name?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <h4 className="font-bold text-navy-950">{booking.user.name}</h4>
+                    <h4 className="font-bold text-navy-950">{booking.user?.name || 'Unknown Traveler'}</h4>
                     <p className="text-xs text-navy-950/40 font-medium">
-                      {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • ₹{booking.totalPrice.toLocaleString()}
+                      {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • ₹{booking.totalPrice?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -1524,23 +1444,18 @@ export function GuideDashboard() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === "overview" && renderOverview()}
-            {activeTab === "tours" && renderTours()}
-            {activeTab === "profile" && renderProfile()}
-            {activeTab === "kyc" && (
-              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
-                <h2 className="text-3xl font-serif font-bold text-navy-950 mb-4">KYC & Verification Center</h2>
-                <p className="text-sm text-navy-950/40 mb-8">Upload your documents to get verified and start receiving bookings.</p>
-                <div className="p-8 border-2 border-dashed border-sand-200 rounded-2xl text-center">
-                  <ShieldCheck className="w-12 h-12 text-sand-300 mx-auto mb-4" />
-                  <p className="text-navy-950 font-bold">Document upload UI coming soon</p>
-                </div>
-              </div>
-            )}
-            {activeTab === "payouts" && renderPayouts()}
-            {activeTab === "calendar" && renderCalendar()}
-            {activeTab === "bookings" && renderBookings()}
-            {activeTab === "settings" && renderSettings()}
+            <ErrorBoundary fallback={<div className="p-10 text-center text-red-500 bg-red-50 rounded-[3rem]">Failed to load this section. Please try again.</div>}>
+              {activeTab === "overview" && renderOverview()}
+              {activeTab === "tours" && renderTours()}
+              {activeTab === "profile" && renderProfile()}
+              {activeTab === "kyc" && (
+                <KycUploadSection userType="guide" profileId={profile?.id} />
+              )}
+              {activeTab === "payouts" && renderPayouts()}
+              {activeTab === "calendar" && renderCalendar()}
+              {activeTab === "bookings" && renderBookings()}
+              {activeTab === "settings" && renderSettings()}
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </div>

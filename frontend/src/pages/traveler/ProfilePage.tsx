@@ -32,6 +32,9 @@ async function uploadFile(file: File): Promise<string> {
   fd.append('timestamp', sigData.timestamp);
   fd.append('signature', sigData.signature);
   fd.append('folder', sigData.folder);
+  if (sigData.eager) {
+    fd.append('eager', sigData.eager);
+  }
 
   const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
     method: 'POST',
