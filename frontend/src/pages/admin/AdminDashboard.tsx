@@ -2023,6 +2023,7 @@ export function AdminDashboard() {
  </nav>
 
  {/* KPI Operations Bar */}
+ {activeTab !== "promotions" && (
  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
  <div className="bg-white p-4 rounded-xl border border-sand-200 shadow-sm flex flex-col justify-center">
  <div className="flex items-center gap-2 mb-2">
@@ -2060,7 +2061,7 @@ export function AdminDashboard() {
  <p className="text-xl font-bold text-navy-950">₹{stats?.platformEarnings?.toLocaleString() || 0}</p>
  </div>
  </div>
-
+ )}
  {isLoading ? (
  <div className="flex items-center justify-center py-20">
  <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />

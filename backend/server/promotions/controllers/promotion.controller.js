@@ -161,7 +161,7 @@ export const getPromotionAnalytics = async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const promotions = await prisma.promotion.findMany({
-      include: { bookings: { select: { totalPrice: true } } }
+      include: { bookings: { select: { totalPrice: true, createdAt: true } } }
     });
 
     let totalDiscounts = 0;
@@ -172,6 +172,8 @@ export const getPromotionAnalytics = async (c) => {
 
     const usageData = [];
     const revenueData = [];
+    const historicalUsageMap = {};
+    let totalBookingsAcrossAllPromos = 0;
 
     for (const promo of promotions) {
       if (promo.active) activePromotions++;
@@ -183,13 +185,22 @@ export const getPromotionAnalytics = async (c) => {
       let promoRevenue = 0;
       for (const booking of promo.bookings) {
         promoRevenue += booking.totalPrice || 0;
+        totalBookingsAcrossAllPromos++;
+        
+        // Build Historical Data
+        if (booking.createdAt) {
+          const dateStr = new Date(booking.createdAt).toISOString().split('T')[0];
+          if (!historicalUsageMap[dateStr]) historicalUsageMap[dateStr] = {};
+          const pName = promo.code || promo.name;
+          historicalUsageMap[dateStr][pName] = (historicalUsageMap[dateStr][pName] || 0) + 1;
+        }
       }
       totalRevenueGenerated += promoRevenue;
       
       let pDiscount = 0;
       if (promo.usageCount > 0) {
         const avgBooking = promoRevenue / promo.usageCount;
-        if (promo.discountType === 'PERCENTAGE') {
+        if (promo.discountType === 'PERCENTAGE' || promo.discountType === 'percentage') {
           pDiscount = avgBooking * (promo.discountValue / 100);
           if (promo.maxDiscount && pDiscount > promo.maxDiscount) pDiscount = promo.maxDiscount;
         } else {
@@ -202,13 +213,23 @@ export const getPromotionAnalytics = async (c) => {
       revenueData.push({ name: promo.code || promo.name, revenue: promoRevenue });
     }
 
+    const historicalUsage = Object.keys(historicalUsageMap).sort().map(date => {
+      return { date, ...historicalUsageMap[date] };
+    });
+
+    // We also need total platform bookings to calculate conversion rate (Promo Bookings / Total Bookings)
+    const totalPlatformBookings = await prisma.booking.count();
+    const conversionRate = totalPlatformBookings > 0 ? (totalBookingsAcrossAllPromos / totalPlatformBookings) * 100 : 0;
+
     return c.json({
       usageData,
       revenueData,
       totalDiscounts,
       totalRevenueGenerated,
       mostUsedPromo,
-      activePromotions
+      activePromotions,
+      historicalUsage,
+      conversionRate
     });
   } catch (error) {
     return c.json({ error: error.message }, 500);
