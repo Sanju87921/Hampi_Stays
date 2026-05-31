@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Calendar, Heart, User, LogOut, 
+import { Calendar, Heart, User, LogOut, 
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
-  Phone, Compass, Shield, Download, Smartphone, Share
+  Phone, Compass, Shield, Download, Smartphone, Share,
+  Copy, CheckCircle
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -12,6 +12,7 @@ import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { apiClient } from "../../utils/apiClient";
+import toast from "react-hot-toast";
 import type { Booking, Message } from "../../types/booking";
 import type { Resort } from "../../types/resort";
 
@@ -249,10 +250,15 @@ export function TravelerDashboard() {
 
 
 
-  const stats = [
-    { label: "Bookings", value: bookings.length.toString(), icon: Calendar, color: "text-gold-600", bg: "bg-gold-50", link: "/dashboard/bookings" },
-    { label: "Saved Resorts", value: wishlist.length.toString(), icon: Heart, color: "text-red-500", bg: "bg-red-50", link: "/dashboard/wishlist" },
-    { label: "Book Stays", value: "Explore", icon: MapPin, color: "text-blue-600", bg: "bg-blue-50", link: "/resorts" },
+  const upcomingCount = bookings.filter(b => ['PENDING', 'PAID', 'CONFIRMED'].includes(b.status)).length;
+  const completedCount = bookings.filter(b => ['COMPLETED', 'CHECKED_IN'].includes(b.status)).length;
+  const cancelledCount = bookings.filter(b => b.status === 'CANCELLED').length;
+
+  const quickActions = [
+    { label: "Browse Resorts", icon: Compass, link: "/resorts", color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "View Saved", icon: Heart, link: "/dashboard/wishlist", color: "text-red-500", bg: "bg-red-50" },
+    { label: "Contact Support", icon: Phone, action: () => window.location.href='mailto:support@hampistays.com', color: "text-gold-600", bg: "bg-gold-50" },
+    { label: "Download Invoice", icon: Download, link: "/dashboard/bookings", color: "text-green-600", bg: "bg-green-50" },
   ];
 
   const upcomingTrip = bookings[0] ? {
@@ -293,7 +299,6 @@ export function TravelerDashboard() {
             { name: "Book Stays", icon: Calendar, path: "/resorts" },
             { name: "My Bookings", icon: ShoppingBag, path: "/dashboard/bookings" },
             { name: "Guest Inbox", icon: Mail, id: "inbox" },
-            { name: "Wishlist", icon: Heart, path: "/dashboard/wishlist" },
             { name: "Notifications", icon: Bell, path: "/dashboard/notifications", badge: unreadCount },
             { name: "Profile", icon: User, path: "/dashboard/profile" },
           ].map((item) => {
@@ -359,34 +364,71 @@ export function TravelerDashboard() {
         <ProfileIncompleteBanner />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {stats.map((stat, i) => (
-            <Link key={stat.label} to={stat.link}>
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          {quickActions.map((action, i) => (
+            action.link ? (
+              <Link key={action.label} to={action.link}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-sand-100 shadow-sm flex flex-col items-center gap-3 hover:border-gold-300 hover:shadow-md transition-all cursor-pointer text-center h-full"
+                >
+                  <div className={cn("w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0", action.bg)}>
+                    <action.icon className={cn("w-5 h-5 md:w-7 md:h-7", action.color)} />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-bold text-navy-950 uppercase tracking-widest">{action.label}</p>
+                </motion.div>
+              </Link>
+            ) : (
               <motion.div
+                key={action.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm flex items-center gap-5 hover:border-gold-300 hover:shadow-md transition-all cursor-pointer h-full"
+                onClick={action.action}
+                className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-sand-100 shadow-sm flex flex-col items-center gap-3 hover:border-gold-300 hover:shadow-md transition-all cursor-pointer text-center h-full"
               >
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", stat.bg)}>
-                  <stat.icon className={cn("w-7 h-7", stat.color)} />
+                <div className={cn("w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0", action.bg)}>
+                  <action.icon className={cn("w-5 h-5 md:w-7 md:h-7", action.color)} />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-navy-950">{stat.value}</p>
-                  <p className="text-xs font-bold text-navy-950/40 uppercase tracking-widest">{stat.label}</p>
-                </div>
+                <p className="text-[10px] md:text-xs font-bold text-navy-950 uppercase tracking-widest">{action.label}</p>
               </motion.div>
-            </Link>
+            )
           ))}
         </div>
 
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Upcoming Trip Section */}
+            {/* Left Column */}
             <section className="lg:col-span-8">
+              
+              {/* Booking Summary Section */}
+              <div className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm mb-8">
+                <h3 className="text-sm font-bold text-navy-950 uppercase tracking-widest mb-4">Booking Summary</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-navy-950">{upcomingCount}</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-navy-950/50">Upcoming</p>
+                  </div>
+                  <div className="border-l border-sand-100">
+                    <p className="text-2xl font-bold text-navy-950">{completedCount}</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-navy-950/50">Completed</p>
+                  </div>
+                  <div className="border-l border-sand-100">
+                    <p className="text-2xl font-bold text-navy-950">{cancelledCount}</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-navy-950/50">Cancelled</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-serif font-bold text-navy-950">Upcoming Stay</h2>
-                <Link to="/dashboard/bookings" className="text-navy-950/40 text-xs font-bold uppercase tracking-widest hover:text-gold-600 transition-colors">View all</Link>
+                <h2 className="text-2xl font-serif font-bold text-navy-950">{upcomingTrip ? "Upcoming Stay" : "Recommended Stays"}</h2>
+                <Link to={upcomingTrip ? "/dashboard/bookings" : "/resorts"} className="text-navy-950/40 text-xs font-bold uppercase tracking-widest hover:text-gold-600 transition-colors">
+                  {upcomingTrip ? "View all" : "Browse all"}
+                </Link>
               </div>
               
               {(() => {
@@ -523,20 +565,30 @@ export function TravelerDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2">
                       <Link to="/dashboard/bookings">
-                        <Button size="sm" className="px-6 shadow-none">Check Details</Button>
+                        <Button className="bg-navy-950 text-white hover:bg-gold-600 px-5 rounded-xl text-xs font-bold tracking-widest uppercase h-10 flex items-center gap-2">
+                          <LayoutDashboard className="w-4 h-4" /> View Booking
+                        </Button>
                       </Link>
+                      <Button variant="outline" className="border-navy-900/20 text-navy-950 hover:bg-sand-50 rounded-xl px-4 h-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest" onClick={() => toast.success("Invoice downloading...")}>
+                        <Download className="w-4 h-4" /> Invoice
+                      </Button>
+                      <Button variant="outline" className="border-navy-900/20 text-navy-950 hover:bg-sand-50 rounded-xl px-4 h-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest" onClick={() => toast.success("Opening maps...")}>
+                        <MapPin className="w-4 h-4" /> Directions
+                      </Button>
+                      <Button variant="outline" className="border-navy-900/20 text-navy-950 hover:bg-sand-50 rounded-xl px-4 h-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest" onClick={() => toast.success("Calling resort...")}>
+                        <Phone className="w-4 h-4" /> Call
+                      </Button>
                       <Button 
                         variant="outline" 
-                        size="sm" 
-                        className="px-6"
+                        className="border-navy-900/20 text-navy-950 hover:bg-sand-50 rounded-xl px-4 h-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
                         onClick={() => {
                           setActiveTab("inbox");
-                          setActiveMessageBooking(bookings[0]);
+                          if (bookings[0]) setActiveMessageBooking(bookings[0]);
                         }}
                       >
-                        Message Resort
+                        <Mail className="w-4 h-4" /> Contact
                       </Button>
                     </div>
                   </div>
@@ -554,6 +606,45 @@ export function TravelerDashboard() {
                 </div>
               )}
 
+              {/* Savings & Rewards Widget */}
+              {(() => {
+                const totalSavings = bookings.reduce((sum, b: any) => sum + (b.discountAmount || 0), 0);
+                const promotionsUsed = bookings.filter((b: any) => b.discountAmount && b.discountAmount > 0).length;
+                const bestDiscount = bookings.reduce((max, b: any) => Math.max(max, b.discountAmount || 0), 0);
+
+                if (totalSavings > 0) {
+                  return (
+                    <div className="mt-8">
+                      <div className="p-6 rounded-[2rem] bg-navy-950 border border-navy-900 shadow-md text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                          <Heart className="w-32 h-32 text-gold-500" />
+                        </div>
+                        <div className="relative z-10">
+                          <h2 className="text-xl font-serif font-bold text-gold-500 mb-2">Savings & Rewards</h2>
+                          <p className="text-sm text-sand-200 mb-6">Your total savings from HampiStays promotions</p>
+                          
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-xs text-sand-400 uppercase tracking-widest font-bold mb-1">Total Saved</p>
+                              <p className="text-2xl font-bold text-white">₹{totalSavings}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-sand-400 uppercase tracking-widest font-bold mb-1">Offers Used</p>
+                              <p className="text-2xl font-bold text-white">{promotionsUsed}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-sand-400 uppercase tracking-widest font-bold mb-1">Best Offer</p>
+                              <p className="text-2xl font-bold text-white">₹{bestDiscount}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Active Promotions */}
               {activePromotions.length > 0 && (
                 <div className="mt-8">
@@ -566,12 +657,24 @@ export function TravelerDashboard() {
                         <div>
                           <div className="flex justify-between items-start mb-2">
                             <p className="text-lg font-bold text-navy-950">🎉 {promo.name}</p>
-                            <span className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 px-2 py-1 rounded-md border border-gold-100">
-                              {promo.code}
-                            </span>
+                            {promo.autoApply ? (
+                              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" /> Auto Applied
+                              </span>
+                            ) : (
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(promo.code);
+                                  toast.success("Code copied!");
+                                }}
+                                className="text-[10px] font-bold text-gold-600 uppercase tracking-wider bg-gold-50 hover:bg-gold-100 px-2 py-1 rounded-md border border-gold-100 flex items-center gap-1 transition-colors"
+                              >
+                                {promo.code} <Copy className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                           <p className="text-sm text-navy-950/60 mb-4">
-                            {promo.description || (promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
+                            {promo.description || (promo.discountType?.toLowerCase() === 'percentage' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
                             {promo.minBookingAmount ? ` on bookings above ₹${promo.minBookingAmount}` : ''}
                           </p>
                         </div>
@@ -612,28 +715,44 @@ export function TravelerDashboard() {
 
             </section>
 
-            {/* Quick Actions / Recent Activity */}
+            {/* Wishlist Section */}
             <section className="lg:col-span-4">
-              <h2 className="text-2xl font-serif font-bold text-navy-950 mb-6">Quick Actions</h2>
-              <div className="space-y-4">
-                {[
-                  { name: "Explore New Resorts", path: "/resorts", desc: "Find your next escape" },
-                  { name: "Write a Review", path: "/dashboard/bookings", desc: "Share your experience" },
-                  { name: "Support Center", path: "/contact", desc: "Need help with a trip?" },
-                ].map((action) => (
-                  <Link
-                    key={action.name}
-                    to={action.path}
-                    className="block p-5 bg-white rounded-2xl border border-sand-100 hover:border-gold-400 hover:shadow-md transition-all group"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-bold text-navy-950">{action.name}</p>
-                      <ChevronRight className="w-4 h-4 text-navy-950/20 group-hover:text-gold-600 transition-colors" />
-                    </div>
-                    <p className="text-xs text-navy-950/50">{action.desc}</p>
-                  </Link>
-                ))}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif font-bold text-navy-950">Saved Resorts</h2>
+                <Link to="/resorts" className="text-navy-950/40 text-xs font-bold uppercase tracking-widest hover:text-gold-600 transition-colors">Browse</Link>
               </div>
+              
+              {wishlist.length > 0 ? (
+                <div className="space-y-4">
+                  {wishlist.slice(0, 4).map((resort: any) => (
+                    <Link
+                      key={resort.id}
+                      to={`/resorts/${resort.slug}`}
+                      className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-sand-100 hover:border-gold-400 hover:shadow-md transition-all group"
+                    >
+                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                        <img src={resort.images?.[0]} alt={resort.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-navy-950 truncate text-sm mb-1">{resort.name}</p>
+                        <p className="text-[10px] text-navy-950/40 uppercase tracking-widest">{resort.location?.area || "Hampi"}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-navy-950/20 group-hover:text-gold-600 transition-colors shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-[2rem] border border-dashed border-sand-300 p-8 text-center shadow-sm">
+                  <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Heart className="w-5 h-5 text-red-500/40" />
+                  </div>
+                  <h3 className="text-sm font-bold text-navy-950 mb-1">No saved resorts</h3>
+                  <p className="text-xs text-navy-950/50 mb-4">Keep track of your favorite stays by hearting them.</p>
+                  <Link to="/resorts">
+                    <Button variant="outline" size="sm" className="rounded-xl w-full">Explore</Button>
+                  </Link>
+                </div>
+              )}
             </section>
           </div>
         )}

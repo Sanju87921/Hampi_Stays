@@ -112,7 +112,7 @@ export function PromotionsModule() {
     }
 
     const overlapping = promotions.find(p => p.priority === editingPromo.priority && p.active && p.id !== editingPromo.id && p.targetType === (editingPromo.targetType || 'PLATFORM'));
-    if (overlapping && !(await confirm({ title: "Confirm Action", message: `Conflict Detected: Priority ${editingPromo.priority} overlaps with "${overlapping.name}". Do you want to proceed?`)) {
+    if (overlapping && !(await confirm({ title: "Confirm Action", message: `Conflict Detected: Priority ${editingPromo.priority} overlaps with "${overlapping.name}". Do you want to proceed?`}))) {
       return;
     }
 
@@ -461,7 +461,7 @@ export function PromotionsModule() {
                 let discountAmount = 0;
                 if (promo.usageCount > 0) {
                    const avg = revenueAmount / promo.usageCount;
-                   discountAmount = promo.discountType === 'percentage' 
+                   discountAmount = promo.discountType?.toLowerCase() === 'percentage' 
                      ? (avg * (promo.discountValue/100)) * promo.usageCount
                      : promo.discountValue * promo.usageCount;
                 }
@@ -477,8 +477,8 @@ export function PromotionsModule() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 font-bold text-navy-950">
-                        {promo.discountType === 'percentage' ? <Percent className="w-3.5 h-3.5 text-emerald-600"/> : <IndianRupee className="w-3.5 h-3.5 text-emerald-600"/>}
-                        {promo.discountValue}{promo.discountType === 'percentage' ? '%' : ''} OFF
+                        {promo.discountType?.toLowerCase() === 'percentage' ? <Percent className="w-3.5 h-3.5 text-emerald-600"/> : <IndianRupee className="w-3.5 h-3.5 text-emerald-600"/>}
+                        {promo.discountValue}{promo.discountType?.toLowerCase() === 'percentage' ? '%' : ''} OFF
                       </div>
                       <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">
                         {promo.minBookingAmount ? `Min: ₹${promo.minBookingAmount}` : 'No Minimum'}
@@ -786,5 +786,8 @@ export function PromotionsModule() {
         </div>
       )}
     </div>
-   }));
+  );
 }
+
+
+
