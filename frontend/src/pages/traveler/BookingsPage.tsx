@@ -1,3 +1,4 @@
+import { useModal } from "../../components/shared/ModalProvider";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +30,8 @@ const downloadPdf = (doc: any, filename: string) => {
 };
 
 export function BookingsPage() {
+  const { confirm, showModal } = useModal();
+
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,7 +143,7 @@ export function BookingsPage() {
   };
 
   const handleCancel = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to cancel this booking? This cannot be undone.")) return;
+    if (!(await confirm({ title: "Confirm Action", message: "Are you sure you want to cancel this booking? This cannot be undone." }))) return;
     setCancellingId(bookingId);
     try {
       await apiClient.patch(`/bookings/${bookingId}/cancel`);

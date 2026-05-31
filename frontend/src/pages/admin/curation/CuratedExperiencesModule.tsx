@@ -1,3 +1,4 @@
+import { useModal } from "../../../components/shared/ModalProvider";
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Map, Star, Clock, IndianRupee, MapPin } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
@@ -85,7 +86,7 @@ const CuratedExperiencesModule = () => {
  };
 
  const handleDelete = async (id: string) => {
- if (!window.confirm('Are you sure?')) return;
+ if (!(await confirm({ title: "Confirm Action", message: 'Are you sure?' }))) return;
  try {
  await apiClient.delete(`/curation/experiences/${id}`);
  fetchExperiences();

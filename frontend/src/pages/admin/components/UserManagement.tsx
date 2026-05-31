@@ -1,3 +1,4 @@
+import { useModal } from "../../../components/shared/ModalProvider";
 import React, { useState, useEffect } from 'react';
 import { Search, Shield, User, Hotel, MapPin, CheckCircle, XCircle, MoreVertical, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
@@ -9,6 +10,8 @@ type Role = 'TRAVELLER' | 'RESORT_OWNER' | 'GUIDE' | 'ADMIN';
 import { ErrorBoundary } from '../../../components/shared/ErrorBoundary';
 
 export function UserManagement() {
+  const { confirm, showModal } = useModal();
+
  const [activeRole, setActiveRole] = useState<Role>('TRAVELLER');
  const [users, setUsers] = useState<any[]>([]);
  const [loading, setLoading] = useState(true);
@@ -45,7 +48,7 @@ export function UserManagement() {
  }, [activeRole, page, searchQuery]);
 
  const handleDeleteUser = async (id: string, name: string) => {
- if (!window.confirm(`Are you sure you want to permanently delete ${name}?`)) return;
+ if (!(await confirm({ title: "Confirm Action", message: `Are you sure you want to permanently delete ${name}?` }))) return;
  setProcessingId(id);
  try {
  await apiClient.delete(`/admin/users/${id}`);

@@ -1,3 +1,4 @@
+import { useModal } from "../../../components/shared/ModalProvider";
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Calendar, Star, CheckCircle, XCircle } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
@@ -82,7 +83,7 @@ const SeasonalCampaignsModule = () => {
  };
 
  const handleDelete = async (id: string) => {
- if (!window.confirm('Are you sure?')) return;
+ if (!(await confirm({ title: "Confirm Action", message: 'Are you sure?' }))) return;
  try {
  await apiClient.delete(`/curation/campaigns/${id}`);
  fetchCampaigns();

@@ -1,3 +1,4 @@
+import { useModal } from '../../components/shared/ModalProvider';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-case-declarations */
@@ -137,6 +138,7 @@ const mergeMockGuides = (fetched: any[]) => {
 };
 
 export function AdminDashboard() {
+ const { confirm } = useModal();
  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
  const [propertySubTab, setPropertySubTab] = useState<"pending" | "active">("pending");
  const [pendingResorts, setPendingResorts] = useState<any[]>([]);
@@ -402,7 +404,8 @@ export function AdminDashboard() {
  };
 
  const handleDeleteUser = async (userId: string, userName: string) => {
- if (!window.confirm(`CRITICAL: Are you sure you want to delete ${userName}? This will remove all their data, bookings, and platform access permanently. This cannot be undone.`)) return;
+ const confirmed = await confirm({ title: "Confirm Delete", message: `CRITICAL: Are you sure you want to delete ${userName}? This will remove all their data, bookings, and platform access permanently. This cannot be undone.` });
+ if (!confirmed) return;
  
  setProcessingId(userId);
  try {
@@ -2354,6 +2357,7 @@ export function AdminDashboard() {
  </div>
  );
 }
+
 
 
 

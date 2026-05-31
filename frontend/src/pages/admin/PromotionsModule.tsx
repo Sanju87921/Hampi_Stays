@@ -1,3 +1,4 @@
+import { useModal } from "../../components/shared/ModalProvider";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -40,6 +41,8 @@ interface AuditLog {
 }
 
 export function PromotionsModule() {
+  const { confirm, showModal } = useModal();
+
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [guideAnalytics, setGuideAnalytics] = useState<any>(null);
@@ -109,7 +112,7 @@ export function PromotionsModule() {
     }
 
     const overlapping = promotions.find(p => p.priority === editingPromo.priority && p.active && p.id !== editingPromo.id && p.targetType === (editingPromo.targetType || 'PLATFORM'));
-    if (overlapping && !window.confirm(`Conflict Detected: Priority ${editingPromo.priority} overlaps with "${overlapping.name}". Do you want to proceed?`)) {
+    if (overlapping && !(await confirm({ title: "Confirm Action", message: `Conflict Detected: Priority ${editingPromo.priority} overlaps with "${overlapping.name}". Do you want to proceed?`)) {
       return;
     }
 
@@ -131,7 +134,7 @@ export function PromotionsModule() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this promotion?")) return;
+    if (!(await confirm({ title: "Confirm Action", message: "Are you sure you want to delete this promotion?" }))) return;
     try {
       await apiClient.delete(`/admin/promotions/${id}`);
       toast.success("Promotion deleted");
@@ -783,5 +786,5 @@ export function PromotionsModule() {
         </div>
       )}
     </div>
-  );
+   }));
 }

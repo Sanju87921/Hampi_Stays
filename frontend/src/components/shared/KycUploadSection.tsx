@@ -4,11 +4,33 @@ import { useSystem } from '../../context/SystemContext';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
+import Tesseract from 'tesseract.js';
 
 // Direct-to-Cloudinary Signed Upload Helper
-async function uploadFile(file: File): Promise<string> {
+async function uploadFile(file: File): Promise<{ url: string, extractedText: string }> {
   const token = localStorage.getItem('hampi-token');
-  const sigRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8787/api'}/upload/signature?type=kyc`, {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787/api';
+
+  // Duplicate Hash Detection
+  const arrayBuffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  const hashCheckRes = await fetch(`${API_BASE_URL}/upload/check-hash`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({ hash: hashHex })
+  });
+  const hashData = await hashCheckRes.json();
+  if (hashData.exists) {
+    throw new Error('Duplicate Document: This document has already been uploaded.');
+  }
+
+  const sigRes = await fetch(`${API_BASE_URL}/upload/signature?type=kyc`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   if (!sigRes.ok) throw new Error('Failed to get upload signature');
@@ -33,8 +55,30 @@ async function uploadFile(file: File): Promise<string> {
   });
   
   if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
-  const data = await uploadRes.json();
-  return data.secure_url;
+  const uploadData = await uploadRes.json();
+  
+  // Save Hash URL to DB
+  await fetch(`${API_BASE_URL}/upload/check-hash`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({ hash: hashHex, url: uploadData.secure_url })
+  });
+
+  // Optional: Run OCR if it's an image
+  let extractedText = "";
+  if (file.type.startsWith('image/')) {
+    try {
+      const result = await Tesseract.recognize(file, 'eng');
+      extractedText = result.data.text;
+    } catch (e) {
+      console.error("OCR failed", e);
+    }
+  }
+
+  return { url: uploadData.secure_url, extractedText };
 }
 
 export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 'resort', profileId: string }) {
@@ -70,17 +114,19 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
     if (!file) return;
 
     setUploadingType(type);
+    let toastId = toast.loading('Uploading and extracting document data...');
     try {
-      const url = await uploadFile(file);
+      const { url, extractedText } = await uploadFile(file);
       await apiClient.post(`/${userType === 'guide' ? 'guides' : 'resorts'}/${profileId}/kyc`, {
         type,
-        documentUrl: url
+        documentUrl: url,
+        extractedText
       });
-      toast.success(`${type.replace('_', ' ')} uploaded successfully!`);
+      toast.success(`${type.replace('_', ' ')} uploaded successfully!`, { id: toastId });
       fetchDocs();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to upload document');
+      toast.error(err.message || 'Failed to upload document', { id: toastId });
     } finally {
       setUploadingType(null);
     }

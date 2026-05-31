@@ -1,3 +1,4 @@
+import { useModal } from "../../components/shared/ModalProvider";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -55,6 +56,8 @@ async function uploadFile(file: File): Promise<string> {
 }
 
 export function GuideDashboard() {
+  const { confirm, showModal } = useModal();
+
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -314,7 +317,7 @@ export function GuideDashboard() {
   };
 
   const handleDeleteExperience = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this experience?")) return;
+    if (!(await confirm({ title: "Confirm Action", message: "Are you sure you want to delete this experience?" }))) return;
     try {
       await apiClient.delete(`/experiences/${id}`);
       fetchProfile();

@@ -956,7 +956,7 @@ app.get('/resorts', discoveryCache, async (c) => {
   const prisma = getPrisma(c.env);
   const { 
     minPrice, maxPrice, type, category, 
-    minRating, sort, search 
+    minRating, sort, search, guests, checkIn, checkOut
   } = c.req.query();
 
   try {
@@ -977,6 +977,13 @@ app.get('/resorts', discoveryCache, async (c) => {
       }
     }
 
+    // Parse dates if provided
+    let checkInDate, checkOutDate;
+    if (checkIn && checkOut) {
+      checkInDate = new Date(checkIn);
+      checkOutDate = new Date(checkOut);
+    }
+
     const where = {
       status: 'APPROVED',
       ...(minPrice || maxPrice ? {
@@ -991,7 +998,15 @@ app.get('/resorts', discoveryCache, async (c) => {
           hasEvery: categoriesQuery
         }
       } : {}),
-      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {})
+      ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
+      // Capacity Filtering (Dates checked in memory later)
+      ...(guests ? {
+        roomTypes: {
+          some: {
+            capacity: { gte: parseInt(guests, 10) }
+          }
+        }
+      } : {})
     };
 
     const orderBy = {};
@@ -1019,6 +1034,27 @@ app.get('/resorts', discoveryCache, async (c) => {
         categories: true,
         isVerified: true,
         isFeatured: true,
+        roomTypes: checkInDate && checkOutDate ? {
+          select: {
+            availableCount: true,
+            capacity: true,
+            bookings: {
+              where: {
+                status: { in: ['CONFIRMED', 'PAID', 'PENDING'] },
+                checkIn: { lt: checkOutDate },
+                checkOut: { gt: checkInDate }
+              }
+            },
+            blockings: {
+              where: {
+                date: {
+                  gte: checkInDate,
+                  lt: checkOutDate
+                }
+              }
+            }
+          }
+        } : false,
       },
       cacheStrategy: { swr: 60, ttl: 60 }, // Cache at the edge for 60s
     });
@@ -1034,11 +1070,31 @@ app.get('/resorts', discoveryCache, async (c) => {
       );
     }
 
-    const optimizedResorts = filteredResorts.map(r => ({
-      ...r,
-      category: r.categories[0] || null,
-      images: r.images.slice(0, 1)
-    }));
+    let finalResorts = filteredResorts;
+    if (checkInDate && checkOutDate) {
+      finalResorts = filteredResorts.filter(r => {
+        if (!r.roomTypes || r.roomTypes.length === 0) return false;
+        
+        // Find if at least one room type has available inventory
+        return r.roomTypes.some(rt => {
+          if (guests && rt.capacity < parseInt(guests, 10)) return false;
+          const overlappingBookings = rt.bookings.length;
+          const overlappingBlockings = rt.blockings.length;
+          const availableInventory = rt.availableCount - overlappingBookings - overlappingBlockings;
+          return availableInventory > 0;
+        });
+      });
+    }
+
+    const optimizedResorts = finalResorts.map(r => {
+      const copy = { ...r };
+      delete copy.roomTypes; // Don't send heavy roomTypes array to frontend
+      return {
+        ...copy,
+        category: r.categories[0] || null,
+        images: r.images.slice(0, 1)
+      };
+    });
 
     return c.json(optimizedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -1592,6 +1648,42 @@ app.get('/upload/signature', authMiddleware, async (c) => {
   }
 });
 
+// Image Hash Duplicate Checker
+app.post('/upload/check-hash', authMiddleware, async (c) => {
+  try {
+    const { hash, url } = await c.req.json();
+    if (!hash) return c.json({ error: 'Hash required' }, 400);
+
+    const prisma = getPrisma(c.env);
+    
+    // Check if hash exists
+    const existing = await prisma.mediaHash.findUnique({
+      where: { hash }
+    });
+
+    if (existing) {
+      return c.json({ exists: true, message: 'This image has already been uploaded.' });
+    }
+
+    // If a URL is provided, record it
+    if (url) {
+      await prisma.mediaHash.create({
+        data: {
+          hash,
+          url,
+          userId: c.get('userId')
+        }
+      });
+      return c.json({ exists: false, saved: true });
+    }
+
+    return c.json({ exists: false });
+  } catch (err) {
+    console.error('Check hash error:', err);
+    return c.json({ error: 'Failed to check media hash' }, 500);
+  }
+});
+
 
 // Heritage & Discovery
 app.get('/heritage/poi', (c) => {
@@ -2045,13 +2137,14 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
 app.post('/guides/:guideId/kyc', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const guideId = c.req.param('guideId');
-  const { type, documentUrl } = await c.req.json();
+  const { type, documentUrl, extractedText } = await c.req.json();
   try {
     const kyc = await prisma.guideKYC.create({
       data: {
         guideProfileId: guideId,
         type,
         documentUrl,
+        extractedText,
         status: 'PENDING'
       }
     });
@@ -2437,10 +2530,28 @@ export default {
     ctx.waitUntil(Promise.all([
       processUpcomingStays(env),
       cleanupPendingVerifications(env),
-      cleanupPendingBookings(env)
+      cleanupPendingBookings(env),
+      cleanupOrphanedMedia(env)
     ]));
   }
 };
+
+async function cleanupOrphanedMedia(env) {
+  console.log("Running Storage Cleanup Monitor...");
+  const prisma = getPrisma(env);
+  try {
+    // Media Health Monitor: Find MediaHash records older than 24h
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const hashes = await prisma.mediaHash.findMany({
+      where: { createdAt: { lt: yesterday } }
+    });
+    // In a full implementation, we would verify each hash.url against all Resort/Room/KYC tables
+    // and if unused, call Cloudinary's Destroy API, then delete the MediaHash record.
+    console.log(`Found ${hashes.length} media hashes to verify.`);
+  } catch (error) {
+    console.error("Storage Cleanup Monitor error:", error);
+  }
+}
 
 
 

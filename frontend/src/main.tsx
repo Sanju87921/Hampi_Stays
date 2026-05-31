@@ -8,6 +8,7 @@ import { WishlistProvider } from './context/WishlistContext'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { SystemProvider } from './context/SystemContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ModalProvider } from './components/shared/ModalProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +30,9 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <SystemProvider>
             <WishlistProvider>
-              <App />
+              <ModalProvider>
+                <App />
+              </ModalProvider>
             </WishlistProvider>
           </SystemProvider>
         </AuthProvider>

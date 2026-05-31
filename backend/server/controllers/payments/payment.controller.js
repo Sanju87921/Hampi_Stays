@@ -38,9 +38,22 @@ export const verifyPayment = async (c) => {
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
 
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    if (booking.createdAt < fifteenMinsAgo) {
+      logSecureError('PAYMENT_TIMEOUT', 'Payment succeeded but inventory lock expired', { ref });
+      await prisma.booking.update({
+        where: { referenceNumber: ref },
+        data: { 
+          status: 'CANCELLED',
+          paymentStatus: 'MANUAL_REVIEW_REQUIRED'
+        }
+      });
+      return c.json({ error: 'Payment received but room lock expired. Contact support for refund or reallocation.' }, 400);
+    }
+
     const updatedBooking = await prisma.booking.update({
       where: { referenceNumber: ref },
-      data: { status: 'PAID' }
+      data: { status: 'PAID', paymentStatus: 'PAID' }
     });
 
     logSecureInfo('PAYMENT_VERIFIED', 'Payment successfully verified', { ref, razorpay_order_id });
@@ -101,11 +114,20 @@ export const handleWebhook = async (c) => {
       
       // Reconcile double payments or missed callbacks
       if (booking && booking.status === 'PENDING') {
-         await prisma.booking.update({
-           where: { referenceNumber: ref },
-           data: { status: 'PAID' }
-         });
-         logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically reconciled via webhook to PAID', { ref });
+         const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+         if (booking.createdAt < fifteenMinsAgo) {
+           await prisma.booking.update({
+             where: { referenceNumber: ref },
+             data: { status: 'CANCELLED', paymentStatus: 'MANUAL_REVIEW_REQUIRED' }
+           });
+           logSecureError('WEBHOOK_TIMEOUT', 'Webhook received after lock expired. Manual review required.', { ref });
+         } else {
+           await prisma.booking.update({
+             where: { referenceNumber: ref },
+             data: { status: 'PAID', paymentStatus: 'PAID' }
+           });
+           logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically reconciled via webhook to PAID', { ref });
+         }
       }
     } else if (event === 'payment.failed') {
       const booking = await prisma.booking.findUnique({ where: { referenceNumber: ref } });

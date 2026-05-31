@@ -19,17 +19,49 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show local preview
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
-
-    // Upload directly to Cloudinary using signed signature
+    // Show local preview & Resolution Check
+    const localUrl = URL.createObjectURL(file);
+    setPreview(localUrl);
+    
     setIsUploading(true);
     
     try {
+      // Image Resolution Validation
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width < 1200 || img.height < 800) {
+            reject(new Error(`Resolution too low (${img.width}x${img.height}). Minimum 1200x800 required.`));
+          } else {
+            resolve();
+          }
+        };
+        img.onerror = () => reject(new Error('Corrupted or invalid image file.'));
+        img.src = localUrl;
+      });
+
       const token = localStorage.getItem("hampi-token");
       
+      // Duplicate Hash Detection
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      const hashCheckRes = await fetch(`${API_BASE_URL}/upload/check-hash`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ hash: hashHex })
+      });
+      const hashData = await hashCheckRes.json();
+      
+      if (hashData.exists) {
+        throw new Error('Duplicate Image: This image has already been uploaded.');
+      }
+
       // 1. Get Signature
       const sigRes = await fetch(`${API_BASE_URL}/upload/signature?type=resort`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -56,11 +88,21 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || "Upload failed");
 
+      // Save Hash URL to DB
+      await fetch(`${API_BASE_URL}/upload/check-hash`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ hash: hashHex, url: data.secure_url })
+      });
+
       onUploadSuccess(data.secure_url);
       toast.success("Image uploaded successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload image. Please check your Cloudinary credentials.");
+      toast.error(error.message || "Failed to upload image.");
       setPreview(null);
     } finally {
       setIsUploading(false);

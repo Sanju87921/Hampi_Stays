@@ -89,6 +89,7 @@ model Resort {
   locationLat      Float
   locationLng      Float
   images           String[]
+  coverImage       String?
   amenities        String[]
   rating           Float           @default(0)
   reviewCount      Int             @default(0)
@@ -134,6 +135,7 @@ model Room {
   capacity       Int
   amenities      String[]
   images         String[]
+  coverImage     String?
   availableCount Int
   resortId       String
   maxNights      Int                 @default(30)
@@ -370,6 +372,7 @@ model KycDocument {
   type         String      // AADHAAR, PAN
   documentUrl  String
   status       String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  extractedText String?
   rejectedReason String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -480,6 +483,7 @@ model GuideKYC {
   type            String       // AADHAAR, PAN, DRIVING_LICENSE, GUIDE_CERTIFICATE
   documentUrl     String
   status          String       @default("PENDING") // PENDING, VERIFIED, REJECTED
+  extractedText   String?
   rejectionReason String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -819,4 +823,14 @@ model Promotion {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   bookings          Booking[]
+}
+
+model MediaHash {
+  id        String   @id @default(cuid())
+  hash      String   @unique
+  url       String
+  userId    String?
+  createdAt DateTime @default(now())
+  
+  @@map("media_hashes")
 }

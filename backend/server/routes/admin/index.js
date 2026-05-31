@@ -1206,7 +1206,7 @@ app.post('/bookings', authMiddleware, async (c) => {
   const payload = c.get('user');
   
   try {
-    // We run the concurrency check and booking creation in a transaction
+    // We run the concurrency check and booking creation in a Serializable transaction to prevent overbooking
     const { booking, totalPrice, referenceNumber } = await prisma.$transaction(async (tx) => {
       // 1. RECALCULATE PRICE & FETCH ROOM DETAILS
       const resort = await tx.resort.findUnique({ 
@@ -1218,6 +1218,11 @@ app.post('/bookings', authMiddleware, async (c) => {
       
       const room = resort.roomTypes.find(r => r.id === roomId);
       if (!room) throw new Error('Room type not found');
+
+      const numGuests = parseInt(guests) || 1;
+      if (numGuests > room.capacity) {
+        throw new Error('GUESTS_EXCEED_CAPACITY');
+      }
 
       // Parse dates safely
       const parseDate = (d) => {
@@ -1336,12 +1341,12 @@ app.post('/bookings', authMiddleware, async (c) => {
         originalAmount: computedTotal
       };
     }, {
-      isolationLevel: 'Serializable', // Use strictest isolation for concurrency safety
+      isolationLevel: 'Serializable',
       maxWait: 5000,
       timeout: 10000
     });
 
-    // 5. CREATE RAZORPAY ORDER (OUTSIDE TRANSACTION TO AVOID HOLDING LOCKS)
+    // 5. CALL RAZORPAY APIORDER (OUTSIDE TRANSACTION TO AVOID HOLDING LOCKS)
     try {
       const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',

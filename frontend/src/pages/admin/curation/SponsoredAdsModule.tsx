@@ -1,3 +1,4 @@
+import { useModal } from "../../../components/shared/ModalProvider";
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Megaphone, Star, ArrowUpRight } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
@@ -77,7 +78,7 @@ const SponsoredAdsModule = () => {
  };
 
  const handleDelete = async (id: string) => {
- if (!window.confirm('Are you sure?')) return;
+ if (!(await confirm({ title: "Confirm Action", message: 'Are you sure?' }))) return;
  try {
  await apiClient.delete(`/curation/sponsored/${id}`);
  fetchAds();

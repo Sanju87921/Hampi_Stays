@@ -1,3 +1,4 @@
+import { useModal } from "../../components/shared/ModalProvider";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Pencil, Check, X, Monitor, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
@@ -137,7 +138,7 @@ const HeroModule = () => {
  };
 
  const deleteSlide = async (id: string) => {
- if (!window.confirm('Are you sure you want to delete this slide?')) return;
+ if (!(await confirm({ title: "Confirm Action", message: 'Are you sure you want to delete this slide?' }))) return;
  
  if (slides.find(s => s.id === id)?.isActive && activeSlides.length <= 2) {
  toast.error('Cannot delete slide. Minimum 2 active slides required.');

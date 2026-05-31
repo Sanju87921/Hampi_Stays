@@ -1,3 +1,4 @@
+import { useModal } from "../../components/shared/ModalProvider";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +8,8 @@ import { apiClient } from "../../utils/apiClient";
 import { cn } from "../../utils/cn";
 
 export function BlogModule() {
+  const { confirm, showModal } = useModal();
+
  const [posts, setPosts] = useState<any[]>([]);
  const [isLoading, setIsLoading] = useState(true);
  const [search, setSearch] = useState("");
@@ -106,7 +109,7 @@ export function BlogModule() {
  };
 
  const handleDeletePost = async (id: string, postTitle: string) => {
- if (!window.confirm(`Are you sure you want to delete "${postTitle}"?`)) return;
+ if (!(await confirm({ title: "Confirm Action", message: `Are you sure you want to delete "${postTitle}"?` }))) return;
  try {
  await apiClient.delete(`/admin/content/posts/${id}`);
  setPosts(posts.filter(p => p.id !== id));
