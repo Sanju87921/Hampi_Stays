@@ -1250,15 +1250,18 @@ export function GuideDashboard() {
                 <h3 className="text-xl font-serif font-bold text-navy-950">Transaction Ledger</h3>
               </div>
               <div className="p-8 space-y-4">
-                {bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').length > 0 ? bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').map(b => (
-                  <div key={b.id} className="flex items-center justify-between p-4 rounded-2xl bg-sand-50/50 border border-sand-100">
+                {payouts.filter(p => p.status !== 'BANK_INFO').length > 0 ? payouts.filter(p => p.status !== 'BANK_INFO').map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-4 rounded-2xl bg-sand-50/50 border border-sand-100">
                     <div>
-                      <p className="font-bold text-navy-950">{b.user?.name} - Tour</p>
-                      <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">{new Date(b.date).toLocaleDateString()}</p>
+                      <p className="font-bold text-navy-950">Payout - {p.ref || p.id.slice(-6)}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">+₹{(b.totalPrice * 0.9).toLocaleString()}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">Paid out</p>
+                      <p className={`font-bold ${p.status === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>+₹{p.amount.toLocaleString()}</p>
+                      <p className={`text-[10px] uppercase tracking-widest font-bold mt-1 ${
+                        p.status === 'PAID' ? 'text-green-600' : 
+                        p.status === 'FAILED' ? 'text-red-600' : 'text-amber-600'
+                      }`}>{p.status}</p>
                     </div>
                   </div>
                 )) : (

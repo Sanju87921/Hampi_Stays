@@ -942,7 +942,48 @@ app.patch('/admin/guides/bank/:payoutId/verify', authMiddleware, adminMiddleware
 });
 
 // Stubs for remaining dashboard tabs
-app.get('/admin/payouts', authMiddleware, adminMiddleware, (c) => c.json([]));
+app.get('/admin/payouts', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const payouts = await prisma.guidePayout.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        guideProfile: {
+          include: {
+            user: { select: { name: true, email: true } }
+          }
+        }
+      }
+    });
+    return c.json(payouts);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/payouts/:payoutId/status', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const payoutId = c.req.param('payoutId');
+  const { status } = await c.req.json();
+  try {
+    const payout = await prisma.guidePayout.update({
+      where: { id: payoutId },
+      data: { status }
+    });
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.req.user?.userId || 'system',
+          action: `PAYOUT_STATUS_${status}`,
+          details: { payoutId },
+          ipAddress: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null,
+          userAgent: c.req.header('user-agent') || null
+        }
+      });
+    } catch (auditErr) { console.error('Failed to create audit log for payout status:', auditErr); }
+
+    return c.json(payout);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
 app.get('/admin/security/stats', authMiddleware, adminMiddleware, (c) => c.json({ logs: [], activeSessions: 1 }));
 app.get('/admin/reviews/flagged', authMiddleware, adminMiddleware, (c) => c.json([]));
 app.get('/admin/otp-logs', authMiddleware, adminMiddleware, (c) => c.json([]));

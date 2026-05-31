@@ -1451,18 +1451,7 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       }).catch(err => console.error("Async cancel notification failed:", err))
     );
 
-    if (status === 'COMPLETED') {
-      const commission = booking.totalPrice * 0.1;
-      await prisma.guidePayout.create({
-        data: {
-          guideProfileId: existingBooking.guideId,
-          amount: booking.totalPrice,
-          commission: commission,
-          netAmount: booking.totalPrice - commission,
-          status: 'PENDING'
-        }
-      });
-    }
+    // (Removed broken GuidePayout block from Resort Booking cancel)
 
     return c.json(booking);
   } catch (err) { 
@@ -1728,7 +1717,14 @@ app.get('/guides', async (c) => {
 app.get('/guides/:id/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const guideId = c.req.param('id');
+  const payload = c.get('user');
+  
   try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+    if (guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
     const bookings = await prisma.guideBooking.findMany({
       where: { guideId },
       include: {
@@ -1775,11 +1771,51 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
   const guideId = c.req.param('guideId');
   const { userId, date, durationHours, meetingPoint, totalPrice, specialRequests } = await c.req.json();
   try {
+    const bookingDate = new Date(date);
+    const bookingEnd = new Date(bookingDate.getTime() + durationHours * 60 * 60 * 1000);
+    
+    // 1. Validate blockedDates
+    const guide = await prisma.guideProfile.findUnique({
+      where: { id: guideId },
+      select: { blockedDates: true }
+    });
+    
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+    
+    const isBlocked = guide.blockedDates.some(blocked => {
+      const bDate = new Date(blocked);
+      return bDate.getFullYear() === bookingDate.getFullYear() && 
+             bDate.getMonth() === bookingDate.getMonth() && 
+             bDate.getDate() === bookingDate.getDate();
+    });
+    
+    if (isBlocked) {
+      return c.json({ error: 'Guide is blocked on this date' }, 400);
+    }
+    
+    // 2. Validate overlapping bookings
+    const existingBookings = await prisma.guideBooking.findMany({
+      where: {
+        guideId,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      }
+    });
+    
+    const hasOverlap = existingBookings.some(b => {
+      const existingStart = new Date(b.date);
+      const existingEnd = new Date(existingStart.getTime() + b.durationHours * 60 * 60 * 1000);
+      return (bookingDate < existingEnd && bookingEnd > existingStart);
+    });
+    
+    if (hasOverlap) {
+      return c.json({ error: 'Time slot overlaps with an existing booking' }, 400);
+    }
+
     const booking = await prisma.guideBooking.create({
       data: {
         guideId,
         userId,
-        date: new Date(date),
+        date: bookingDate,
         durationHours,
         meetingPoint,
         totalPrice,
@@ -1816,6 +1852,19 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
       where: { id: bookingId },
       data: { status }
     });
+
+    if (status === 'COMPLETED' && existingBooking.status !== 'COMPLETED') {
+      const commission = booking.totalPrice * 0.1;
+      await prisma.guidePayout.create({
+        data: {
+          guideProfileId: existingBooking.guideId,
+          amount: booking.totalPrice,
+          commission: commission,
+          netAmount: booking.totalPrice - commission,
+          status: 'PENDING'
+        }
+      });
+    }
 
     return c.json(booking);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -1854,9 +1903,15 @@ app.get('/guides/:guideId/kyc', authMiddleware, async (c) => {
 app.post('/guides/:guideId/bank', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const guideId = c.req.param('guideId');
+  const payload = c.get('user');
   const { accountName, bankName, accountNumber, ifsc } = await c.req.json();
   
   try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+    if (guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
     const bank = await prisma.guidePayout.create({
       data: {
         guideProfileId: guideId,
@@ -1877,7 +1932,13 @@ app.post('/guides/:guideId/bank', authMiddleware, async (c) => {
 app.get('/guides/:guideId/payouts', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const guideId = c.req.param('guideId');
+  const payload = c.get('user');
   try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+    if (guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
     const payouts = await prisma.guidePayout.findMany({
       where: { guideProfileId: guideId }
     });
@@ -1932,7 +1993,40 @@ app.get('/experiences/:id', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.patch('/experiences/:id', async (c) => { const prisma = getPrisma(c.env); const id = c.req.param('id'); const data = await c.req.json(); try { const experience = await prisma.experience.update({ where: { id }, data }); return c.json(experience); } catch (err) { return c.json({ error: err.message }, 500); } }); app.delete('/experiences/:id', async (c) => { const prisma = getPrisma(c.env); const id = c.req.param('id'); try { await prisma.experience.delete({ where: { id } }); return c.json({ success: true }); } catch (err) { return c.json({ error: err.message }, 500); } });
+app.patch('/experiences/:id', authMiddleware, async (c) => { 
+  const prisma = getPrisma(c.env); 
+  const id = c.req.param('id'); 
+  const payload = c.get('user');
+  const data = await c.req.json(); 
+  try { 
+    const existing = await prisma.experience.findUnique({ where: { id }, include: { guide: true } });
+    if (!existing) return c.json({ error: 'Experience not found' }, 404);
+    if (existing.guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized to update this experience' }, 403);
+    }
+    const experience = await prisma.experience.update({ where: { id }, data }); 
+    return c.json(experience); 
+  } catch (err) { 
+    return c.json({ error: err.message }, 500); 
+  } 
+}); 
+
+app.delete('/experiences/:id', authMiddleware, async (c) => { 
+  const prisma = getPrisma(c.env); 
+  const id = c.req.param('id'); 
+  const payload = c.get('user');
+  try { 
+    const existing = await prisma.experience.findUnique({ where: { id }, include: { guide: true } });
+    if (!existing) return c.json({ error: 'Experience not found' }, 404);
+    if (existing.guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized to delete this experience' }, 403);
+    }
+    await prisma.experience.delete({ where: { id } }); 
+    return c.json({ success: true }); 
+  } catch (err) { 
+    return c.json({ error: err.message }, 500); 
+  } 
+});
 // Hero Slides API
 // Extracted GET /hero-slides to admin controller
 
