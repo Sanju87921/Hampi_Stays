@@ -20,6 +20,7 @@ export interface HomepageHero {
 }
 
 const HeroModule = () => {
+ const { confirm } = useModal();
  const [slides, setSlides] = useState<HomepageHero[]>([]);
  const [isLoading, setIsLoading] = useState(true);
  const [loadError, setLoadError] = useState<string | null>(null);
@@ -138,7 +139,7 @@ const HeroModule = () => {
  };
 
  const deleteSlide = async (id: string) => {
- if (!(await confirm({ title: "Confirm Action", message: 'Are you sure you want to delete this slide?' }))) return;
+ if (!(await confirm({ title: "Delete Slide", message: 'Are you sure you want to delete this slide?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
  
  if (slides.find(s => s.id === id)?.isActive && activeSlides.length <= 2) {
  toast.error('Cannot delete slide. Minimum 2 active slides required.');
