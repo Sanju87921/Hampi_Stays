@@ -580,7 +580,10 @@ app.get('/admin/guides', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   try {
     const guides = await prisma.guideProfile.findMany({
-      include: { user: true },
+      include: { 
+        user: true,
+        payouts: true
+      },
       orderBy: { createdAt: 'desc' }
     });
     
@@ -684,6 +687,27 @@ app.patch('/admin/guides/:id/status', authMiddleware, adminMiddleware, async (c)
           userAgent
         }
       });
+
+      // Platform Audit Log Entry
+      try {
+        await prisma.auditLog.create({
+          data: {
+            adminId: c.req.user?.userId || 'system',
+            action: `GUIDE_STATUS_${status}`,
+            details: {
+              targetGuideId: guide.id,
+              targetUserId: guide.userId,
+              previousStatus,
+              newStatus: status,
+              rejectionReason
+            },
+            ipAddress,
+            userAgent
+          }
+        });
+      } catch (auditErr) {
+        console.error('Failed to create audit log for guide status:', auditErr);
+      }
 
       // Create internal notification
       const notificationTitle = status === 'APPROVED' ? 'Identity Verification Approved' : 'Identity Verification Rejected';
@@ -842,7 +866,78 @@ app.patch('/admin/guides/:id/toggle-active', authMiddleware, adminMiddleware, as
   const { isActive } = await c.req.json();
   try {
     const guide = await prisma.guideProfile.update({ where: { id }, data: { isActive } });
+    
+    // Platform Audit Log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.req.user?.userId || 'system',
+          action: isActive ? 'GUIDE_ACTIVATED' : 'GUIDE_SUSPENDED',
+          details: { targetGuideId: id },
+          ipAddress: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null,
+          userAgent: c.req.header('user-agent') || null
+        }
+      });
+    } catch (auditErr) {
+      console.error('Failed to create audit log for guide toggle:', auditErr);
+    }
+    
     return c.json(guide);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/guides/toggle-all', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const { isActive } = await c.req.json();
+  try {
+    await prisma.guideProfile.updateMany({ data: { isActive } });
+    
+    // Platform Audit Log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.req.user?.userId || 'system',
+          action: isActive ? 'GUIDES_GLOBAL_ACTIVATED' : 'GUIDES_GLOBAL_SHUTDOWN',
+          details: { },
+          ipAddress: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null,
+          userAgent: c.req.header('user-agent') || null
+        }
+      });
+    } catch (auditErr) {
+      console.error('Failed to create audit log for global guide toggle:', auditErr);
+    }
+    
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/guides/bank/:payoutId/verify', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const payoutId = c.req.param('payoutId');
+  try {
+    const bank = await prisma.guidePayout.update({
+      where: { id: payoutId },
+      data: { status: 'BANK_VERIFIED' }
+    });
+    
+    // Log Audit
+    try {
+      const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
+      const userAgent = c.req.header('user-agent') || null;
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.req.user?.userId || 'system',
+          action: 'GUIDE_BANK_VERIFIED',
+          details: { payoutId },
+          ipAddress,
+          userAgent
+        }
+      });
+    } catch (auditErr) {
+      console.error('Failed to create audit log for bank verify:', auditErr);
+    }
+    
+    return c.json(bank);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

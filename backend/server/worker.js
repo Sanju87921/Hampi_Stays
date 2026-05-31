@@ -1451,6 +1451,19 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       }).catch(err => console.error("Async cancel notification failed:", err))
     );
 
+    if (status === 'COMPLETED') {
+      const commission = booking.totalPrice * 0.1;
+      await prisma.guidePayout.create({
+        data: {
+          guideProfileId: existingBooking.guideId,
+          amount: booking.totalPrice,
+          commission: commission,
+          netAmount: booking.totalPrice - commission,
+          status: 'PENDING'
+        }
+      });
+    }
+
     return c.json(booking);
   } catch (err) { 
     return c.json({ error: err.message }, 500); 
@@ -1808,6 +1821,71 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// Guide KYC
+app.post('/guides/:guideId/kyc', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  const { type, documentUrl } = await c.req.json();
+  try {
+    const kyc = await prisma.guideKYC.create({
+      data: {
+        guideProfileId: guideId,
+        type,
+        documentUrl,
+        status: 'PENDING'
+      }
+    });
+    return c.json(kyc, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/guides/:guideId/kyc', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  try {
+    const kycs = await prisma.guideKYC.findMany({
+      where: { guideProfileId: guideId }
+    });
+    return c.json(kycs);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Guide Payouts / Bank Accounts
+app.post('/guides/:guideId/bank', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  const { accountName, bankName, accountNumber, ifsc } = await c.req.json();
+  
+  try {
+    const bank = await prisma.guidePayout.create({
+      data: {
+        guideProfileId: guideId,
+        amount: 0,
+        commission: 0,
+        netAmount: 0,
+        status: 'BANK_INFO',
+        accountName,
+        bankName,
+        accountNumber,
+        ifsc
+      }
+    });
+    return c.json(bank, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/guides/:guideId/payouts', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  try {
+    const payouts = await prisma.guidePayout.findMany({
+      where: { guideProfileId: guideId }
+    });
+    return c.json(payouts);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/guides/:guideId/calendar/block', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const { date } = await c.req.json(); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: { push: new Date(date) } } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } }); app.delete('/guides/:guideId/calendar/block/:date', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const dateStr = c.req.param('date'); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const dateToRemove = new Date(dateStr).toISOString(); const newBlocked = guide.blockedDates.filter(d => d.toISOString() !== dateToRemove); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: newBlocked } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } });
 // Experiences
 app.get('/experiences', async (c) => {
   const prisma = getPrisma(c.env);
@@ -1854,6 +1932,7 @@ app.get('/experiences/:id', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.patch('/experiences/:id', async (c) => { const prisma = getPrisma(c.env); const id = c.req.param('id'); const data = await c.req.json(); try { const experience = await prisma.experience.update({ where: { id }, data }); return c.json(experience); } catch (err) { return c.json({ error: err.message }, 500); } }); app.delete('/experiences/:id', async (c) => { const prisma = getPrisma(c.env); const id = c.req.param('id'); try { await prisma.experience.delete({ where: { id } }); return c.json({ success: true }); } catch (err) { return c.json({ error: err.message }, 500); } });
 // Hero Slides API
 // Extracted GET /hero-slides to admin controller
 

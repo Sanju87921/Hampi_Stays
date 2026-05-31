@@ -372,6 +372,11 @@ model GuideProfile {
   pricePerDay     Float
   pricePerHour    Float
   yearsExperience Int
+  contactNumber   String?
+  emergencyContact String?
+  city            String?
+  state           String?
+  profileCompletion Int          @default(0)
   isVerified      Boolean        @default(false)
   rating          Float          @default(0)
   reviewCount     Int            @default(0)
@@ -391,6 +396,9 @@ model GuideProfile {
   experiences     Experience[]
   bookings        GuideBooking[]
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycDocuments    GuideKYC[]
+  payouts         GuidePayout[]
+  blockedDates    DateTime[]     @default([])
 
   @@map("guide_profiles")
 }
@@ -422,8 +430,12 @@ model Experience {
   description   String
   price         Float
   durationHours Int
+  maxGroupSize  Int?
   images        String[]
   meetingPoint  String
+  inclusions    String[]     @default([])
+  exclusions    String[]     @default([])
+  isActive      Boolean      @default(true)
   includes      String[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -431,6 +443,39 @@ model Experience {
   guide         GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@map("experiences")
+}
+
+model GuideKYC {
+  id              String       @id @default(cuid())
+  guideProfileId  String
+  type            String       // AADHAAR, PAN, DRIVING_LICENSE, GUIDE_CERTIFICATE
+  documentUrl     String
+  status          String       @default("PENDING") // PENDING, VERIFIED, REJECTED
+  rejectionReason String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  guideProfile    GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
+
+  @@map("guide_kyc_documents")
+}
+
+model GuidePayout {
+  id              String       @id @default(cuid())
+  guideProfileId  String
+  amount          Float
+  commission      Float
+  netAmount       Float
+  status          String       @default("PENDING") // PENDING, PAID, FAILED
+  bankName        String?
+  accountName     String?
+  accountNumber   String?
+  ifsc            String?
+  transactionRef  String?
+  createdAt       DateTime     @default(now())
+  paidAt          DateTime?
+  guideProfile    GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
+
+  @@map("guide_payouts")
 }
 
 model Message {

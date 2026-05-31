@@ -92,13 +92,32 @@ export function GuideDashboard() {
     description: "",
     price: "",
     durationHours: "4",
+    maxGroupSize: "10",
     meetingPoint: "",
-    includes: ["Expert Guiding", "Water Bottles"],
+    inclusions: ["Expert Guiding", "Water Bottles"],
+    exclusions: ["Entrance Fees", "Camera Fees"],
     imageUrl: "",
+    isActive: true,
   });
   const [isUploadingExpImage, setIsUploadingExpImage] = useState(false);
   const [uploadingExpId, setUploadingExpId] = useState<string | null>(null);
   const [isUploadingId, setIsUploadingId] = useState(false);
+  
+  // Payouts & Bank State
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [bankForm, setBankForm] = useState({
+    accountName: "",
+    bankName: "",
+    accountNumber: "",
+    ifsc: ""
+  });
+  const [isSavingBank, setIsSavingBank] = useState(false);
+  
+  // Calendar State
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const [bookingFilter, setBookingFilter] = useState("ALL");
 
   useEffect(() => {
     fetchProfile();
@@ -127,6 +146,10 @@ export function GuideDashboard() {
           avatar: data.user?.avatar || data.avatar || ""
         });
         fetchBookings(data.id);
+        fetchPayouts(data.id);
+        if (data.blockedDates) {
+          setBlockedDates(data.blockedDates.map((d: string) => new Date(d).toISOString().split('T')[0]));
+        }
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
@@ -152,6 +175,70 @@ export function GuideDashboard() {
       setBookings(data);
     } catch (err) {
       console.error("Failed to fetch bookings", err);
+    }
+  };
+
+  const fetchPayouts = async (profileId: string) => {
+    try {
+      const data = await apiClient.get<any[]>(`/guides/${profileId}/payouts`);
+      setPayouts(data);
+      const bankInfo = data.find(p => p.status === 'BANK_INFO');
+      if (bankInfo) {
+        setBankForm({
+          accountName: bankInfo.accountName || "",
+          bankName: bankInfo.bankName || "",
+          accountNumber: bankInfo.accountNumber || "",
+          ifsc: bankInfo.ifsc || ""
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch payouts", err);
+    }
+  };
+
+  const handleSaveBank = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setIsSavingBank(true);
+    try {
+      await apiClient.post(`/guides/${profile.id}/bank`, bankForm);
+      toast.success("Bank details saved successfully!");
+      fetchPayouts(profile.id);
+    } catch (err) {
+      toast.error("Failed to save bank details.");
+      console.error(err);
+    } finally {
+      setIsSavingBank(false);
+    }
+  };
+
+  const toggleDateBlock = async (dateStr: string) => {
+    if (!profile) return;
+    const isBlocked = blockedDates.includes(dateStr);
+    
+    // Optimistic update
+    if (isBlocked) {
+      setBlockedDates(prev => prev.filter(d => d !== dateStr));
+    } else {
+      setBlockedDates(prev => [...prev, dateStr]);
+    }
+    
+    try {
+      if (isBlocked) {
+        await apiClient.delete(`/guides/${profile.id}/calendar/block/${dateStr}`);
+      } else {
+        await apiClient.post(`/guides/${profile.id}/calendar/block`, { date: dateStr });
+      }
+      toast.success(isBlocked ? "Date unblocked" : "Date blocked");
+    } catch (err) {
+      // Revert on error
+      if (isBlocked) {
+        setBlockedDates(prev => [...prev, dateStr]);
+      } else {
+        setBlockedDates(prev => prev.filter(d => d !== dateStr));
+      }
+      toast.error("Failed to update availability");
+      console.error(err);
     }
   };
 
@@ -195,7 +282,13 @@ export function GuideDashboard() {
   const handleCreateExperience = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post(`/guides/${profile.id}/experiences`, { ...newExp, images: newExp.imageUrl ? [newExp.imageUrl] : [] });
+      await apiClient.post(`/guides/${profile.id}/experiences`, { 
+        ...newExp,
+        price: parseFloat(newExp.price),
+        durationHours: parseInt(newExp.durationHours, 10),
+        maxGroupSize: parseInt(newExp.maxGroupSize, 10),
+        images: newExp.imageUrl ? [newExp.imageUrl] : [] 
+      });
       setIsAddingExperience(false);
       fetchProfile();
       setNewExp({
@@ -203,9 +296,12 @@ export function GuideDashboard() {
         description: "",
         price: "",
         durationHours: "4",
+        maxGroupSize: "10",
         meetingPoint: "",
-        includes: ["Expert Guiding", "Water Bottles"],
+        inclusions: ["Expert Guiding", "Water Bottles"],
+        exclusions: ["Entrance Fees", "Camera Fees"],
         imageUrl: "",
+        isActive: true,
       });
     } catch (err) {
       console.error("Failed to create experience", err);
@@ -223,70 +319,88 @@ export function GuideDashboard() {
   };
 
   const stats = [
-    { label: "Total Tours", value: profile?.experiences?.length || "0", icon: MapPin, color: "bg-blue-50 text-blue-600" },
-    { label: "Active Bookings", value: bookings.filter(b => b.status === 'CONFIRMED').length, icon: Calendar, color: "bg-gold-50 text-gold-600" },
-    { label: "Avg Rating", value: profile?.rating?.toFixed(1) || "4.9", icon: Star, color: "bg-green-50 text-green-600" },
-    { label: "Earnings", value: "₹" + (bookings.filter(b => b.status === 'CONFIRMED').reduce((acc, b) => acc + b.totalPrice, 0)).toLocaleString(), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
+    { label: "Total Bookings", value: bookings.filter(b => b.status !== 'CANCELLED').length, icon: Briefcase, color: "bg-blue-50 text-blue-600" },
+    { label: "Upcoming Tours", value: bookings.filter(b => b.status === 'CONFIRMED').length, icon: Calendar, color: "bg-gold-50 text-gold-600" },
+    { label: "Avg Rating", value: profile?.rating?.toFixed(1) || "0.0", icon: Star, color: "bg-green-50 text-green-600" },
+    { label: "Total Revenue", value: "₹" + (bookings.filter(b => b.status === 'COMPLETED').reduce((acc, b) => acc + (b.totalPrice * 0.9), 0)).toLocaleString(), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
   ];
 
-  const renderOverview = () => (
-    <div className="space-y-12">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm"
-          >
-            <div className={`${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-6`}>
-              <stat.icon className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-medium text-navy-950/40 mb-1">{stat.label}</p>
-            <p className="text-3xl font-serif font-bold text-navy-950">{stat.value}</p>
-          </motion.div>
-        ))}
-      </div>
+  const renderOverview = () => {
+    const last6Months = Array.from({ length: 6 }).map((_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      return {
+        month: d.toLocaleString('default', { month: 'short' }),
+        monthNum: d.getMonth(),
+        year: d.getFullYear(),
+        inc: 0
+      };
+    });
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-8 space-y-10">
-          {/* Earnings Analytics */}
-          <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-serif font-bold text-navy-950">Earnings Analytics</h2>
-                <p className="text-sm text-navy-950/40 mt-1">Monthly performance and revenue growth.</p>
+    bookings.filter(b => b.status === 'COMPLETED').forEach(b => {
+      const bDate = new Date(b.date);
+      const match = last6Months.find(m => m.monthNum === bDate.getMonth() && m.year === bDate.getFullYear());
+      if (match) match.inc += (b.totalPrice * 0.9);
+    });
+
+    const maxInc = Math.max(...last6Months.map(m => m.inc), 1000); // Prevent divide by 0
+    const chartData = last6Months.map(m => ({
+      month: m.month,
+      val: Math.max(5, (m.inc / maxInc) * 100), // Base visual height
+      inc: m.inc
+    }));
+
+    return (
+      <div className="space-y-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm"
+            >
+              <div className={`${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-6`}>
+                <stat.icon className="w-6 h-6" />
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-sand-50 rounded-xl border border-sand-100 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
-                Last 30 Days <TrendingUp className="w-3 h-3 text-green-600" />
+              <p className="text-sm font-medium text-navy-950/40 mb-1">{stat.label}</p>
+              <p className="text-3xl font-serif font-bold text-navy-950">{stat.value}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-8 space-y-10">
+            {/* Earnings Analytics */}
+            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-serif font-bold text-navy-950">Earnings Analytics</h2>
+                  <p className="text-sm text-navy-950/40 mt-1">Monthly performance and revenue growth.</p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-sand-50 rounded-xl border border-sand-100 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
+                  Last 6 Months <TrendingUp className="w-3 h-3 text-green-600" />
+                </div>
               </div>
-            </div>
-            <div className="p-10">
-              <div className="flex items-end justify-between h-48 gap-4 px-4">
-                {[
-                  { month: "Jan", val: 45, inc: 12400 },
-                  { month: "Feb", val: 65, inc: 18600 },
-                  { month: "Mar", val: 35, inc: 9200 },
-                  { month: "Apr", val: 85, inc: 24500 },
-                  { month: "May", val: 55, inc: 15800 },
-                  { month: "Jun", val: 95, inc: 28900 },
-                ].map((d, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-4 group cursor-help">
-                    <div className="w-full relative">
-                      <motion.div 
-                        initial={{ height: 0 }}
-                        animate={{ height: `${d.val}%` }}
-                        className="w-full bg-sand-100 rounded-2xl group-hover:bg-gold-500 transition-colors relative"
-                      >
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
-                          ₹{d.inc.toLocaleString()}
-                        </div>
-                      </motion.div>
+              <div className="p-10">
+                <div className="flex items-end justify-between h-48 gap-4 px-4">
+                  {chartData.map((d, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-4 group cursor-help">
+                      <div className="w-full relative h-full flex items-end">
+                        <motion.div 
+                          initial={{ height: 0 }}
+                          animate={{ height: `${d.val}%` }}
+                          className="w-full bg-sand-100 rounded-2xl group-hover:bg-gold-500 transition-colors relative"
+                        >
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
+                            ₹{d.inc.toLocaleString()}
+                          </div>
+                        </motion.div>
+                      </div>
+                      <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">{d.month}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">{d.month}</span>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </div>
@@ -341,12 +455,12 @@ export function GuideDashboard() {
               <Star className="w-5 h-5 text-gold-500 fill-current" />
             </div>
             <div className="flex items-center gap-4 mb-8">
-              <div className="text-5xl font-serif font-bold text-navy-950">{profile?.rating?.toFixed(1) || "4.9"}</div>
+              <div className="text-5xl font-serif font-bold text-navy-950">{profile?.rating?.toFixed(1) || "0.0"}</div>
               <div>
                 <div className="flex gap-1 text-gold-500 mb-1">
-                  {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
+                  {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-4 h-4 fill-current opacity-50" />)}
                 </div>
-                <p className="text-xs text-navy-950/40 uppercase tracking-widest font-bold">{profile?.reviewCount || 48} reviews</p>
+                <p className="text-xs text-navy-950/40 uppercase tracking-widest font-bold">{profile?.reviewCount || 0} reviews</p>
               </div>
             </div>
             
@@ -390,27 +504,6 @@ export function GuideDashboard() {
               </div>
             </div>
           )}
-
-          {/* Recent Reviews */}
-          <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
-            <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Recent Feedback</h3>
-            <div className="space-y-6">
-              {[
-                { name: "John D.", text: "Incredible depth of knowledge about the Vitthala temple architecture.", rating: 5 },
-                { name: "Priya M.", text: "Very professional and patient with our family. Highly recommend!", rating: 5 }
-              ].map((rev, i) => (
-                <div key={i} className="pb-6 border-b border-sand-50 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-navy-950 text-sm">{rev.name}</span>
-                    <div className="flex gap-0.5 text-gold-500">
-                      {[...Array(rev.rating)].map((_, j) => <Star key={j} className="w-3 h-3 fill-current" />)}
-                    </div>
-                  </div>
-                  <p className="text-xs text-navy-950/50 italic leading-relaxed">"{rev.text}"</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -499,7 +592,7 @@ export function GuideDashboard() {
                   </div>
                 </div>
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Price (INR)</label>
                       <div className="relative">
@@ -521,6 +614,39 @@ export function GuideDashboard() {
                         className="w-full h-14 bg-sand-50 rounded-2xl border border-sand-100 px-6 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors"
                         value={newExp.durationHours}
                         onChange={e => setNewExp({...newExp, durationHours: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Max Group Size</label>
+                      <input 
+                        required
+                        type="number"
+                        min="1"
+                        className="w-full h-14 bg-sand-50 rounded-2xl border border-sand-100 px-6 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors"
+                        value={newExp.maxGroupSize}
+                        onChange={e => setNewExp({...newExp, maxGroupSize: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Inclusions (comma separated)</label>
+                      <input 
+                        required
+                        placeholder="e.g. Water, Guide"
+                        className="w-full h-14 bg-sand-50 rounded-2xl border border-sand-100 px-6 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors"
+                        value={newExp.inclusions.join(', ')}
+                        onChange={e => setNewExp({...newExp, inclusions: e.target.value.split(',').map(s => s.trim())})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Exclusions (comma separated)</label>
+                      <input 
+                        placeholder="e.g. Camera Fees, Lunch"
+                        className="w-full h-14 bg-sand-50 rounded-2xl border border-sand-100 px-6 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors"
+                        value={newExp.exclusions.join(', ')}
+                        onChange={e => setNewExp({...newExp, exclusions: e.target.value.split(',').map(s => s.trim())})}
                       />
                     </div>
                   </div>
@@ -610,12 +736,39 @@ export function GuideDashboard() {
             <div className="p-8">
               <div className="flex items-center justify-between mb-4">
                 <span className="px-3 py-1 bg-gold-50 text-gold-600 text-[10px] font-bold uppercase tracking-widest rounded-full">
-                  {exp.durationHours} Hours
+                  {exp.durationHours} Hours • Max {exp.maxGroupSize || 10}
                 </span>
-                <span className="font-bold text-navy-950">₹{exp.price}</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await apiClient.patch(`/experiences/${exp.id}`, { isActive: !exp.isActive });
+                        fetchProfile();
+                      } catch (err) { console.error(err); }
+                    }}
+                    className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${exp.isActive ? 'border-green-200 bg-green-50 text-green-600' : 'border-sand-200 bg-sand-50 text-navy-950/40'}`}
+                  >
+                    {exp.isActive ? 'Active' : 'Inactive'}
+                  </button>
+                  <span className="font-bold text-navy-950">₹{exp.price}</span>
+                </div>
               </div>
               <h3 className="text-xl font-serif font-bold text-navy-950 mb-3">{exp.title}</h3>
-              <p className="text-sm text-navy-950/50 line-clamp-2 leading-relaxed mb-6">{exp.description}</p>
+              <p className="text-sm text-navy-950/50 line-clamp-2 leading-relaxed mb-4">{exp.description}</p>
+              
+              <div className="space-y-2 mb-6">
+                {(exp.inclusions && exp.inclusions.length > 0) && (
+                  <div className="text-[10px] font-bold text-green-600 uppercase tracking-widest">
+                    + {exp.inclusions.slice(0,2).join(', ')}{exp.inclusions.length > 2 ? '...' : ''}
+                  </div>
+                )}
+                {(exp.exclusions && exp.exclusions.length > 0) && (
+                  <div className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                    - {exp.exclusions.slice(0,2).join(', ')}{exp.exclusions.length > 2 ? '...' : ''}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
                 <MapPin className="w-3 h-3" /> {exp.meetingPoint}
               </div>
@@ -967,56 +1120,87 @@ export function GuideDashboard() {
     </div>
   );
 
-  const renderBookings = () => (
-    <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-      <div className="p-10 border-b border-sand-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-serif font-bold text-navy-950">Booking History</h2>
-          <p className="text-sm text-navy-950/40 mt-1">Manage all your past and upcoming tour bookings.</p>
+  const renderBookings = () => {
+    const filteredBookings = bookings.filter(b => bookingFilter === 'ALL' || b.status === bookingFilter);
+
+    return (
+      <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+        <div className="p-10 border-b border-sand-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-serif font-bold text-navy-950">Booking History</h2>
+            <p className="text-sm text-navy-950/40 mt-1">Manage all your past and upcoming tour bookings.</p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+            {['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map(filter => (
+              <button
+                key={filter}
+                onClick={() => setBookingFilter(filter)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${
+                  bookingFilter === filter 
+                    ? 'bg-navy-950 text-white' 
+                    : 'bg-sand-50 text-navy-950/60 hover:bg-sand-100'
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="p-10">
-        <div className="space-y-4">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30 gap-6">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-white border border-sand-200 flex items-center justify-center font-bold text-navy-950 overflow-hidden">
-                  {booking.user.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user.name.charAt(0)}
-                </div>
-                <div>
-                  <h4 className="font-bold text-navy-950">{booking.user.name}</h4>
-                  <p className="text-xs text-navy-950/40 font-medium">
-                    {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • ₹{booking.totalPrice.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
-                  booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-700 border-green-100' :
-                  booking.status === 'CANCELLED' ? 'bg-red-50 text-red-700 border-red-100' :
-                  'bg-gold-50 text-gold-700 border-gold-100'
-                }`}>
-                  {booking.status}
-                </span>
-                {booking.status === 'PENDING' && (
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="outline" className="h-9 px-4 text-[10px] border-red-100 text-red-500">Reject</Button>
-                    <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} className="h-9 px-4 text-[10px] bg-green-600 text-white">Accept</Button>
+        <div className="p-10">
+          <div className="space-y-4">
+            {filteredBookings.map((booking) => (
+              <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30 gap-6">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-sand-200 flex items-center justify-center font-bold text-navy-950 overflow-hidden shrink-0">
+                    {booking.user.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user.name.charAt(0)}
                   </div>
-                )}
+                  <div>
+                    <h4 className="font-bold text-navy-950">{booking.user.name}</h4>
+                    <p className="text-xs text-navy-950/40 font-medium">
+                      {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • ₹{booking.totalPrice.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap justify-end">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                    booking.status === 'CONFIRMED' ? 'bg-green-50 text-green-700 border-green-100' :
+                    booking.status === 'COMPLETED' ? 'bg-navy-50 text-navy-700 border-navy-100' :
+                    booking.status === 'CANCELLED' ? 'bg-red-50 text-red-700 border-red-100' :
+                    'bg-gold-50 text-gold-700 border-gold-100'
+                  }`}>
+                    {booking.status}
+                  </span>
+                  
+                  {booking.status === 'PENDING' && (
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="outline" className="h-9 px-4 text-[10px] border-red-100 text-red-500 hover:bg-red-50">Reject</Button>
+                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} className="h-9 px-4 text-[10px] bg-green-600 text-white hover:bg-green-700">Accept</Button>
+                    </div>
+                  )}
+
+                  {booking.status === 'CONFIRMED' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleBookingStatus(booking.id, 'COMPLETED')} 
+                      className="h-9 px-4 text-[10px] bg-navy-950 text-white shadow-luxury hover:bg-gold-500 hover:text-navy-950"
+                    >
+                      Mark Completed
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-          {bookings.length === 0 && (
-            <div className="text-center py-20 bg-sand-50/50 rounded-[2rem] border-2 border-dashed border-sand-200">
-              <Briefcase className="w-8 h-8 text-sand-300 mx-auto mb-4" />
-              <p className="text-sm text-navy-950/40">Your booking history will appear here.</p>
-            </div>
-          )}
+            ))}
+            {filteredBookings.length === 0 && (
+              <div className="text-center py-20 bg-sand-50/50 rounded-[2rem] border-2 border-dashed border-sand-200">
+                <Briefcase className="w-8 h-8 text-sand-300 mx-auto mb-4" />
+                <p className="text-sm text-navy-950/40">No {bookingFilter !== 'ALL' ? bookingFilter.toLowerCase() : ''} bookings found.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSettings = () => (
     <div className="max-w-2xl mx-auto bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
@@ -1033,6 +1217,198 @@ export function GuideDashboard() {
       </Button>
     </div>
   );
+
+  const renderPayouts = () => {
+    const totalEarnings = bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').reduce((acc, b) => acc + b.totalPrice, 0);
+    const platformCommission = totalEarnings * 0.1; // 10% mock commission
+    const netEarnings = totalEarnings - platformCommission;
+    
+    // Masked Account Number
+    const maskedAccount = bankForm.accountNumber ? `XXXX-XXXX-${bankForm.accountNumber.slice(-4)}` : "";
+
+    return (
+      <div className="space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
+            <p className="text-sm font-medium text-navy-950/40 mb-1">Gross Earnings</p>
+            <p className="text-3xl font-serif font-bold text-navy-950">₹{totalEarnings.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
+            <p className="text-sm font-medium text-navy-950/40 mb-1">Platform Commission (10%)</p>
+            <p className="text-3xl font-serif font-bold text-red-500">-₹{platformCommission.toLocaleString()}</p>
+          </div>
+          <div className="bg-gold-50 p-8 rounded-[2.5rem] border border-gold-200 shadow-sm">
+            <p className="text-sm font-medium text-gold-700 mb-1">Net Earnings</p>
+            <p className="text-3xl font-serif font-bold text-gold-700">₹{netEarnings.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-sand-100">
+                <h3 className="text-xl font-serif font-bold text-navy-950">Transaction Ledger</h3>
+              </div>
+              <div className="p-8 space-y-4">
+                {bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').length > 0 ? bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').map(b => (
+                  <div key={b.id} className="flex items-center justify-between p-4 rounded-2xl bg-sand-50/50 border border-sand-100">
+                    <div>
+                      <p className="font-bold text-navy-950">{b.user?.name} - Tour</p>
+                      <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">{new Date(b.date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">+₹{(b.totalPrice * 0.9).toLocaleString()}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">Paid out</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-navy-950/40">No transactions yet.</div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-4">
+            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
+              <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Payout Bank Details</h3>
+              <form onSubmit={handleSaveBank} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Account Holder Name</label>
+                  <input 
+                    required
+                    value={bankForm.accountName}
+                    onChange={e => setBankForm({...bankForm, accountName: e.target.value})}
+                    className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Bank Name</label>
+                  <input 
+                    required
+                    value={bankForm.bankName}
+                    onChange={e => setBankForm({...bankForm, bankName: e.target.value})}
+                    className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Account Number</label>
+                  <input 
+                    required
+                    type="password"
+                    placeholder={maskedAccount || "Account Number"}
+                    value={bankForm.accountNumber}
+                    onChange={e => setBankForm({...bankForm, accountNumber: e.target.value})}
+                    className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500"
+                  />
+                  {maskedAccount && !bankForm.accountNumber && (
+                    <p className="text-[10px] text-green-600 mt-1 ml-1 font-bold">Currently saved: {maskedAccount}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">IFSC Code</label>
+                  <input 
+                    required
+                    value={bankForm.ifsc}
+                    onChange={e => setBankForm({...bankForm, ifsc: e.target.value})}
+                    className="w-full h-12 bg-sand-50 rounded-xl border border-sand-100 px-4 font-bold text-navy-950 outline-none focus:border-gold-500 uppercase"
+                  />
+                </div>
+                <Button type="submit" isLoading={isSavingBank} className="w-full mt-6 rounded-xl bg-navy-950 text-white shadow-luxury">
+                  Save Bank Details
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  const renderCalendar = () => {
+    const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+    const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+    const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
+    }
+
+    return (
+      <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-serif font-bold text-navy-950 mb-2">Availability Calendar</h2>
+            <p className="text-sm text-navy-950/40">Manage your working days. Block dates you are unavailable.</p>
+          </div>
+          <div className="flex gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+              className="rounded-xl"
+            >
+              Previous
+            </Button>
+            <span className="text-lg font-bold text-navy-950 py-2">{monthName}</span>
+            <Button 
+              variant="outline" 
+              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+              className="rounded-xl"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-4 mb-4">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="text-center font-bold text-navy-950/40 text-[10px] uppercase tracking-widest">{day}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-4">
+          {days.map((date, i) => {
+            if (!date) return <div key={i} className="aspect-square bg-sand-50/30 rounded-2xl" />;
+            
+            // Generate local YYYY-MM-DD securely to avoid timezone shifts
+            const dateStr = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            const isBlocked = blockedDates.includes(dateStr);
+            const isPast = date < new Date(new Date().setHours(0,0,0,0));
+            const dayBookings = bookings.filter(b => b.date.startsWith(dateStr) && b.status !== 'CANCELLED');
+            
+            return (
+              <button
+                key={i}
+                disabled={isPast}
+                onClick={() => toggleDateBlock(dateStr)}
+                className={`aspect-square p-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all relative group
+                  ${isPast ? 'opacity-50 cursor-not-allowed bg-sand-50' : 
+                    isBlocked ? 'bg-red-50 hover:bg-red-100 border border-red-200' : 
+                    dayBookings.length > 0 ? 'bg-navy-900 text-white hover:bg-navy-950' : 'bg-sand-50 hover:bg-sand-100 border border-sand-200'}
+                `}
+              >
+                <span className={`font-bold ${dayBookings.length > 0 && !isBlocked ? 'text-white' : 'text-navy-950'}`}>
+                  {date.getDate()}
+                </span>
+                
+                {isBlocked && <span className="text-[10px] font-bold text-red-500">BLOCKED</span>}
+                {!isBlocked && dayBookings.length > 0 && (
+                  <span className="text-[10px] font-bold text-gold-400">{dayBookings.length} Tour{dayBookings.length > 1 ? 's' : ''}</span>
+                )}
+                
+                {/* Hover state for available dates */}
+                {!isPast && !isBlocked && dayBookings.length === 0 && (
+                  <span className="text-[10px] font-bold text-navy-950/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Block
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   if (loading) return <div className="min-h-screen bg-sand-50 pt-28 flex items-center justify-center">Loading Expert Portal...</div>;
 
@@ -1080,19 +1456,21 @@ export function GuideDashboard() {
 
         <ProfileIncompleteBanner />
 
-        {/* Tab Navigation */}
-        <nav className="flex items-center bg-white p-1.5 rounded-2xl border border-sand-200 shadow-sm mb-12 w-fit">
+        <nav className="flex items-center bg-white p-1.5 rounded-2xl border border-sand-200 shadow-sm mb-12 w-fit overflow-x-auto">
           {[
             { id: "overview", label: "Overview", icon: Award },
             { id: "tours", label: "Tours", icon: MapPin },
-            { id: "bookings", label: "Bookings", icon: Calendar },
+            { id: "bookings", label: "Bookings", icon: Briefcase },
+            { id: "calendar", label: "Calendar", icon: Calendar },
             { id: "profile", label: "Profile", icon: Users },
+            { id: "kyc", label: "KYC Center", icon: ShieldCheck },
+            { id: "payouts", label: "Earnings", icon: IndianRupee },
             { id: "settings", label: "Settings", icon: Settings },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab.id 
                   ? "bg-navy-950 text-white shadow-lg" 
                   : "text-navy-950/40 hover:text-navy-950 hover:bg-sand-50"
@@ -1146,6 +1524,18 @@ export function GuideDashboard() {
             {activeTab === "overview" && renderOverview()}
             {activeTab === "tours" && renderTours()}
             {activeTab === "profile" && renderProfile()}
+            {activeTab === "kyc" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
+                <h2 className="text-3xl font-serif font-bold text-navy-950 mb-4">KYC & Verification Center</h2>
+                <p className="text-sm text-navy-950/40 mb-8">Upload your documents to get verified and start receiving bookings.</p>
+                <div className="p-8 border-2 border-dashed border-sand-200 rounded-2xl text-center">
+                  <ShieldCheck className="w-12 h-12 text-sand-300 mx-auto mb-4" />
+                  <p className="text-navy-950 font-bold">Document upload UI coming soon</p>
+                </div>
+              </div>
+            )}
+            {activeTab === "payouts" && renderPayouts()}
+            {activeTab === "calendar" && renderCalendar()}
             {activeTab === "bookings" && renderBookings()}
             {activeTab === "settings" && renderSettings()}
           </motion.div>

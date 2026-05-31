@@ -321,6 +321,25 @@ export function AdminDashboard() {
  }
  };
 
+ const handleBankVerification = async (payoutId: string, profileId: string) => {
+ setProcessingId(payoutId);
+ try {
+ await apiClient.patch(`/admin/guides/bank/${payoutId}/verify`);
+ setAllGuides(prev => prev.map(g => {
+ if (g.id === profileId) {
+ const newPayouts = (g.payouts || []).map((p: any) => p.id === payoutId ? { ...p, status: 'BANK_VERIFIED' } : p);
+ return { ...g, payouts: newPayouts };
+ }
+ return g;
+ }));
+ toast.success('Bank details verified successfully!');
+ } catch (err: any) {
+ toast.error(`Error: ${err.message || 'Failed to verify bank details'}`);
+ } finally {
+ setProcessingId(null);
+ }
+ };
+
  const handleStatusUpdate = async (id: string, status: "APPROVED" | "REJECTED") => {
  setProcessingId(id);
  try {
@@ -1228,6 +1247,47 @@ export function AdminDashboard() {
  <p className="text-sm text-navy-950 italic">No documents uploaded yet.</p>
  )}
  </div>
+
+ {/* BANK DETAILS SECTION */}
+ {guide.payouts && guide.payouts.length > 0 && (() => {
+ const bankInfo = guide.payouts.find((p: any) => p.status === 'BANK_INFO' || p.status === 'BANK_VERIFIED');
+ if (bankInfo) {
+ return (
+ <div className="flex-grow lg:max-w-md bg-sand-50 rounded-3xl p-6 border border-sand-100 ">
+ <div className="flex items-center justify-between mb-4">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest flex items-center gap-2">
+ <ShieldCheck className="w-3.5 h-3.5" /> Bank Details
+ </p>
+ <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${
+ bankInfo.status === 'BANK_VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+ }`}>
+ {bankInfo.status.replace('_', ' ')}
+ </span>
+ </div>
+ <div className="space-y-2">
+ <p className="text-xs text-navy-950"><strong>Bank:</strong> {bankInfo.bankName}</p>
+ <p className="text-xs text-navy-950"><strong>Name:</strong> {bankInfo.accountName}</p>
+ <p className="font-mono text-xs text-navy-950 blur-[3px] hover:blur-none transition-all duration-300 select-all cursor-pointer">
+ {bankInfo.accountNumber}
+ </p>
+ <p className="text-xs text-navy-950"><strong>IFSC:</strong> {bankInfo.ifsc}</p>
+ </div>
+ {bankInfo.status === 'BANK_INFO' && (
+ <div className="mt-4">
+ <Button 
+ className="w-full bg-navy-950 hover:bg-gold-500 text-white h-10 text-xs gap-2"
+ onClick={() => handleBankVerification(bankInfo.id, guide.id)}
+ isLoading={processingId === bankInfo.id}
+ >
+ Verify Bank Details
+ </Button>
+ </div>
+ )}
+ </div>
+ );
+ }
+ return null;
+ })()}
 
  <div className="flex flex-row lg:flex-col gap-3 justify-center pr-20 lg:pr-0">
  <Button 
