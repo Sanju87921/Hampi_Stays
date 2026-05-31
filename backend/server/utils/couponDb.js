@@ -263,22 +263,14 @@ export async function deleteCouponFromDb(prisma, id) {
 }
 
 export async function incrementCouponUsage(prisma, code) {
-  const isSupported = await checkDbSupport(prisma);
   const cleanCode = code.trim().toUpperCase();
-  if (isSupported) {
-    try {
-      return await prisma.coupon.update({
-        where: { code: cleanCode },
-        data: { usedCount: { increment: 1 } }
-      });
-    } catch (e) {}
-  }
-  const coupons = readJsonFile(COUPONS_FILE);
-  const index = coupons.findIndex(c => c.code === cleanCode);
-  if (index !== -1) {
-    coupons[index].usedCount += 1;
-    writeJsonFile(COUPONS_FILE, coupons);
-    return coupons[index];
+  try {
+    return await prisma.promotion.update({
+      where: { code: cleanCode },
+      data: { usageCount: { increment: 1 } }
+    });
+  } catch (e) {
+    console.error("Failed to increment promotion usage", e);
   }
 }
 

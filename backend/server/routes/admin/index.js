@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { Resend } from 'resend';
+import { validateCouponCode } from '../../utils/couponEngine.js';
+import { incrementCouponUsage } from '../../utils/couponDb.js';
 
 /**
  * setupAdminRoutes — registers modularized admin management routes.

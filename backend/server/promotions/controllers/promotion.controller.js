@@ -154,3 +154,63 @@ export const validatePromotion = async (c) => {
     return c.json({ error: error.message }, 500);
   }
 };
+
+
+export const getPromotionAnalytics = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  try {
+    const promotions = await prisma.promotion.findMany({
+      include: { bookings: { select: { totalPrice: true } } }
+    });
+
+    let totalDiscounts = 0;
+    let totalRevenueGenerated = 0;
+    let mostUsedPromo = null;
+    let maxUsage = -1;
+    let activePromotions = 0;
+
+    const usageData = [];
+    const revenueData = [];
+
+    for (const promo of promotions) {
+      if (promo.active) activePromotions++;
+      if (promo.usageCount > maxUsage) {
+        maxUsage = promo.usageCount;
+        mostUsedPromo = promo.name;
+      }
+      
+      let promoRevenue = 0;
+      for (const booking of promo.bookings) {
+        promoRevenue += booking.totalPrice || 0;
+      }
+      totalRevenueGenerated += promoRevenue;
+      
+      let pDiscount = 0;
+      if (promo.usageCount > 0) {
+        const avgBooking = promoRevenue / promo.usageCount;
+        if (promo.discountType === 'PERCENTAGE') {
+          pDiscount = avgBooking * (promo.discountValue / 100);
+          if (promo.maxDiscount && pDiscount > promo.maxDiscount) pDiscount = promo.maxDiscount;
+        } else {
+          pDiscount = promo.discountValue;
+        }
+      }
+      totalDiscounts += (pDiscount * promo.usageCount);
+
+      usageData.push({ name: promo.code || promo.name, usage: promo.usageCount });
+      revenueData.push({ name: promo.code || promo.name, revenue: promoRevenue });
+    }
+
+    return c.json({
+      usageData,
+      revenueData,
+      totalDiscounts,
+      totalRevenueGenerated,
+      mostUsedPromo,
+      activePromotions
+    });
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+};

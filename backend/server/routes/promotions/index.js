@@ -3,12 +3,15 @@ import * as promotionController from '../../promotions/controllers/promotion.con
 
 export const setupPromotionRoutes = (app, authMiddleware, adminMiddleware) => {
   // Public/Traveler endpoints
-  app.get('/api/promotions/active', promotionController.getActivePromotions);
-  app.post('/api/promotions/validate', authMiddleware, promotionController.validatePromotion);
+  app.get('/promotions/active', promotionController.getActivePromotions);
+  app.post('/promotions/validate', authMiddleware, promotionController.validatePromotion);
   
   // Admin endpoints
-  app.get('/api/admin/promotions', authMiddleware, adminMiddleware, promotionController.getPromotions);
-  app.post('/api/admin/promotions', authMiddleware, adminMiddleware, promotionController.createPromotion);
-  app.patch('/api/admin/promotions/:id', authMiddleware, adminMiddleware, promotionController.updatePromotion);
-  app.delete('/api/admin/promotions/:id', authMiddleware, adminMiddleware, promotionController.deletePromotion);
+  app.get('/admin/promotions', authMiddleware, adminMiddleware, promotionController.getPromotions);
+  app.post('/admin/promotions', authMiddleware, adminMiddleware, promotionController.createPromotion);
+  app.patch('/admin/promotions/:id', authMiddleware, adminMiddleware, promotionController.updatePromotion);
+  app.delete('/admin/promotions/:id', authMiddleware, adminMiddleware, promotionController.deletePromotion);
+  
+  // Admin Analytics
+  app.get('/admin/promotions/analytics', authMiddleware, adminMiddleware, promotionController.getPromotionAnalytics);
 };

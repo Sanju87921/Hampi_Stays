@@ -27,6 +27,7 @@ interface Promotion {
 
 export function PromotionsModule() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingPromo, setEditingPromo] = useState<Partial<Promotion>>({});
@@ -35,8 +36,12 @@ export function PromotionsModule() {
   const fetchPromotions = async () => {
     try {
       setIsLoading(true);
-      const res = await apiClient.get<Promotion[]>('/admin/promotions');
-      setPromotions(res || []);
+      const [promosRes, analyticsRes] = await Promise.all([
+        apiClient.get<Promotion[]>('/admin/promotions'),
+        apiClient.get<any>('/admin/promotions/analytics')
+      ]);
+      setPromotions(promosRes || []);
+      setAnalytics(analyticsRes || null);
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch promotions');
     } finally {
@@ -108,15 +113,8 @@ export function PromotionsModule() {
     (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const usageData = promotions.map(p => ({
-    name: p.code || p.name,
-    usage: p.usageCount
-  }));
-
-  const revenueData = promotions.map(p => ({
-    name: p.code || p.name,
-    revenue: p.usageCount * (p.discountType === 'flat' ? p.discountValue * 5 : 10000)
-  }));
+  const usageData = analytics?.usageData || [];
+  const revenueData = analytics?.revenueData || [];
 
   return (
     <div className="space-y-6">
