@@ -185,8 +185,8 @@ export const createBooking = async (c) => {
       let promotionName = null;
       
       if (couponCode) {
-        const promotion = await tx.promotion.findUnique({
-          where: { code: couponCode.toUpperCase() }
+        const promotion = await tx.promotion.findFirst({
+          where: { code: { equals: couponCode.trim(), mode: 'insensitive' } }
         });
 
         if (!promotion) throw new Error("COUPON_INVALID:Invalid promotion code");
@@ -203,7 +203,7 @@ export const createBooking = async (c) => {
           if (userBookingsCount > 0) throw new Error("COUPON_INVALID:Promotion valid for first booking only");
         }
 
-        if (promotion.discountType === 'PERCENTAGE') {
+        if (promotion.discountType?.toUpperCase() === 'PERCENTAGE') {
           discountAmount = computedTotal * (promotion.discountValue / 100);
           if (promotion.maxDiscount && discountAmount > promotion.maxDiscount) {
             discountAmount = promotion.maxDiscount;
@@ -386,11 +386,15 @@ export const updateBookingStatus = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
-  const { status } = await c.req.json();
+  const { status, paymentStatus } = await c.req.json();
   try {
+    const dataToUpdate = {};
+    if (status) dataToUpdate.status = status;
+    if (paymentStatus) dataToUpdate.paymentStatus = paymentStatus;
+
     const booking = await prisma.booking.update({
       where: { id },
-      data: { status },
+      data: dataToUpdate,
       include: { resort: true }
     });
 

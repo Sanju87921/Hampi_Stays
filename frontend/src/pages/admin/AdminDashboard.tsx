@@ -164,6 +164,8 @@ export function AdminDashboard() {
  const [isSavingCommission, setIsSavingCommission] = useState(false);
  const [otpLogs, setOtpLogs] = useState<any[]>([]);
  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+ const [bookingTab, setBookingTab] = useState<"all" | "reviews">("all");
+ const [reviewReason, setReviewReason] = useState("");
 
  const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(7.0);
  const [isSavingGlobalCommission, setIsSavingGlobalCommission] = useState(false);
@@ -1455,30 +1457,135 @@ export function AdminDashboard() {
  </table>
  </div>
  </div>
- );
+ );  const handlePaymentReview = async (bookingId: string, action: "APPROVE" | "REFUND" | "REJECT") => {
+    if (!(await confirm({ title: `Confirm ${action}`, message: `Are you sure you want to ${action.toLowerCase()} this booking's payment?` }))) return;
+    
+    setProcessingId(bookingId);
+    try {
+      let newPaymentStatus = "PAID";
+      let newStatus = undefined;
 
- const renderBookings = () => (
- <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
- <div className="p-8 border-b border-sand-100 flex items-center justify-between">
- <h3 className="text-xl font-bold text-navy-950 ">Global Bookings</h3>
- <Button variant="outline" onClick={handleExportCSV} className="gap-2 rounded-xl hover:bg-navy-950 hover:text-white transition-all">
- <Download className="w-4 h-4" />
- Export CSV
- </Button>
- </div>
- <div className="overflow-x-auto">
- <table className="w-full text-left">
- <thead>
- <tr className="bg-sand-50 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
- <th className="px-8 py-4">Reference</th>
- <th className="px-8 py-4">Guest</th>
- <th className="px-8 py-4">Resort & Room</th>
- <th className="px-8 py-4">Dates</th>
- <th className="px-8 py-4">Amount</th>
- <th className="px-8 py-4">Status</th>
- </tr>
- </thead>
- <tbody className="divide-y divide-sand-100">
+      if (action === "APPROVE") {
+        newPaymentStatus = "PAID";
+        newStatus = "CONFIRMED";
+      } else if (action === "REFUND") {
+        newPaymentStatus = "REFUNDED";
+        newStatus = "CANCELLED";
+      } else if (action === "REJECT") {
+        newPaymentStatus = "FAILED";
+        newStatus = "CANCELLED";
+      }
+
+      await apiClient.patch(`/bookings/${bookingId}/status`, {
+        paymentStatus: newPaymentStatus,
+        ...(newStatus && { status: newStatus })
+      });
+      toast.success(`Payment ${action.toLowerCase()}ed successfully.`);
+      const updated = await apiClient.get<any[]>('/admin/bookings');
+      setAllBookings(updated);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to process payment: ${err.message}`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const renderBookings = () => {
+    const reviewQueue = allBookings.filter((b: any) => b.paymentStatus === "MANUAL_REVIEW_REQUIRED");
+    
+    return (
+      <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
+        <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+          <div className="flex gap-6">
+            <h3 
+              className={cn("text-xl font-bold cursor-pointer transition-colors", bookingTab === "all" ? "text-navy-950" : "text-navy-950/40")} 
+              onClick={() => setBookingTab("all")}
+            >
+              Global Bookings
+            </h3>
+            <div 
+              className={cn("flex items-center gap-2 cursor-pointer transition-colors", bookingTab === "reviews" ? "text-red-600" : "text-navy-950/40")} 
+              onClick={() => setBookingTab("reviews")}
+            >
+              <h3 className="text-xl font-bold">Review Queue</h3>
+              {reviewQueue.length > 0 && (
+                <span className="px-2.5 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                  {reviewQueue.length}
+                </span>
+              )}
+            </div>
+          </div>
+          <Button variant="outline" onClick={handleExportCSV} className="gap-2 rounded-xl hover:bg-navy-950 hover:text-white transition-all">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+        </div>
+
+        {bookingTab === "reviews" ? (
+          <div className="p-8">
+            {reviewQueue.length === 0 ? (
+              <div className="text-center py-12">
+                <ShieldCheck className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-navy-950 mb-2">No Reviews Pending</h3>
+                <p className="text-navy-950/50">All bookings are processed and verified.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {reviewQueue.map((booking: any) => (
+                  <div key={booking.id} className="p-6 bg-red-50/30 border border-red-100 rounded-2xl flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-mono font-bold text-red-700">{booking.referenceNumber}</span>
+                        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-widest rounded">Manual Review</span>
+                      </div>
+                      <h4 className="font-bold text-navy-950 mb-1">{booking.user?.name} <span className="text-navy-950/50 font-normal">({booking.user?.email})</span></h4>
+                      <p className="text-sm text-navy-950/70">{booking.resort?.name} • ₹{booking.totalPrice?.toLocaleString()}</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                      <Button 
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 flex-1 md:flex-none"
+                        onClick={() => handlePaymentReview(booking.id, "APPROVE")}
+                        isLoading={processingId === booking.id}
+                      >
+                        <CheckCircle className="w-4 h-4" /> Approve
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl gap-2 flex-1 md:flex-none"
+                        onClick={() => handlePaymentReview(booking.id, "REFUND")}
+                        isLoading={processingId === booking.id}
+                      >
+                        <History className="w-4 h-4" /> Refund
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl gap-2 flex-1 md:flex-none"
+                        onClick={() => handlePaymentReview(booking.id, "REJECT")}
+                        isLoading={processingId === booking.id}
+                      >
+                        <XCircle className="w-4 h-4" /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-sand-50 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
+                  <th className="px-8 py-4">Reference</th>
+                  <th className="px-8 py-4">Guest</th>
+                  <th className="px-8 py-4">Resort & Room</th>
+                  <th className="px-8 py-4">Dates</th>
+                  <th className="px-8 py-4">Amount</th>
+                  <th className="px-8 py-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sand-100">
  {allBookings.map((booking) => (
  <tr key={booking.id} className="hover:bg-sand-50 :bg-sand-100/30 transition-colors">
  <td className="px-8 py-6">
@@ -1519,11 +1626,13 @@ export function AdminDashboard() {
  </td>
  </tr>
  )}
- </tbody>
- </table>
- </div>
+        </tbody>
+      </table>
+    </div>
+  )}
  </div>
  );
+};
 
  const renderPayouts = () => (
  <div className="space-y-8">

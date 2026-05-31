@@ -19,7 +19,7 @@ export const createPromotion = async (c) => {
     const promotion = await prisma.promotion.create({
       data: {
         name: body.name,
-        code: body.code?.toUpperCase() || null,
+        code: body.code?.trim() || null,
         description: body.description,
         discountType: body.discountType,
         discountValue: parseFloat(body.discountValue),
@@ -66,7 +66,7 @@ export const updatePromotion = async (c) => {
     
     const updateData = {};
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.code !== undefined) updateData.code = body.code?.toUpperCase() || null;
+    if (body.code !== undefined) updateData.code = body.code?.trim() || null;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.discountType !== undefined) updateData.discountType = body.discountType;
     if (body.discountValue !== undefined) updateData.discountValue = parseFloat(body.discountValue);
@@ -176,7 +176,7 @@ export const validatePromotion = async (c) => {
     if (!code) return c.json({ error: "No code provided" }, 400);
 
     const now = new Date();
-    const promotion = await prisma.promotion.findUnique({ where: { code: code.toUpperCase() } });
+    const promotion = await prisma.promotion.findFirst({ where: { code: { equals: code.trim(), mode: 'insensitive' } } });
     
     if (!promotion) return c.json({ error: "Invalid promotion code" }, 404);
     if (!promotion.active) return c.json({ error: "Promotion is disabled" }, 400);
@@ -193,7 +193,7 @@ export const validatePromotion = async (c) => {
     }
 
     let discountAmount = 0;
-    if (promotion.discountType === 'PERCENTAGE') {
+    if (promotion.discountType?.toUpperCase() === 'PERCENTAGE') {
       discountAmount = bookingAmount * (promotion.discountValue / 100);
       if (promotion.maxDiscount && discountAmount > promotion.maxDiscount) {
         discountAmount = promotion.maxDiscount;
@@ -217,7 +217,11 @@ export const getPromotionAnalytics = async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const promotions = await prisma.promotion.findMany({
-      include: { bookings: { select: { totalPrice: true, createdAt: true } } }
+      include: { bookings: { select: { totalPrice: true, createdAt: true, discountAmount: true } } }
+    });
+
+    const couponRedemptions = await prisma.couponRedemption.findMany({
+      include: { booking: { select: { totalPrice: true, createdAt: true, discountAmount: true } }, coupon: true }
     });
 
     let totalDiscounts = 0;
@@ -231,49 +235,62 @@ export const getPromotionAnalytics = async (c) => {
     const historicalUsageMap = {};
     let totalBookingsAcrossAllPromos = 0;
 
+    const aggregateMap = {};
+
     for (const promo of promotions) {
       if (promo.active) activePromotions++;
-      if (promo.usageCount > maxUsage) {
-        maxUsage = promo.usageCount;
-        mostUsedPromo = promo.name;
-      }
+      const pName = promo.code || promo.name;
+      if (!aggregateMap[pName]) aggregateMap[pName] = { usage: 0, revenue: 0, discount: 0 };
       
-      let promoRevenue = 0;
+      aggregateMap[pName].usage += promo.usageCount || 0;
+
       for (const booking of promo.bookings) {
-        promoRevenue += booking.totalPrice || 0;
+        aggregateMap[pName].revenue += booking.totalPrice || 0;
+        aggregateMap[pName].discount += booking.discountAmount || 0;
         totalBookingsAcrossAllPromos++;
         
-        // Build Historical Data
         if (booking.createdAt) {
           const dateStr = new Date(booking.createdAt).toISOString().split('T')[0];
           if (!historicalUsageMap[dateStr]) historicalUsageMap[dateStr] = {};
-          const pName = promo.code || promo.name;
           historicalUsageMap[dateStr][pName] = (historicalUsageMap[dateStr][pName] || 0) + 1;
         }
       }
-      totalRevenueGenerated += promoRevenue;
-      
-      let pDiscount = 0;
-      if (promo.usageCount > 0) {
-        const avgBooking = promoRevenue / promo.usageCount;
-        if (promo.discountType === 'PERCENTAGE' || promo.discountType === 'percentage') {
-          pDiscount = avgBooking * (promo.discountValue / 100);
-          if (promo.maxDiscount && pDiscount > promo.maxDiscount) pDiscount = promo.maxDiscount;
-        } else {
-          pDiscount = promo.discountValue;
-        }
-      }
-      totalDiscounts += (pDiscount * promo.usageCount);
+    }
 
-      usageData.push({ name: promo.code || promo.name, usage: promo.usageCount });
-      revenueData.push({ name: promo.code || promo.name, revenue: promoRevenue });
+    for (const redemption of couponRedemptions) {
+      if (!redemption.booking) continue;
+      
+      const cName = redemption.coupon?.code || 'Unknown Coupon';
+      if (!aggregateMap[cName]) aggregateMap[cName] = { usage: 0, revenue: 0, discount: 0 };
+      
+      aggregateMap[cName].usage += 1;
+      aggregateMap[cName].revenue += redemption.booking.totalPrice || 0;
+      aggregateMap[cName].discount += redemption.booking.discountAmount || 0;
+      totalBookingsAcrossAllPromos++;
+
+      if (redemption.booking.createdAt) {
+        const dateStr = new Date(redemption.booking.createdAt).toISOString().split('T')[0];
+        if (!historicalUsageMap[dateStr]) historicalUsageMap[dateStr] = {};
+        historicalUsageMap[dateStr][cName] = (historicalUsageMap[dateStr][cName] || 0) + 1;
+      }
+    }
+
+    for (const [name, data] of Object.entries(aggregateMap)) {
+      if (data.usage > maxUsage) {
+        maxUsage = data.usage;
+        mostUsedPromo = name;
+      }
+      totalRevenueGenerated += data.revenue;
+      totalDiscounts += data.discount;
+      
+      usageData.push({ name, usage: data.usage });
+      revenueData.push({ name, revenue: data.revenue });
     }
 
     const historicalUsage = Object.keys(historicalUsageMap).sort().map(date => {
       return { date, ...historicalUsageMap[date] };
     });
 
-    // We also need total platform bookings to calculate conversion rate (Promo Bookings / Total Bookings)
     const totalPlatformBookings = await prisma.booking.count();
     const conversionRate = totalPlatformBookings > 0 ? (totalBookingsAcrossAllPromos / totalPlatformBookings) * 100 : 0;
 
