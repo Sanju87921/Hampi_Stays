@@ -51,6 +51,8 @@ export function LocalExpertsPage() {
   const [bookingMeetingPoint, setBookingMeetingPoint] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [promoSettings, setPromoSettings] = useState<any>(null);
+  const [hasUpcomingStay, setHasUpcomingStay] = useState(false);
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
@@ -67,9 +69,33 @@ export function LocalExpertsPage() {
     }
   };
 
+  const fetchBundleData = async () => {
+    if (!user) return;
+    try {
+      const [promoRes, bookingsRes] = await Promise.all([
+        apiClient.get<any>('/users/guide-promotion-settings'),
+        apiClient.get<any[]>('/bookings')
+      ]);
+      setPromoSettings(promoRes);
+      
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const hasStay = bookingsRes.some(b => 
+        b.status === 'CONFIRMED' && new Date(b.checkIn) >= today
+      );
+      setHasUpcomingStay(hasStay);
+    } catch (err) {
+      console.error("Failed to fetch bundle data", err);
+    }
+  };
+
   useEffect(() => {
     fetchGuides();
   }, []);
+
+  useEffect(() => {
+    fetchBundleData();
+  }, [user]);
 
   const handleBookGuide = async () => {
     if (!selectedGuide || !bookingDate || !bookingMeetingPoint) return;
@@ -372,11 +398,27 @@ export function LocalExpertsPage() {
                             />
                           </div>
                         </div>
-                        <div className="p-6 bg-gold-50 rounded-2xl border border-gold-100">
+                        <div className="p-6 bg-gold-50 rounded-2xl border border-gold-100 relative overflow-hidden">
+                          {hasUpcomingStay && promoSettings?.enableBundleOffers && promoSettings?.bundleDiscountAmount > 0 && (selectedGuide.pricePerDay * (bookingHours / 8)) >= promoSettings.bundleDiscountAmount && (
+                            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl">
+                              Save ₹{promoSettings.bundleDiscountAmount}
+                            </div>
+                          )}
                           <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Estimated Cost</p>
-                          <p className="text-2xl font-serif font-bold text-navy-950 italic">
-                            ₹{(selectedGuide.pricePerDay * (bookingHours / 8)).toLocaleString()}
-                          </p>
+                          <div className="flex items-center gap-3">
+                            <p className="text-2xl font-serif font-bold text-navy-950 italic">
+                              ₹{(
+                                hasUpcomingStay && promoSettings?.enableBundleOffers && promoSettings?.bundleDiscountAmount > 0 && (selectedGuide.pricePerDay * (bookingHours / 8)) >= promoSettings.bundleDiscountAmount
+                                ? (selectedGuide.pricePerDay * (bookingHours / 8)) - promoSettings.bundleDiscountAmount 
+                                : selectedGuide.pricePerDay * (bookingHours / 8)
+                              ).toLocaleString()}
+                            </p>
+                            {hasUpcomingStay && promoSettings?.enableBundleOffers && promoSettings?.bundleDiscountAmount > 0 && (selectedGuide.pricePerDay * (bookingHours / 8)) >= promoSettings.bundleDiscountAmount && (
+                              <p className="text-sm font-bold text-navy-950/40 line-through">
+                                ₹{(selectedGuide.pricePerDay * (bookingHours / 8)).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                           <p className="text-[9px] text-gold-700 font-bold mt-1">*Final price confirmed by expert</p>
                         </div>
                       </div>

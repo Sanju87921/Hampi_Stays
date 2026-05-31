@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tag, Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Percent, IndianRupee, Copy, TrendingUp, Calendar, AlertCircle, Clock, History, Award } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { Select } from '../../components/ui/Select';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 
@@ -41,6 +42,7 @@ interface AuditLog {
 export function PromotionsModule() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [guideAnalytics, setGuideAnalytics] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -52,12 +54,14 @@ export function PromotionsModule() {
   const fetchPromotions = async () => {
     try {
       setIsLoading(true);
-      const [promosRes, analyticsRes] = await Promise.all([
+      const [promosRes, analyticsRes, guideAnalyticsRes] = await Promise.all([
         apiClient.get<Promotion[]>('/admin/promotions'),
-        apiClient.get<any>('/admin/promotions/analytics')
+        apiClient.get<any>('/admin/promotions/analytics'),
+        apiClient.get<any>('/admin/guide-promotion-analytics')
       ]);
       setPromotions(promosRes || []);
       setAnalytics(analyticsRes || null);
+      setGuideAnalytics(guideAnalyticsRes || null);
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch promotions');
     } finally {
@@ -374,6 +378,36 @@ export function PromotionsModule() {
         </div>
       </div>
 
+      {/* GUIDE PERFORMANCE LEADERBOARD */}
+      {guideAnalytics?.performanceByGuide && guideAnalytics.performanceByGuide.length > 0 && (
+        <div className="bg-white p-8 rounded-[2rem] border border-sand-200 shadow-sm">
+          <h3 className="text-xl font-serif font-bold text-navy-950 mb-6 flex items-center gap-2"><Award className="text-gold-500"/> Guide Performance</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {guideAnalytics.performanceByGuide.map((guide: any, idx: number) => (
+              <div key={guide.guideId} className="flex items-center gap-4 p-4 rounded-xl bg-sand-50 border border-sand-100 hover:border-gold-200 transition-colors">
+                <div className="w-12 h-12 rounded-full border-2 border-gold-200 overflow-hidden shrink-0">
+                  {guide.avatar ? (
+                    <img src={guide.avatar} alt={guide.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-navy-950 text-white flex items-center justify-center font-bold">
+                      {guide.name[0]}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-navy-950 truncate">{guide.name}</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{guide.bookings} Bookings</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-emerald-600">₹{guide.revenue.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Revenue</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 2 & 3. ACTIVE PROMOTIONS TABLE WITH STATUS SYSTEM & 7. CLONE ACTION */}
       <div className="bg-white rounded-[2rem] border border-sand-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-sand-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-sand-50/50">
@@ -547,12 +581,14 @@ export function PromotionsModule() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Discount Type *</label>
-                    <select className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium"
+                    <Select
                       value={editingPromo.discountType || 'percentage'}
-                      onChange={e => setEditingPromo({...editingPromo, discountType: e.target.value as 'percentage'|'flat'})}>
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="flat">Flat Amount (₹)</option>
-                    </select>
+                      onChange={val => setEditingPromo({...editingPromo, discountType: val as 'percentage'|'flat'})}
+                      options={[
+                        { value: "percentage", label: "Percentage (%)" },
+                        { value: "flat", label: "Flat Amount (₹)" }
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Value *</label>
@@ -567,14 +603,16 @@ export function PromotionsModule() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Target Type</label>
-                    <select className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium"
+                    <Select
                       value={editingPromo.targetType || 'PLATFORM'}
-                      onChange={e => setEditingPromo({...editingPromo, targetType: e.target.value as any})}>
-                      <option value="PLATFORM">Entire Platform</option>
-                      <option value="RESORT">Specific Resort</option>
-                      <option value="CATEGORY">Resort Category</option>
-                      <option value="OWNER">Specific Owner</option>
-                    </select>
+                      onChange={val => setEditingPromo({...editingPromo, targetType: val as any})}
+                      options={[
+                        { value: "PLATFORM", label: "Entire Platform" },
+                        { value: "RESORT", label: "Specific Resort" },
+                        { value: "CATEGORY", label: "Resort Category" },
+                        { value: "OWNER", label: "Specific Owner" }
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Target ID</label>
@@ -589,16 +627,18 @@ export function PromotionsModule() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Max Uses Per User</label>
-                    <select className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium"
-                      value={editingPromo.maxUsesPerUser || ''}
-                      onChange={e => setEditingPromo({...editingPromo, maxUsesPerUser: e.target.value ? Number(e.target.value) : null})}>
-                      <option value="">Unlimited</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="5">5</option>
-                      <option value="10">10</option>
-                    </select>
+                    <Select
+                      value={String(editingPromo.maxUsesPerUser || '')}
+                      onChange={val => setEditingPromo({...editingPromo, maxUsesPerUser: val ? Number(val) : null})}
+                      options={[
+                        { value: "", label: "Unlimited" },
+                        { value: "1", label: "1" },
+                        { value: "2", label: "2" },
+                        { value: "3", label: "3" },
+                        { value: "5", label: "5" },
+                        { value: "10", label: "10" }
+                      ]}
+                    />
                   </div>
                   <div className="flex items-center space-x-3 pt-8">
                     <input type="checkbox" id="autoApply" className="w-5 h-5 text-gold-600 rounded focus:ring-gold-500"

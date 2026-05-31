@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Heart, User, LogOut, 
-  ChevronRight, MapPin, Star,
+  ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield
 } from "lucide-react";
@@ -30,6 +30,9 @@ export function TravelerDashboard() {
   const [isTyping, setIsTyping] = useState(false);
   const [showStayPassModal, setShowStayPassModal] = useState<Booking | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [promoSettings, setPromoSettings] = useState<any>(null);
+  const [hasGuideBooking, setHasGuideBooking] = useState(false);
+  const [recommendedGuides, setRecommendedGuides] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +60,31 @@ export function TravelerDashboard() {
         setWishlist(normalizedWishlist);
         if (notificationsData) {
           setUnreadCount(notificationsData.filter((n: any) => !n.isRead).length);
+        }
+
+        try {
+          const promoData = await apiClient.get<any>('/users/guide-promotion-settings');
+          setPromoSettings(promoData);
+          if (promoData?.enableRecommendations) {
+            // Track impression if banner will be shown
+            const upcoming = bookingsData[0];
+            if (upcoming && promoData?.enableDashboardBanner) {
+               const checkInDate = new Date(upcoming.checkIn);
+               const daysUntil = (checkInDate.getTime() - Date.now()) / (1000 * 3600 * 24);
+               if (daysUntil <= 30) {
+                 apiClient.post('/users/guide-promotion-analytics/track', { type: 'impression' }).catch(()=>{});
+                 
+                 // Fetch recommended guides for this date range
+                 const cIn = upcoming.checkIn;
+                 const cOut = upcoming.checkOut;
+                 apiClient.get<any[]>(`/guides/recommended?checkIn=${cIn}&checkOut=${cOut}`)
+                   .then(guides => setRecommendedGuides(guides || []))
+                   .catch(() => {});
+               }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch promo settings', e);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -351,6 +379,112 @@ export function TravelerDashboard() {
                 <h2 className="text-2xl font-serif font-bold text-navy-950">Upcoming Stay</h2>
                 <Link to="/dashboard/bookings" className="text-navy-950/40 text-xs font-bold uppercase tracking-widest hover:text-gold-600 transition-colors">View all</Link>
               </div>
+              
+              {(() => {
+                if (!promoSettings?.enableRecommendations || !promoSettings?.enableDashboardBanner || !upcomingTrip || hasGuideBooking) return null;
+                const checkInDate = new Date(bookings[0]?.checkIn || Date.now());
+                const daysUntil = (checkInDate.getTime() - Date.now()) / (1000 * 3600 * 24);
+                if (daysUntil > 30) return null;
+                
+                return (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-8"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star className="w-5 h-5 text-gold-500" />
+                    <h3 className="text-xl font-serif font-bold text-navy-950">Recommended For Your Trip</h3>
+                  </div>
+                  {recommendedGuides.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {recommendedGuides.map(guide => (
+                        <div key={guide.id} className="bg-white rounded-[2rem] p-6 border border-sand-200 shadow-sm flex flex-col justify-between hover:shadow-luxury transition-shadow relative overflow-hidden">
+                          {promoSettings.enableBundleOffers && promoSettings.bundleDiscountAmount > 0 && (
+                            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl">
+                              Save ₹{promoSettings.bundleDiscountAmount}
+                            </div>
+                          )}
+                          <div>
+                            <div className="w-16 h-16 rounded-full overflow-hidden mb-4 border-2 border-gold-200">
+                              <img src={guide.user?.avatar || "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=200&h=200&fit=crop"} alt={guide.user?.name} className="w-full h-full object-cover" />
+                            </div>
+                            <h4 className="font-bold text-navy-950 text-lg mb-1">{guide.user?.name}</h4>
+                            <div className="flex items-center gap-1 text-gold-500 mb-4">
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              <span className="text-xs font-bold text-navy-950">{guide.rating.toFixed(1)} Rating</span>
+                            </div>
+                            <div className="space-y-1.5 mb-6">
+                              <p className="text-xs text-navy-950"><span className="font-bold text-navy-950/50">Languages:</span> {guide.languages?.join(' • ')}</p>
+                              <p className="text-xs text-navy-950"><span className="font-bold text-navy-950/50">Experience:</span> {guide.yearsExperience} Years</p>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex items-end justify-between mb-4">
+                              <span className="text-[10px] uppercase font-bold text-navy-950/40 tracking-widest">Starting</span>
+                              <span className="font-bold text-navy-950 text-lg">₹{guide.pricePerDay}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                className="flex-1 rounded-xl h-10 text-xs border-sand-200 text-navy-950"
+                                onClick={() => {
+                                  apiClient.post('/users/guide-promotion-analytics/track', { type: 'profileView' }).catch(()=>{});
+                                  navigate(`/guides`);
+                                }}
+                              >
+                                View Guide
+                              </Button>
+                              <Button 
+                                className="flex-1 rounded-xl h-10 text-xs bg-navy-950 text-white"
+                                onClick={() => {
+                                  apiClient.post('/users/guide-promotion-analytics/track', { type: 'click' }).catch(()=>{});
+                                  navigate(`/guides`);
+                                }}
+                              >
+                                Book Guide
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-navy-950 via-navy-900 to-navy-800 text-white p-8 md:p-10 shadow-lg border border-gold-900/30">
+                      {/* Decorative Elements */}
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 mix-blend-screen" />
+                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gold-400/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 mix-blend-screen" />
+                      
+                      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="flex-1 space-y-4 text-center md:text-left">
+                          <h3 className="text-2xl md:text-3xl font-serif font-bold text-white">
+                            {promoSettings.bannerText}
+                          </h3>
+                          <p className="text-navy-200 text-sm md:text-base max-w-md font-medium leading-relaxed">
+                            Discover hidden temples, royal stories, sunrise viewpoints, and hidden gems with certified Hampi guides.
+                          </p>
+                        </div>
+                        
+                        <div className="shrink-0 flex flex-col items-center">
+                          <Button className="relative bg-gold-500 text-navy-950 hover:bg-gold-400 px-8 py-4 rounded-2xl text-sm font-bold flex items-center gap-3 transition-transform hover:scale-105" onClick={() => {
+                            apiClient.post('/users/guide-promotion-analytics/track', { type: 'click' }).catch(()=>{});
+                            navigate('/guides');
+                          }}>
+                            {promoSettings.ctaText || "Explore Guides"}
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                          {promoSettings.enableBundleOffers && promoSettings.bundleDiscountAmount > 0 && (
+                            <p className="mt-3 text-[10px] text-gold-300/80 font-bold uppercase tracking-widest text-center">
+                              Save ₹{promoSettings.bundleDiscountAmount} when booked together
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+                );
+              })()}
               
               {isLoading ? (
                 <div className="bg-white rounded-[2.5rem] p-12 border border-sand-100 flex items-center justify-center">

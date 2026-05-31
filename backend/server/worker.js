@@ -649,6 +649,55 @@ app.patch('/users/profile', authMiddleware, async (c) => {
   }
 });
 
+app.get('/users/guide-promotion-settings', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    let settings = await prisma.guidePromotionSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.guidePromotionSettings.create({ data: {} });
+    }
+    return c.json(settings);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/users/guide-promotion-analytics/track', async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = await c.req.json();
+  const { type, amount = 0 } = payload;
+  
+  try {
+    let analytics = await prisma.guidePromotionAnalytics.findFirst();
+    if (!analytics) {
+      analytics = await prisma.guidePromotionAnalytics.create({ data: {} });
+    }
+
+    const data = {};
+    if (type === 'impression') data.impressions = analytics.impressions + 1;
+    if (type === 'click') data.clicks = analytics.clicks + 1;
+    if (type === 'profileView') data.profileViews = analytics.profileViews + 1;
+    if (type === 'booking') {
+      data.guideBookings = analytics.guideBookings + 1;
+      data.revenueGenerated = analytics.revenueGenerated + amount;
+    }
+    if (type === 'bundle') {
+      data.bundleConversions = analytics.bundleConversions + 1;
+    }
+
+    if (Object.keys(data).length > 0) {
+      await prisma.guidePromotionAnalytics.update({
+        where: { id: analytics.id },
+        data
+      });
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 app.get('/users/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const payload = c.get('user');
@@ -1743,6 +1792,64 @@ app.get('/guides/:id/bookings', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.get('/guides/recommended', async (c) => {
+  const prisma = getPrisma(c.env);
+  const { checkIn, checkOut } = c.req.query();
+  try {
+    let guides = await prisma.guideProfile.findMany({
+      where: {
+        status: 'APPROVED',
+        isActive: true,
+        isVerified: true
+      },
+      include: {
+        user: { select: { id: true, name: true, avatar: true } },
+        bookings: { select: { date: true, durationHours: true, status: true } }
+      }
+    });
+
+    if (checkIn && checkOut) {
+      const start = new Date(checkIn);
+      const end = new Date(checkOut);
+      guides = guides.filter(guide => {
+        // Filter out if blocked dates intersect
+        const isBlocked = guide.blockedDates.some(d => {
+          const bDate = new Date(d);
+          return bDate >= start && bDate <= end;
+        });
+        if (isBlocked) return false;
+        
+        // Filter out if overlapping bookings
+        const hasOverlap = guide.bookings.some(b => {
+          if (b.status !== 'CONFIRMED' && b.status !== 'PENDING') return false;
+          const bStart = new Date(b.date);
+          const bEnd = new Date(bStart.getTime() + b.durationHours * 60 * 60 * 1000);
+          return (start < bEnd && end > bStart);
+        });
+        if (hasOverlap) return false;
+        
+        return true;
+      });
+    }
+
+    // Sort by rating desc, then review count
+    guides.sort((a, b) => {
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return b.reviewCount - a.reviewCount;
+    });
+
+    const topGuides = guides.slice(0, 3).map(g => {
+      // Remove bookings for safety
+      const { bookings, blockedDates, fraudFlags, ...safeGuide } = g;
+      return safeGuide;
+    });
+
+    return c.json(topGuides);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 app.get('/guides/:id', async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
@@ -1777,7 +1884,7 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
     // 1. Validate blockedDates
     const guide = await prisma.guideProfile.findUnique({
       where: { id: guideId },
-      select: { blockedDates: true }
+      select: { blockedDates: true, pricePerDay: true }
     });
     
     if (!guide) return c.json({ error: 'Guide not found' }, 404);
@@ -1811,6 +1918,30 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
       return c.json({ error: 'Time slot overlaps with an existing booking' }, 400);
     }
 
+    // 3. Bundle Intelligence & Security
+    const basePrice = (guide.pricePerDay || 0) * (durationHours / 8);
+    let finalPrice = basePrice;
+    let bundleApplied = false;
+
+    // Check if user has an upcoming or active stay booking
+    const upcomingStay = await prisma.booking.findFirst({
+      where: {
+        userId,
+        status: 'CONFIRMED',
+        checkIn: { gte: new Date(new Date().setHours(0,0,0,0)) }
+      }
+    });
+
+    if (upcomingStay) {
+      const settings = await prisma.guidePromotionSettings.findFirst();
+      if (settings && settings.enableBundleOffers && settings.bundleDiscountAmount > 0) {
+        if (basePrice >= settings.bundleDiscountAmount) {
+          finalPrice = basePrice - settings.bundleDiscountAmount;
+          bundleApplied = true;
+        }
+      }
+    }
+
     const booking = await prisma.guideBooking.create({
       data: {
         guideId,
@@ -1818,11 +1949,28 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
         date: bookingDate,
         durationHours,
         meetingPoint,
-        totalPrice,
+        totalPrice: Math.max(0, finalPrice),
         specialRequests,
         status: 'PENDING'
       }
     });
+
+    try {
+      const analytics = await prisma.guidePromotionAnalytics.findFirst();
+      if (analytics) {
+        await prisma.guidePromotionAnalytics.update({
+          where: { id: analytics.id },
+          data: {
+            guideBookings: { increment: 1 },
+            revenueGenerated: { increment: Math.max(0, finalPrice) },
+            ...(bundleApplied ? { bundleConversions: { increment: 1 } } : {})
+          }
+        });
+      }
+    } catch (aErr) {
+      // ignore
+    }
+
     return c.json(booking, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });

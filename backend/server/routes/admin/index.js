@@ -295,6 +295,99 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// Guide Promotion Settings
+app.get('/admin/guide-promotion-settings', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    let settings = await prisma.guidePromotionSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.guidePromotionSettings.create({ data: {} });
+    }
+    return c.json(settings);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/admin/guide-promotion-settings', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const payload = await c.req.json();
+  const userPayload = c.get('user');
+  
+  try {
+    let adminEmail = userPayload?.email || userPayload?.userId || 'system';
+
+    let settings = await prisma.guidePromotionSettings.findFirst();
+    const data = {};
+    
+    if (payload.enableRecommendations !== undefined) data.enableRecommendations = payload.enableRecommendations;
+    if (payload.enableSuccessUpsell !== undefined) data.enableSuccessUpsell = payload.enableSuccessUpsell;
+    if (payload.enableDashboardBanner !== undefined) data.enableDashboardBanner = payload.enableDashboardBanner;
+    if (payload.enableBundleOffers !== undefined) data.enableBundleOffers = payload.enableBundleOffers;
+    if (payload.bundleDiscountAmount !== undefined) data.bundleDiscountAmount = payload.bundleDiscountAmount;
+    if (payload.bannerText !== undefined) data.bannerText = payload.bannerText;
+    if (payload.ctaText !== undefined) data.ctaText = payload.ctaText;
+    
+    if (Object.keys(data).length > 0) {
+      data.updatedBy = adminEmail;
+    }
+
+    if (settings) {
+      settings = await prisma.guidePromotionSettings.update({
+        where: { id: settings.id },
+        data
+      });
+    } else {
+      settings = await prisma.guidePromotionSettings.create({
+        data: {
+          ...data,
+          updatedBy: adminEmail
+        }
+      });
+    }
+
+    return c.json(settings);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Guide Promotion Analytics
+app.get('/admin/guide-promotion-analytics', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    let analytics = await prisma.guidePromotionAnalytics.findFirst();
+    if (!analytics) {
+      analytics = await prisma.guidePromotionAnalytics.create({ data: {} });
+    }
+
+    const guideBookings = await prisma.guideBooking.groupBy({
+      by: ['guideId'],
+      _sum: { totalPrice: true },
+      _count: { id: true },
+      where: { status: { in: ['CONFIRMED', 'COMPLETED', 'PENDING'] } }
+    });
+
+    const guides = await prisma.guideProfile.findMany({
+      where: { id: { in: guideBookings.map(b => b.guideId) } },
+      include: { user: { select: { name: true, avatar: true } } }
+    });
+
+    const performanceByGuide = guideBookings.map(gb => {
+      const g = guides.find(g => g.id === gb.guideId);
+      return {
+        guideId: gb.guideId,
+        name: g?.user?.name || 'Unknown',
+        avatar: g?.user?.avatar,
+        revenue: gb._sum.totalPrice || 0,
+        bookings: gb._count.id
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+
+    return c.json({ ...analytics, performanceByGuide });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 // User Management
 app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
@@ -602,6 +695,61 @@ app.get('/admin/guides', authMiddleware, adminMiddleware, async (c) => {
     });
 
     return c.json(decryptedGuides);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+app.get('/admin/kyc/guides', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const docs = await prisma.guideKYC.findMany({
+      include: {
+        guideProfile: {
+          include: { user: { select: { name: true, email: true } } }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(docs);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/admin/kyc/resorts', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const docs = await prisma.kycDocument.findMany({
+      include: {
+        owner: {
+          include: { user: { select: { name: true, email: true } } }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(docs);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  const { status, rejectionReason } = await c.req.json();
+  try {
+    const doc = await prisma.guideKYC.update({
+      where: { id },
+      data: { status, rejectionReason }
+    });
+    return c.json(doc);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  const { status, rejectionReason } = await c.req.json();
+  try {
+    const doc = await prisma.kycDocument.update({
+      where: { id },
+      data: { status, rejectedReason: rejectionReason }
+    });
+    return c.json(doc);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

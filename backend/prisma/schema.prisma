@@ -172,6 +172,34 @@ model SystemSettings {
   updatedAt               DateTime @updatedAt
 }
 
+model GuidePromotionSettings {
+  id                      String   @id @default(cuid())
+  enableRecommendations   Boolean  @default(true)
+  enableSuccessUpsell     Boolean  @default(true)
+  enableDashboardBanner   Boolean  @default(true)
+  enableBundleOffers      Boolean  @default(true)
+  bundleDiscountAmount    Float    @default(200.0)
+  bannerText              String   @default("🏛️ Explore Hampi With a Local Expert")
+  ctaText                 String   @default("Explore Guides")
+  updatedBy               String?
+  updatedAt               DateTime @updatedAt
+
+  @@map("guide_promotion_settings")
+}
+
+model GuidePromotionAnalytics {
+  id                    String   @id @default(cuid())
+  impressions           Int      @default(0)
+  clicks                Int      @default(0)
+  profileViews          Int      @default(0)
+  guideBookings         Int      @default(0)
+  bundleConversions     Int      @default(0)
+  revenueGenerated      Float    @default(0.0)
+  date                  DateTime @default(now())
+
+  @@map("guide_promotion_analytics")
+}
+
 model VerificationSettings {
   id                      String   @id @default(cuid())
   travellerRequirements   String[] @default(["MOBILE_OTP", "EMAIL_VERIFICATION"])

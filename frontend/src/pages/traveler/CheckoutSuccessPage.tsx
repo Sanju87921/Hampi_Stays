@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, XCircle, Loader2, Calendar, 
-  MapPin, ArrowRight, Download 
+  MapPin, ArrowRight, Download, Star 
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { apiClient } from "../../utils/apiClient";
@@ -35,6 +35,7 @@ export function CheckoutSuccessPage() {
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [promoSettings, setPromoSettings] = useState<any>(null);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -48,6 +49,13 @@ export function CheckoutSuccessPage() {
         if (data) {
           setBooking(data);
           setStatus("success");
+          try {
+            const pData = await apiClient.get<any>('/users/guide-promotion-settings');
+            setPromoSettings(pData);
+            if (pData?.enableRecommendations && pData?.enableSuccessUpsell) {
+              apiClient.post('/users/guide-promotion-analytics/track', { type: 'impression' }).catch(()=>{});
+            }
+          } catch(e) {}
         } else {
           setStatus("failed");
         }
@@ -344,6 +352,51 @@ export function CheckoutSuccessPage() {
             </div>
           </div>
         </motion.div>
+
+        {promoSettings?.enableRecommendations && promoSettings?.enableSuccessUpsell && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 bg-gradient-to-br from-gold-50 to-white rounded-[3rem] p-10 border border-gold-200 shadow-luxury flex flex-col md:flex-row items-center justify-between gap-8"
+          >
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gold-100 text-gold-800 rounded-full text-[10px] font-bold uppercase tracking-widest border border-gold-200 mb-4">
+                <Star className="w-3 h-3 text-gold-500" />
+                Complete Your Trip
+              </div>
+              <h2 className="text-3xl font-serif font-bold text-navy-950 mb-3">Add a Local Heritage Guide</h2>
+              <p className="text-navy-950/60 max-w-lg mb-6 leading-relaxed">
+                Elevate your Hampi experience with a certified local expert. Discover hidden stories, avoid crowds, and navigate the ancient ruins with ease.
+              </p>
+              {promoSettings.enableBundleOffers && promoSettings.bundleDiscountAmount > 0 && (
+                <p className="text-sm font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl inline-flex items-center border border-emerald-100 mb-6">
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Save ₹{promoSettings.bundleDiscountAmount} when booking within 24 hours
+                </p>
+              )}
+              <div className="flex gap-4">
+                <Button 
+                  className="bg-gold-500 text-navy-950 hover:bg-gold-400 rounded-2xl shadow-lg shadow-gold-500/20"
+                  onClick={() => {
+                    apiClient.post('/users/guide-promotion-analytics/track', { type: 'click' }).catch(()=>{});
+                    navigate('/guides');
+                  }}
+                >
+                  Explore Guides
+                </Button>
+              </div>
+            </div>
+            <div className="w-full md:w-1/3">
+              <div className="aspect-[4/3] rounded-[2rem] overflow-hidden shadow-lg border-4 border-white relative">
+                <img src="https://images.unsplash.com/photo-1620766165457-a80fe5604888?auto=format&fit=crop&q=80&w=800" alt="Hampi Guide" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 to-transparent flex items-end p-6">
+                  <p className="text-white font-bold text-sm">"The stories brought the stones to life."</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

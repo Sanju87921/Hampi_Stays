@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, User, Hotel, MapPin } from 'lucide-react';
+import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, User, Hotel, MapPin, TrendingUp } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { Select } from '../../components/ui/Select';
 
 export function AdminSettingsPage() {
  const { user, refreshUser } = useAuth();
@@ -17,6 +18,11 @@ export function AdminSettingsPage() {
  const [verificationSettings, setVerificationSettings] = useState<any>(null);
  const [updatingReq, setUpdatingReq] = useState<string | null>(null);
 
+ const [guidePromoSettings, setGuidePromoSettings] = useState<any>(null);
+ const [updatingPromo, setUpdatingPromo] = useState<string | null>(null);
+
+ const [guideAnalytics, setGuideAnalytics] = useState<any>(null);
+
  useEffect(() => {
  fetchSettings();
  }, []);
@@ -27,6 +33,10 @@ export function AdminSettingsPage() {
  setSettings(data);
  const vData = await apiClient.get<any>('/admin/verification-settings');
  setVerificationSettings(vData);
+ const promoData = await apiClient.get<any>('/admin/guide-promotion-settings');
+ setGuidePromoSettings(promoData);
+ const analyticsData = await apiClient.get<any>('/admin/guide-promotion-analytics').catch(() => null);
+ if (analyticsData) setGuideAnalytics(analyticsData);
  } catch (err) {
  toast.error('Failed to load global settings');
  }
@@ -56,6 +66,20 @@ export function AdminSettingsPage() {
      setUpdatingReq(null);
    }
  };
+
+  const togglePromoSetting = async (key: string, value: any) => {
+    if (!guidePromoSettings) return;
+    setUpdatingPromo(key);
+    try {
+      const data = await apiClient.post<any>('/admin/guide-promotion-settings', { [key]: value });
+      setGuidePromoSettings(data);
+      toast.success('Promotion setting updated');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update setting');
+    } finally {
+      setUpdatingPromo(null);
+    }
+  };
 
  const updatePreference = async (key: string, value: string) => {
  try {
@@ -114,17 +138,17 @@ export function AdminSettingsPage() {
  <Globe className="w-4 h-4 mr-2 text-navy-950 " />
  Primary Language
  </label>
- <select 
+ <Select 
  disabled={isUpdatingLanguage}
  value={(user as any)?.language || 'en-US'}
- onChange={(e) => updatePreference('language', e.target.value)}
- className="w-full p-3 bg-sand-50 border border-sand-200 rounded-xl text-navy-950 font-medium focus:outline-none focus:border-gold-400 disabled:opacity-50 transition-colors"
- >
- <option value="en-US">English (US)</option>
- <option value="en-UK">English (UK)</option>
- <option value="hi-IN">Hindi</option>
- <option value="kn-IN">Kannada</option>
- </select>
+ onChange={(val) => updatePreference('language', val)}
+ options={[
+ { value: "en-US", label: "English (US)" },
+ { value: "en-UK", label: "English (UK)" },
+ { value: "hi-IN", label: "Hindi" },
+ { value: "kn-IN", label: "Kannada" }
+ ]}
+ />
  {isUpdatingLanguage && <Loader2 className="w-4 h-4 animate-spin text-navy-950 absolute top-10 right-3" />}
  </div>
  
@@ -287,6 +311,126 @@ export function AdminSettingsPage() {
      </div>
    </div>
  </motion.div>
+
+  {/* Smart Guide Promotions Settings */}
+  <motion.div 
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.18 }}
+  className="bg-white rounded-3xl p-8 shadow-sm border border-sand-200 transition-colors mb-6"
+  >
+  <h3 className="text-xl font-bold text-navy-950 mb-6 flex items-center">
+  <MapPin className="w-5 h-5 mr-3 text-gold-500" />
+  Smart Guide Promotions Engine
+  </h3>
+  
+  <div className="space-y-4">
+  {[
+  { key: 'enableRecommendations', title: 'Enable Guide Recommendations', desc: 'Global toggle for the Smart Guide Discovery system.' },
+  { key: 'enableDashboardBanner', title: 'Dashboard Banner', desc: 'Show contextual banner on traveler dashboard.' },
+  { key: 'enableSuccessUpsell', title: 'Booking Success Upsell', desc: 'Prompt travelers to book a guide after resort confirmation.' },
+  { key: 'enableBundleOffers', title: 'Stay + Guide Bundles', desc: 'Offer discounts when booked together.' },
+  ].map((item, i) => {
+  const isActive = guidePromoSettings?.[item.key] ?? false;
+  const isUpdating = updatingPromo === item.key;
+  return (
+  <div key={i} className="flex items-center justify-between p-4 border border-sand-100 rounded-xl hover:bg-sand-50 transition-colors">
+  <div>
+  <h4 className="font-bold text-navy-950 text-sm">{item.title}</h4>
+  <p className="text-xs text-navy-950 mt-0.5">{item.desc}</p>
+  </div>
+  <button 
+  disabled={!guidePromoSettings || isUpdating}
+  onClick={() => togglePromoSetting(item.key, !isActive)}
+  className={`w-12 h-6 rounded-full transition-colors relative flex items-center disabled:opacity-50 ${isActive ? 'bg-gold-500' : 'bg-sand-200 '}`}
+  >
+  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'left-7' : 'left-1'}`} />
+  {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-navy-950 absolute -left-6" />}
+  </button>
+  </div>
+  );
+  })}
+
+  {guidePromoSettings?.enableBundleOffers && (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-sand-100 rounded-xl bg-sand-50 transition-colors">
+      <div className="mb-4 sm:mb-0">
+        <h4 className="font-bold text-navy-950 text-sm">Bundle Discount Amount (₹)</h4>
+        <p className="text-xs text-navy-950 mt-0.5">Discount applied when booking stay + guide.</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <input 
+          type="number"
+          value={guidePromoSettings.bundleDiscountAmount}
+          onChange={(e) => setGuidePromoSettings({...guidePromoSettings, bundleDiscountAmount: Number(e.target.value)})}
+          className="w-24 px-3 py-1.5 border border-sand-200 rounded-lg text-sm focus:outline-none focus:border-gold-500"
+        />
+        <button 
+          disabled={updatingPromo === 'bundleDiscountAmount'}
+          onClick={() => togglePromoSetting('bundleDiscountAmount', guidePromoSettings.bundleDiscountAmount)}
+          className="px-3 py-1.5 bg-navy-950 text-white rounded-lg text-xs font-bold"
+        >
+          {updatingPromo === 'bundleDiscountAmount' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+        </button>
+      </div>
+    </div>
+  )}
+
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-sand-100 rounded-xl transition-colors">
+    <div className="mb-4 sm:mb-0">
+      <h4 className="font-bold text-navy-950 text-sm">Banner Text</h4>
+    </div>
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <input 
+        type="text"
+        value={guidePromoSettings?.bannerText || ''}
+        onChange={(e) => setGuidePromoSettings({...guidePromoSettings, bannerText: e.target.value})}
+        className="w-full sm:w-64 px-3 py-1.5 border border-sand-200 rounded-lg text-sm focus:outline-none focus:border-gold-500"
+      />
+      <button 
+        disabled={updatingPromo === 'bannerText'}
+        onClick={() => togglePromoSetting('bannerText', guidePromoSettings.bannerText)}
+        className="px-3 py-1.5 bg-navy-950 text-white rounded-lg text-xs font-bold"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+  </div>
+  </motion.div>
+
+  {/* Guide Promotions Analytics Dashboard */}
+  <motion.div 
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.19 }}
+  className="bg-white rounded-3xl p-8 shadow-sm border border-sand-200 transition-colors mb-6"
+  >
+    <div className="mb-6 flex items-center justify-between">
+      <h3 className="text-xl font-bold text-navy-950 flex items-center">
+        <TrendingUp className="w-5 h-5 mr-3 text-gold-500" />
+        Promotions Engine Performance
+      </h3>
+    </div>
+    
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="bg-sand-50 rounded-2xl p-4 border border-sand-200">
+        <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Impressions</p>
+        <p className="text-2xl font-bold text-navy-950">{guideAnalytics?.impressions?.toLocaleString() || 0}</p>
+      </div>
+      <div className="bg-sand-50 rounded-2xl p-4 border border-sand-200">
+        <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Clicks</p>
+        <p className="text-2xl font-bold text-navy-950">{guideAnalytics?.clicks?.toLocaleString() || 0}</p>
+      </div>
+      <div className="bg-sand-50 rounded-2xl p-4 border border-sand-200">
+        <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Guide Bookings</p>
+        <p className="text-2xl font-bold text-navy-950">{guideAnalytics?.guideBookings?.toLocaleString() || 0}</p>
+      </div>
+      <div className="bg-gold-50 rounded-2xl p-4 border border-gold-200">
+        <p className="text-[10px] font-bold text-gold-800 uppercase tracking-widest mb-1">Revenue Gen</p>
+        <p className="text-2xl font-bold text-gold-700">₹{guideAnalytics?.revenueGenerated?.toLocaleString() || 0}</p>
+      </div>
+    </div>
+  </motion.div>
 
  {/* Operational & Audit */}
  <motion.div 

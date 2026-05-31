@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
+import { Select } from "../../components/ui/Select";
 import { Input } from "../../components/ui/Input";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
+import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { apiClient } from "../../utils/apiClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -848,6 +850,13 @@ export function OwnerDashboard() {
             >
               <Building2 className="w-4 h-4 mr-2" /> Settings
             </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "kyc" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=kyc")}
+            >
+              <CheckCircle className="w-4 h-4 mr-2" /> KYC & Verification
+            </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
             </Button>
@@ -1292,15 +1301,15 @@ export function OwnerDashboard() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Assigned Role</label>
-                          <select 
+                          <Select 
                             value={inviteRole}
-                            onChange={(e) => setInviteRole(e.target.value)}
-                            className="w-full bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-gold-500 transition-colors appearance-none"
-                          >
-                            <option value="RECEPTIONIST">Receptionist</option>
-                            <option value="MANAGER">Manager</option>
-                            <option value="HOUSEKEEPING">Housekeeping</option>
-                          </select>
+                            onChange={(val) => setInviteRole(val)}
+                            options={[
+                              { value: "RECEPTIONIST", label: "Receptionist" },
+                              { value: "MANAGER", label: "Manager" },
+                              { value: "HOUSEKEEPING", label: "Housekeeping" }
+                            ]}
+                          />
                         </div>
                         <div className="flex gap-4 pt-4">
                           <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-14 rounded-2xl">Cancel</Button>
@@ -1898,6 +1907,10 @@ export function OwnerDashboard() {
                   </div>
                 </div>
               </div>
+            )}
+            
+            {activeTab === "kyc" && (
+              <KycUploadSection userType="resort" profileId={resort.id} />
             )}
           </div>
         </div>

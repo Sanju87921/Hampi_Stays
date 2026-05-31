@@ -12,6 +12,7 @@ import {
  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { Select } from "../../components/ui/Select";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
@@ -19,9 +20,10 @@ import { API_BASE_URL } from "../../config/api";
 import { BlogModule } from "./BlogModule";
 import { PromotionsModule } from "./PromotionsModule";
 import { UserManagement } from "./components/UserManagement";
+import { KycOperationsCenter } from "./components/KycOperationsCenter";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -776,6 +778,23 @@ export function AdminDashboard() {
  </button>
  </div>
  </div>
+ <div className="flex items-center gap-6 mt-4 md:mt-0">
+ <div className="flex gap-4 bg-white p-4 rounded-[2rem] border border-sand-200 shadow-sm">
+ <div className="text-center px-4">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Total Properties</p>
+ <p className="text-xl font-bold text-navy-950 ">{pendingResorts.length + activeResorts.length}</p>
+ </div>
+ <div className="w-px h-10 bg-sand-200 " />
+ <div className="text-center px-4">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Active</p>
+ <p className="text-xl font-bold text-emerald-500">{activeResorts.length}</p>
+ </div>
+ <div className="w-px h-10 bg-sand-200 " />
+ <div className="text-center px-4">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Pending</p>
+ <p className="text-xl font-bold text-amber-500">{pendingResorts.length}</p>
+ </div>
+ </div>
  <div className="flex flex-wrap gap-4">
  <div className="relative">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 " />
@@ -789,6 +808,7 @@ export function AdminDashboard() {
  <Filter className="w-4 h-4" />
  Filters
  </Button>
+ </div>
  </div>
  </div>
 
@@ -1079,8 +1099,23 @@ export function AdminDashboard() {
  </div>
  <div className="w-px h-10 bg-sand-200 " />
  <div className="text-center">
- <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Active</p>
- <p className="text-xl font-bold text-green-600">{allGuides.filter(g => g.isActive).length}</p>
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Pending</p>
+ <p className="text-xl font-bold text-amber-500">{allGuides.filter(g => g.status === 'UNDER_REVIEW' || g.status === 'PENDING').length}</p>
+ </div>
+ <div className="w-px h-10 bg-sand-200 " />
+ <div className="text-center">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Approved</p>
+ <p className="text-xl font-bold text-emerald-500">{allGuides.filter(g => g.status === 'APPROVED').length}</p>
+ </div>
+ <div className="w-px h-10 bg-sand-200 " />
+ <div className="text-center">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Rejected</p>
+ <p className="text-xl font-bold text-red-500">{allGuides.filter(g => g.status === 'REJECTED').length}</p>
+ </div>
+ <div className="w-px h-10 bg-sand-200 " />
+ <div className="text-center">
+ <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest">Suspended</p>
+ <p className="text-xl font-bold text-orange-600">{allGuides.filter(g => g.status === 'SUSPENDED').length}</p>
  </div>
  </div>
  <div className="w-px h-10 bg-sand-200 " />
@@ -1998,6 +2033,7 @@ export function AdminDashboard() {
  {[
  { id: "overview", label: "Overview", icon: LayoutDashboard },
  { id: "properties", label: "Properties", icon: Building2 },
+ { id: "kyc", label: "KYC Center", icon: ShieldCheck },
  { id: "promotions", label: "Promotions", icon: Tag },
  { id: "content", label: "Blog Content", icon: FileText },
  { id: "guides", label: "Guides", icon: Award },
@@ -2076,6 +2112,7 @@ export function AdminDashboard() {
  <ErrorBoundary>
  {activeTab === "overview" && renderOverview()}
  {activeTab === "properties" && renderProperties()}
+ {activeTab === "kyc" && <KycOperationsCenter />}
  {activeTab === "promotions" && <PromotionsModule />}
  {activeTab === "content" && <BlogModule />}
  {activeTab === "guides" && renderGuides()}
@@ -2133,16 +2170,16 @@ export function AdminDashboard() {
  </div>
  <div>
  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 ml-1">Platform Role</label>
- <select 
+ <Select 
  value={editingUser.role}
- onChange={e => setEditingUser({...editingUser, role: e.target.value})}
- className="w-full h-14 bg-sand-50 border-2 border-sand-200 rounded-xl px-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-all"
- >
- <option value="TRAVELLER">Traveler</option>
- <option value="RESORT_OWNER">Resort Owner</option>
- <option value="GUIDE">Local Expert (Guide)</option>
- <option value="ADMIN">System Administrator</option>
- </select>
+ onChange={(val) => setEditingUser({...editingUser, role: val})}
+ options={[
+ { value: "TRAVELLER", label: "Traveler" },
+ { value: "RESORT_OWNER", label: "Resort Owner" },
+ { value: "GUIDE", label: "Local Expert (Guide)" },
+ { value: "ADMIN", label: "System Administrator" }
+ ]}
+ />
  </div>
  </div>
 
