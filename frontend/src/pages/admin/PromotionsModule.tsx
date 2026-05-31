@@ -398,6 +398,17 @@ export function PromotionsModule() {
                     <td className="px-6 py-4">
                       <div className="font-bold text-navy-950">{promo.usageCount} <span className="text-slate-400 font-medium text-xs">Uses</span></div>
                       <div className="text-xs text-emerald-600 font-bold mt-1">₹{revenueAmount.toLocaleString()} Rev</div>
+                      {promo.usageCount > 0 && (
+                        <div className="mt-1.5">
+                          {revenueAmount > 20000 && promo.usageCount > 3 ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-emerald-600"><CheckCircle className="w-3 h-3"/> High Performing</span>
+                          ) : revenueAmount < 5000 && promo.usageCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-rose-600"><XCircle className="w-3 h-3"/> Underperforming</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-amber-600"><CheckCircle className="w-3 h-3"/> Average</span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs font-medium text-navy-950 flex items-center gap-1.5 mb-1">
@@ -455,13 +466,14 @@ export function PromotionsModule() {
         )}
       </div>
 
-      {/* 8. SCHEDULED CAMPAIGNS & CREATION MODAL */}
+      {/* 8. SCHEDULED CAMPAIGNS & CREATION MODAL & 10. REVENUE IMPACT PREVIEW */}
       {isEditing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-4xl m-auto my-8 border border-sand-200">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-6xl m-auto my-8 border border-sand-200">
             <h3 className="text-2xl font-serif font-bold text-navy-950 mb-8">{editingPromo.id ? 'Edit Campaign Configuration' : 'Launch New Campaign'}</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-sand-200 pb-2">Core Settings</h4>
                 <div>
@@ -546,6 +558,63 @@ export function PromotionsModule() {
                   </div>
                 </div>
               </div>
+              
+              {/* REVENUE IMPACT PREVIEW PANEL */}
+              <div className="lg:col-span-1 bg-navy-950 rounded-[2rem] p-6 text-white shadow-luxury relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-gold-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/3"></div>
+                <h4 className="text-sm font-serif font-bold mb-6 flex items-center gap-2 relative z-10"><TrendingUp className="text-gold-400 w-4 h-4"/> Revenue Impact Preview</h4>
+                
+                <div className="space-y-4 relative z-10">
+                  {[3000, 5000, 10000, 20000].map(amount => {
+                    // Check Min Booking
+                    if (editingPromo.minBookingAmount && amount < editingPromo.minBookingAmount) {
+                      return (
+                        <div key={amount} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-bold text-slate-300">Booking ₹{amount.toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Below Min</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                            <span className="text-xs text-slate-400">Final Total</span>
+                            <span className="font-bold">₹{amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Calculate Discount
+                    let discount = 0;
+                    let isMaxCapped = false;
+                    
+                    if (editingPromo.discountType === 'percentage') {
+                      discount = amount * ((editingPromo.discountValue || 0) / 100);
+                      if (editingPromo.maxDiscount && discount > editingPromo.maxDiscount) {
+                        discount = editingPromo.maxDiscount;
+                        isMaxCapped = true;
+                      }
+                    } else {
+                      discount = editingPromo.discountValue || 0;
+                      if (discount > amount) discount = amount;
+                    }
+
+                    const finalTotal = amount - discount;
+
+                    return (
+                      <div key={amount} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-bold text-slate-300">Booking ₹{amount.toLocaleString()}</span>
+                          <span className="text-xs font-bold text-gold-400">-₹{discount.toLocaleString()} {isMaxCapped && <span className="text-[9px] text-rose-300 ml-1">(Max Cap)</span>}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/10">
+                          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Final Total</span>
+                          <span className="text-lg font-bold text-emerald-400">₹{finalTotal.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
             </div>
             
             <div className="flex justify-end gap-4 mt-10 pt-8 border-t border-sand-200">
