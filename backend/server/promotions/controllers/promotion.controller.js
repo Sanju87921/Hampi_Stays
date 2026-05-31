@@ -31,8 +31,26 @@ export const createPromotion = async (c) => {
         validFrom: body.validFrom ? new Date(body.validFrom) : null,
         validUntil: body.validUntil ? new Date(body.validUntil) : null,
         priority: body.priority ? parseInt(body.priority) : 1,
+        maxUsesPerUser: body.maxUsesPerUser ? parseInt(body.maxUsesPerUser) : null,
+        targetType: body.targetType || 'PLATFORM',
+        targetId: body.targetId || null,
+        autoApply: body.autoApply !== undefined ? Boolean(body.autoApply) : true,
       }
     });
+
+    const user = c.get('user');
+    if (user && user.userId) {
+      await prisma.auditLog.create({
+        data: {
+          adminId: user.userId,
+          action: 'PROMOTION_CREATED',
+          details: { promotionId: promotion.id, name: promotion.name },
+          ipAddress: c.req.header('x-forwarded-for') || '',
+          userAgent: c.req.header('user-agent') || ''
+        }
+      });
+    }
+
     return c.json(promotion);
   } catch (error) {
     return c.json({ error: error.message }, 500);
@@ -60,11 +78,34 @@ export const updatePromotion = async (c) => {
     if (body.validFrom !== undefined) updateData.validFrom = body.validFrom ? new Date(body.validFrom) : null;
     if (body.validUntil !== undefined) updateData.validUntil = body.validUntil ? new Date(body.validUntil) : null;
     if (body.priority !== undefined) updateData.priority = parseInt(body.priority);
+    if (body.maxUsesPerUser !== undefined) updateData.maxUsesPerUser = body.maxUsesPerUser ? parseInt(body.maxUsesPerUser) : null;
+    if (body.targetType !== undefined) updateData.targetType = body.targetType;
+    if (body.targetId !== undefined) updateData.targetId = body.targetId || null;
+    if (body.autoApply !== undefined) updateData.autoApply = Boolean(body.autoApply);
 
     const promotion = await prisma.promotion.update({
       where: { id },
       data: updateData
     });
+
+    const user = c.get('user');
+    if (user && user.userId) {
+      let action = 'PROMOTION_EDITED';
+      if (body.active !== undefined && Object.keys(body).length === 1) {
+         action = body.active ? 'PROMOTION_ENABLED' : 'PROMOTION_DISABLED';
+      }
+      
+      await prisma.auditLog.create({
+        data: {
+          adminId: user.userId,
+          action,
+          details: { promotionId: promotion.id, name: promotion.name },
+          ipAddress: c.req.header('x-forwarded-for') || '',
+          userAgent: c.req.header('user-agent') || ''
+        }
+      });
+    }
+
     return c.json(promotion);
   } catch (error) {
     return c.json({ error: error.message }, 500);
@@ -76,7 +117,22 @@ export const deletePromotion = async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
   try {
-    await prisma.promotion.delete({ where: { id } });
+    const promotion = await prisma.promotion.findUnique({ where: { id } });
+    if (promotion) {
+      await prisma.promotion.delete({ where: { id } });
+      const user = c.get('user');
+      if (user && user.userId) {
+        await prisma.auditLog.create({
+          data: {
+            adminId: user.userId,
+            action: 'PROMOTION_DELETED',
+            details: { promotionId: id, name: promotion.name },
+            ipAddress: c.req.header('x-forwarded-for') || '',
+            userAgent: c.req.header('user-agent') || ''
+          }
+        });
+      }
+    }
     return c.json({ success: true });
   } catch (error) {
     return c.json({ error: error.message }, 500);

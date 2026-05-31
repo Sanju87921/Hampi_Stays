@@ -23,6 +23,10 @@ interface Promotion {
   validFrom: string | null;
   validUntil: string | null;
   priority: number;
+  targetType?: 'PLATFORM' | 'RESORT' | 'CATEGORY' | 'OWNER';
+  targetId?: string | null;
+  maxUsesPerUser?: number | null;
+  autoApply?: boolean;
   createdAt?: string;
 }
 
@@ -42,6 +46,8 @@ export function PromotionsModule() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingPromo, setEditingPromo] = useState<Partial<Promotion>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'ALL'|'ACTIVE'|'SCHEDULED'|'EXPIRED'|'DISABLED'>('ALL');
+  const [simulatorAmount, setSimulatorAmount] = useState<number>(5000);
 
   const fetchPromotions = async () => {
     try {
@@ -78,6 +84,28 @@ export function PromotionsModule() {
   const handleSave = async () => {
     if (!editingPromo.name || !editingPromo.discountType || !editingPromo.discountValue) {
       toast.error("Please fill required fields (Name, Type, Value)");
+      return;
+    }
+
+    if (editingPromo.discountValue < 0) {
+      toast.error("Discount value cannot be negative");
+      return;
+    }
+    if (editingPromo.discountType === 'percentage' && editingPromo.discountValue > 100) {
+      toast.error("Percentage discount cannot exceed 100%");
+      return;
+    }
+    if (editingPromo.validFrom && editingPromo.validUntil && new Date(editingPromo.validFrom) > new Date(editingPromo.validUntil)) {
+      toast.error("Valid From date must be before Valid Until date");
+      return;
+    }
+    if (editingPromo.discountType === 'flat' && editingPromo.minBookingAmount && editingPromo.discountValue > editingPromo.minBookingAmount) {
+      toast.error("Flat discount cannot exceed minimum booking amount");
+      return;
+    }
+
+    const overlapping = promotions.find(p => p.priority === editingPromo.priority && p.active && p.id !== editingPromo.id && p.targetType === (editingPromo.targetType || 'PLATFORM'));
+    if (overlapping && !window.confirm(`Conflict Detected: Priority ${editingPromo.priority} overlaps with "${overlapping.name}". Do you want to proceed?`)) {
       return;
     }
 
@@ -128,7 +156,9 @@ export function PromotionsModule() {
       active: true,
       priority: 1,
       firstBookingOnly: false,
-      usageCount: 0
+      usageCount: 0,
+      targetType: 'PLATFORM',
+      autoApply: true,
     });
     setIsEditing(true);
   };
@@ -160,11 +190,23 @@ export function PromotionsModule() {
     return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-emerald-50 text-emerald-600 border border-emerald-200"><CheckCircle className="w-3 h-3"/> Active</span>;
   };
 
-  const filteredPromotions = promotions.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const getPromoStatus = (promo: Promotion) => {
+    if (!promo.active) return 'DISABLED';
+    const now = new Date();
+    if (promo.validUntil && new Date(promo.validUntil) < now) return 'EXPIRED';
+    if (promo.validFrom && new Date(promo.validFrom) > now) return 'SCHEDULED';
+    return 'ACTIVE';
+  };
 
+  const filteredPromotions = promotions.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
+    if (activeTab === 'ALL') return true;
+    return getPromoStatus(p) === activeTab;
+  });
   const usageData = analytics?.usageData || [];
   const revenueData = analytics?.revenueData || [];
   const historicalData = analytics?.historicalUsage || [];
@@ -335,7 +377,20 @@ export function PromotionsModule() {
       {/* 2 & 3. ACTIVE PROMOTIONS TABLE WITH STATUS SYSTEM & 7. CLONE ACTION */}
       <div className="bg-white rounded-[2rem] border border-sand-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-sand-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-sand-50/50">
-          <h3 className="text-xl font-serif font-bold text-navy-950">Campaign Management</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-xl font-serif font-bold text-navy-950">Campaign Management</h3>
+            <div className="hidden md:flex bg-white rounded-lg border border-sand-200 p-1">
+              {(['ALL', 'ACTIVE', 'SCHEDULED', 'EXPIRED', 'DISABLED'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 text-xs font-bold uppercase tracking-widest rounded-md transition-colors ${activeTab === tab ? 'bg-navy-950 text-white' : 'text-slate-500 hover:text-navy-950 hover:bg-sand-50'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
@@ -508,8 +563,52 @@ export function PromotionsModule() {
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-sand-200 pb-2">Constraints & Scheduling</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-sand-200 pb-2">Target & Scope</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Target Type</label>
+                    <select className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium"
+                      value={editingPromo.targetType || 'PLATFORM'}
+                      onChange={e => setEditingPromo({...editingPromo, targetType: e.target.value as any})}>
+                      <option value="PLATFORM">Entire Platform</option>
+                      <option value="RESORT">Specific Resort</option>
+                      <option value="CATEGORY">Resort Category</option>
+                      <option value="OWNER">Specific Owner</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Target ID</label>
+                    <input type="text" className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium" 
+                      placeholder={editingPromo.targetType === 'PLATFORM' ? "N/A" : "Enter ID"}
+                      disabled={editingPromo.targetType === 'PLATFORM'}
+                      value={editingPromo.targetId || ''} 
+                      onChange={e => setEditingPromo({...editingPromo, targetId: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Max Uses Per User</label>
+                    <select className="w-full px-4 py-3 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 font-medium"
+                      value={editingPromo.maxUsesPerUser || ''}
+                      onChange={e => setEditingPromo({...editingPromo, maxUsesPerUser: e.target.value ? Number(e.target.value) : null})}>
+                      <option value="">Unlimited</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-3 pt-8">
+                    <input type="checkbox" id="autoApply" className="w-5 h-5 text-gold-600 rounded focus:ring-gold-500"
+                      checked={editingPromo.autoApply ?? true} 
+                      onChange={e => setEditingPromo({...editingPromo, autoApply: e.target.checked})} />
+                    <label htmlFor="autoApply" className="text-sm font-bold text-navy-950">Auto Apply Mode</label>
+                  </div>
+                </div>
+
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-sand-200 pb-2 pt-4">Constraints & Scheduling</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-navy-950 mb-2">Min. Booking (₹)</label>
@@ -564,8 +663,17 @@ export function PromotionsModule() {
                 <div className="absolute top-0 right-0 w-48 h-48 bg-gold-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/3"></div>
                 <h4 className="text-sm font-serif font-bold mb-6 flex items-center gap-2 relative z-10"><TrendingUp className="text-gold-400 w-4 h-4"/> Revenue Impact Preview</h4>
                 
+                <div className="flex items-center gap-2 mb-6">
+                  <input type="number" 
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:border-gold-500 font-medium text-sm"
+                    value={simulatorAmount}
+                    onChange={e => setSimulatorAmount(Number(e.target.value) || 0)}
+                    placeholder="Enter Custom Booking Amount"
+                  />
+                </div>
+                
                 <div className="space-y-4 relative z-10">
-                  {[3000, 5000, 10000, 20000].map(amount => {
+                  {[simulatorAmount].map(amount => {
                     // Check Min Booking
                     if (editingPromo.minBookingAmount && amount < editingPromo.minBookingAmount) {
                       return (
@@ -608,6 +716,16 @@ export function PromotionsModule() {
                         <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/10">
                           <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Final Total</span>
                           <span className="text-lg font-bold text-emerald-400">₹{finalTotal.toLocaleString()}</span>
+                        </div>
+                        <div className="pt-2 mt-2 border-t border-white/10">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Eligibility Scope</span>
+                            <span className="text-xs font-bold text-white">{editingPromo.targetType || 'PLATFORM'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Est. Reach</span>
+                            <span className="text-xs font-bold text-white">{editingPromo.targetType === 'PLATFORM' ? '~15,000 Users' : editingPromo.targetType === 'RESORT' ? '~400 Users' : '~1,200 Users'}</span>
+                          </div>
                         </div>
                       </div>
                     );

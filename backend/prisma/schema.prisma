@@ -236,6 +236,7 @@ model Booking {
   promotionId      String?
   promotionName    String?
   discountAmount   Float?
+  promotion        Promotion?        @relation(fields: [promotionId], references: [id])
 
   resort           Resort            @relation(fields: [resortId], references: [id])
   room             Room?             @relation(fields: [roomId], references: [id])
@@ -770,11 +771,13 @@ model Promotion {
   maxDiscount       Float?
 
   firstBookingOnly  Boolean @default(false)
+  maxUsesPerUser    Int?
 
   usageLimit        Int?
   usageCount        Int @default(0)
 
   active            Boolean @default(true)
+  autoApply         Boolean @default(false)
 
   validFrom         DateTime?
   validUntil        DateTime?
@@ -782,7 +785,10 @@ model Promotion {
   priority          Int @default(1)
 
   applicableRoles   String?
+  targetType        String @default("PLATFORM") // PLATFORM, RESORT, CATEGORY, OWNER
+  targetId          String?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  bookings          Booking[]
 }
