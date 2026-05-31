@@ -414,11 +414,15 @@ const HeroModule = () => {
  </div>
  <div className="flex gap-1">
  <button onClick={() => toggle(slide)}
- title={slide.isActive ? "Deactivate (Set as Draft)" : "Activate (Publish)"}
- className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white border border-sand-200 text-navy-950 hover:bg-sand-50 :bg-sand-100'}`}>
+ disabled={slide.isActive && activeSlides.length <= 2}
+ title={slide.isActive && activeSlides.length <= 2 ? "Minimum 2 active slides required" : slide.isActive ? "Deactivate (Set as Draft)" : "Activate (Publish)"}
+ className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white border border-sand-200 text-navy-950 hover:bg-sand-50 :bg-sand-100'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-50`}>
  {slide.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
  </button>
- <button onClick={() => deleteSlide(slide.id)} title="Delete Slide" className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm">
+ <button onClick={() => deleteSlide(slide.id)} 
+ disabled={slide.isActive && activeSlides.length <= 2}
+ title={slide.isActive && activeSlides.length <= 2 ? "Minimum 2 active slides required" : "Delete Slide"} 
+ className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-red-500/70">
  <Trash2 className="w-4 h-4" />
  </button>
  </div>
