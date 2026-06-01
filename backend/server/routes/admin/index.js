@@ -809,7 +809,10 @@ app.get('/admin/kyc/guides', authMiddleware, adminMiddleware, async (c) => {
       orderBy: { createdAt: 'desc' }
     });
     return c.json(docs);
-  } catch (err) { return c.json({ error: err.message }, 500); }
+  } catch (err) {
+    console.error('[/admin/kyc/guides] Error:', err?.message || err);
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 app.get('/admin/kyc/resorts', authMiddleware, adminMiddleware, async (c) => {

@@ -35,21 +35,40 @@ export function KycOperationsCenter() {
 
   const fetchDocs = async () => {
     setLoading(true);
-    try {
-      const [guides, owners, travellers] = await Promise.all([
-        apiClient.get<any[]>('/admin/kyc/guides'),
-        apiClient.get<any[]>('/admin/kyc/resorts'),
-        apiClient.get<any[]>('/admin/kyc/travellers')
-      ]);
-      setGuideDocs(guides || []);
-      setOwnerDocs(owners || []);
-      setTravellerDocs(travellers || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load KYC documents.");
-    } finally {
-      setLoading(false);
+    let anyFailed = false;
+
+    const [guidesResult, ownersResult, travellersResult] = await Promise.allSettled([
+      apiClient.get<any[]>('/admin/kyc/guides'),
+      apiClient.get<any[]>('/admin/kyc/resorts'),
+      apiClient.get<any[]>('/admin/kyc/travellers')
+    ]);
+
+    if (guidesResult.status === 'fulfilled') {
+      setGuideDocs(guidesResult.value || []);
+    } else {
+      console.error('[KYC] Failed to load guide documents:', guidesResult.reason);
+      anyFailed = true;
     }
+
+    if (ownersResult.status === 'fulfilled') {
+      setOwnerDocs(ownersResult.value || []);
+    } else {
+      console.error('[KYC] Failed to load resort owner documents:', ownersResult.reason);
+      anyFailed = true;
+    }
+
+    if (travellersResult.status === 'fulfilled') {
+      setTravellerDocs(travellersResult.value || []);
+    } else {
+      console.error('[KYC] Failed to load traveller documents:', travellersResult.reason);
+      anyFailed = true;
+    }
+
+    if (anyFailed) {
+      toast.error("Some KYC data failed to load. Check browser console for details.");
+    }
+
+    setLoading(false);
   };
 
   const handleUpdateStatus = async (id: string, type: 'guides' | 'owners' | 'travellers', status: 'VERIFIED' | 'REJECTED', reason?: string) => {
