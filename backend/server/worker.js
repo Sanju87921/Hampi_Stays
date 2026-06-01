@@ -2570,6 +2570,43 @@ app.patch('/bookings/:id', authMiddleware, async (c) => {
   } catch(e) { return c.json({error: e.message}, 500); }
 });
 
+app.post('/resorts/:id/photos', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const resort = await prisma.resort.findUnique({ where: { id } });
+    if (!resort) return c.json({ error: 'Not found' }, 404);
+    const images = [...resort.images, body.url];
+    const updated = await prisma.resort.update({ where: { id }, data: { images } });
+    return c.json(updated);
+  } catch(e) { return c.json({ error: e.message }, 500); }
+});
+
+app.post('/rooms/:id/photos', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const room = await prisma.room.findUnique({ where: { id } });
+    if (!room) return c.json({ error: 'Not found' }, 404);
+    const images = [...room.images, body.url];
+    const updated = await prisma.room.update({ where: { id }, data: { images } });
+    return c.json(updated);
+  } catch(e) { return c.json({ error: e.message }, 500); }
+});
+
+app.patch('/rooms/:id/cover', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const updated = await prisma.room.update({ where: { id }, data: { coverImage: body.url } });
+    return c.json(updated);
+  } catch(e) { return c.json({ error: e.message }, 500); }
+});
+
+
 export default {
   fetch: app.fetch,
   async scheduled(event, env, ctx) {
@@ -2598,6 +2635,7 @@ async function cleanupOrphanedMedia(env) {
     console.error("Storage Cleanup Monitor error:", error);
   }
 }
+
 
 
 
