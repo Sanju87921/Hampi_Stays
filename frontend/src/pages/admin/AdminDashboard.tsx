@@ -24,7 +24,7 @@ import { UserManagement } from "./components/UserManagement";
 import { KycOperationsCenter } from "./components/KycOperationsCenter";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "qr-scanner";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -2093,6 +2093,7 @@ export function AdminDashboard() {
  { id: "guides", label: "Guides", icon: Award },
  { id: "users", label: "Users", icon: Users },
  { id: "bookings", label: "Bookings", icon: CalendarDays },
+              { id: "qr-scanner", label: "QR Scanner", icon: QrCode },
  { id: "commissions", label: "Commissions", icon: TrendingUp },
  { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
  { id: "audit-logs", label: "Audit Logs", icon: History },
