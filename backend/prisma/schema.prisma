@@ -55,6 +55,7 @@ model User {
   blogPosts               BlogPost[]         @relation("BlogAuthor")
   adminSessions           AdminSession[]
   auditLogs               AuditLog[]
+  travellerKycDocuments   TravellerKYC[]
 
   @@map("users")
 }
@@ -395,6 +396,21 @@ model BankAccount {
   owner         ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("bank_accounts")
+}
+
+model TravellerKYC {
+  id             String    @id @default(cuid())
+  userId         String
+  type           String    // GOVERNMENT_ID, AADHAAR, PASSPORT
+  documentUrl    String
+  status         String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  extractedText  String?
+  rejectedReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("traveller_kyc_documents")
 }
 
 model GuideProfile {

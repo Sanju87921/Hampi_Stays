@@ -219,8 +219,8 @@ export function AdminSettingsPage() {
        </h4>
        <div className="space-y-3">
          {[
-           { id: 'MOBILE_OTP', label: 'Mobile OTP' },
-           { id: 'EMAIL_VERIFICATION', label: 'Email Verification' },
+
+
            { id: 'GOVERNMENT_ID', label: 'Government ID' },
            { id: 'AADHAAR', label: 'Aadhaar' },
            { id: 'PASSPORT', label: 'Passport' }
@@ -429,6 +429,48 @@ export function AdminSettingsPage() {
         <p className="text-[10px] font-bold text-gold-800 uppercase tracking-widest mb-1">Revenue Gen</p>
         <p className="text-2xl font-bold text-gold-700">₹{guideAnalytics?.revenueGenerated?.toLocaleString() || 0}</p>
       </div>
+    </div>
+  </motion.div>
+
+  {/* Authentication & Security */}
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.195 }}
+    className="bg-white rounded-3xl p-8 shadow-sm border border-sand-200 transition-colors mb-6"
+  >
+    <div className="mb-6">
+      <h3 className="text-xl font-bold text-navy-950 flex items-center">
+        <Shield className="w-5 h-5 mr-3 text-gold-500" />
+        Authentication & Security
+      </h3>
+      <p className="text-sm text-navy-950 mt-1">Manage mandatory authentication verifications.</p>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {[
+        { id: 'MOBILE_OTP', label: 'Mobile OTP Verification', desc: 'Require users to verify their phone numbers.' },
+        { id: 'EMAIL_VERIFICATION', label: 'Email Verification', desc: 'Require users to verify their email addresses.' }
+      ].map(req => {
+        const isActive = verificationSettings?.travellerRequirements?.includes(req.id);
+        const isUpdating = updatingReq === `traveller-${req.id}`;
+        return (
+          <div key={req.id} className="bg-sand-50 rounded-2xl p-5 border border-sand-200 flex items-center justify-between">
+            <div>
+              <h4 className="font-bold text-navy-950 text-sm">{req.label}</h4>
+              <p className="text-xs text-navy-950 mt-0.5">{req.desc}</p>
+            </div>
+            <button 
+              disabled={!verificationSettings || isUpdating}
+              onClick={() => toggleRequirement('traveller', req.id)}
+              className={`w-9 h-5 rounded-full transition-colors relative flex items-center disabled:opacity-50 ${isActive ? 'bg-gold-500' : 'bg-sand-200'}`}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'left-4' : 'left-0.5'}`} />
+              {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-navy-950 absolute -left-5" />}
+            </button>
+          </div>
+        );
+      })}
     </div>
   </motion.div>
 

@@ -15,12 +15,15 @@ import { apiClient } from "../../utils/apiClient";
 import toast from "react-hot-toast";
 import type { Booking, Message } from "../../types/booking";
 import type { Resort } from "../../types/resort";
+import { KycUploadSection } from "../../components/shared/KycUploadSection";
+import { useSystem } from "../../context/SystemContext";
 
 
 export function TravelerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { settings } = useSystem();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [wishlist, setWishlist] = useState<Resort[]>([]); // TODO: Define Wishlist interface if needed
   const [isLoading, setIsLoading] = useState(true);
@@ -254,6 +257,10 @@ export function TravelerDashboard() {
   const completedCount = bookings.filter(b => ['COMPLETED', 'CHECKED_IN'].includes(b.status)).length;
   const cancelledCount = bookings.filter(b => b.status === 'CANCELLED').length;
 
+  const travellerKycReqs = settings?.verificationSettings?.travellerRequirements || [];
+  // Exclude non-document reqs for KYC tab visibility (e.g., EMAIL, PHONE)
+  const hasKycRequirements = travellerKycReqs.some(r => !['EMAIL', 'PHONE'].includes(r));
+
   const quickActions = [
     { label: "Browse Resorts", icon: Compass, link: "/resorts", color: "text-blue-600", bg: "bg-blue-50" },
     { label: "View Saved", icon: Heart, link: "/dashboard/wishlist", color: "text-red-500", bg: "bg-red-50" },
@@ -299,6 +306,7 @@ export function TravelerDashboard() {
             { name: "Book Stays", icon: Calendar, path: "/resorts" },
             { name: "My Bookings", icon: ShoppingBag, path: "/dashboard/bookings" },
             { name: "Guest Inbox", icon: Mail, id: "inbox" },
+            ...(hasKycRequirements ? [{ name: "KYC & Verification", icon: Shield, id: "kyc" }] : []),
             { name: "Notifications", icon: Bell, path: "/dashboard/notifications", badge: unreadCount },
             { name: "Profile", icon: User, path: "/dashboard/profile" },
           ].map((item) => {
@@ -996,6 +1004,16 @@ export function TravelerDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === "kyc" && hasKycRequirements && (
+          <div className="max-w-4xl mx-auto">
+             <div className="mb-6">
+                <h2 className="text-3xl font-serif font-bold text-navy-950 mb-2">Identity Verification</h2>
+                <p className="text-navy-950/60">Upload your government-issued documents to comply with local regulations.</p>
+             </div>
+             <KycUploadSection userType="traveler" profileId={user?.id || ""} />
           </div>
         )}
       </main>

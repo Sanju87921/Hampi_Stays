@@ -748,6 +748,55 @@ app.get('/admin/guides', authMiddleware, adminMiddleware, async (c) => {
     return c.json(decryptedGuides);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
+
+app.get('/admin/kyc/travellers', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const docs = await prisma.travellerKYC.findMany({
+      include: {
+        user: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(docs);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/kyc/travellers/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  const { status, rejectionReason } = await c.req.json();
+  const adminId = c.get('userId');
+  try {
+    const doc = await prisma.travellerKYC.update({
+      where: { id },
+      data: { status, rejectedReason: rejectionReason },
+      include: { user: true }
+    });
+    
+    const userId = doc.userId;
+    if (status === 'REJECTED') {
+      await prisma.user.update({ where: { id: userId }, data: { kycStatus: 'REJECTED' } });
+    } else if (status === 'VERIFIED') {
+      // Check if all required docs are verified
+      const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
+      const vSettings = await prisma.verificationSettings.findFirst() || {};
+      const isVerified = await evaluateTravellerKyc(prisma, doc.user, vSettings);
+      if (isVerified) {
+        await prisma.user.update({ where: { id: userId }, data: { kycStatus: 'VERIFIED' } });
+      }
+    }
+
+    await prisma.verificationAudit.create({
+      data: {
+        adminId, targetUserId: userId, targetType: 'USER',
+        action: status, newStatus: status, previousStatus: 'PENDING'
+      }
+    });
+
+    return c.json({ success: true, doc });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
 app.get('/admin/kyc/guides', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   try {

@@ -118,7 +118,7 @@ export const createBooking = async (c) => {
 
       const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
       const vSettings = await prisma.verificationSettings.findFirst() || {};
-      const isVerified = await evaluateTravellerKyc(user, vSettings);
+      const isVerified = await evaluateTravellerKyc(prisma, user, vSettings);
       
       if (!isVerified) {
         return c.json({ error: 'Please complete your mandatory Traveller Verification before booking.' }, 403);

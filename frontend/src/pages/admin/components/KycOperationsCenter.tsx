@@ -9,13 +9,14 @@ import toast from 'react-hot-toast';
 export function KycOperationsCenter() {
   const [guideDocs, setGuideDocs] = useState<any[]>([]);
   const [ownerDocs, setOwnerDocs] = useState<any[]>([]);
+  const [travellerDocs, setTravellerDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [rejectingDocId, setRejectingDocId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'guides' | 'owners'>('guides');
+  const [activeTab, setActiveTab] = useState<'guides' | 'owners' | 'travellers'>('guides');
 
   // Zoom and Rotate for viewer
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -35,12 +36,14 @@ export function KycOperationsCenter() {
   const fetchDocs = async () => {
     setLoading(true);
     try {
-      const [guides, owners] = await Promise.all([
+      const [guides, owners, travellers] = await Promise.all([
         apiClient.get<any[]>('/admin/kyc/guides'),
-        apiClient.get<any[]>('/admin/kyc/resorts')
+        apiClient.get<any[]>('/admin/kyc/resorts'),
+        apiClient.get<any[]>('/admin/kyc/travellers')
       ]);
       setGuideDocs(guides || []);
       setOwnerDocs(owners || []);
+      setTravellerDocs(travellers || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load KYC documents.");
@@ -49,7 +52,7 @@ export function KycOperationsCenter() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, type: 'guides' | 'owners', status: 'VERIFIED' | 'REJECTED', reason?: string) => {
+  const handleUpdateStatus = async (id: string, type: 'guides' | 'owners' | 'travellers', status: 'VERIFIED' | 'REJECTED', reason?: string) => {
     if (status === 'REJECTED' && !reason) {
       setRejectingDocId(id);
       setRejectionReason("");
@@ -85,7 +88,7 @@ export function KycOperationsCenter() {
     }
   };
 
-  const currentDocs = activeTab === 'guides' ? guideDocs : ownerDocs;
+  const currentDocs = activeTab === 'guides' ? guideDocs : activeTab === 'travellers' ? travellerDocs : ownerDocs;
   
   // Analytics
   const pendingCount = currentDocs.filter(d => d.status === 'PENDING').length;
@@ -96,7 +99,7 @@ export function KycOperationsCenter() {
   const filteredDocs = currentDocs.filter(doc => {
     if (filterStatus !== "ALL" && doc.status !== filterStatus) return false;
     if (searchQuery) {
-      const user = activeTab === 'guides' ? doc.guideProfile?.user : doc.owner?.user;
+      const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
       const q = searchQuery.toLowerCase();
       if (!user?.name?.toLowerCase().includes(q) && !user?.email?.toLowerCase().includes(q)) {
         return false;
@@ -177,6 +180,12 @@ export function KycOperationsCenter() {
             >
               Resort Owners
             </button>
+            <button
+              onClick={() => { setActiveTab('travellers'); setSelectedDocs(new Set()); }}
+              className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'travellers' ? 'bg-white shadow-sm text-navy-950' : 'text-navy-950/60'}`}
+            >
+              Travellers
+            </button>
           </div>
         </div>
 
@@ -238,7 +247,7 @@ export function KycOperationsCenter() {
               </thead>
               <tbody className="divide-y divide-sand-100">
                 {pendingDocs.map(doc => {
-                  const user = activeTab === 'guides' ? doc.guideProfile?.user : doc.owner?.user;
+                  const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
                   const isSelected = selectedDocs.has(doc.id);
                   return (
                     <tr key={doc.id} className={`transition-colors ${isSelected ? 'bg-gold-50' : 'hover:bg-sand-50'}`}>
@@ -309,7 +318,7 @@ export function KycOperationsCenter() {
               </thead>
               <tbody className="divide-y divide-sand-100">
                 {historyDocs.map(doc => {
-                  const user = activeTab === 'guides' ? doc.guideProfile?.user : doc.owner?.user;
+                  const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
                   return (
                     <tr key={doc.id} className="hover:bg-sand-50 transition-colors">
                       <td className="px-6 py-4">

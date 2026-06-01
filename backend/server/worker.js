@@ -746,6 +746,55 @@ app.post('/users/guide-promotion-analytics/track', async (c) => {
   }
 });
 
+app.get('/users/kyc', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.get('userId');
+  try {
+    const kycs = await prisma.travellerKYC.findMany({
+      where: { userId }
+    });
+    return c.json(kycs);
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post('/users/kyc', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.get('userId');
+  try {
+    const { type, documentUrl, extractedText } = await c.req.json();
+    const existing = await prisma.travellerKYC.findFirst({
+      where: { userId, type }
+    });
+    
+    let kyc;
+    if (existing) {
+      kyc = await prisma.travellerKYC.update({
+        where: { id: existing.id },
+        data: { documentUrl, extractedText, status: 'PENDING', rejectedReason: null }
+      });
+    } else {
+      kyc = await prisma.travellerKYC.create({
+        data: { userId, type, documentUrl, extractedText, status: 'PENDING' }
+      });
+    }
+
+    // Update user kycStatus to PENDING if not verified
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user && user.kycStatus !== 'VERIFIED') {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { kycStatus: 'PENDING' }
+      });
+    }
+
+    return c.json(kyc, 201);
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 app.get('/users/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const payload = c.get('user');

@@ -35,18 +35,23 @@ export async function evaluateGuideKyc(prisma, guideProfileId, vSettings, curren
   return isVerified;
 }
 
-export async function evaluateTravellerKyc(user, vSettings) {
+export async function evaluateTravellerKyc(prisma, user, vSettings) {
   // Traveller requirements apply dynamically upon action usually, but we can verify status
   const reqs = vSettings.travellerRequirements || [];
   let isVerified = true;
+  
+  if (reqs.length === 0) return true;
+
+  const allDocs = await prisma.travellerKYC.findMany({ where: { userId: user.id } });
+
   for (const req of reqs) {
     if (req === 'EMAIL' || req === 'EMAIL_VERIFICATION') {
       if (!user.verifiedEmail) isVerified = false;
     } else if (req === 'PHONE' || req === 'MOBILE_OTP') {
       if (!user.verifiedPhone) isVerified = false;
     } else {
-      // For any other document req, check user kycStatus
-      if (user.kycStatus !== 'VERIFIED') isVerified = false;
+      const doc = allDocs.find(d => d.type === req);
+      if (!doc || doc.status !== 'VERIFIED') isVerified = false;
     }
   }
   return isVerified;

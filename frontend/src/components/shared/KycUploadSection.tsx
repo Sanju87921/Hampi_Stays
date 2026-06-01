@@ -6,10 +6,11 @@ import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import Tesseract from 'tesseract.js';
 
+import { API_BASE_URL } from '../../config/api';
+
 // Direct-to-Cloudinary Signed Upload Helper
 async function uploadFile(file: File): Promise<{ url: string, extractedText: string }> {
   const token = localStorage.getItem('hampi-token');
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787/api';
 
   // Helper for detailed API error parsing
   const fetchWithDetailedError = async (url: string, options: RequestInit, stepName: string) => {
@@ -107,7 +108,7 @@ async function uploadFile(file: File): Promise<{ url: string, extractedText: str
   return { url: uploadData.secure_url, extractedText };
 }
 
-export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 'resort', profileId: string }) {
+export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 'resort' | 'traveler', profileId: string }) {
   const { settings } = useSystem();
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +116,8 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
 
   const reqs = userType === 'guide' 
     ? settings?.verificationSettings?.guideRequirements || []
+    : userType === 'traveler'
+    ? settings?.verificationSettings?.travellerRequirements || []
     : settings?.verificationSettings?.resortOwnerRequirements || [];
   
   // Filter out EMAIL and PHONE as they are handled in profile, we only want KYC docs
@@ -126,7 +129,10 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
 
   const fetchDocs = async () => {
     try {
-      const res = await apiClient.get<any[]>(`/${userType === 'guide' ? 'guides' : 'resorts'}/${profileId}/kyc`);
+      const endpoint = userType === 'guide' ? `/guides/${profileId}/kyc` :
+                       userType === 'traveler' ? `/users/kyc` : 
+                       `/resorts/${profileId}/kyc`;
+      const res = await apiClient.get<any[]>(endpoint);
       setDocuments(res || []);
     } catch (err) {
       console.error(err);
@@ -143,7 +149,10 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
     let toastId = toast.loading('Uploading and extracting document data...');
     try {
       const { url, extractedText } = await uploadFile(file);
-      await apiClient.post(`/${userType === 'guide' ? 'guides' : 'resorts'}/${profileId}/kyc`, {
+      const endpoint = userType === 'guide' ? `/guides/${profileId}/kyc` :
+                       userType === 'traveler' ? `/users/kyc` : 
+                       `/resorts/${profileId}/kyc`;
+      await apiClient.post(endpoint, {
         type,
         documentUrl: url,
         extractedText
@@ -213,6 +222,7 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
               'TOURISM_REGISTRATION': 'Tourism Registration',
               'FSSAI_LICENSE': 'FSSAI License',
               'ID_DOCUMENT': 'ID Document',
+              'GOVERNMENT_ID': 'Government ID',
               'GUIDE_LICENSE': 'Guide License',
               'PASSPORT': 'Passport'
             };
