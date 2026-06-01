@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Building2, Plus, Calendar as CalIcon,
   Trash2, CheckCircle, AlertCircle, Loader2,
-  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X, Mail, Star, User
+  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X, Mail, Star, User, QrCode
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
@@ -863,7 +863,7 @@ export function OwnerDashboard() {
               className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "qr-scanner" && "bg-navy-950 text-white")}
               onClick={() => navigate("/dashboard?tab=qr-scanner")}
             >
-              <Users className="w-4 h-4 mr-2" /> QR Scanner
+              <QrCode className="w-4 h-4 mr-2" /> QR Scanner
             </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
