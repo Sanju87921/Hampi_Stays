@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { Resend } from 'resend';
 import { validateCouponCode } from '../../utils/couponEngine.js';
 import { incrementCouponUsage } from '../../utils/couponDb.js';
+import { generateSignedKycUrlWorker, verifySignedKycUrlWorker } from '../../services/kyc.service.js';
 
 /**
  * setupAdminRoutes — registers modularized admin management routes.
@@ -734,16 +735,16 @@ app.get('/admin/guides', authMiddleware, adminMiddleware, async (c) => {
     });
     
     // Decrypt guide profiles and nested users, secure idImage
-    const decryptedGuides = guides.map(g => {
+    const decryptedGuides = await Promise.all(guides.map(async g => {
       const decGuide = decryptGuide(g);
       if (decGuide.user) {
         decGuide.user = decryptUser(decGuide.user);
       }
       if (decGuide.idImage) {
-        decGuide.idImage = generateSignedKycUrlWorker(decGuide.id, c.env);
+        decGuide.idImage = await generateSignedKycUrlWorker(decGuide.id, c.env);
       }
       return decGuide;
-    });
+    }));
 
     return c.json(decryptedGuides);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -826,13 +827,15 @@ app.get('/admin/kyc/resorts', authMiddleware, adminMiddleware, async (c) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    const { generateSignedKycUrlWorker } = require('../../utils/crypto');
-    const secureDocs = docs.map(doc => ({
+    const secureDocs = await Promise.all(docs.map(async doc => ({
       ...doc,
-      documentUrl: generateSignedKycUrlWorker(doc.id, c.env).replace('/api/admin/kyc-image/', '/api/admin/kyc-document/')
-    }));
+      documentUrl: (await generateSignedKycUrlWorker(doc.id, c.env)).replace('/api/admin/kyc-image/', '/api/admin/kyc-document/')
+    })));
     return c.json(secureDocs);
-  } catch (err) { return c.json({ error: err.message }, 500); }
+  } catch (err) {
+    console.error('[/admin/kyc/resorts] Error:', err?.message || err);
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) => {
@@ -1123,8 +1126,7 @@ app.get('/admin/kyc-document/:id', authMiddleware, adminMiddleware, async (c) =>
   const expires = c.req.query('expires');
   const token = c.req.query('token');
 
-  const { verifySignedKycUrlWorker } = require('../../utils/crypto');
-  if (!verifySignedKycUrlWorker(id, expires, token, c.env)) {
+  if (!(await verifySignedKycUrlWorker(id, expires, token, c.env))) {
     return c.json({ error: 'Forbidden: Invalid or expired signature' }, 403);
   }
 
@@ -1154,7 +1156,7 @@ app.get('/admin/kyc-image/:id', authMiddleware, adminMiddleware, async (c) => {
   const expires = c.req.query('expires');
   const token = c.req.query('token');
 
-  if (!verifySignedKycUrlWorker(id, expires, token, c.env)) {
+  if (!(await verifySignedKycUrlWorker(id, expires, token, c.env))) {
     return c.json({ error: 'Forbidden: Invalid or expired signature' }, 403);
   }
 

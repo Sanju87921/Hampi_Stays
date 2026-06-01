@@ -1,26 +1,32 @@
-import crypto from 'crypto';
 import { decrypt } from '../utils/crypto.js';
 
-export const generateSignedKycUrlWorker = (guideId, env) => {
+// ── Web Crypto-compatible HMAC helpers (work in Cloudflare Workers) ──────────
+
+async function hmacSign(secret, data) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacVerify(secret, data, token) {
+  const expected = await hmacSign(secret, data);
+  return expected === token;
+}
+
+export const generateSignedKycUrlWorker = async (docId, env) => {
   const expires = Math.floor(Date.now() / 1000) + 300; // 5 minutes validity
-  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
-  const dataToSign = `${guideId}:${expires}`;
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(dataToSign);
-  const token = hmac.digest('hex');
-  return `/api/admin/kyc-image/${guideId}?expires=${expires}&token=${token}`;
+  const secret = env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026';
+  const token = await hmacSign(secret, `${docId}:${expires}`);
+  return `/api/admin/kyc-image/${docId}?expires=${expires}&token=${token}`;
 };
 
-export const verifySignedKycUrlWorker = (guideId, expires, token, env) => {
-  if (Math.floor(Date.now() / 1000) > parseInt(expires)) {
-    return false;
-  }
-  const secret = env.JWT_SECRET || 'aa30357b7387e0d6e0c78f02298713a3cced0b36db2031f3823e0a27336425875eae06cba281f25256cdfdc09e171dee2ab48443652046c3e8d81174da19417f';
-  const dataToSign = `${guideId}:${expires}`;
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(dataToSign);
-  const expectedToken = hmac.digest('hex');
-  return token === expectedToken;
+export const verifySignedKycUrlWorker = async (docId, expires, token, env) => {
+  if (Math.floor(Date.now() / 1000) > parseInt(expires)) return false;
+  const secret = env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026';
+  return hmacVerify(secret, `${docId}:${expires}`, token);
 };
 
 export const runKycFraudCheckWorker = async (userId, idNumber, idImage, prisma) => {
