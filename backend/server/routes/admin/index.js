@@ -305,7 +305,7 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
 
     // Call recalculation
     const { recalculateAllKyc } = await import('../../utils/kycEngine.js');
-    await recalculateAllKyc(prisma, adminEmail);
+    await recalculateAllKyc(prisma, userPayload.userId);
 
     // Audit Logging
     const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
@@ -318,10 +318,10 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
           const added = curr.filter(x => !prev.includes(x));
           const removed = prev.filter(x => !curr.includes(x));
           for (const req of added) {
-            await prisma.auditLog.create({ data: { adminId: userPayload?.userId || 'system', action: 'REQUIREMENT_ENABLED', details: { type, req }, ipAddress, userAgent }});
+            await prisma.auditLog.create({ data: { adminId: userPayload.userId, action: 'REQUIREMENT_ENABLED', details: { type, req }, ipAddress, userAgent }});
           }
           for (const req of removed) {
-            await prisma.auditLog.create({ data: { adminId: userPayload?.userId || 'system', action: 'REQUIREMENT_DISABLED', details: { type, req }, ipAddress, userAgent }});
+            await prisma.auditLog.create({ data: { adminId: userPayload.userId, action: 'REQUIREMENT_DISABLED', details: { type, req }, ipAddress, userAgent }});
           }
         };
         await logChanges(previousSettings.travellerRequirements || [], data.travellerRequirements, 'TRAVELLER');
@@ -331,7 +331,7 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
 
       await prisma.auditLog.create({
         data: {
-          adminId: userPayload?.userId || 'system',
+          adminId: userPayload.userId,
           action: 'VERIFICATION_SETTINGS_UPDATED',
           details: JSON.parse(JSON.stringify({ previous: previousSettings, new: data })),
           ipAddress,

@@ -104,7 +104,7 @@ export async function recalculateAllKyc(prisma, adminId) {
   // Generate generic KYC_RECALCULATED audit record
   await prisma.auditLog.create({
     data: {
-      adminId: adminId || 'system',
+      adminId: adminId,
       action: 'KYC_RECALCULATED',
       details: { ownersVerifiedCount, guidesVerifiedCount }
     }
