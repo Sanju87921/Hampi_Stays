@@ -112,6 +112,19 @@ export const createBooking = async (c) => {
   const payload = c.get('user');
   
   try {
+    if (payload?.userId) {
+      const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+      if (!user) return c.json({ error: 'User not found' }, 404);
+
+      const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
+      const vSettings = await prisma.verificationSettings.findFirst() || {};
+      const isVerified = await evaluateTravellerKyc(user, vSettings);
+      
+      if (!isVerified) {
+        return c.json({ error: 'Please complete your mandatory Traveller Verification before booking.' }, 403);
+      }
+    }
+
     // We run the concurrency check and booking creation in a transaction
     const { booking, totalPrice, referenceNumber } = await prisma.$transaction(async (tx) => {
       // 1. RECALCULATE PRICE & FETCH ROOM DETAILS

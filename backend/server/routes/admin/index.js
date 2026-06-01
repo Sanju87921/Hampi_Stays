@@ -234,6 +234,35 @@ app.get('/admin/verification-settings', authMiddleware, adminMiddleware, async (
   }
 });
 
+app.post('/admin/verification-settings/impact', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const payload = await c.req.json();
+  try {
+    const { evaluateResortOwnerKyc, evaluateGuideKyc } = await import('../../utils/kycEngine.js');
+    const pendingOwners = await prisma.resortOwner.findMany({ where: { isVerified: false } });
+    let affectedOwners = 0;
+    for (const owner of pendingOwners) {
+      if (await evaluateResortOwnerKyc(prisma, owner.id, payload, owner.isVerified)) {
+        affectedOwners++;
+      }
+    }
+    const pendingGuides = await prisma.guideProfile.findMany({ where: { isVerified: false } });
+    let affectedGuides = 0;
+    for (const guide of pendingGuides) {
+      if (await evaluateGuideKyc(prisma, guide.id, payload, guide.isVerified)) {
+        affectedGuides++;
+      }
+    }
+    return c.json({
+      affectedPendingOwners: affectedOwners,
+      affectedPendingGuides: affectedGuides,
+      message: 'These pending users will immediately become VERIFIED. Existing verified users remain unaffected (grandfathered).'
+    });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   const payload = await c.req.json();
@@ -274,10 +303,32 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
       });
     }
 
+    // Call recalculation
+    const { recalculateAllKyc } = require('../../utils/kycEngine.js');
+    await recalculateAllKyc(prisma, adminEmail);
+
     // Audit Logging
     const ipAddress = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
     const userAgent = c.req.header('user-agent') || null;
+
     try {
+      if (previousSettings) {
+        const logChanges = async (prev, curr, type) => {
+          if (!curr) return;
+          const added = curr.filter(x => !prev.includes(x));
+          const removed = prev.filter(x => !curr.includes(x));
+          for (const req of added) {
+            await prisma.auditLog.create({ data: { adminId: userPayload?.userId || 'system', action: 'REQUIREMENT_ENABLED', details: { type, req }, ipAddress, userAgent }});
+          }
+          for (const req of removed) {
+            await prisma.auditLog.create({ data: { adminId: userPayload?.userId || 'system', action: 'REQUIREMENT_DISABLED', details: { type, req }, ipAddress, userAgent }});
+          }
+        };
+        await logChanges(previousSettings.travellerRequirements || [], data.travellerRequirements, 'TRAVELLER');
+        await logChanges(previousSettings.resortOwnerRequirements || [], data.resortOwnerRequirements, 'RESORT_OWNER');
+        await logChanges(previousSettings.guideRequirements || [], data.guideRequirements, 'GUIDE');
+      }
+
       await prisma.auditLog.create({
         data: {
           adminId: userPayload?.userId || 'system',
@@ -736,11 +787,39 @@ app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) =>
   const prisma = c.get('getPrisma')(c.env);
   const id = c.req.param('id');
   const { status, rejectionReason } = await c.req.json();
+  const adminId = c.get('userId');
   try {
     const doc = await prisma.guideKYC.update({
       where: { id },
-      data: { status, rejectionReason }
+      data: { status, rejectionReason },
+      include: { guideProfile: true }
     });
+    
+    const guideId = doc.guideProfileId;
+    if (status === 'REJECTED') {
+      await prisma.guideProfile.update({ where: { id: guideId }, data: { isVerified: false } });
+    } else {
+      const { evaluateGuideKyc } = require('../../utils/kycEngine.js');
+      const vSettings = await prisma.verificationSettings.findFirst() || {};
+      const guide = doc.guideProfile;
+      const isVerified = await evaluateGuideKyc(prisma, guideId, vSettings, guide.isVerified);
+      if (isVerified && !guide.isVerified) {
+        await prisma.guideProfile.update({ where: { id: guideId }, data: { isVerified: true } });
+      }
+    }
+    
+    await prisma.verificationAudit.create({
+      data: {
+        adminId: adminId || 'SYSTEM',
+        targetUserId: doc.guideProfile.userId,
+        targetType: 'GUIDE',
+        action: status,
+        newStatus: status,
+        rejectionReason: rejectionReason,
+        details: `${status} ${doc.type}`
+      }
+    });
+
     return c.json(doc);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -758,19 +837,17 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
     });
     
     const ownerId = doc.ownerId;
-    const allDocs = await prisma.kycDocument.findMany({ where: { ownerId } });
-    const bank = await prisma.bankAccount.findUnique({ where: { ownerId } });
-    
-    const aadhaarVerified = allDocs.find(d => d.type === 'AADHAAR')?.status === 'VERIFIED';
-    const panVerified = allDocs.find(d => d.type === 'PAN')?.status === 'VERIFIED';
-    const bankVerified = bank?.status === 'VERIFIED';
-
-    const isVerified = aadhaarVerified && panVerified && bankVerified;
     
     if (status === 'REJECTED') {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: false } });
-    } else if (isVerified) {
-      await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+    } else {
+      const { evaluateResortOwnerKyc } = require('../../utils/kycEngine.js');
+      const vSettings = await prisma.verificationSettings.findFirst() || {};
+      const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
+      const isVerified = await evaluateResortOwnerKyc(prisma, ownerId, vSettings, owner.isVerified);
+      if (isVerified && !owner.isVerified) {
+        await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+      }
     }
 
     if (doc.owner) {
@@ -1275,6 +1352,19 @@ app.post('/bookings', authMiddleware, async (c) => {
   const payload = c.get('user');
   
   try {
+    if (payload?.userId) {
+      const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+      if (!user) return c.json({ error: 'User not found' }, 404);
+
+      const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
+      const vSettings = await prisma.verificationSettings.findFirst() || {};
+      const isVerified = await evaluateTravellerKyc(user, vSettings);
+      
+      if (!isVerified) {
+        return c.json({ error: 'Please complete your mandatory Traveller Verification before booking.' }, 403);
+      }
+    }
+
     // We run the concurrency check and booking creation in a Serializable transaction to prevent overbooking
     const { booking, totalPrice, referenceNumber } = await prisma.$transaction(async (tx) => {
       // 1. RECALCULATE PRICE & FETCH ROOM DETAILS

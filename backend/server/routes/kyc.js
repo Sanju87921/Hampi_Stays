@@ -170,26 +170,22 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
       if (doc) await prisma.kycDocument.update({ where: { id: doc.id }, data: { status: 'VERIFIED' } });
     }
 
-    // Check if ALL documents are verified
-    const allDocs = await prisma.kycDocument.findMany({ where: { ownerId } });
-    const bank = await prisma.bankAccount.findUnique({ where: { ownerId } });
-    
-    const aadhaarVerified = allDocs.find(d => d.type === 'AADHAAR')?.status === 'VERIFIED';
-    const panVerified = allDocs.find(d => d.type === 'PAN')?.status === 'VERIFIED';
-    const bankVerified = bank?.status === 'VERIFIED';
+    const { evaluateResortOwnerKyc } = require('../utils/kycEngine.js');
+    const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
+    const vSettings = await prisma.verificationSettings.findFirst() || { resortOwnerRequirements: ['AADHAAR', 'PAN'] };
+    const isNowVerified = await evaluateResortOwnerKyc(prisma, ownerId, vSettings, owner.isVerified);
 
-    if (aadhaarVerified && panVerified && bankVerified) {
+    if (isNowVerified && !owner.isVerified) {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
     }
 
-    const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
     await prisma.verificationAudit.create({
       data: {
         adminId, targetUserId: owner.userId, targetType: 'RESORT', action: 'APPROVED', newStatus: 'VERIFIED',
         details: `Approved ${type}`
       }
     });
-    return c.json({ success: true, ownerVerified: aadhaarVerified && panVerified && bankVerified });
+    return c.json({ success: true, ownerVerified: isNowVerified });
   });
 
   app.patch('/admin/verification/:ownerId/reject', authMiddleware, adminMiddleware, async (c) => {
