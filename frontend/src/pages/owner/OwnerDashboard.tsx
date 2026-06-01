@@ -1923,12 +1923,6 @@ export function OwnerDashboard() {
             
             {activeTab === "qr-scanner" && (
               <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h2 className="text-2xl font-serif font-bold text-navy-950">Contactless Check-In</h2>
-                    <p className="text-sm text-navy-950/40 mt-1">Scan guest QR passes to securely check them in.</p>
-                  </div>
-                </div>
                 <QRScannerModule />
               </div>
             )}
