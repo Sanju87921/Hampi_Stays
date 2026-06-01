@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
 import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
 
@@ -438,3 +439,170 @@ export const getGuideBookings = async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 };
 
+
+import jwt from 'jsonwebtoken';
+
+export const getBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const bookingId = c.req.param('id');
+  const JWT_SECRET = c.env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026';
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { resort: true, user: true }
+    });
+
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+    if (booking.userId !== payload.userId && payload.role !== 'ADMIN' && payload.role !== 'RESORT_OWNER') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    const now = new Date();
+    // Assuming checkIn time is at 14:00 (2:00 PM) on the checkIn date if not specified
+    // Prisma checkIn might be midnight if it's just a Date. Let's adjust for a standard check-in time of 14:00
+    const checkInDate = new Date(booking.checkIn);
+    checkInDate.setHours(14, 0, 0, 0); // 2:00 PM
+    
+    const unlockTime = new Date(checkInDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
+    const checkOutDate = new Date(booking.checkOut);
+    checkOutDate.setHours(11, 0, 0, 0); // 11:00 AM checkout
+
+    if (booking.status === 'CANCELLED') {
+      return c.json({ error: 'Booking cancelled. QR no longer valid.' }, 400);
+    }
+
+    if (now > checkOutDate) {
+      return c.json({ error: 'Booking expired. QR no longer valid.' }, 400);
+    }
+
+    if (now < unlockTime) {
+      return c.json({ 
+        locked: true, 
+        message: 'Contactless Check-In will be available 24 hours before your arrival.',
+        unlockTime: unlockTime.toISOString(),
+        checkInTime: checkInDate.toISOString()
+      }, 200);
+    }
+
+    // Generate secure QR payload
+    const qrPayload = {
+      bookingId: booking.id,
+      userId: booking.userId,
+      resortId: booking.resortId,
+      exp: Math.floor(checkOutDate.getTime() / 1000)
+    };
+
+    const token = jwt.sign(qrPayload, JWT_SECRET);
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'QR_GENERATED',
+        entityType: 'BOOKING',
+        entityId: booking.id,
+        userId: payload.userId,
+        details: 'QR pass generated for booking'
+      }
+    });
+
+    return c.json({ 
+      locked: false, 
+      token, 
+      checkInTime: checkInDate.toISOString(),
+      checkOutTime: checkOutDate.toISOString()
+    });
+
+  } catch (err) {
+    logSecureError('Failed to generate QR', err);
+    return c.json({ error: 'Failed to generate QR' }, 500);
+  }
+};
+
+export const scanBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const JWT_SECRET = c.env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026';
+
+  try {
+    const { token } = await c.req.json();
+    if (!token) return c.json({ error: 'Missing QR token' }, 400);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return c.json({ error: 'This Stay Pass is no longer valid or has been tampered with.' }, 400);
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: decoded.bookingId },
+      include: { resort: true, user: true }
+    });
+
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+
+    if (booking.status === 'CANCELLED') {
+      await prisma.auditLog.create({
+        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Cancelled booking scan attempt' }
+      });
+      return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
+    }
+
+    const now = new Date();
+    const checkInDate = new Date(booking.checkIn);
+    checkInDate.setHours(14, 0, 0, 0);
+    const validFrom = new Date(checkInDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
+    const checkOutDate = new Date(booking.checkOut);
+    checkOutDate.setHours(11, 0, 0, 0);
+
+    if (now > checkOutDate) {
+      await prisma.auditLog.create({
+        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Expired booking scan attempt' }
+      });
+      return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
+    }
+
+    if (now < validFrom) {
+      await prisma.auditLog.create({
+        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Early scan attempt blocked' }
+      });
+      return c.json({ 
+        error: 'Check-In not yet available.',
+        validFrom: validFrom.toISOString()
+      }, 400);
+    }
+
+    if (booking.status === 'CHECKED_IN') {
+      await prisma.auditLog.create({
+        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Duplicate scan attempt' }
+      });
+      return c.json({ error: 'Guest is already checked in.' }, 400);
+    }
+
+    // Mark as checked in
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: 'CHECKED_IN' }
+    });
+
+    await prisma.auditLog.create({
+      data: { action: 'CHECK_IN_COMPLETED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'QR Check-In successful' }
+    });
+
+    return c.json({
+      message: 'Contactless Check-In Complete',
+      bookingId: booking.id,
+      guestName: booking.user.name,
+      resortName: booking.resort.name,
+      checkInTime: new Date().toISOString(),
+      verifiedBy: payload.name || payload.email
+    });
+
+  } catch (err) {
+    logSecureError('Failed to scan QR', err);
+    return c.json({ error: 'Failed to process QR scan' }, 500);
+  }
+};
