@@ -17,6 +17,7 @@ export const authMiddleware = async (c, next) => {
     if (!secret) throw new Error("JWT_SECRET not configured");
     const decoded = jwt.verify(token, secret);
     c.set('user', decoded);
+    c.set('userId', decoded.userId);
     await next();
   } catch (err) { 
     console.error("Auth Middleware Error:", err.message);
