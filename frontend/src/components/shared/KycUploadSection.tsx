@@ -11,29 +11,56 @@ async function uploadFile(file: File): Promise<{ url: string, extractedText: str
   const token = localStorage.getItem('hampi-token');
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787/api';
 
+  // Helper for detailed API error parsing
+  const fetchWithDetailedError = async (url: string, options: RequestInit, stepName: string) => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        let errMsg = `${res.status} ${res.statusText}`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errData.message || errMsg;
+        } catch(e) {}
+        
+        if (res.status === 401) throw new Error(`${stepName} Failed: 401 Unauthorized (Session Expired)`);
+        if (res.status === 403) throw new Error(`${stepName} Failed: 403 Forbidden`);
+        if (res.status === 404) throw new Error(`${stepName} Failed: 404 Route Missing (${url})`);
+        if (res.status === 413) throw new Error(`${stepName} Failed: 413 File Too Large`);
+        throw new Error(`${stepName} Failed: ${errMsg}`);
+      }
+      return res;
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        throw new Error(`${stepName} Network Error: CORS Preflight Failed or Server Unreachable at ${url}`);
+      }
+      throw err; // Re-throw if we already mapped it above
+    }
+  };
+
   // Duplicate Hash Detection
   const arrayBuffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   
-  const hashCheckRes = await fetch(`${API_BASE_URL}/upload/check-hash`, {
+  const hashCheckRes = await fetchWithDetailedError(`${API_BASE_URL}/upload/check-hash`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     },
     body: JSON.stringify({ hash: hashHex })
-  });
+  }, "Hash Check");
+  
   const hashData = await hashCheckRes.json();
   if (hashData.exists) {
     throw new Error('Duplicate Document: This document has already been uploaded.');
   }
 
-  const sigRes = await fetch(`${API_BASE_URL}/upload/signature?type=kyc`, {
+  const sigRes = await fetchWithDetailedError(`${API_BASE_URL}/upload/signature?type=kyc`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
-  });
-  if (!sigRes.ok) throw new Error('Failed to get upload signature');
+  }, "Signature Fetch");
+  
   const sigData = await sigRes.json();
   
   const fd = new FormData();
@@ -49,23 +76,22 @@ async function uploadFile(file: File): Promise<{ url: string, extractedText: str
     fd.append('type', sigData.type);
   }
 
-  const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
+  const uploadRes = await fetchWithDetailedError(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
     method: 'POST',
     body: fd,
-  });
+  }, "Cloudinary Upload");
   
-  if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
   const uploadData = await uploadRes.json();
   
   // Save Hash URL to DB
-  await fetch(`${API_BASE_URL}/upload/check-hash`, {
+  await fetchWithDetailedError(`${API_BASE_URL}/upload/check-hash`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     },
     body: JSON.stringify({ hash: hashHex, url: uploadData.secure_url })
-  });
+  }, "Save Hash");
 
   // Optional: Run OCR if it's an image
   let extractedText = "";
@@ -176,7 +202,22 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {requiredDocs.map(type => {
             const { status, doc } = getDocStatus(type);
-            const title = type.replace('_', ' ');
+            
+            const DOC_TITLES: Record<string, string> = {
+              'AADHAAR': 'Aadhaar',
+              'PAN': 'PAN',
+              'PROPERTY_OWNERSHIP_PROOF': 'Property Ownership Proof',
+              'BANK_VERIFICATION': 'Bank Verification',
+              'GST_CERTIFICATE': 'GST Certificate',
+              'TRADE_LICENSE': 'Trade License',
+              'TOURISM_REGISTRATION': 'Tourism Registration',
+              'FSSAI_LICENSE': 'FSSAI License',
+              'ID_DOCUMENT': 'ID Document',
+              'GUIDE_LICENSE': 'Guide License',
+              'PASSPORT': 'Passport'
+            };
+            
+            const title = DOC_TITLES[type] || type.replace(/_/g, ' ');
             
             return (
               <div key={type} className={`relative p-6 rounded-2xl border-2 transition-all ${
