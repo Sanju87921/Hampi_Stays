@@ -137,6 +137,14 @@ const mergeMockGuides = (fetched: any[]) => {
  return [...MOCK_GUIDES, ...cleanFetched];
 };
 
+
+const normalizeArray = (d: any) => {
+  if (Array.isArray(d)) return d;
+  if (d && Array.isArray(d.data)) return d.data;
+  if (d && Array.isArray(d.logs)) return d.logs;
+  return [];
+};
+
 export function AdminDashboard() {
  const { confirm } = useModal();
  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
