@@ -117,7 +117,7 @@ export function CheckoutPage() {
     setIsValidatingCoupon(true);
     try {
       const response = await apiClient.post<any>('/promotions/validate', {
-        code: codeToApply.trim().toUpperCase(),
+        code: codeToApply.trim(),
         bookingAmount: grandTotal,
         userId: user?.id
       });
@@ -132,7 +132,7 @@ export function CheckoutPage() {
         toast.success(`🎉 ${response.name} applied successfully!`);
       } else {
         toast.error(response.error || "Invalid promotion code");
-        if (appliedCoupon && appliedCoupon.code === codeToApply.toUpperCase()) {
+        if (appliedCoupon && appliedCoupon.code === codeToApply.trim()) {
             setAppliedCoupon(null);
         }
       }
@@ -483,7 +483,7 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+                  <div className="flex-col sm:flex-row items-center gap-6 pt-4 hidden md:flex">
                     <Button size="lg" className="w-full sm:w-auto px-12 h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
                       Pay {fmt(finalPrice)} Securely
                     </Button>
@@ -544,7 +544,7 @@ export function CheckoutPage() {
                                 🎉 {promo.name}
                               </p>
                               <p className="text-xs text-navy-950/60 mt-1">
-                                {promo.description || (promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
+                                {promo.description || (promo.discountType?.toUpperCase() === 'PERCENTAGE' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`)}
                                 {promo.minBookingAmount ? ` on bookings above ₹${promo.minBookingAmount}` : ''}
                               </p>
                             </div>
@@ -582,7 +582,7 @@ export function CheckoutPage() {
                         type="text"
                         placeholder="ENTER PROMO CODE"
                         value={couponCodeInput}
-                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        onChange={(e) => setCouponCodeInput(e.target.value)}
                         disabled={isValidatingCoupon}
                         className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl border border-sand-200 focus:outline-none focus:border-gold-500 bg-white transition-colors uppercase"
                       />
@@ -655,6 +655,24 @@ export function CheckoutPage() {
           </aside>
         </div>
       </div>
+
+      {/* Mobile Sticky Pay Button (Step 3) */}
+      <AnimatePresence>
+        {step === 3 && (
+          <motion.div 
+            initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
+            className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-sand-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 md:hidden pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          >
+            <div className="flex items-center justify-between mb-3 px-2">
+              <span className="text-sm font-bold text-navy-950 font-serif">Total</span>
+              <span className="text-lg font-bold text-navy-950">{fmt(finalPrice)}</span>
+            </div>
+            <Button size="lg" className="w-full h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
+              Pay Securely
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

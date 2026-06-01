@@ -15,12 +15,16 @@ export function MobileDock() {
   const isAdmin = user?.role === "ADMIN";
   if (isOwner || isAdmin) return null;
 
-  const items = [
-    { icon: Home, label: "Dashboard", path: "/dashboard" },
-    { icon: Search, label: "Explore", path: "/resorts" },
+  const items = isAuthenticated ? [
+    { icon: Compass, label: "Explore", path: "/resorts" },
+    { icon: Home, label: "Dashboard", path: "/dashboard", exact: true },
     { icon: Calendar, label: "Bookings", path: "/dashboard/bookings" },
-    { icon: Heart, label: "Wishlist", path: isAuthenticated ? "/dashboard/wishlist" : "/login" },
-    { icon: User, label: "Profile", path: isAuthenticated ? "/dashboard/profile" : "/login" },
+    { icon: User, label: "Profile", path: "/dashboard/profile" },
+  ] : [
+    { icon: Home, label: "Home", path: "/", exact: true },
+    { icon: Compass, label: "Explore", path: "/resorts" },
+    { icon: Heart, label: "Wishlist", path: "/login" },
+    { icon: User, label: "Profile", path: "/login" },
   ];
 
   return (
@@ -31,7 +35,9 @@ export function MobileDock() {
         className="max-w-md mx-auto bg-navy-950/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-2 shadow-2xl flex items-center justify-between pointer-events-auto"
       >
         {items.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+          const isActive = item.exact 
+            ? location.pathname === item.path
+            : (location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path)));
           const Icon = item.icon;
 
           const handleClick = (e: React.MouseEvent, label: string) => {

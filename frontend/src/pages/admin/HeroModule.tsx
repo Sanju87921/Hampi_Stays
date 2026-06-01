@@ -81,10 +81,6 @@ const HeroModule = () => {
  }, [previewPlaying, activeSlides.length, rotationSpeed]);
 
  const toggle = async (slide: HomepageHero) => {
- if (slide.isActive && activeSlides.length <= 2) { 
- toast.error('Minimum 2 slides required'); 
- return; 
- }
  const updated = { ...slide, isActive: !slide.isActive };
  setSlides(slides.map(x => x.id === slide.id ? updated : x));
  try {
@@ -139,22 +135,21 @@ const HeroModule = () => {
  };
 
  const deleteSlide = async (id: string) => {
- if (!(await confirm({ title: "Delete Slide", message: 'Are you sure you want to delete this slide?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
- 
- if (slides.find(s => s.id === id)?.isActive && activeSlides.length <= 2) {
- toast.error('Cannot delete slide. Minimum 2 active slides required.');
- return;
- }
-
- setSlides(slides.filter(x => x.id !== id));
- try {
- await api.delete(`/hero-slides/${id}`);
- toast.success('Slide deleted');
- } catch (err) {
- toast.error('Failed to delete slide');
- fetchSlides();
- }
- };
+    if (!(await confirm({ title: "Delete Hero Slide", message: 'Are you sure you want to delete this slide?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
+    
+    setSlides(slides.filter(x => x.id !== id));
+    try {
+      await api.delete(`/hero-slides/${id}`);
+      if (slides.length === 1) {
+        toast.success('All hero slides removed');
+      } else {
+        toast.success('Slide deleted successfully');
+      }
+    } catch (err) {
+      toast.error('Failed to delete slide');
+      fetchSlides();
+    }
+  };
 
  const handleSaveConfig = () => {
  localStorage.setItem('hampi_hero_config', JSON.stringify({ rotationSpeed }));
@@ -414,15 +409,13 @@ const HeroModule = () => {
  </div>
  <div className="flex gap-1">
  <button onClick={() => toggle(slide)}
- disabled={slide.isActive && activeSlides.length <= 2}
- title={slide.isActive && activeSlides.length <= 2 ? "Minimum 2 active slides required" : slide.isActive ? "Deactivate (Set as Draft)" : "Activate (Publish)"}
- className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white border border-sand-200 text-navy-950 hover:bg-sand-50 :bg-sand-100'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-50`}>
+ title={slide.isActive ? "Deactivate (Set as Draft)" : "Activate (Publish)"}
+ className={`p-2 rounded-xl transition-all shadow-sm ${slide.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-white border border-sand-200 text-navy-950 hover:bg-sand-50 :bg-sand-100'}`}>
  {slide.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
  </button>
  <button onClick={() => deleteSlide(slide.id)} 
- disabled={slide.isActive && activeSlides.length <= 2}
- title={slide.isActive && activeSlides.length <= 2 ? "Minimum 2 active slides required" : "Delete Slide"} 
- className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-red-500/70">
+ title="Delete Slide" 
+ className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm">
  <Trash2 className="w-4 h-4" />
  </button>
  </div>

@@ -41,6 +41,7 @@ interface AuditLog {
 }
 
 export function PromotionsModule() {
+  const normalizeArray = (d) => Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.promotions) ? d.promotions : [];
   const { confirm, showModal } = useModal();
 
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -62,7 +63,7 @@ export function PromotionsModule() {
         apiClient.get<any>('/admin/promotions/analytics'),
         apiClient.get<any>('/admin/guide-promotion-analytics')
       ]);
-      setPromotions(promosRes || []);
+      setPromotions(normalizeArray(promosRes));
       setAnalytics(analyticsRes || null);
       setGuideAnalytics(guideAnalyticsRes || null);
     } catch (err: any) {

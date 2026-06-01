@@ -35,6 +35,7 @@ export function Hero() {
   const [hampiImages, setHampiImages] = useState(hampiImagesFallback);
   const [imageLabels, setImageLabels] = useState(imageLabelsFallback);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [hasSlides, setHasSlides] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Fetch dynamic hero slides

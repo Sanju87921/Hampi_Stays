@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('src/pages/admin/PromotionsModule.tsx', 'utf8'); c = c.replace('proceed?\)) {', 'proceed?\}))) {'); fs.writeFileSync('src/pages/admin/PromotionsModule.tsx', c);

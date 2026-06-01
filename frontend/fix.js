@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('src/pages/admin/PromotionsModule.tsx', 'utf8'); c = c.split('\n').map(l => l.includes('Do you want to proceed?') ? l.replace('proceed?\)) {', 'proceed?\}))) {') : l).join('\n'); fs.writeFileSync('src/pages/admin/PromotionsModule.tsx', c);

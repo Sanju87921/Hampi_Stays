@@ -528,6 +528,57 @@ export function BookingsPage() {
                       </div>
                     </div>
 
+                    {/* Booking Timeline */}
+                    <div className="mb-8 p-6 bg-sand-50/60 rounded-3xl border border-sand-100/50">
+                      <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold mb-4">Journey Timeline</p>
+                      <div className="flex flex-col gap-3 relative">
+                        <div className="absolute left-2.5 top-2 bottom-2 w-0.5 bg-sand-200"></div>
+                        {booking.status === "CANCELLED" ? (
+                          <>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-5 h-5 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center shrink-0" />
+                              <span className="text-xs font-bold text-navy-950">Booking Created</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-5 h-5 rounded-full bg-red-500 border-4 border-white flex items-center justify-center shrink-0" />
+                              <span className="text-xs font-bold text-navy-950">Cancelled</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-5 h-5 rounded-full bg-sand-300 border-4 border-white flex items-center justify-center shrink-0" />
+                              <span className="text-xs font-bold text-navy-950/50">Refund Processing</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-5 h-5 rounded-full bg-sand-300 border-4 border-white flex items-center justify-center shrink-0" />
+                              <span className="text-xs font-bold text-navy-950/50">Refund Completed</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-5 h-5 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center shrink-0" />
+                              <span className="text-xs font-bold text-navy-950">Booking Created</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className={cn("w-5 h-5 rounded-full border-4 border-white flex items-center justify-center shrink-0", booking.status !== "PENDING" ? "bg-emerald-500" : "bg-sand-300")} />
+                              <span className={cn("text-xs font-bold", booking.status !== "PENDING" ? "text-navy-950" : "text-navy-950/50")}>Payment Successful</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className={cn("w-5 h-5 rounded-full border-4 border-white flex items-center justify-center shrink-0", booking.status !== "PENDING" ? "bg-emerald-500" : "bg-sand-300")} />
+                              <span className={cn("text-xs font-bold", booking.status !== "PENDING" ? "text-navy-950" : "text-navy-950/50")}>Confirmation Sent</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className={cn("w-5 h-5 rounded-full border-4 border-white flex items-center justify-center shrink-0", booking.status === "CHECKED_IN" || booking.status === "COMPLETED" ? "bg-emerald-500" : "bg-sand-300")} />
+                              <span className={cn("text-xs font-bold", booking.status === "CHECKED_IN" || booking.status === "COMPLETED" ? "text-navy-950" : "text-navy-950/50")}>Check-In</span>
+                            </div>
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className={cn("w-5 h-5 rounded-full border-4 border-white flex items-center justify-center shrink-0", booking.status === "COMPLETED" ? "bg-emerald-500" : "bg-sand-300")} />
+                              <span className={cn("text-xs font-bold", booking.status === "COMPLETED" ? "text-navy-950" : "text-navy-950/50")}>Check-Out</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Add-ons & Meal Packages & Promotions */}
                     {(() => {
                       const text = booking.specialRequests;

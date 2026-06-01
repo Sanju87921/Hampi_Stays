@@ -195,7 +195,7 @@ export function AdminDashboard() {
  break;
  case 'otp-logs':
  const logs = await apiClient.get<any[]>('/admin/otp-logs');
- setOtpLogs(logs);
+ setOtpLogs(normalizeArray(logs));
  break;
  case 'overview':
  const st = await apiClient.get<any>('/admin/stats');
@@ -207,7 +207,7 @@ export function AdminDashboard() {
  break;
  case 'bookings':
  const bk = await apiClient.get<any[]>('/admin/bookings/all');
- setAllBookings(bk);
+ setAllBookings(normalizeArray(bk));
  break;
  case 'properties':
  case 'commissions':
@@ -218,11 +218,11 @@ export function AdminDashboard() {
  break;
  case 'users':
  const us = await apiClient.get<any[]>('/admin/users');
- setAllUsers(Array.isArray(us) ? us : []);
+ setAllUsers(normalizeArray(us));
  break;
  case 'audit-logs':
  const aLogs = await apiClient.get<any[]>('/admin/audit-logs');
- setAuditLogs(Array.isArray(aLogs?.data) ? aLogs.data : (Array.isArray(aLogs) ? aLogs : []));
+ setAuditLogs(normalizeArray(aLogs));
  break;
  case 'guides':
  const gds = await apiClient.get<any[]>('/admin/guides');
@@ -265,7 +265,7 @@ export function AdminDashboard() {
  break;
  case 'users':
  const users = await apiClient.get<any[]>('/admin/users');
- setAllUsers(Array.isArray(users) ? users : []);
+ setAllUsers(normalizeArray(users));
  break;
  case 'guides':
  const guides = await apiClient.get<any[]>('/admin/guides');
@@ -273,7 +273,7 @@ export function AdminDashboard() {
  break;
  case 'bookings':
  const bookings = await apiClient.get<any[]>('/admin/bookings/all');
- setAllBookings(bookings);
+ setAllBookings(normalizeArray(bookings));
  break;
  case 'payouts':
  const payouts = await apiClient.get<any[]>('/admin/payouts');
@@ -289,11 +289,11 @@ export function AdminDashboard() {
  break;
  case 'otp-logs':
  const logs = await apiClient.get<any[]>('/admin/otp-logs');
- setOtpLogs(logs);
+ setOtpLogs(normalizeArray(logs));
  break;
  case 'audit-logs':
  const audit = await apiClient.get<any[]>('/admin/audit-logs');
- setAuditLogs(Array.isArray(audit?.data) ? audit.data : (Array.isArray(audit) ? audit : []));
+ setAuditLogs(normalizeArray(audit));
  break;
  }
  } catch (err) {
