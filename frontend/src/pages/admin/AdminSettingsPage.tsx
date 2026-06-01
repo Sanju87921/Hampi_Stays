@@ -253,12 +253,12 @@ export function AdminSettingsPage() {
          {[
            { id: 'AADHAAR', label: 'Aadhaar' },
            { id: 'PAN', label: 'PAN' },
-           { id: 'PROPERTY_OWNERSHIP', label: 'Property Ownership Proof' },
+           { id: 'PROPERTY_OWNERSHIP_PROOF', label: 'Property Ownership Proof' },
            { id: 'BANK_VERIFICATION', label: 'Bank Verification' },
-           { id: 'GST', label: 'GST Certificate' },
+           { id: 'GST_CERTIFICATE', label: 'GST Certificate' },
            { id: 'TRADE_LICENSE', label: 'Trade License' },
            { id: 'TOURISM_REGISTRATION', label: 'Tourism Registration' },
-           { id: 'FSSAI', label: 'FSSAI License' }
+           { id: 'FSSAI_LICENSE', label: 'FSSAI License' }
          ].map(req => {
            const isActive = verificationSettings?.resortOwnerRequirements?.includes(req.id);
            const isUpdating = updatingReq === `resortOwner-${req.id}`;

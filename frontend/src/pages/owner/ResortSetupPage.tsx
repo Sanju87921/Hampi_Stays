@@ -29,8 +29,8 @@ export function ResortSetupPage() {
     const reqs = settings?.verificationSettings?.resortOwnerRequirements || [];
     const docs = [];
     if (reqs.includes('AADHAAR') || reqs.includes('ID_DOCUMENT')) docs.push('id_proof');
-    if (reqs.includes('BUSINESS_REG')) docs.push('gst_cert');
-    if (reqs.includes('BANK_DETAILS')) docs.push('property_tax');
+    if (reqs.includes('GST_CERTIFICATE')) docs.push('gst_cert');
+    if (reqs.includes('PROPERTY_OWNERSHIP_PROOF') || reqs.includes('BANK_VERIFICATION')) docs.push('property_tax');
     return docs;
   }, [settings]);
 

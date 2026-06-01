@@ -36,7 +36,7 @@ export function ProfileIncompleteBanner() {
         const reqs = vSettings?.resortOwnerRequirements || [];
         if (reqs.includes('EMAIL') && !hasEmail) return true;
         if (reqs.includes('PHONE') && !hasPhone) return true;
-        if (reqs.some(r => ['AADHAAR', 'ID_DOCUMENT', 'BUSINESS_REG', 'BANK_DETAILS'].includes(r)) && !hasKYC) return true;
+        if (reqs.some(r => ['AADHAAR', 'PAN', 'ID_DOCUMENT', 'GST_CERTIFICATE', 'BANK_VERIFICATION', 'PROPERTY_OWNERSHIP_PROOF', 'TRADE_LICENSE', 'TOURISM_REGISTRATION', 'FSSAI_LICENSE'].includes(r)) && !hasKYC) return true;
         return !(hasFullName && hasAvatar);
       }
 
