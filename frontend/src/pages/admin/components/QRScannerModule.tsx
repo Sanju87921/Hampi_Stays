@@ -120,7 +120,7 @@ export function QRScannerModule() {
 
       <div className="bg-sand-50 rounded-3xl p-6 border border-sand-200">
         {isScanning ? (
-          <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl shadow-inner border-2 border-sand-200 relative">
+          <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl shadow-inner border-2 border-sand-200 relative pb-12">
             <div id="reader" className="w-full"></div>
             <div className="absolute inset-0 border-4 border-gold-400/50 rounded-2xl pointer-events-none z-10" />
             <div className="text-center py-4 text-xs font-bold text-navy-950/60 uppercase tracking-widest absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur z-20 pointer-events-none">
