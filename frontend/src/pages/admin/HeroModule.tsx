@@ -1,7 +1,7 @@
 import { useModal } from "../../components/shared/ModalProvider";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Pencil, Check, X, Monitor, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { Play, Pause, Pencil, Check, X, Monitor, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2, Calendar, Clock, Copy, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient as api } from '../../utils/apiClient';
 
@@ -396,7 +396,34 @@ const HeroModule = () => {
  </div>
  <button onClick={() => startEdit(slide)} className="p-1.5 text-navy-950 hover:text-gold-600 bg-sand-50 hover:bg-sand-100 :bg-sand-200 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
  </div>
- <p className="text-[10px] text-navy-950 mt-2 truncate font-mono bg-sand-50 px-1.5 py-0.5 rounded inline-block max-w-full">{slide.imageUrl}</p>
+   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-3">
+    <div className="flex items-center gap-1.5 text-[11px] text-navy-950/70">
+      <Calendar className="w-3 h-3" />
+      <span>Created: {new Date(slide.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+    </div>
+    <div className="flex items-center gap-1.5 text-[11px] text-navy-950/70">
+      <Clock className="w-3 h-3" />
+      <span>Updated: {new Date(slide.updatedAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+    </div>
+    <div className="flex items-center gap-1.5 mt-1 sm:mt-0 sm:ml-auto">
+      <button 
+        onClick={() => { navigator.clipboard.writeText(slide.imageUrl); toast.success('Image URL copied'); }}
+        className="flex items-center gap-1 px-2 py-1 bg-sand-50 hover:bg-sand-100 border border-sand-200 rounded text-[9px] font-bold text-navy-950 transition-colors uppercase tracking-wider"
+        title="Copy URL"
+      >
+        <Copy className="w-3 h-3" /> Copy URL
+      </button>
+      <a 
+        href={slide.imageUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-1 px-2 py-1 bg-sand-50 hover:bg-sand-100 border border-sand-200 rounded text-[9px] font-bold text-navy-950 transition-colors uppercase tracking-wider"
+        title="Open Image"
+      >
+        <ExternalLink className="w-3 h-3" /> Open
+      </a>
+    </div>
+  </div>
  </div>
  )}
  </div>
