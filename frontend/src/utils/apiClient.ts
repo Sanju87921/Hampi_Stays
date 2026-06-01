@@ -40,7 +40,12 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 1, ti
       if (err.name === 'AbortError') {
         throw new ApiError('Request timed out after ' + (timeoutMs/1000) + 's', 408);
       }
-      if (i === retries) throw err;
+      if (i === retries) {
+        if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+          throw new ApiError(`Network Error: CORS Preflight Failed or Server Unreachable at ${url}`, 0);
+        }
+        throw err;
+      }
       await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, i), 5000)));
     }
   }
