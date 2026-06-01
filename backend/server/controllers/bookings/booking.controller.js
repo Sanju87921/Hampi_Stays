@@ -708,3 +708,53 @@ export const scanBookingQR = async (c) => {
     return c.json({ error: 'Failed to process QR scan' }, 500);
   }
 };
+
+export const getQRScanHistory = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const userId = c.get('userId');
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, include: { resortOwner: true } });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    let resortIds = [];
+    if (user.role === 'ADMIN') {
+      const resorts = await prisma.resort.findMany({ select: { id: true } });
+      resortIds = resorts.map(r => r.id);
+    } else if (user.resortOwner) {
+      const resorts = await prisma.resort.findMany({ where: { ownerId: user.resortOwner.id }, select: { id: true } });
+      resortIds = resorts.map(r => r.id);
+    } else {
+      return c.json({ history: [] });
+    }
+
+    const recentCheckIns = await prisma.auditLog.findMany({
+      where: {
+        action: 'CHECK_IN_COMPLETED',
+        details: { path: ['resortId'], array_contains: resortIds } // Simplified search for json, wait no, just fetch recent and filter or fetch recent bookings
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+    // It's much easier to query the Booking table directly for recently CHECKED_IN bookings for these resorts
+    const recentBookings = await prisma.booking.findMany({
+      where: { resortId: { in: resortIds }, status: 'CHECKED_IN' },
+      include: { user: { select: { name: true } }, resort: { select: { name: true } } },
+      orderBy: { updatedAt: 'desc' },
+      take: 10
+    });
+
+    const history = recentBookings.map(b => ({
+      guestName: b.guestName || b.user?.name || 'Guest',
+      bookingId: b.referenceNumber || b.id,
+      time: b.updatedAt,
+      status: b.status,
+      resortName: b.resort.name
+    }));
+
+    return c.json({ history });
+  } catch (err) {
+    return c.json({ error: 'Failed to fetch history' }, 500);
+  }
+};
+

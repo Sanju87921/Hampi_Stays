@@ -15,6 +15,7 @@ export const setupBookingRoutes = (app, authMiddleware, adminMiddleware) => {
   app.get('/guides/:id/bookings', authMiddleware, bookingController.getGuideBookings);
 
   app.get('/bookings/:id/qr', authMiddleware, bookingController.getBookingQR);
+  app.get('/bookings/qr/history', authMiddleware, bookingController.getQRScanHistory);
   app.post('/bookings/qr/validate', authMiddleware, bookingController.validateBookingQR);
   app.post('/bookings/qr/scan', authMiddleware, bookingController.scanBookingQR);
 };
