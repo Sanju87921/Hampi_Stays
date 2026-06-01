@@ -113,6 +113,37 @@ export function InventoryPage() {
   };
 
   const [showDiscounts, setShowDiscounts] = useState(false);
+  const [showIcal, setShowIcal] = useState(false);
+  const [icalUrls, setIcalUrls] = useState<string>("");
+
+  const handleSyncIcal = async () => {
+    if (!room) return;
+    setIsLoading(true);
+    try {
+      const res = await apiClient.post<{message: string, blocksCreatedOrUpdated: number}>(`/ical/sync/${room.id}`);
+      toast.success(`Sync complete! ${res.blocksCreatedOrUpdated} dates synchronized.`);
+      fetchResorts();
+    } catch (err) {
+      toast.error("Failed to sync calendar");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveIcalUrls = async () => {
+    if (!room) return;
+    setIsSaving(true);
+    try {
+      const urls = icalUrls.split('\\n').filter(u => u.trim() !== '');
+      await apiClient.post(`/ical/urls/${room.id}`, { urls });
+      toast.success("iCal URLs saved successfully!");
+      fetchResorts();
+    } catch (err) {
+      toast.error("Failed to save URLs");
+    } finally {
+      setIsSaving(false);
+    }
+  };
   const [newDiscount, setNewDiscount] = useState<any>({
     code: "", percentage: "", flatAmount: "", validFrom: "", validUntil: "", maxUses: "",
     isEarlyBird: false, minDaysInAdvance: "", isLastMinute: false, maxDaysInAdvance: ""
@@ -158,13 +189,13 @@ export function InventoryPage() {
               ))}
             </select>
             <Button variant="outline" className="rounded-xl gap-2 border-sand-200 text-navy-950" 
-              onClick={async () => {
-                setIsLoading(true);
-                // Simulation: Mocking a sync with Google Calendar
-                setTimeout(() => {
-                  toast.success("Sync complete! 12 external dates imported from Google Calendar.");
-                  setIsLoading(false);
-                }, 1500);
+              onClick={() => {
+                if (room?.externalIcalUrls) {
+                  setIcalUrls(room.externalIcalUrls.join('\\n'));
+                } else {
+                  setIcalUrls('');
+                }
+                setShowIcal(true);
               }}>
               <RefreshCw className="w-4 h-4" /> Sync Calendar
             </Button>
@@ -304,6 +335,59 @@ export function InventoryPage() {
           </div>
         </div>
       </div>
+
+      {/* iCal Sync Modal */}
+      <AnimatePresence>
+        {showIcal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowIcal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-8 md:p-12 max-w-2xl w-full shadow-luxury overflow-hidden">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-3xl font-serif font-bold text-navy-950 mb-2">Calendar Sync</h2>
+                  <p className="text-navy-950/40">Sync inventory with Airbnb, Booking.com, and Google Calendar.</p>
+                </div>
+                <button onClick={() => setShowIcal(false)} className="p-2 hover:bg-sand-100 rounded-full transition-all">
+                  <Trash2 className="w-6 h-6 text-navy-950" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-bold text-navy-950 mb-2">Export Calendar (Provide this to OTAs)</h4>
+                  <div className="flex gap-2">
+                    <input 
+                      readOnly 
+                      value={`${window.location.origin}/api/ical/export/room/${room?.id}`} 
+                      className="w-full px-4 py-3 bg-sand-50 rounded-xl text-sm border border-sand-100 text-navy-950 focus:outline-none" 
+                    />
+                    <Button onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/api/ical/export/room/${room?.id}`);
+                      toast.success("Export URL copied!");
+                    }} className="rounded-xl shrink-0">Copy</Button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-sand-100">
+                  <h4 className="text-sm font-bold text-navy-950 mb-2">Import Calendars (Paste URLs from OTAs)</h4>
+                  <p className="text-xs text-navy-950/50 mb-4">Paste one iCal URL per line.</p>
+                  <textarea 
+                    value={icalUrls}
+                    onChange={(e) => setIcalUrls(e.target.value)}
+                    className="w-full h-32 px-4 py-3 bg-white rounded-xl text-sm border border-sand-200 text-navy-950 focus:outline-none focus:border-gold-500 mb-4 resize-none"
+                    placeholder="https://www.airbnb.com/calendar/ical/..."
+                  />
+                  <div className="flex gap-4">
+                    <Button onClick={handleSaveIcalUrls} isLoading={isSaving} variant="outline" className="flex-1 rounded-xl">Save URLs</Button>
+                    <Button onClick={handleSyncIcal} isLoading={isLoading} className="flex-1 rounded-xl shadow-gold border-gold-500 bg-gold-500 text-white hover:bg-gold-600">Sync Now</Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Discount Management Modal */}
       <AnimatePresence>

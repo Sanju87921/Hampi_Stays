@@ -140,6 +140,7 @@ model Room {
   resortId       String
   maxNights      Int                 @default(30)
   minNights      Int                 @default(1)
+  externalIcalUrls String[]          @default([])
   bookings       Booking[]
   blockings      RoomBlocking[]
   priceOverrides RoomPriceOverride[]

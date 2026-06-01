@@ -78,7 +78,7 @@ const LoadingFallback = () => (
         src="/logo.png" 
         alt="Loading" 
         onError={(e) => (e.currentTarget.src = "/favicon.svg")}
-        className="h-12 w-auto opacity-20 grayscale mb-4" 
+        className="h-16 sm:h-20 w-auto opacity-20 grayscale mb-6" 
       />
       <div className="w-48 h-0.5 bg-sand-200 overflow-hidden rounded-full">
         <motion.div
@@ -109,7 +109,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             src="/logo.png" 
             alt="HampiStays" 
             onError={(e) => (e.currentTarget.src = "/favicon.svg")}
-            className="h-20 w-auto object-contain mb-8 opacity-20 grayscale" 
+            className="h-28 sm:h-32 w-auto object-contain mb-8 opacity-20 grayscale" 
           />
           <motion.div 
             animate={{ 
