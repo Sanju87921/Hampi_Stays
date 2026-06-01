@@ -15,6 +15,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
+import { QRScannerModule } from "../admin/components/QRScannerModule";
 import { apiClient } from "../../utils/apiClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -856,6 +857,13 @@ export function OwnerDashboard() {
               onClick={() => navigate("/dashboard?tab=kyc")}
             >
               <CheckCircle className="w-4 h-4 mr-2" /> KYC & Verification
+            </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "qr-scanner" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=qr-scanner")}
+            >
+              <Users className="w-4 h-4 mr-2" /> QR Scanner
             </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
@@ -1911,6 +1919,18 @@ export function OwnerDashboard() {
             
             {activeTab === "kyc" && (
               <KycUploadSection userType="resort" profileId={resort.id} />
+            )}
+            
+            {activeTab === "qr-scanner" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950">Contactless Check-In</h2>
+                    <p className="text-sm text-navy-950/40 mt-1">Scan guest QR passes to securely check them in.</p>
+                  </div>
+                </div>
+                <QRScannerModule />
+              </div>
             )}
           </div>
         </div>
