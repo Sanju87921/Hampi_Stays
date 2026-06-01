@@ -723,7 +723,12 @@ app.get('/admin/kyc/resorts', authMiddleware, adminMiddleware, async (c) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    return c.json(docs);
+    const { generateSignedKycUrlWorker } = require('../../utils/crypto');
+    const secureDocs = docs.map(doc => ({
+      ...doc,
+      documentUrl: generateSignedKycUrlWorker(doc.id, c.env).replace('/api/admin/kyc-image/', '/api/admin/kyc-document/')
+    }));
+    return c.json(secureDocs);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -744,11 +749,44 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
   const prisma = c.get('getPrisma')(c.env);
   const id = c.req.param('id');
   const { status, rejectionReason } = await c.req.json();
+  const adminId = c.get('userId');
   try {
     const doc = await prisma.kycDocument.update({
       where: { id },
-      data: { status, rejectedReason: rejectionReason }
+      data: { status, rejectedReason: rejectionReason },
+      include: { owner: true }
     });
+    
+    const ownerId = doc.ownerId;
+    const allDocs = await prisma.kycDocument.findMany({ where: { ownerId } });
+    const bank = await prisma.bankAccount.findUnique({ where: { ownerId } });
+    
+    const aadhaarVerified = allDocs.find(d => d.type === 'AADHAAR')?.status === 'VERIFIED';
+    const panVerified = allDocs.find(d => d.type === 'PAN')?.status === 'VERIFIED';
+    const bankVerified = bank?.status === 'VERIFIED';
+
+    const isVerified = aadhaarVerified && panVerified && bankVerified;
+    
+    if (status === 'REJECTED') {
+      await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: false } });
+    } else if (isVerified) {
+      await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+    }
+
+    if (doc.owner) {
+      await prisma.verificationAudit.create({
+        data: {
+          adminId: adminId || 'SYSTEM',
+          targetUserId: doc.owner.userId,
+          targetType: 'RESORT',
+          action: status,
+          newStatus: status,
+          rejectionReason: rejectionReason,
+          details: `${status} ${doc.type}`
+        }
+      });
+    }
+
     return c.json(doc);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -948,6 +986,37 @@ app.patch('/admin/guides/:id/status', authMiddleware, adminMiddleware, async (c)
     }
     return c.json(decryptedGuide);
   } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/admin/kyc-document/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  const expires = c.req.query('expires');
+  const token = c.req.query('token');
+
+  const { verifySignedKycUrlWorker } = require('../../utils/crypto');
+  if (!verifySignedKycUrlWorker(id, expires, token, c.env)) {
+    return c.json({ error: 'Forbidden: Invalid or expired signature' }, 403);
+  }
+
+  const doc = await prisma.kycDocument.findUnique({ where: { id } });
+  if (!doc || !doc.documentUrl) return c.json({ error: 'Not found' }, 404);
+  
+  const rawUrl = doc.documentUrl;
+  try {
+    const res = await fetch(rawUrl);
+    if (!res.ok) return c.json({ error: 'Failed to fetch document' }, 500);
+    const contentType = res.headers.get('content-type') || 'application/octet-stream';
+    const buffer = await res.arrayBuffer();
+    return new Response(buffer, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'private, max-age=3600'
+      }
+    });
+  } catch (err) {
+    return c.json({ error: 'Failed to proxy document: ' + err.message }, 500);
+  }
 });
 
 app.get('/admin/kyc-image/:id', authMiddleware, adminMiddleware, async (c) => {

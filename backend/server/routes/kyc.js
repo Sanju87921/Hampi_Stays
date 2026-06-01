@@ -170,13 +170,26 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
       if (doc) await prisma.kycDocument.update({ where: { id: doc.id }, data: { status: 'VERIFIED' } });
     }
 
+    // Check if ALL documents are verified
+    const allDocs = await prisma.kycDocument.findMany({ where: { ownerId } });
+    const bank = await prisma.bankAccount.findUnique({ where: { ownerId } });
+    
+    const aadhaarVerified = allDocs.find(d => d.type === 'AADHAAR')?.status === 'VERIFIED';
+    const panVerified = allDocs.find(d => d.type === 'PAN')?.status === 'VERIFIED';
+    const bankVerified = bank?.status === 'VERIFIED';
+
+    if (aadhaarVerified && panVerified && bankVerified) {
+      await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+    }
+
     const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
     await prisma.verificationAudit.create({
       data: {
-        adminId, targetUserId: owner.userId, targetType: 'RESORT', action: 'APPROVED', newStatus: 'VERIFIED'
+        adminId, targetUserId: owner.userId, targetType: 'RESORT', action: 'APPROVED', newStatus: 'VERIFIED',
+        details: `Approved ${type}`
       }
     });
-    return c.json({ success: true });
+    return c.json({ success: true, ownerVerified: aadhaarVerified && panVerified && bankVerified });
   });
 
   app.patch('/admin/verification/:ownerId/reject', authMiddleware, adminMiddleware, async (c) => {
@@ -191,11 +204,15 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
       const doc = await prisma.kycDocument.findFirst({ where: { ownerId, type } });
       if (doc) await prisma.kycDocument.update({ where: { id: doc.id }, data: { status: 'REJECTED', rejectedReason: reason } });
     }
+    
+    // Revoke owner verification if any doc is rejected
+    await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: false } });
 
     const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
     await prisma.verificationAudit.create({
       data: {
-        adminId, targetUserId: owner.userId, targetType: 'RESORT', action: 'REJECTED', newStatus: 'REJECTED', rejectionReason: reason
+        adminId, targetUserId: owner.userId, targetType: 'RESORT', action: 'REJECTED', newStatus: 'REJECTED', rejectionReason: reason,
+        details: `Rejected ${type}`
       }
     });
     return c.json({ success: true });

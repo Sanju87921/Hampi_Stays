@@ -2570,6 +2570,59 @@ app.patch('/bookings/:id', authMiddleware, async (c) => {
   } catch(e) { return c.json({error: e.message}, 500); }
 });
 
+  app.get('/resorts/:id/kyc', authMiddleware, async (c) => {
+    const prisma = getPrisma(c.env);
+    const id = c.req.param('id');
+    const resort = await prisma.resort.findUnique({ where: { id }, include: { owner: true } });
+    if (!resort || !resort.owner) return c.json({ error: 'Not found' }, 404);
+    
+    // Ensure the current user is the owner
+    const ownerUserId = resort.owner.userId;
+    if (ownerUserId !== c.get('userId')) return c.json({ error: 'Forbidden' }, 403);
+    
+    const docs = await prisma.kycDocument.findMany({ where: { ownerId: resort.owner.id } });
+    return c.json(docs);
+  });
+
+  app.post('/resorts/:id/kyc', authMiddleware, async (c) => {
+    const prisma = getPrisma(c.env);
+    const id = c.req.param('id');
+    const { type, documentUrl, extractedText } = await c.req.json();
+    const resort = await prisma.resort.findUnique({ where: { id }, include: { owner: true } });
+    if (!resort || !resort.owner) return c.json({ error: 'Not found' }, 404);
+    
+    const ownerUserId = resort.owner.userId;
+    if (ownerUserId !== c.get('userId')) return c.json({ error: 'Forbidden' }, 403);
+
+    const ownerId = resort.owner.id;
+    const existing = await prisma.kycDocument.findFirst({ where: { ownerId, type } });
+    
+    let doc;
+    if (existing) {
+      doc = await prisma.kycDocument.update({
+        where: { id: existing.id },
+        data: { documentUrl, status: 'PENDING', extractedText, rejectedReason: null }
+      });
+    } else {
+      doc = await prisma.kycDocument.create({
+        data: { ownerId, type, documentUrl, status: 'PENDING', extractedText }
+      });
+    }
+
+    await prisma.verificationAudit.create({
+      data: {
+        adminId: c.get('userId'),
+        targetUserId: ownerUserId,
+        targetType: 'RESORT',
+        action: 'SUBMITTED',
+        newStatus: 'PENDING',
+        previousStatus: existing?.status || 'NOT_SUBMITTED'
+      }
+    });
+
+    return c.json(doc);
+  });
+
 app.post('/resorts/:id/photos', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
