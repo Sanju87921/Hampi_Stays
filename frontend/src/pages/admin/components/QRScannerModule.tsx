@@ -13,8 +13,11 @@ export function QRScannerModule() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
 
+  const scannerRef = React.useRef<Html5QrcodeScanner | null>(null);
+
   useEffect(() => {
     if (!isScanning) return;
+    if (scannerRef.current) return;
 
     const scanner = new Html5QrcodeScanner(
       "reader",
@@ -27,13 +30,20 @@ export function QRScannerModule() {
       false
     );
 
+    scannerRef.current = scanner;
+
     scanner.render(
       async (decodedText) => {
         // Stop scanning to prevent multiple scans
-        scanner.pause(true);
+        if (scannerRef.current) {
+          scannerRef.current.pause(true);
+        }
         setIsScanning(false);
         await handleScan(decodedText);
-        scanner.clear();
+        if (scannerRef.current) {
+          scannerRef.current.clear();
+          scannerRef.current = null;
+        }
       },
       (error) => {
         // Ignore normal scan errors (no QR found in frame)
@@ -41,7 +51,10 @@ export function QRScannerModule() {
     );
 
     return () => {
-      scanner.clear().catch(console.error);
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(console.error);
+        scannerRef.current = null;
+      }
     };
   }, [isScanning]);
 
@@ -110,7 +123,7 @@ export function QRScannerModule() {
           <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl shadow-inner border-2 border-sand-200 relative">
             <div id="reader" className="w-full"></div>
             <div className="absolute inset-0 border-4 border-gold-400/50 rounded-2xl pointer-events-none z-10" />
-            <div className="text-center py-4 text-xs font-bold text-navy-950/60 uppercase tracking-widest absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur z-20">
+            <div className="text-center py-4 text-xs font-bold text-navy-950/60 uppercase tracking-widest absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur z-20 pointer-events-none">
               Align QR code within frame
             </div>
           </div>
