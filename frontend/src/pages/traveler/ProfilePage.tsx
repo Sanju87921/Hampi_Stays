@@ -7,6 +7,8 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { KycUploadSection } from "../../components/shared/KycUploadSection";
+import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
 import { sanitizePhoneNumber } from "../../utils/phone";
 
@@ -89,6 +91,11 @@ function buildFormData(u: any): ProfileFormData {
 
 export function ProfilePage() {
   const { user, updateUser } = useAuth();
+  const { settings } = useSystem();
+  
+  const travellerKycReqs = settings?.verificationSettings?.travellerRequirements || [];
+  const hasKycRequirements = travellerKycReqs.some((r: string) => !['EMAIL', 'PHONE'].includes(r));
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -392,6 +399,17 @@ export function ProfilePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </motion.div>
+      )}
+      {user?.role === 'TRAVELLER' && hasKycRequirements && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className='max-w-4xl mx-auto mt-12 mb-20 px-4 md:px-6'>
+          <div className='bg-white rounded-[2.5rem] p-10 md:p-14 shadow-sm border border-sand-100'>
+             <div className="mb-6">
+                <h2 className="text-3xl font-serif font-bold text-navy-950 mb-2">Identity Verification</h2>
+                <p className="text-navy-950/60">Upload your government-issued documents to comply with local regulations.</p>
+             </div>
+             <KycUploadSection userType="traveler" profileId={user?.id || ""} />
           </div>
         </motion.div>
       )}

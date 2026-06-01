@@ -18,7 +18,7 @@ import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { QRScannerModule } from "../admin/components/QRScannerModule";
 import { apiClient } from "../../utils/apiClient";
 import { compressImageFile } from "../../utils/image";
-import { Eye, RefreshCw, Star, Image as ImageIcon } from "lucide-react";
+import { Eye, RefreshCw, Image as ImageIcon } from "lucide-react";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
