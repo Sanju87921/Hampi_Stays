@@ -1,4 +1,4 @@
-async function evaluateResortOwnerKyc(prisma, ownerId, vSettings, currentIsVerified = false) {
+export async function evaluateResortOwnerKyc(prisma, ownerId, vSettings, currentIsVerified = false) {
   // Grandfathering: If they are already verified, changing settings shouldn't revoke it
   if (currentIsVerified) return true;
 
@@ -19,7 +19,7 @@ async function evaluateResortOwnerKyc(prisma, ownerId, vSettings, currentIsVerif
   return isVerified;
 }
 
-async function evaluateGuideKyc(prisma, guideProfileId, vSettings, currentIsVerified = false) {
+export async function evaluateGuideKyc(prisma, guideProfileId, vSettings, currentIsVerified = false) {
   // Grandfathering
   if (currentIsVerified) return true;
 
@@ -35,7 +35,7 @@ async function evaluateGuideKyc(prisma, guideProfileId, vSettings, currentIsVeri
   return isVerified;
 }
 
-async function evaluateTravellerKyc(user, vSettings) {
+export async function evaluateTravellerKyc(user, vSettings) {
   // Traveller requirements apply dynamically upon action usually, but we can verify status
   const reqs = vSettings.travellerRequirements || [];
   let isVerified = true;
@@ -52,7 +52,7 @@ async function evaluateTravellerKyc(user, vSettings) {
   return isVerified;
 }
 
-async function recalculateAllKyc(prisma, adminId) {
+export async function recalculateAllKyc(prisma, adminId) {
   const vSettings = await prisma.verificationSettings.findFirst() || {
     travellerRequirements: ['MOBILE_OTP', 'EMAIL_VERIFICATION'],
     resortOwnerRequirements: ['AADHAAR', 'PAN'],

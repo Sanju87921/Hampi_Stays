@@ -170,7 +170,7 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
       if (doc) await prisma.kycDocument.update({ where: { id: doc.id }, data: { status: 'VERIFIED' } });
     }
 
-    const { evaluateResortOwnerKyc } = require('../utils/kycEngine.js');
+    const { evaluateResortOwnerKyc } = await import('../utils/kycEngine.js');
     const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
     const vSettings = await prisma.verificationSettings.findFirst() || { resortOwnerRequirements: ['AADHAAR', 'PAN'] };
     const isNowVerified = await evaluateResortOwnerKyc(prisma, ownerId, vSettings, owner.isVerified);

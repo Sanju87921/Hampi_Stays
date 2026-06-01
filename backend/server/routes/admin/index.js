@@ -304,7 +304,7 @@ app.post('/admin/verification-settings', authMiddleware, adminMiddleware, async 
     }
 
     // Call recalculation
-    const { recalculateAllKyc } = require('../../utils/kycEngine.js');
+    const { recalculateAllKyc } = await import('../../utils/kycEngine.js');
     await recalculateAllKyc(prisma, adminEmail);
 
     // Audit Logging
@@ -799,7 +799,7 @@ app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) =>
     if (status === 'REJECTED') {
       await prisma.guideProfile.update({ where: { id: guideId }, data: { isVerified: false } });
     } else {
-      const { evaluateGuideKyc } = require('../../utils/kycEngine.js');
+      const { evaluateGuideKyc } = await import('../../utils/kycEngine.js');
       const vSettings = await prisma.verificationSettings.findFirst() || {};
       const guide = doc.guideProfile;
       const isVerified = await evaluateGuideKyc(prisma, guideId, vSettings, guide.isVerified);
@@ -841,7 +841,7 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
     if (status === 'REJECTED') {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: false } });
     } else {
-      const { evaluateResortOwnerKyc } = require('../../utils/kycEngine.js');
+      const { evaluateResortOwnerKyc } = await import('../../utils/kycEngine.js');
       const vSettings = await prisma.verificationSettings.findFirst() || {};
       const owner = await prisma.resortOwner.findUnique({ where: { id: ownerId } });
       const isVerified = await evaluateResortOwnerKyc(prisma, ownerId, vSettings, owner.isVerified);
