@@ -499,11 +499,9 @@ export const getBookingQR = async (c) => {
 
     await prisma.auditLog.create({
       data: {
+        adminId: payload.userId || 'system',
         action: 'QR_GENERATED',
-        entityType: 'BOOKING',
-        entityId: booking.id,
-        userId: payload.userId,
-        details: 'QR pass generated for booking'
+        details: { entityType: 'BOOKING', entityId: booking.id, info: 'QR pass generated for booking' }
       }
     });
 
@@ -543,6 +541,25 @@ export const validateBookingQR = async (c) => {
     });
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
+
+    if (payload.role !== 'ADMIN') {
+      const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId } });
+      const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
+      
+      const isOwner = owner && booking.resort.ownerId === owner.id;
+      const isStaff = staff && staff.resortId === booking.resortId;
+
+      if (!isOwner && !isStaff) {
+        await prisma.auditLog.create({
+          data: {
+            adminId: payload.userId || 'system',
+            action: 'UNAUTHORIZED_RESORT_SCAN',
+            details: { bookingId: booking.id, resortId: booking.resortId, error: 'User attempted to scan QR for a resort they do not own' }
+          }
+        });
+        return c.json({ error: 'Unauthorized check-in attempt.' }, 403);
+      }
+    }
 
     if (booking.status === 'CANCELLED') {
       return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
@@ -610,9 +627,28 @@ export const scanBookingQR = async (c) => {
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
 
+    if (payload.role !== 'ADMIN') {
+      const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId } });
+      const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
+      
+      const isOwner = owner && booking.resort.ownerId === owner.id;
+      const isStaff = staff && staff.resortId === booking.resortId;
+
+      if (!isOwner && !isStaff) {
+        await prisma.auditLog.create({
+          data: {
+            adminId: payload.userId || 'system',
+            action: 'UNAUTHORIZED_RESORT_SCAN',
+            details: { bookingId: booking.id, resortId: booking.resortId, error: 'User attempted to scan QR for a resort they do not own' }
+          }
+        });
+        return c.json({ error: 'Unauthorized check-in attempt.' }, 403);
+      }
+    }
+
     if (booking.status === 'CANCELLED') {
       await prisma.auditLog.create({
-        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Cancelled booking scan attempt' }
+        data: { adminId: payload.userId || 'system', action: 'QR_SCAN_FAILED', details: { entityType: 'BOOKING', entityId: booking.id, error: 'Cancelled booking scan attempt' } }
       });
       return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
     }
@@ -626,14 +662,14 @@ export const scanBookingQR = async (c) => {
 
     if (now > checkOutDate) {
       await prisma.auditLog.create({
-        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Expired booking scan attempt' }
+        data: { adminId: payload.userId || 'system', action: 'QR_SCAN_FAILED', details: { entityType: 'BOOKING', entityId: booking.id, error: 'Expired booking scan attempt' } }
       });
       return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
     }
 
     if (now < validFrom) {
       await prisma.auditLog.create({
-        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Early scan attempt blocked' }
+        data: { adminId: payload.userId || 'system', action: 'EARLY_SCAN_ATTEMPT', details: { entityType: 'BOOKING', entityId: booking.id, error: 'Early scan attempt blocked' } }
       });
       return c.json({ 
         error: 'Check-In not yet available.',
@@ -643,7 +679,7 @@ export const scanBookingQR = async (c) => {
 
     if (booking.status === 'CHECKED_IN') {
       await prisma.auditLog.create({
-        data: { action: 'QR_SCAN_FAILED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'Duplicate scan attempt' }
+        data: { adminId: payload.userId || 'system', action: 'DUPLICATE_SCAN_ATTEMPT', details: { entityType: 'BOOKING', entityId: booking.id, error: 'Duplicate scan attempt' } }
       });
       return c.json({ error: 'Guest is already checked in.' }, 400);
     }
@@ -655,7 +691,7 @@ export const scanBookingQR = async (c) => {
     });
 
     await prisma.auditLog.create({
-      data: { action: 'CHECK_IN_COMPLETED', entityType: 'BOOKING', entityId: booking.id, userId: payload.userId, details: 'QR Check-In successful' }
+      data: { adminId: payload.userId || 'system', action: 'CHECK_IN_COMPLETED', details: { entityType: 'BOOKING', entityId: booking.id, info: 'QR Check-In successful' } }
     });
 
     return c.json({
