@@ -96,6 +96,50 @@ app.use('*', async (c, next) => {
   c.set('getPrisma', getPrisma);
   await next();
 });
+// --- Maintenance Middleware ---
+app.use('*', async (c, next) => {
+  if (c.req.method === 'OPTIONS') return next();
+  const path = c.req.path;
+  
+  // Allow health checks and auth routes to bypass maintenance check
+  if (path === '/api/health' || path === '/health') return next();
+  if (path.startsWith('/api/auth/login')) return next();
+
+  // Check if user is admin
+  let isAdmin = false;
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, c.env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026');
+      if (decoded.role === 'ADMIN' || decoded.role === 'SUPER_ADMIN') {
+        isAdmin = true;
+      }
+    } catch(e) {}
+  }
+
+  if (isAdmin) return next();
+
+  // If not admin, check maintenance mode
+  const getPrisma = c.get('getPrisma');
+  if (getPrisma) {
+    const prisma = getPrisma(c.env);
+    let settings;
+    try {
+      settings = await prisma.systemSettings.findFirst();
+    } catch(e) {}
+
+    if (settings && settings.maintenanceMode) {
+      return c.json({ 
+        error: 'System is under maintenance. Public access is temporarily disabled.', 
+        maintenanceMode: true 
+      }, 503);
+    }
+  }
+
+  await next();
+});
+
 app.use('*', loggingMiddleware());
 app.onError(globalErrorHandler);
 

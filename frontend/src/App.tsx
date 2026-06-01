@@ -49,6 +49,23 @@ import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { AuthModal } from "./components/auth/AuthModal";
 import { useAuth } from "./context/AuthContext";
 import { useSystem } from "./context/SystemContext";
+import { MaintenanceScreen } from "./components/shared/MaintenanceScreen";
+
+const MaintenanceWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { settings } = useSystem();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/register');
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard/resort-setup');
+
+  if (settings?.maintenanceMode && !isAdmin && !isAuthRoute && !isAdminRoute) {
+    return <MaintenanceScreen />;
+  }
+
+  return <>{children}</>;
+};
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-sand-50">
@@ -319,7 +336,9 @@ function App() {
         }}
       />
       <ScrollToTop />
-      <AnimatedRoutes />
+      <MaintenanceWrapper>
+        <AnimatedRoutes />
+      </MaintenanceWrapper>
       <AuthModal />
       <CookieConsent />
     </Router>
