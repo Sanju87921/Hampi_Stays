@@ -69,7 +69,7 @@ export function QRScannerModule() {
     
     const confirmed = await confirm({
       title: "Confirm Check-In",
-      message: \`Are you sure you want to check in \${scanResult.guestName}?\`
+      message: `Are you sure you want to check in ${scanResult.guestName}?`
     });
 
     if (!confirmed) return;
@@ -77,7 +77,7 @@ export function QRScannerModule() {
     setIsProcessing(true);
     try {
       await apiClient.post('/bookings/qr/scan', { token: scanResult.token });
-      toast.success(\`\${scanResult.guestName} Successfully Checked In!\`);
+      toast.success(`${scanResult.guestName} Successfully Checked In!`);
       setScanResult(null);
       setIsScanning(true);
     } catch (err: any) {
