@@ -520,6 +520,72 @@ export const getBookingQR = async (c) => {
   }
 };
 
+export const validateBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const JWT_SECRET = c.env.JWT_SECRET || 'hampistays_secure_jwt_secret_2026';
+
+  try {
+    const { token } = await c.req.json();
+    if (!token) return c.json({ error: 'Missing QR token' }, 400);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return c.json({ error: 'This Stay Pass is no longer valid or has been tampered with.' }, 400);
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: decoded.bookingId },
+      include: { resort: true, user: true }
+    });
+
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+
+    if (booking.status === 'CANCELLED') {
+      return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
+    }
+
+    const now = new Date();
+    const checkInDate = new Date(booking.checkIn);
+    checkInDate.setHours(14, 0, 0, 0);
+    const validFrom = new Date(checkInDate.getTime() - 24 * 60 * 60 * 1000);
+    const checkOutDate = new Date(booking.checkOut);
+    checkOutDate.setHours(11, 0, 0, 0);
+
+    if (now > checkOutDate) {
+      return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
+    }
+
+    if (now < validFrom) {
+      return c.json({ 
+        error: 'Check-In not yet available.',
+        validFrom: validFrom.toISOString()
+      }, 400);
+    }
+
+    if (booking.status === 'CHECKED_IN') {
+      return c.json({ error: 'Guest is already checked in.' }, 400);
+    }
+
+    return c.json({
+      token,
+      guestName: booking.user.name,
+      bookingId: booking.id,
+      resortName: booking.resort.name,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      guests: booking.guests,
+      status: booking.status
+    });
+  } catch (err) {
+    logSecureError('Failed to validate QR', err);
+    return c.json({ error: 'Failed to process QR validation' }, 500);
+  }
+};
+
 export const scanBookingQR = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
