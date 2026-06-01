@@ -440,7 +440,7 @@ export const getGuideBookings = async (c) => {
 };
 
 
-import jwt from 'jsonwebtoken';
+
 
 export const getBookingQR = async (c) => {
   const getPrisma = c.get('getPrisma');
