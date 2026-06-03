@@ -789,13 +789,18 @@ app.patch('/admin/kyc/travellers/:id', authMiddleware, adminMiddleware, async (c
     if (status === 'REJECTED') {
       await prisma.user.update({ where: { id: userId }, data: { kycStatus: 'REJECTED' } });
     } else if (status === 'VERIFIED') {
-      // Check if all required docs are verified
-      const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
-      const vSettings = await prisma.verificationSettings.findFirst() || {};
-      const isVerified = await evaluateTravellerKyc(prisma, doc.user, vSettings);
-      if (isVerified) {
-        await prisma.user.update({ where: { id: userId }, data: { kycStatus: 'VERIFIED' } });
-      }
+      // Forcefully set the user to verified, overriding phone/email requirements since Admin approved manually
+      await prisma.user.update({ 
+        where: { id: userId }, 
+        data: { 
+          kycStatus: 'VERIFIED',
+          verifiedEmail: true,
+          verifiedPhone: true,
+          isEmailVerified: true,
+          isMobileVerified: true,
+          verificationCompletedAt: new Date()
+        } 
+      });
     }
 
     await prisma.verificationAudit.create({

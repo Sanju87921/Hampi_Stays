@@ -37,6 +37,8 @@ export async function evaluateGuideKyc(prisma, guideProfileId, vSettings, curren
 
 export async function evaluateTravellerKyc(prisma, user, vSettings) {
   // Traveller requirements apply dynamically upon action usually, but we can verify status
+  if (user.kycStatus === 'VERIFIED') return true;
+  
   const reqs = vSettings.travellerRequirements || [];
   let isVerified = true;
   
