@@ -171,8 +171,11 @@ export function BookingsPage() {
       });
       setShowReview(null);
       setReviewData({ rating: 5, comment: "" });
-    } catch (err) {
+      toast.success("Review submitted successfully");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.message || "Failed to submit review");
     }
   };
 

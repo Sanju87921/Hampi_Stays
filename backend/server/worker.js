@@ -1256,6 +1256,19 @@ app.post('/reviews', authMiddleware, async (c) => {
     const resort = await prisma.resort.findUnique({ where: { id: resortId } });
     if (!resort) return c.json({ error: 'Resort not found' }, 404);
     
+    // Verify user actually stayed here
+    const validBooking = await prisma.booking.findFirst({
+      where: {
+        userId,
+        resortId,
+        status: { in: ['CHECKED_IN', 'COMPLETED'] }
+      }
+    });
+    
+    if (!validBooking) {
+      return c.json({ error: 'You can only leave a review for resorts you have checked into or completed a stay with' }, 403);
+    }
+    
     const review = await prisma.review.create({
       data: {
         resortId,
