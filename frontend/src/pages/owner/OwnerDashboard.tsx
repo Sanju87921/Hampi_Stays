@@ -43,7 +43,7 @@ export function OwnerDashboard() {
   const navigate = useNavigate();
   const [resorts, setResorts] = useState<any[]>([]);
   const [activeResortIdx, setActiveResortIdx] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [isAddingRoom, setIsLoadingAddingRoom] = useState(false);
   const [roomFormData, setRoomFormData] = useState({
@@ -88,48 +88,52 @@ export function OwnerDashboard() {
 
   const fetchResorts = async (showLoading = true) => {
     if (!user) {
-      return; // Wait for user to be populated by AuthContext
+      if (showLoading) setIsLoading(false); // Never get stuck in skeleton
+      return;
     }
     if (showLoading) setIsLoading(true);
     
-    let isJustCreated = sessionStorage.getItem("just_created_resort") === "true";
+    // Only poll if the flag was set AND we haven't been on the dashboard before
+    // If the resort already exists, clear the flag immediately to avoid pointless polling
+    const isJustCreated = sessionStorage.getItem("just_created_resort") === "true";
     let finalData: any[] = [];
     let success = false;
     
     try {
-      // First attempt
       finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
       success = true;
     } catch (error) {
       console.error("Initial fetch error:", error);
     }
 
-    // Polling logic even if the first request threw an error (success = false) or returned []
-    if (isJustCreated && (!success || (Array.isArray(finalData) && finalData.length === 0))) {
+    // If we already got data, clean up the flag and skip polling
+    if (Array.isArray(finalData) && finalData.length > 0) {
+      sessionStorage.removeItem("just_created_resort");
+      setResorts(finalData);
+      if (showLoading) setIsLoading(false);
+      return;
+    }
+
+    // Only poll if the flag is set (property was just created in this browser session)
+    if (isJustCreated && (!success || finalData.length === 0)) {
       let retries = 0;
-      while (retries < 6) {
+      while (retries < 5) {
         await new Promise(r => setTimeout(r, 2000));
         try {
           const newData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
           if (Array.isArray(newData) && newData.length > 0) {
             finalData = newData;
             success = true;
-            break; // Found it!
+            sessionStorage.removeItem("just_created_resort");
+            break;
           }
         } catch (e) {
           console.error("Polling fetch error:", e);
         }
         retries++;
       }
-      if (finalData.length > 0) {
-        sessionStorage.removeItem("just_created_resort");
-      }
-    } else if (success && Array.isArray(finalData) && finalData.length === 0) {
-       // Quick fallback retry for minor replication lag without flag
-       await new Promise(r => setTimeout(r, 1000));
-       try {
-         finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
-       } catch (e) {}
+      // After polling exhausted, clear flag regardless to prevent future loops
+      sessionStorage.removeItem("just_created_resort");
     }
 
     setResorts(Array.isArray(finalData) ? finalData : []);
@@ -139,6 +143,13 @@ export function OwnerDashboard() {
   useEffect(() => {
     if (authLoading) return;
     
+    if (!user) {
+      // Auth is done but no user — just ensure we're not stuck in a loading state
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
     fetchResorts(true);
     
     // Command Center Pulse: Refresh owner data every 30 seconds for real-time operations
