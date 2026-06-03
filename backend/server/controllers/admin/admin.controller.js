@@ -229,14 +229,25 @@ export const updateResortStatus = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
-  const { status } = await c.req.json();
+  const body = await c.req.json();
+  const { status, rejectionReason } = body;
+
   try {
+    // Fetch resort + owner + user for notifications
+    const resort = await prisma.resort.findUnique({
+      where: { id },
+      include: {
+        owner: {
+          include: {
+            user: { select: { id: true, name: true, email: true } }
+          }
+        }
+      }
+    });
+    if (!resort) return c.json({ error: 'Resort not found' }, 404);
+
+    // KYC gate: block approval if owner KYC not verified
     if (status === 'ACTIVE' || status === 'APPROVED') {
-      const resort = await prisma.resort.findUnique({
-        where: { id },
-        include: { owner: true }
-      });
-      if (!resort) return c.json({ error: 'Resort not found' }, 404);
       if (resort.owner && !resort.owner.isVerified) {
         await prisma.auditLog.create({
           data: {
@@ -249,7 +260,120 @@ export const updateResortStatus = async (c) => {
         return c.json({ error: 'KYC_VERIFICATION_REQUIRED', message: 'Resort cannot be approved until KYC verification is completed.' }, 403);
       }
     }
+
+    // Perform status update
     const updated = await prisma.resort.update({ where: { id }, data: { status } });
+
+    const ownerUser = resort.owner?.user;
+    const adminPayload = c.get('user');
+    const adminId = adminPayload?.userId || 'SYSTEM';
+
+    // ── Audit Log ────────────────────────────────────────────────────────────
+    if (ownerUser) {
+      await prisma.verificationAudit.create({
+        data: {
+          adminId,
+          adminName: adminPayload?.email || 'Admin',
+          targetUserId: ownerUser.id,
+          targetName: ownerUser.name || 'Resort Owner',
+          targetType: 'RESORT',
+          action: status,
+          rejectionReason: status === 'REJECTED' ? (rejectionReason || 'Resort did not meet our quality standards.') : null,
+          previousStatus: resort.status,
+          newStatus: status,
+          ipAddress: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null,
+          userAgent: c.req.header('user-agent') || null,
+        }
+      });
+    }
+
+    // ── In-app Notification ──────────────────────────────────────────────────
+    if (ownerUser) {
+      const notifTitle = status === 'APPROVED'
+        ? '🎉 Resort Approved!'
+        : '❌ Resort Verification Rejected';
+      const notifMessage = status === 'APPROVED'
+        ? `Congratulations! Your resort "${resort.name}" has been approved and is now live on HampiStays. Travellers can now discover and book your property.`
+        : `Your resort "${resort.name}" verification was rejected. Reason: ${rejectionReason || 'Resort did not meet our quality standards.'}. Please update your details and re-submit.`;
+
+      await prisma.notification.create({
+        data: {
+          userId: ownerUser.id,
+          title: notifTitle,
+          message: notifMessage,
+          type: status === 'APPROVED' ? 'KYC_APPROVED' : 'KYC_REJECTED',
+        }
+      });
+    }
+
+    // ── Email Notification (async, non-blocking) ─────────────────────────────
+    if (c.env.RESEND_API_KEY && ownerUser?.email) {
+      const resend = new Resend(c.env.RESEND_API_KEY);
+      const emailFrom = c.env.EMAIL_FROM || 'onboarding@resend.dev';
+      const userName = ownerUser.name || 'Resort Owner';
+      const resortName = resort.name;
+
+      let emailSubject = '';
+      let emailHtml = '';
+
+      if (status === 'APPROVED') {
+        emailSubject = `🎉 Your Resort is Live! | HampiStays`;
+        emailHtml = `
+          <div style="font-family: serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #FAF9F6; color: #0C1E36; border: 1px solid #E6D5B8; border-radius: 16px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h2 style="color: #C5A880; font-size: 28px; margin: 0; letter-spacing: 0.1em; text-transform: uppercase;">HampiStays</h2>
+              <p style="font-size: 12px; text-transform: uppercase; color: rgba(12, 30, 54, 0.4); margin-top: 5px;">Exclusive Heritage Stays &amp; Experiences</p>
+            </div>
+            <div style="background-color: #FFFFFF; padding: 40px; border-radius: 12px; border: 1px solid #F0ECE3; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              <h3 style="font-size: 22px; margin-top: 0; color: #2E7D32;">🎉 Your Resort is Now Live!</h3>
+              <p>Dear ${userName},</p>
+              <p>We are thrilled to inform you that your resort <strong>"${resortName}"</strong> has been reviewed and approved by our team.</p>
+              <p>Your property is now <strong>visible to travellers</strong> on HampiStays and you can start receiving bookings immediately.</p>
+              <div style="margin: 30px 0; text-align: center;">
+                <a href="https://hampi-stays.pages.dev/dashboard" style="background-color: #0C1E36; color: #FAF9F6; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block;">Go to Dashboard</a>
+              </div>
+              <p style="font-size: 14px; color: rgba(12, 30, 54, 0.6); line-height: 1.6;">Warm regards,<br>The HampiStays Team</p>
+            </div>
+          </div>
+        `;
+      } else if (status === 'REJECTED') {
+        emailSubject = `Resort Verification Update | HampiStays`;
+        emailHtml = `
+          <div style="font-family: serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #FAF9F6; color: #0C1E36; border: 1px solid #E6D5B8; border-radius: 16px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h2 style="color: #C5A880; font-size: 28px; margin: 0; letter-spacing: 0.1em; text-transform: uppercase;">HampiStays</h2>
+              <p style="font-size: 12px; text-transform: uppercase; color: rgba(12, 30, 54, 0.4); margin-top: 5px;">Exclusive Heritage Stays &amp; Experiences</p>
+            </div>
+            <div style="background-color: #FFFFFF; padding: 40px; border-radius: 12px; border: 1px solid #F0ECE3; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              <h3 style="font-size: 22px; margin-top: 0; color: #D32F2F;">Resort Verification Update</h3>
+              <p>Dear ${userName},</p>
+              <p>Thank you for listing <strong>"${resortName}"</strong> on HampiStays. After reviewing your submission, we were unable to approve it at this time.</p>
+              <div style="background-color: #FFF8F8; border-left: 4px solid #D32F2F; padding: 15px 20px; margin: 20px 0; font-size: 14px; color: #555555; border-radius: 0 8px 8px 0;">
+                <strong>Reason for Rejection:</strong><br>
+                ${rejectionReason || 'Resort did not meet our quality standards.'}
+              </div>
+              <p>Please log into your dashboard to update your resort details and re-submit for review.</p>
+              <div style="margin: 30px 0; text-align: center;">
+                <a href="https://hampi-stays.pages.dev/dashboard" style="background-color: #0C1E36; color: #FAF9F6; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block;">Update My Resort</a>
+              </div>
+              <p style="font-size: 14px; color: rgba(12, 30, 54, 0.6); line-height: 1.6;">Warm regards,<br>The HampiStays Team</p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (emailSubject) {
+        c.executionCtx.waitUntil(
+          resend.emails.send({
+            from: emailFrom,
+            to: ownerUser.email,
+            subject: emailSubject,
+            html: emailHtml,
+          }).catch(err => console.error('Resort status email failed:', err))
+        );
+      }
+    }
+
     return c.json(updated);
   } catch (err) { return c.json({ error: err.message }, 500); }
 };

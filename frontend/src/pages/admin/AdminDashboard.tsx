@@ -119,6 +119,11 @@ export function AdminDashboard() {
  const [rejectingGuideId, setRejectingGuideId] = useState<string | null>(null);
  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
 
+ // Resort rejection modal
+ const [resortRejectModalOpen, setResortRejectModalOpen] = useState(false);
+ const [rejectingResortId, setRejectingResortId] = useState<string | null>(null);
+ const [resortRejectionReason, setResortRejectionReason] = useState("");
+
  useEffect(() => {
  fetchInitialData();
  }, []);
@@ -289,22 +294,43 @@ export function AdminDashboard() {
  }
  };
 
- const handleStatusUpdate = async (id: string, status: "APPROVED" | "REJECTED") => {
+ const handleStatusUpdate = async (id: string, status: "APPROVED" | "REJECTED", rejectionReason?: string) => {
  setProcessingId(id);
  try {
- await apiClient.patch(`/admin/resorts/${id}/status`, { status });
- // Refresh both lists
- const [p, a] = await Promise.all([
- apiClient.get<any[]>('/admin/resorts/pending'),
- apiClient.get<any[]>('/admin/resorts/active')
- ]);
- setPendingResorts(p);
- setActiveResorts(Array.isArray(a?.data) ? a.data : (Array.isArray(a) ? a : []));
- } catch (err) {
+ await apiClient.patch(`/admin/resorts/${id}/status`, { status, rejectionReason });
+
+ if (status === 'APPROVED') {
+ // Optimistically move from pending → active
+ const approvedResort = pendingResorts.find((r: any) => r.id === id);
+ setPendingResorts(prev => prev.filter((r: any) => r.id !== id));
+ if (approvedResort) {
+ setActiveResorts(prev => [{ ...approvedResort, status: 'APPROVED' }, ...prev]);
+ }
+ toast.success('✅ Resort Approved Successfully\n\nThe resort is now visible to travellers.');
+ } else {
+ // Optimistically remove from pending
+ setPendingResorts(prev => prev.filter((r: any) => r.id !== id));
+ toast.success('Resort Rejected. Owner has been notified.');
+ }
+ } catch (err: any) {
  console.error(err);
+ const msg = err?.message || '';
+ if (msg.includes('KYC_VERIFICATION_REQUIRED')) {
+ toast.error('❌ Cannot Approve: Owner KYC verification is not complete.');
+ } else {
+ toast.error(`❌ ${status === 'APPROVED' ? 'Approval' : 'Rejection'} Failed. Please try again.`);
+ }
  } finally {
  setProcessingId(null);
  }
+ };
+
+ const handleConfirmRejectResort = async () => {
+ if (!rejectingResortId || !resortRejectionReason.trim()) return;
+ await handleStatusUpdate(rejectingResortId, 'REJECTED', resortRejectionReason.trim());
+ setResortRejectModalOpen(false);
+ setRejectingResortId(null);
+ setResortRejectionReason('');
  };
 
  const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
@@ -663,7 +689,11 @@ export function AdminDashboard() {
  <Button 
  variant="danger" 
  className="gap-2 h-12 px-6"
- onClick={() => handleStatusUpdate(resort.id, "REJECTED")}
+ onClick={() => {
+ setRejectingResortId(resort.id);
+ setResortRejectionReason('');
+ setResortRejectModalOpen(true);
+ }}
  disabled={processingId === resort.id}
  >
  <XCircle className="w-4 h-4" />
@@ -2406,10 +2436,70 @@ export function AdminDashboard() {
  </div>
  )}
  </AnimatePresence>
- </div>
- );
-}
 
+      {/* ── Resort Rejection Modal ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {resortRejectModalOpen && (
+          <div className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-8 shadow-2xl w-full max-w-lg"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-navy-950">Reject This Resort?</h3>
+                  <p className="text-xs text-navy-950/60">A reason is required. The owner will be notified.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 ml-1 block mb-2">
+                    Rejection Reason <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={resortRejectionReason}
+                    onChange={e => setResortRejectionReason(e.target.value)}
+                    placeholder="e.g. The resort images are low quality. Please upload high-resolution photos of at least 1200×800px."
+                    className="w-full h-32 bg-sand-50 border-2 border-sand-200 rounded-xl p-4 font-medium text-navy-950 outline-none focus:border-red-500 transition-all placeholder:text-navy-950/40 text-sm resize-none"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-12 rounded-xl"
+                    onClick={() => {
+                      setResortRejectModalOpen(false);
+                      setRejectingResortId(null);
+                      setResortRejectionReason('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                    onClick={handleConfirmRejectResort}
+                    isLoading={processingId === rejectingResortId}
+                    disabled={!resortRejectionReason.trim() || processingId === rejectingResortId}
+                  >
+                    Confirm Rejection
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 
 
