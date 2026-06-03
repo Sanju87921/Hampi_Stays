@@ -39,7 +39,7 @@ const downloadPdf = (doc: any, filename: string) => {
 };
 
 export function OwnerDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [resorts, setResorts] = useState<any[]>([]);
   const [activeResortIdx, setActiveResortIdx] = useState(0);
@@ -86,28 +86,35 @@ export function OwnerDashboard() {
     { id: '3', room: '202', type: 'Garden Villa', status: 'READY', color: 'bg-emerald-500', lastCleaned: 'Just now', staff: 'Sanjay K.' }
   ]);
 
-  const fetchResorts = async () => {
+  const fetchResorts = async (showLoading = true) => {
     if (!user) {
-      setIsLoading(false);
-      return;
+      return; // Wait for user to be populated by AuthContext
     }
+    if (showLoading) setIsLoading(true);
     try {
-      const data = await apiClient.get<any[]>(`/owners/${user.id}/resorts`);
-      setResorts(data);
+      // Add cache buster to ensure we get the newly created resort
+      const data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      if (Array.isArray(data)) {
+        setResorts(data);
+      } else {
+        setResorts([]);
+      }
     } catch (error) {
       console.error("Error fetching resorts:", error);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchResorts();
+    if (authLoading) return;
+    
+    fetchResorts(true);
     
     // Command Center Pulse: Refresh owner data every 30 seconds for real-time operations
-    const pulse = setInterval(fetchResorts, 30000);
+    const pulse = setInterval(() => fetchResorts(false), 30000);
     return () => clearInterval(pulse);
-  }, [user]);
+  }, [user, authLoading]);
 
   const resort = resorts[activeResortIdx];
 
@@ -794,6 +801,14 @@ export function OwnerDashboard() {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-sand-50 flex items-center justify-center pt-24 pb-12">
+        <Loader2 className="w-8 h-8 text-gold-600 animate-spin" />
       </div>
     );
   }
