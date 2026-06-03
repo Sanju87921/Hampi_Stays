@@ -1325,6 +1325,11 @@ app.post('/resorts', authMiddleware, async (c) => {
       )
     );
 
+    // CRITICAL: Strip any base64 or blob images — only accept proper CDN URLs
+    const safeImages = (images || []).filter(
+      (img) => typeof img === 'string' && img.startsWith('http')
+    );
+
     const resort = await prisma.resort.create({
       data: {
         name,
@@ -1340,10 +1345,10 @@ app.post('/resorts', authMiddleware, async (c) => {
         amenities: amenities || [],
         houseRules: houseRules || [],
         mealPackages: mealPackages || [],
-        verificationDocs: documents || [],
+        verificationDocs: [],
         ownerId: owner.id,
         status: 'KYC_PENDING',
-        images: images || [],
+        images: safeImages,
         roomTypes: {
           create: (roomTypes || []).map((room) => ({
             name: room.name,
@@ -1354,7 +1359,9 @@ app.post('/resorts', authMiddleware, async (c) => {
             images: []
           }))
         }
-      }
+      },
+      // Return ONLY essential fields to avoid P6009 query size limits
+      select: { id: true, name: true, slug: true, status: true, ownerId: true }
     });
 
     return c.json(resort, 201);

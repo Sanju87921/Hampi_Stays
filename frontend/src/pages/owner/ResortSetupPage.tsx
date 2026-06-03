@@ -23,6 +23,7 @@ export function ResortSetupPage() {
   const { user } = useAuth();
   const { settings } = useSystem();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCategoryText, setCustomCategoryText] = useState("");
 
@@ -247,7 +248,10 @@ export function ResortSetupPage() {
                  p.description.trim() !== ""
                );
       case 7: {
-        return formData.images.length >= 3;
+        const uploadedImages = formData.images.filter(
+          (img: string) => typeof img === 'string' && img.startsWith('http')
+        );
+        return uploadedImages.length >= 3;
       }
       default:
         return true;
@@ -262,7 +266,8 @@ export function ResortSetupPage() {
       let msg = "Please fill all required fields in this section.";
       if (step === 5 && formData.roomTypes.length === 0) msg = "Please add at least one room type.";
       if (step === 7) {
-        if (formData.images.length < 3) msg = "Please upload at least 3 resort photos.";
+        const uploaded = formData.images.filter((img: string) => img.startsWith('http'));
+        msg = `Please upload at least 3 resort photos using the Add Photo button. (${uploaded.length}/3 uploaded)`;
       }
       toast.error(msg);
     }
@@ -282,20 +287,33 @@ export function ResortSetupPage() {
       return;
     }
 
-    // Payload size check removed for testing mode
-    const payload = { ...formData, ownerId: user?.id };
+    // Filter out any base64/blob images — only send real Cloudinary URLs
+    const safeImages = (formData.images || []).filter(
+      (img: string) => typeof img === 'string' && img.startsWith('http')
+    );
+
+    if (safeImages.length < 3) {
+      toast.error("Please upload at least 3 resort photos via the upload button.");
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      images: safeImages,
+      ownerId: user?.id
+    };
 
     setIsPublishing(true);
-    const toastId = toast.loading("Launching your sanctuary in Hampi...");
+    const toastId = toast.loading("Saving your sanctuary in Hampi...");
     
     try {
       await apiClient.post('/resorts', payload);
       localStorage.removeItem("hampi-resort-setup-draft");
-      toast.success("HampiStays Sanctuary Launched Successfully!", { id: toastId });
+      toast.success("Property saved! Complete KYC to publish.", { id: toastId });
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Publish error:", error);
-      toast.error(error.message || "Failed to publish resort", { id: toastId });
+      toast.error(error.message || "Failed to save resort", { id: toastId });
     } finally {
       setIsPublishing(false);
     }
@@ -643,44 +661,67 @@ export function ResortSetupPage() {
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <h4 className="font-bold text-navy-950 uppercase tracking-widest text-xs">Resort Photos</h4>
-                        <span className="text-xs text-navy-950/40">{formData.images.length} / 10 images</span>
+                        <span className="text-xs font-semibold">
+                          <span className={formData.images.filter((img: string) => img.startsWith('http')).length >= 3 ? 'text-green-600' : 'text-amber-600'}>
+                            {formData.images.filter((img: string) => img.startsWith('http')).length}
+                          </span>
+                          <span className="text-navy-950/40"> / 10 uploaded — need at least 3</span>
+                        </span>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
-                        {formData.images.map((img, i) => (
+                        {formData.images.filter((img: string) => img.startsWith('http')).map((img, i) => (
                           <div key={i} className="aspect-square rounded-2xl overflow-hidden relative group">
                             <img src={img} className="w-full h-full object-cover" />
-                            <button onClick={() => setFormData(p => ({...p, images: p.images.filter((_, idx) => idx !== i)}))}
+                            <button onClick={() => setFormData(p => ({...p, images: p.images.filter(x => x !== img)}))}
                               className="absolute inset-0 bg-red-600/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <X className="w-6 h-6 text-white" />
                             </button>
                           </div>
                         ))}
 
-                        {formData.images.length < 10 && (
-                          <label className="aspect-square rounded-2xl border-2 border-dashed border-sand-200 flex flex-col items-center justify-center gap-2 text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
+                        {formData.images.filter((img: string) => img.startsWith('http')).length < 10 && (
+                          <label className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${
+                            isUploadingPhotos 
+                              ? 'border-gold-300 text-gold-500 cursor-wait opacity-70' 
+                              : 'border-sand-200 text-navy-950/20 hover:border-gold-300 hover:text-gold-500 cursor-pointer'
+                          }`}>
                             <input 
                               type="file" 
                               accept="image/*" 
                               multiple 
-                              className="hidden" 
+                              className="hidden"
+                              disabled={isUploadingPhotos}
                               onChange={async (e) => {
                                   const files = Array.from(e.target.files || []);
+                                  if (!files.length) return;
+                                  setIsUploadingPhotos(true);
                                   try {
                                     const uploadPromises = files.map(file => uploadToCloudinary(file, 'resort_photo'));
                                     const uploadedImages = await Promise.all(uploadPromises);
-                                    
                                     setFormData(p => ({
                                       ...p,
-                                      images: [...p.images, ...uploadedImages.map(res => res.url)].slice(0, 10)
+                                      images: [...p.images.filter((img: string) => img.startsWith('http')), ...uploadedImages.map(res => res.url)].slice(0, 10)
                                     }));
-                                    toast.success("Photos added!");
+                                    toast.success(`${uploadedImages.length} photo${uploadedImages.length > 1 ? 's' : ''} uploaded!`);
                                   } catch (err) {
-                                    toast.error("Upload failed");
+                                    toast.error("Upload failed. Please try again.");
+                                  } finally {
+                                    setIsUploadingPhotos(false);
+                                    e.target.value = '';
                                   }
                               }}
                             />
-                            <Camera className="w-6 h-6" />
-                            <span className="text-[8px] font-bold uppercase">Add Photo</span>
+                            {isUploadingPhotos ? (
+                              <>
+                                <div className="w-6 h-6 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-[8px] font-bold uppercase text-gold-500">Uploading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Camera className="w-6 h-6" />
+                                <span className="text-[8px] font-bold uppercase">Add Photo</span>
+                              </>
+                            )}
                           </label>
                         )}
                       </div>
