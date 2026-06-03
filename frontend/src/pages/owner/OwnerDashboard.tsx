@@ -19,7 +19,7 @@ import { QRScannerModule } from "../admin/components/QRScannerModule";
 import { apiClient } from "../../utils/apiClient";
 import { compressImageFile } from "../../utils/image";
 import { uploadToCloudinary } from "../../utils/cloudinary";
-import { Eye, RefreshCw, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, RefreshCw, Image as ImageIcon, ChevronLeft } from "lucide-react";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
