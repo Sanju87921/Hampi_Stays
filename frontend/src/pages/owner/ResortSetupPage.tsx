@@ -311,7 +311,7 @@ export function ResortSetupPage() {
       localStorage.removeItem("hampi-resort-setup-draft");
       sessionStorage.setItem("just_created_resort", "true");
       toast.success("Property saved! Complete KYC to publish.", { id: toastId });
-      navigate("/dashboard");
+      navigate("/dashboard?tab=kyc");
     } catch (error: any) {
       console.error("Publish error:", error);
       toast.error(error.message || "Failed to save resort", { id: toastId });
