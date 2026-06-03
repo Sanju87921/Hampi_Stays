@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, FileText, CheckCircle, XCircle, Eye, ExternalLink, Loader2, Search, Filter, ZoomIn, ZoomOut, RotateCw, Download, CheckSquare, Square, History } from 'lucide-react';
+import { ShieldCheck, FileText, CheckCircle, XCircle, Eye, ExternalLink, Loader2, Search, Filter, ZoomIn, ZoomOut, RotateCw, Download, CheckSquare, Square, History, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
 import { Button } from '../../../components/ui/Button';
 import { Select } from '../../../components/ui/Select';
@@ -18,9 +18,11 @@ export function KycOperationsCenter() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'guides' | 'owners' | 'travellers'>('guides');
 
-  // Zoom and Rotate for viewer
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
+
+  // Document viewer state
+  const [docLoadError, setDocLoadError] = useState(false);
 
   // Bulk Operations
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
@@ -80,7 +82,8 @@ export function KycOperationsCenter() {
     
     setProcessingId(id);
     try {
-      await apiClient.patch(`/admin/kyc/${type}/${id}`, { status, rejectionReason: reason });
+      const apiType = type === 'owners' ? 'resorts' : type;
+      await apiClient.patch(`/admin/kyc/${apiType}/${id}`, { status, rejectionReason: reason });
       toast.success(`Document ${status.toLowerCase()} successfully!`);
       fetchDocs();
       setRejectingDocId(null);
@@ -96,8 +99,9 @@ export function KycOperationsCenter() {
     if (selectedDocs.size === 0) return;
     try {
       const type = activeTab;
+      const apiType = type === 'owners' ? 'resorts' : type;
       await Promise.all(Array.from(selectedDocs).map(id => 
-        apiClient.patch(`/admin/kyc/${type}/${id}`, { status: 'VERIFIED' })
+        apiClient.patch(`/admin/kyc/${apiType}/${id}`, { status: 'VERIFIED' })
       ));
       toast.success(`Successfully verified ${selectedDocs.size} documents.`);
       setSelectedDocs(new Set());
@@ -143,6 +147,14 @@ export function KycOperationsCenter() {
     } else {
       setSelectedDocs(new Set(docs.map(d => d.id)));
     }
+  };
+
+  // ── Document type helpers ────────────────────────────────────────────────
+  const isPdf = (url: string) => {
+    if (!url) return false;
+    // Check URL path or Cloudinary resource_type hints
+    const lower = url.toLowerCase();
+    return lower.includes('.pdf') || lower.includes('/raw/upload/') || lower.includes('resource_type=raw');
   };
 
   return (
@@ -238,7 +250,7 @@ export function KycOperationsCenter() {
           {selectedDocs.size > 0 && (
             <div className="flex items-center gap-3 w-full md:w-auto bg-white border border-sand-200 px-4 py-2 rounded-xl">
               <span className="text-xs font-bold text-navy-950">{selectedDocs.size} selected</span>
-              <Button onClick={handleBulkApprove} className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 shadow-sm text-xs text-white">
+              <Button variant="custom" onClick={handleBulkApprove} className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 shadow-sm text-xs text-white" disabled={selectedDocs.size === 0}>
                 Approve Selected
               </Button>
             </div>
@@ -294,8 +306,18 @@ export function KycOperationsCenter() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Button 
-                          variant="outline" 
-                          onClick={() => { setSelectedDoc({ ...doc, user, targetType: activeTab }); setZoomLevel(1); setRotation(0); }}
+                          variant="custom" 
+                          onClick={() => {
+                            console.log('[KYC Admin] Opening document viewer.');
+                            console.log('[KYC Admin] Document ID:', doc.id);
+                            console.log('[KYC Admin] Document URL (from backend):', doc.documentUrl);
+                            console.log('[KYC Admin] Document type field:', doc.type);
+                            console.log('[KYC Admin] Full document object:', doc);
+                            setSelectedDoc({ ...doc, user, targetType: activeTab });
+                            setZoomLevel(1);
+                            setRotation(0);
+                            setDocLoadError(false);
+                          }}
                           className="h-8 text-xs rounded-lg px-4 border-sand-200 hover:border-gold-500 hover:text-gold-600"
                         >
                           <Eye className="w-4 h-4 mr-2" /> Review
@@ -364,8 +386,8 @@ export function KycOperationsCenter() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Button 
-                          variant="outline" 
-                          onClick={() => { setSelectedDoc({ ...doc, user, targetType: activeTab }); setZoomLevel(1); setRotation(0); }}
+                          variant="custom" 
+                          onClick={() => { setSelectedDoc({ ...doc, user, targetType: activeTab }); setZoomLevel(1); setRotation(0); setDocLoadError(false); }}
                           className="h-8 text-xs rounded-lg px-4 border-sand-200 hover:border-gold-500 hover:text-gold-600"
                         >
                           <Eye className="w-4 h-4 mr-2" /> View
@@ -402,28 +424,73 @@ export function KycOperationsCenter() {
               <div className="flex-1 flex flex-col bg-sand-50 rounded-[2rem] border border-sand-200 overflow-hidden relative">
                 {/* Viewer Toolbar */}
                 <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white/80 backdrop-blur p-2 rounded-xl border border-sand-200 shadow-sm">
-                  <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
-                    <ZoomOut className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
-                    <ZoomIn className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => setRotation((rotation + 90) % 360)} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
-                    <RotateCw className="w-5 h-5" />
-                  </button>
+                  {!isPdf(selectedDoc.documentUrl) && (
+                    <>
+                      <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
+                        <ZoomOut className="w-5 h-5" />
+                      </button>
+                      <button onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
+                        <ZoomIn className="w-5 h-5" />
+                      </button>
+                      <button onClick={() => setRotation((rotation + 90) % 360)} className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors">
+                        <RotateCw className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
                   <a href={selectedDoc.documentUrl} download target="_blank" rel="noreferrer" className="p-2 hover:bg-sand-100 rounded-lg text-navy-950 transition-colors ml-2 border-l border-sand-200">
                     <Download className="w-5 h-5" />
                   </a>
                 </div>
                 
                 <div className="flex-1 flex items-center justify-center overflow-auto p-4">
-                  <motion.img 
-                    src={selectedDoc.documentUrl} 
-                    alt="KYC Document" 
-                    animate={{ scale: zoomLevel, rotate: rotation }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="max-w-full max-h-full object-contain rounded-xl origin-center"
-                  />
+                  {docLoadError ? (
+                    /* ── Fallback: document preview unavailable ── */
+                    <div className="flex flex-col items-center gap-4 text-center p-8">
+                      <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center">
+                        <AlertTriangle className="w-8 h-8 text-amber-500" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-navy-950 mb-1">Document Preview Unavailable</p>
+                        <p className="text-xs text-navy-950/60 max-w-xs">The document could not be loaded from Cloudinary. Use the download button above to access the file directly.</p>
+                      </div>
+                      <a
+                        href={selectedDoc.documentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-navy-950 text-white rounded-xl text-xs font-bold hover:bg-navy-800 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Open in New Tab
+                      </a>
+                    </div>
+                  ) : isPdf(selectedDoc.documentUrl) ? (
+                    /* ── PDF Viewer ── */
+                    <iframe
+                      src={selectedDoc.documentUrl}
+                      title="KYC Document"
+                      className="w-full h-full rounded-xl border border-sand-200"
+                      onError={() => {
+                        console.error('[KYC Viewer] PDF iframe load failed:', selectedDoc.documentUrl);
+                        setDocLoadError(true);
+                      }}
+                    />
+                  ) : (
+                    /* ── Image Viewer ── */
+                    <motion.img 
+                      src={selectedDoc.documentUrl} 
+                      alt="KYC Document" 
+                      animate={{ scale: zoomLevel, rotate: rotation }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="max-w-full max-h-full object-contain rounded-xl origin-center"
+                      onError={(e) => {
+                        console.error('[KYC Viewer] Image failed to load. URL:', selectedDoc.documentUrl);
+                        setDocLoadError(true);
+                      }}
+                      onLoad={() => {
+                        console.log('[KYC Viewer] Image loaded successfully. URL:', selectedDoc.documentUrl);
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -471,13 +538,14 @@ export function KycOperationsCenter() {
                   {selectedDoc.status === 'PENDING' && (
                     <div className="flex gap-2">
                       <Button 
-                        variant="outline"
-                        className="flex-1 h-12 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                        variant="custom"
+                        className="flex-1 h-12 rounded-xl border border-red-200 text-red-600 hover:bg-red-50"
                         onClick={() => handleUpdateStatus(selectedDoc.id, selectedDoc.targetType, 'REJECTED')}
                       >
                         Reject
                       </Button>
                       <Button 
+                        variant="custom"
                         className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20"
                         onClick={() => handleUpdateStatus(selectedDoc.id, selectedDoc.targetType, 'VERIFIED')}
                         isLoading={processingId === selectedDoc.id}
@@ -544,6 +612,7 @@ export function KycOperationsCenter() {
                     Cancel
                   </Button>
                   <Button 
+                    variant="custom"
                     className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-red-600/10 animate-pulse-slow"
                     onClick={() => handleUpdateStatus(rejectingDocId, activeTab, 'REJECTED', rejectionReason)}
                     isLoading={processingId === rejectingDocId}

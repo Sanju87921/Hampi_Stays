@@ -1020,7 +1020,7 @@ app.get('/resorts/featured', featuredCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'APPROVED', isFeatured: true },
+      where: { status: 'APPROVED', isFeatured: true, owner: { isVerified: true } },
       take: 3,
       select: {
         id: true,
@@ -1081,6 +1081,7 @@ app.get('/resorts', discoveryCache, async (c) => {
 
     const where = {
       status: 'APPROVED',
+      owner: { isVerified: true },
       ...(minPrice || maxPrice ? {
         pricePerNight: {
           ...(minPrice ? { gte: parseFloat(minPrice) } : {}),
@@ -1199,7 +1200,7 @@ app.get('/resorts/categories', staticCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'APPROVED' },
+      where: { status: 'APPROVED', owner: { isVerified: true } },
       select: { categories: true }
     });
     const categories = Array.from(new Set(resorts.flatMap(r => r.categories || [])));
@@ -1215,7 +1216,9 @@ app.get('/resorts/:slug', discoveryCache, async (c) => {
       where: { slug },
       include: { roomTypes: true, owner: { include: { user: true } } }
     });
-    if (!resort) return c.json({ error: 'Resort not found' }, 404);
+    if (!resort || resort.status !== 'APPROVED' || !resort.owner?.isVerified) {
+      return c.json({ error: 'Resort not found' }, 404);
+    }
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -1380,7 +1383,8 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
           },
           orderBy: { createdAt: 'desc' }
         },
-        discountCodes: true
+        discountCodes: true,
+        owner: { select: { isVerified: true } }
       }
     });
     return c.json(resorts);

@@ -520,7 +520,7 @@ app.get('/admin/resorts/pending', authMiddleware, adminMiddleware, async (c) => 
   const prisma = c.get('getPrisma')(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'PENDING' },
+      where: { status: { not: 'APPROVED' }, deletedAt: null },
       select: {
         id: true,
         slug: true,
@@ -581,9 +581,9 @@ app.get('/admin/resorts/active', authMiddleware, adminMiddleware, async (c) => {
 
   try {
     const [totalCount, resorts] = await Promise.all([
-      prisma.resort.count({ where: { status: 'APPROVED' } }),
+      prisma.resort.count({ where: { status: 'APPROVED', deletedAt: null } }),
       prisma.resort.findMany({
-        where: { status: 'APPROVED' },
+        where: { status: 'APPROVED', deletedAt: null },
         skip,
         take: limit,
         select: {
@@ -650,6 +650,15 @@ app.patch('/admin/resorts/:id/status', authMiddleware, adminMiddleware, async (c
   const id = c.req.param('id');
   const { status } = await c.req.json();
   try {
+    if (status === 'APPROVED') {
+      const resort = await prisma.resort.findUnique({
+        where: { id },
+        include: { owner: true }
+      });
+      if (!resort || !resort.owner || !resort.owner.isVerified) {
+        return c.json({ error: 'KYC verification incomplete' }, 403);
+      }
+    }
     const resort = await prisma.resort.update({ where: { id }, data: { status } });
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -827,10 +836,15 @@ app.get('/admin/kyc/resorts', authMiddleware, adminMiddleware, async (c) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    const secureDocs = await Promise.all(docs.map(async doc => ({
+    // Serve the direct Cloudinary secure_url stored in documentUrl.
+    // Previously a signed proxy URL was generated here, but it expired after
+    // 5 minutes causing 403 errors in the admin document viewer.
+    // The documentUrl field already contains the Cloudinary secure_url which
+    // is a public (signed-upload) URL safe to serve directly to the admin.
+    const secureDocs = docs.map(doc => ({
       ...doc,
-      documentUrl: (await generateSignedKycUrlWorker(doc.id, c.env)).replace('/api/admin/kyc-image/', '/api/admin/kyc-document/')
-    })));
+      documentUrl: doc.documentUrl  // direct Cloudinary secure_url
+    }));
     return c.json(secureDocs);
   } catch (err) {
     console.error('[/admin/kyc/resorts] Error:', err?.message || err);
@@ -870,8 +884,7 @@ app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) =>
         targetType: 'GUIDE',
         action: status,
         newStatus: status,
-        rejectionReason: rejectionReason,
-        details: `${status} ${doc.type}`
+        rejectionReason: rejectionReason
       }
     });
 
@@ -913,8 +926,7 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
           targetType: 'RESORT',
           action: status,
           newStatus: status,
-          rejectionReason: rejectionReason,
-          details: `${status} ${doc.type}`
+          rejectionReason: rejectionReason
         }
       });
     }

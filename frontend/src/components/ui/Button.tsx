@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import type { HTMLMotionProps } from "framer-motion";
 
 export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
- variant?: "primary" | "secondary" | "outline" | "ghost";
+ variant?: "primary" | "secondary" | "outline" | "ghost" | "custom";
  size?: "sm" | "md" | "lg";
  isLoading?: boolean;
 }
@@ -16,6 +16,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
  secondary: "bg-gold-500 text-navy-950 hover:bg-gold-400 shadow-luxury hover:shadow-gold",
  outline: "border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white",
  ghost: "text-navy-950 hover:bg-sand-100 :bg-sand-200 hover:text-navy-800",
+ custom: "",
  };
 
  const sizes = {

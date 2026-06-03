@@ -780,6 +780,30 @@ export function OwnerDashboard() {
 
         <ProfileIncompleteBanner />
 
+        {!resort.owner?.isVerified && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4 shadow-sm"
+          >
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-red-900 font-bold mb-1">Account Verification Pending</h3>
+              <p className="text-red-700 text-sm mb-3">
+                Your account is pending KYC verification. Until approved, your resort remains hidden from travellers and you cannot accept new bookings.
+              </p>
+              <Button 
+                onClick={() => navigate("/dashboard?tab=kyc")}
+                className="bg-red-600 hover:bg-red-700 text-white border-none text-xs h-8 px-4"
+              >
+                Complete KYC Verification
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
