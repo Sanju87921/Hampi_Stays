@@ -91,37 +91,49 @@ export function OwnerDashboard() {
       return; // Wait for user to be populated by AuthContext
     }
     if (showLoading) setIsLoading(true);
+    
+    let isJustCreated = sessionStorage.getItem("just_created_resort") === "true";
+    let finalData: any[] = [];
+    let success = false;
+    
     try {
-      // Add cache buster to ensure we get the newly created resort
-      let data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
-      
-      // Handle eventual consistency / D1 replication lag on creation
-      if (Array.isArray(data) && data.length === 0 && sessionStorage.getItem("just_created_resort") === "true") {
-        let retries = 0;
-        while (data.length === 0 && retries < 5) {
-          await new Promise(r => setTimeout(r, 2000));
-          data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
-          retries++;
-        }
-        if (data.length > 0) {
-          sessionStorage.removeItem("just_created_resort");
-        }
-      } else if (Array.isArray(data) && data.length === 0) {
-        // Fallback quick retry just in case it's a minor network glitch without the flag
-        await new Promise(r => setTimeout(r, 1000));
-        data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
-      }
-      
-      if (Array.isArray(data)) {
-        setResorts(data);
-      } else {
-        setResorts([]);
-      }
+      // First attempt
+      finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      success = true;
     } catch (error) {
-      console.error("Error fetching resorts:", error);
-    } finally {
-      if (showLoading) setIsLoading(false);
+      console.error("Initial fetch error:", error);
     }
+
+    // Polling logic even if the first request threw an error (success = false) or returned []
+    if (isJustCreated && (!success || (Array.isArray(finalData) && finalData.length === 0))) {
+      let retries = 0;
+      while (retries < 6) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const newData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+          if (Array.isArray(newData) && newData.length > 0) {
+            finalData = newData;
+            success = true;
+            break; // Found it!
+          }
+        } catch (e) {
+          console.error("Polling fetch error:", e);
+        }
+        retries++;
+      }
+      if (finalData.length > 0) {
+        sessionStorage.removeItem("just_created_resort");
+      }
+    } else if (success && Array.isArray(finalData) && finalData.length === 0) {
+       // Quick fallback retry for minor replication lag without flag
+       await new Promise(r => setTimeout(r, 1000));
+       try {
+         finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+       } catch (e) {}
+    }
+
+    setResorts(Array.isArray(finalData) ? finalData : []);
+    if (showLoading) setIsLoading(false);
   };
 
   useEffect(() => {
@@ -832,6 +844,21 @@ export function OwnerDashboard() {
   }
 
   if (resorts.length === 0) {
+    if (sessionStorage.getItem("just_created_resort") === "true") {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-navy-950 flex-col px-4 text-center">
+          <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mb-6 mx-auto"></div>
+          <h2 className="text-3xl font-serif text-white mb-3">Finalizing Your Property</h2>
+          <p className="text-white/70 max-w-md mx-auto mb-8 leading-relaxed">
+            We are configuring your resort dashboard. It usually takes a few seconds for our global database to sync your property details.
+          </p>
+          <Button onClick={() => window.location.reload()} className="bg-gold-500 hover:bg-gold-400 text-navy-950 px-8 py-6 rounded-xl font-bold text-lg">
+            Refresh Dashboard
+          </Button>
+        </div>
+      );
+    }
+
     return (
       <div className="relative min-h-screen pt-24 pb-12 flex items-center justify-center overflow-hidden bg-navy-950">
         <img 
