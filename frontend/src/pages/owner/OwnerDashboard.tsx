@@ -44,6 +44,7 @@ export function OwnerDashboard() {
   const [resorts, setResorts] = useState<any[]>([]);
   const [activeResortIdx, setActiveResortIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailLoaded, setDetailLoaded] = useState(false); // true after full data is fetched
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [isAddingRoom, setIsLoadingAddingRoom] = useState(false);
   const [roomFormData, setRoomFormData] = useState({
@@ -86,27 +87,27 @@ export function OwnerDashboard() {
     { id: '3', room: '202', type: 'Garden Villa', status: 'READY', color: 'bg-emerald-500', lastCleaned: 'Just now', staff: 'Sanjay K.' }
   ]);
 
+  // ── Phase 1: Fast summary fetch (initial dashboard render < 1s) ──────────
   const fetchResorts = async (showLoading = true) => {
     if (!user) {
-      if (showLoading) setIsLoading(false); // Never get stuck in skeleton
+      if (showLoading) setIsLoading(false);
       return;
     }
     if (showLoading) setIsLoading(true);
-    
-    // Only poll if the flag was set AND we haven't been on the dashboard before
-    // If the resort already exists, clear the flag immediately to avoid pointless polling
+
     const isJustCreated = sessionStorage.getItem("just_created_resort") === "true";
     let finalData: any[] = [];
     let success = false;
-    
+
     try {
-      finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      // Use the FAST summary endpoint — no heavy JOINs, target < 400ms
+      finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts/summary?_t=${Date.now()}`);
       success = true;
     } catch (error) {
-      console.error("Initial fetch error:", error);
+      console.error("Summary fetch error:", error);
     }
 
-    // If we already got data, clean up the flag and skip polling
+    // Got data on first try — clear flag, render immediately
     if (Array.isArray(finalData) && finalData.length > 0) {
       sessionStorage.removeItem("just_created_resort");
       setResorts(finalData);
@@ -114,13 +115,13 @@ export function OwnerDashboard() {
       return;
     }
 
-    // Only poll if the flag is set (property was just created in this browser session)
+    // Poll only if property was just created (D1 replication lag window)
     if (isJustCreated && (!success || finalData.length === 0)) {
       let retries = 0;
       while (retries < 5) {
         await new Promise(r => setTimeout(r, 2000));
         try {
-          const newData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+          const newData = await apiClient.get<any[]>(`/owners/${user.id}/resorts/summary?_t=${Date.now()}`);
           if (Array.isArray(newData) && newData.length > 0) {
             finalData = newData;
             success = true;
@@ -132,39 +133,63 @@ export function OwnerDashboard() {
         }
         retries++;
       }
-      // After polling exhausted, clear flag regardless to prevent future loops
-      sessionStorage.removeItem("just_created_resort");
+      sessionStorage.removeItem("just_created_resort"); // Always clear after polling
     }
 
     setResorts(Array.isArray(finalData) ? finalData : []);
     if (showLoading) setIsLoading(false);
   };
 
+  // ── Phase 2: Full data fetch (lazy — only when detail tabs are opened) ────
+  const fetchFullResortData = async () => {
+    if (!user || detailLoaded) return;
+    try {
+      const fullData = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      if (Array.isArray(fullData) && fullData.length > 0) {
+        setResorts(fullData);
+        setDetailLoaded(true);
+      }
+    } catch (error) {
+      console.error("Full resort data fetch error:", error);
+    }
+  };
+
+
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user) {
-      // Auth is done but no user — just ensure we're not stuck in a loading state
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     fetchResorts(true);
-    
-    // Command Center Pulse: Refresh owner data every 30 seconds for real-time operations
-    const pulse = setInterval(() => fetchResorts(false), 30000);
+
+    // Command Center Pulse: refresh summary every 60s (not 30s — summary is cheap)
+    const pulse = setInterval(() => fetchResorts(false), 60000);
     return () => clearInterval(pulse);
   }, [user, authLoading]);
 
+  // Phase 2: Lazy-load full data when detail tabs are opened
+  const DETAIL_TABS = ["bookings", "finance", "rooms", "analytics", "reviews", "settings"];
+  useEffect(() => {
+    if (DETAIL_TABS.includes(activeTab) && !detailLoaded) {
+      fetchFullResortData();
+    }
+  }, [activeTab, detailLoaded]);
+
   const resort = resorts[activeResortIdx];
 
-  const totalRevenue = resort?.bookings
-    ?.filter((b: any) => b.status !== "CANCELLED")
-    .reduce((sum: number, b: any) => sum + b.totalPrice, 0) || 0;
+  // Use server-computed stats from summary (zero client-side work on initial load)
+  const totalRevenue = resort?.totalRevenue
+    ?? resort?.bookings?.filter((b: any) => b.status !== "CANCELLED")
+        .reduce((sum: number, b: any) => sum + b.totalPrice, 0)
+    ?? 0;
 
-  const activeBookingsCount = resort?.bookings
-    ?.filter((b: any) => b.status === "CONFIRMED" || b.status === "PENDING").length || 0;
+  const activeBookingsCount = resort?.activeBookingsCount
+    ?? resort?.bookings?.filter((b: any) => b.status === "CONFIRMED" || b.status === "PENDING").length
+    ?? 0;
 
   const stats = [
     { label: "Total Revenue", value: resort ? `₹${totalRevenue.toLocaleString("en-IN")}` : "₹0", icon: IndianRupee, trend: "+12.5%", color: "text-green-600 bg-green-50" },

@@ -1368,7 +1368,85 @@ app.post('/resorts', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// ─── FAST SUMMARY ENDPOINT (Phase 1 dashboard load) ──────────────────────────
+// Returns only essential fields needed for the dashboard overview.
+// No heavy JOINs — just scalar fields + aggregate counts.
+// Target: < 400ms response time.
+app.get('/owners/:id/resorts/summary', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const userId = c.req.param('id');
+  try {
+    const owner = await prisma.resortOwner.findUnique({
+      where: { userId },
+      select: { id: true, isVerified: true }
+    });
+    if (!owner) return c.json([]);
+
+    const resorts = await prisma.resort.findMany({
+      where: { ownerId: owner.id },
+      select: {
+        id: true,
+        name: true,
+        locationArea: true,
+        category: true,
+        type: true,
+        status: true,
+        rating: true,
+        description: true,
+        images: true,
+        createdAt: true,
+        // Booking aggregates — no full booking objects
+        _count: {
+          select: {
+            bookings: true,
+            roomTypes: true,
+          }
+        },
+        // Revenue and active booking stats via aggregates
+        bookings: {
+          where: { status: { not: 'CANCELLED' } },
+          select: { totalPrice: true, status: true }
+        }
+      }
+    });
+
+    // Shape the response: compute stats server-side so frontend does zero work
+    const shaped = resorts.map(r => {
+      const totalRevenue = r.bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+      const activeBookingsCount = r.bookings.filter(
+        b => b.status === 'CONFIRMED' || b.status === 'PENDING'
+      ).length;
+      return {
+        id: r.id,
+        name: r.name,
+        locationArea: r.locationArea,
+        category: r.category,
+        type: r.type,
+        status: r.status,
+        rating: r.rating,
+        description: r.description,
+        images: r.images,
+        createdAt: r.createdAt,
+        totalRevenue,
+        activeBookingsCount,
+        totalBookingsCount: r._count.bookings,
+        roomCount: r._count.roomTypes,
+        owner: { isVerified: owner.isVerified },
+        // Placeholders for lazy-loaded data
+        bookings: [],
+        roomTypes: [],
+        discountCodes: [],
+        _summary: true  // Flag so frontend knows this is summary data
+      };
+    });
+
+    return c.json(shaped);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// ─── FULL RESORT DATA (Phase 2 — only loaded when tabs require it) ────────────
 app.get('/owners/:id/resorts', authMiddleware, async (c) => {
+
   const prisma = getPrisma(c.env);
   const userId = c.req.param('id');
   try {
