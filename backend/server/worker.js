@@ -1310,8 +1310,19 @@ app.post('/resorts', authMiddleware, async (c) => {
     const { name, tagline, description, type, area, price, amenities, category, categories, roomTypes, images, mealPackages, houseRules, documents } = data;
     const ownerId = payload.userId;
     
-    const owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
-    if (!owner) return c.json({ error: 'Resort owner profile not found. Please complete owner registration.' }, 403);
+    let owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
+    
+    // Auto-create missing owner profile to prevent blocking resort submission
+    if (!owner) {
+      console.log(`[Auto-Create] Creating missing ResortOwner profile for user: ${ownerId}`);
+      owner = await prisma.resortOwner.create({
+        data: {
+          userId: ownerId,
+          businessName: payload.name || 'HampiStays Partner',
+          isVerified: false
+        }
+      });
+    }
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.random().toString(36).substring(2, 7);
     
