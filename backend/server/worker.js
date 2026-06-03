@@ -207,7 +207,7 @@ app.get('/stats', async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const [resortsCount, usersCount] = await Promise.all([
-      prisma.resort.count({ where: { status: 'APPROVED' }, cacheStrategy: { ttl: 300 } }),
+      prisma.resort.count({ where: { status: 'ACTIVE' }, cacheStrategy: { ttl: 300 } }),
       prisma.user.count({ cacheStrategy: { ttl: 300 } })
     ]);
     return c.json({ resorts: `${resortsCount}+`, guests: `${usersCount + 500}+`, experiences: "15+", rating: "4.9" });
@@ -1020,7 +1020,7 @@ app.get('/resorts/featured', featuredCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'APPROVED', isFeatured: true, owner: { isVerified: true } },
+      where: { status: 'ACTIVE', isFeatured: true, owner: { isVerified: true } },
       take: 3,
       select: {
         id: true,
@@ -1080,7 +1080,7 @@ app.get('/resorts', discoveryCache, async (c) => {
     }
 
     const where = {
-      status: 'APPROVED',
+      status: 'ACTIVE',
       owner: { isVerified: true },
       ...(minPrice || maxPrice ? {
         pricePerNight: {
@@ -1200,7 +1200,7 @@ app.get('/resorts/categories', staticCache, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'APPROVED', owner: { isVerified: true } },
+      where: { status: 'ACTIVE', owner: { isVerified: true } },
       select: { categories: true }
     });
     const categories = Array.from(new Set(resorts.flatMap(r => r.categories || [])));
@@ -1216,7 +1216,7 @@ app.get('/resorts/:slug', discoveryCache, async (c) => {
       where: { slug },
       include: { roomTypes: { include: { photos: { orderBy: { sortOrder: 'asc' } } } }, owner: { include: { user: true } } }
     });
-    if (!resort || resort.status !== 'APPROVED' || !resort.owner?.isVerified) {
+    if (!resort || resort.status !== 'ACTIVE' || !resort.owner?.isVerified) {
       return c.json({ error: 'Resort not found' }, 404);
     }
     // Validation: Room type cannot be published without at least one photo and cover photo
@@ -1342,7 +1342,7 @@ app.post('/resorts', authMiddleware, async (c) => {
         mealPackages: mealPackages || [],
         verificationDocs: documents || [],
         ownerId: owner.id,
-        status: 'PENDING',
+        status: 'DRAFT',
         images: images || [],
         roomTypes: {
           create: (roomTypes || []).map((room) => ({

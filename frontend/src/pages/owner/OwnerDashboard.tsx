@@ -863,9 +863,9 @@ export function OwnerDashboard() {
               <AlertCircle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <h3 className="text-red-900 font-bold mb-1">Account Verification Pending</h3>
+              <h3 className="text-red-900 font-bold mb-1">Complete KYC Verification to make your property visible to travellers.</h3>
               <p className="text-red-700 text-sm mb-3">
-                Your account is pending KYC verification. Until approved, your resort remains hidden from travellers and you cannot accept new bookings.
+                Your account is pending KYC verification. Until approved, your property remains hidden from travellers and you cannot accept new bookings.
               </p>
               <Button 
                 onClick={() => navigate("/dashboard?tab=kyc")}
@@ -883,10 +883,11 @@ export function OwnerDashboard() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-4xl font-serif font-bold text-navy-950">{resort.name}</h1>
               <span className={cn("px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5",
-                resort.status === "APPROVED" ? "bg-green-50 text-green-700 border-green-100" : 
+                resort.status === "ACTIVE" ? "bg-green-50 text-green-700 border-green-100" : 
                 resort.status === "REJECTED" ? "bg-red-50 text-red-700 border-red-100" :
+                resort.status === "DRAFT" ? "bg-sand-100 text-navy-600 border-sand-200" :
                 "bg-gold-50 text-gold-700 border-gold-100")}>
-                {resort.status === "APPROVED" ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                {resort.status === "ACTIVE" ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                 {resort.status}
               </span>
             </div>

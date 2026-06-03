@@ -8,6 +8,7 @@ import {
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useNavigate } from "react-router-dom";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
@@ -663,26 +664,19 @@ export function ResortSetupPage() {
                               multiple 
                               className="hidden" 
                               onChange={async (e) => {
-                                const files = Array.from(e.target.files || []);
-                                
-                                try {
-                                  const base64Promises = files.map(file => {
-                                    return new Promise<string>((resolve) => {
-                                      const reader = new FileReader();
-                                      reader.onloadend = () => resolve(reader.result as string);
-                                      reader.readAsDataURL(file);
-                                    });
-                                  });
-                                  const base64Images = await Promise.all(base64Promises);
-                                  
-                                  setFormData(p => ({
-                                    ...p,
-                                    images: [...p.images, ...base64Images].slice(0, 10)
-                                  }));
-                                  toast.success("Photos added!");
-                                } catch (err) {
-                                  toast.error("Upload failed");
-                                }
+                                  const files = Array.from(e.target.files || []);
+                                  try {
+                                    const uploadPromises = files.map(file => uploadToCloudinary(file, 'resort_photo'));
+                                    const uploadedImages = await Promise.all(uploadPromises);
+                                    
+                                    setFormData(p => ({
+                                      ...p,
+                                      images: [...p.images, ...uploadedImages.map(res => res.url)].slice(0, 10)
+                                    }));
+                                    toast.success("Photos added!");
+                                  } catch (err) {
+                                    toast.error("Upload failed");
+                                  }
                               }}
                             />
                             <Camera className="w-6 h-6" />
