@@ -114,7 +114,7 @@ export const getPendingResorts = async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: 'PENDING' },
+      where: { status: { in: ['PENDING', 'KYC_PENDING', 'REJECTED'] } },
       select: {
         id: true,
         slug: true,
@@ -246,19 +246,9 @@ export const updateResortStatus = async (c) => {
     });
     if (!resort) return c.json({ error: 'Resort not found' }, 404);
 
-    // KYC gate: block approval if owner KYC not verified
-    if (status === 'ACTIVE' || status === 'APPROVED') {
-      if (resort.owner && !resort.owner.isVerified) {
-        await prisma.auditLog.create({
-          data: {
-            action: 'RESORT_APPROVAL_BLOCKED',
-            details: 'KYC not verified for owner ' + resort.owner.id,
-            userId: c.get('userId') || 'SYSTEM',
-            targetId: resort.id
-          }
-        });
-        return c.json({ error: 'KYC_VERIFICATION_REQUIRED', message: 'Resort cannot be approved until KYC verification is completed.' }, 403);
-      }
+    // KYC gate: log a warning if owner KYC not verified but do NOT block admin approval
+    if ((status === 'ACTIVE' || status === 'APPROVED') && resort.owner && !resort.owner.isVerified) {
+      console.warn(`[ADMIN] Approving resort ${id} without completed owner KYC — owner.isVerified is false`);
     }
 
     // Perform status update
