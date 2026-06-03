@@ -890,19 +890,19 @@ export function OwnerDashboard() {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4 shadow-sm"
+            className="mb-8 p-6 bg-red-50/50 border border-red-100 rounded-2xl flex items-start gap-4"
           >
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1">
+              <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-amber-900 font-bold mb-1">⚠ Complete KYC Verification</h3>
-              <p className="text-amber-800 text-sm mb-3">
-                Your property has been saved successfully. To make your resort visible to travellers and start receiving bookings, complete the required KYC verification.
+              <h3 className="text-3xl font-serif text-red-800 mb-2">Account Verification Pending</h3>
+              <p className="text-red-700 text-sm mb-4">
+                Your account is pending KYC verification. Until approved, your resort remains hidden from travellers and you cannot accept new bookings.
               </p>
               <Button 
                 onClick={() => navigate("/dashboard?tab=kyc")}
-                className="bg-amber-600 hover:bg-amber-700 text-white border-none text-xs h-8 px-4"
+                className="bg-red-600 hover:bg-red-700 text-white border-none rounded-xl font-medium px-6"
               >
                 Complete KYC Verification
               </Button>
