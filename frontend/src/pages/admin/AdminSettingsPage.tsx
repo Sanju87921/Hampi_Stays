@@ -5,9 +5,11 @@ import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { Select } from '../../components/ui/Select';
+import { useSystem } from '../../context/SystemContext';
 
 export function AdminSettingsPage() {
  const { user, refreshUser } = useAuth();
+ const { refreshSettings } = useSystem();
  
  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
  
@@ -59,6 +61,7 @@ export function AdminSettingsPage() {
        [roleKey]: newList
      });
      setVerificationSettings(data);
+     await refreshSettings();
      toast.success('Verification requirement updated');
    } catch (err: any) {
      toast.error(err.message || 'Failed to update requirement');

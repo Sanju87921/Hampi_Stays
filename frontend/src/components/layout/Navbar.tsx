@@ -196,7 +196,7 @@ export function Navbar() {
  "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
  isScrolled 
  ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 shadow-2xl shadow-navy-950/20" 
- : "bg-gold-500 text-navy-950 hover:bg-white hover:text-navy-950 shadow-2xl shadow-gold-500/20"
+ : "bg-gold-500 text-navy-950 hover:bg-gold-400 hover:text-navy-950 shadow-2xl shadow-gold-500/20"
  )}
  onClick={() => {
  protect(

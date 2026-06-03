@@ -74,7 +74,7 @@ export function GuideDashboard() {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
   const { settings } = useSystem();
-  const isIdRequired = settings?.verificationSettings?.guideRequirements?.some(req => ['AADHAAR', 'ID_DOCUMENT', 'GUIDE_LICENSE', 'PASSPORT'].includes(req));
+  const isIdRequired = settings?.verificationSettings?.guideRequirements?.some(req => !['EMAIL', 'PHONE'].includes(req));
   
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -439,8 +439,8 @@ export function GuideDashboard() {
                     </a>
                     {booking.status === 'PENDING' ? (
                       <>
-                        <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="outline" className="rounded-xl px-6 border-red-100 text-red-500 hover:bg-red-50">Decline</Button>
-                        <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} className="rounded-xl px-6 bg-green-600 hover:bg-green-700">Confirm</Button>
+                        <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="danger" className="rounded-xl px-6">Decline</Button>
+                        <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} variant="success" className="rounded-xl px-6">Confirm</Button>
                       </>
                     ) : (
                       <span className="px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
@@ -1096,8 +1096,8 @@ export function GuideDashboard() {
                   
                   {booking.status === 'PENDING' && (
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="outline" className="h-9 px-4 text-[10px] border-red-100 text-red-500 hover:bg-red-50">Reject</Button>
-                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} className="h-9 px-4 text-[10px] bg-green-600 text-white hover:bg-green-700">Accept</Button>
+                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="danger" className="h-9 px-4 text-[10px]">Reject</Button>
+                      <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CONFIRMED')} variant="success" className="h-9 px-4 text-[10px]">Accept</Button>
                     </div>
                   )}
 

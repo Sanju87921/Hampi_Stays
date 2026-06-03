@@ -53,7 +53,10 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
     if (!user || !user.resortOwner) return c.json({ error: 'Owner not found' }, 404);
 
     const { type, documentUrl } = await c.req.json();
-    if (!['AADHAAR', 'PAN'].includes(type)) return c.json({ error: 'Invalid document type' }, 400);
+    
+    const vSettings = await prisma.verificationSettings.findFirst();
+    const validTypes = vSettings?.resortOwnerRequirements || ['AADHAAR', 'PAN'];
+    if (!validTypes.includes(type)) return c.json({ error: 'Invalid document type' }, 400);
 
     const existing = await prisma.kycDocument.findFirst({ where: { ownerId: user.resortOwner.id, type } });
     let doc;

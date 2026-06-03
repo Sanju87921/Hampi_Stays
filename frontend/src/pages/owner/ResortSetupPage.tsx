@@ -27,11 +27,7 @@ export function ResortSetupPage() {
 
   const requiredDocTypes = useMemo(() => {
     const reqs = settings?.verificationSettings?.resortOwnerRequirements || [];
-    const docs = [];
-    if (reqs.includes('AADHAAR') || reqs.includes('ID_DOCUMENT')) docs.push('id_proof');
-    if (reqs.includes('GST_CERTIFICATE')) docs.push('gst_cert');
-    if (reqs.includes('PROPERTY_OWNERSHIP_PROOF') || reqs.includes('BANK_VERIFICATION')) docs.push('property_tax');
-    return docs;
+    return reqs.filter(req => !['EMAIL', 'PHONE'].includes(req));
   }, [settings]);
 
   const [formData, setFormData] = useState(() => {
@@ -709,23 +705,32 @@ export function ResortSetupPage() {
                     <div className="space-y-6">
                       <h4 className="font-bold text-navy-950 uppercase tracking-widest text-xs">Verification Documents</h4>
                       <div className="space-y-3">
-                        {[
-                          { id: "id_proof", label: "Owner's ID Proof (Aadhar/PAN)", icon: Shield },
-                          { id: "gst_cert", label: "GST Registration Certificate", icon: FileText },
-                          { id: "property_tax", label: "Property Tax Receipt / Deed", icon: FileText }
-                        ].map(doc => {
-                          const isRequired = requiredDocTypes.includes(doc.id);
-                          const isUploaded = formData.documents.some(d => d.type === doc.id);
+                        {requiredDocTypes.map(docType => {
+                          const DOC_TITLES: Record<string, string> = {
+                            'AADHAAR': 'Aadhaar',
+                            'PAN': 'PAN',
+                            'PROPERTY_OWNERSHIP_PROOF': 'Property Ownership Proof',
+                            'BANK_VERIFICATION': 'Bank Verification',
+                            'GST_CERTIFICATE': 'GST Certificate',
+                            'TRADE_LICENSE': 'Trade License',
+                            'TOURISM_REGISTRATION': 'Tourism Registration',
+                            'FSSAI_LICENSE': 'FSSAI License',
+                            'ID_DOCUMENT': 'ID Document',
+                            'GOVERNMENT_ID': 'Government ID',
+                            'GUIDE_LICENSE': 'Guide License',
+                            'PASSPORT': 'Passport'
+                          };
+                          const label = DOC_TITLES[docType] || docType.replace(/_/g, ' ');
+                          const isUploaded = formData.documents.some(d => d.type === docType);
                           return (
-                            <div key={doc.id} className="p-5 rounded-2xl bg-sand-50 border border-sand-100 flex items-center justify-between">
+                            <div key={docType} className="p-5 rounded-2xl bg-sand-50 border border-sand-100 flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 <div className="p-3 bg-white rounded-xl border border-sand-200">
-                                  <doc.icon className="w-5 h-5 text-gold-600" />
+                                  <FileText className="w-5 h-5 text-gold-600" />
                                 </div>
                                 <span className="text-sm font-bold text-navy-950 flex gap-2 items-center">
-                                  {doc.label}
-                                  {isRequired && !isUploaded && <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>}
-                                  {!isRequired && !isUploaded && <span className="text-[10px] text-navy-400 bg-sand-100 px-2 py-0.5 rounded-full uppercase tracking-wider">Optional</span>}
+                                  {label}
+                                  {!isUploaded && <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>}
                                   {isUploaded && <span className="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Uploaded</span>}
                                 </span>
                               </div>
@@ -743,8 +748,8 @@ export function ResortSetupPage() {
                                       const reader = new FileReader();
                                       reader.onloadend = () => {
                                         setFormData(p => {
-                                          const existing = p.documents.filter(d => d.type !== doc.id);
-                                          return { ...p, documents: [...existing, { type: doc.id, url: reader.result as string }] };
+                                          const existing = p.documents.filter(d => d.type !== docType);
+                                          return { ...p, documents: [...existing, { type: docType, url: reader.result as string }] };
                                         });
                                         toast.success("Document optimized!", { id: "doc-compress" });
                                       };

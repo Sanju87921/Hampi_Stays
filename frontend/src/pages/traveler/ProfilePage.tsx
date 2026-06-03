@@ -361,23 +361,8 @@ export function ProfilePage() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
               <div className='space-y-6'>
                 <h3 className='text-xl font-bold text-navy-950'>Identity Status</h3>
-                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100 space-y-4'>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-navy-950/60 font-bold'>Email Verification</span>
-                    <span className='px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full'>VERIFIED</span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-navy-950/60 font-bold'>Phone OTP</span>
-                    <span className='px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full'>VERIFIED</span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-navy-950/60 font-bold'>Aadhaar</span>
-                    <span className='px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full'>PENDING</span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-navy-950/60 font-bold'>PAN</span>
-                    <span className='px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full'>REJECTED</span>
-                  </div>
+                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100'>
+                  <KycUploadSection userType="resort" profileId={user?.id || ""} />
                 </div>
               </div>
               <div className='space-y-6'>

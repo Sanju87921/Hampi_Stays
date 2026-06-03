@@ -145,7 +145,7 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
           </div>
         ) : (
           <>
-            <div className="w-12 h-12 rounded-2xl bg-sand-50  flex items-center justify-center text-navy-950   group-hover:text-gold-500 group-hover:bg-white  transition-all shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-sand-50  flex items-center justify-center text-navy-950   group-hover:text-gold-500 group-hover:bg-sand-100  transition-all shadow-sm">
               <ImageIcon className="w-6 h-6" />
             </div>
             <div className="text-center">

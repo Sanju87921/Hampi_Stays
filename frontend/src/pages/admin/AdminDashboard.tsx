@@ -651,7 +651,8 @@ export function AdminDashboard() {
  {type === "pending" ? (
  <>
  <Button 
- className="bg-green-600 hover:bg-green-700 text-white gap-2 h-12 px-6"
+ variant="success"
+ className="gap-2 h-12 px-6"
  onClick={() => handleStatusUpdate(resort.id, "APPROVED")}
  disabled={processingId === resort.id}
  >
@@ -659,8 +660,8 @@ export function AdminDashboard() {
  Approve
  </Button>
  <Button 
- variant="outline" 
- className="border-red-200 text-red-600 hover:bg-red-50 gap-2 h-12 px-6"
+ variant="danger" 
+ className="gap-2 h-12 px-6"
  onClick={() => handleStatusUpdate(resort.id, "REJECTED")}
  disabled={processingId === resort.id}
  >
@@ -1067,13 +1068,9 @@ export function AdminDashboard() {
  </div>
  <div className="w-px h-10 bg-sand-200 " />
  <Button 
- variant={allGuides.some(g => !g.isActive) ? "primary" : "outline"}
+ variant={allGuides.some(g => !g.isActive) ? "success" : "danger"}
  onClick={() => handleAllGuidesStatus(allGuides.some(g => !g.isActive))}
- className={`rounded-2xl h-12 px-8 font-bold border-2 transition-all ${
- allGuides.some(g => !g.isActive) 
- ? "bg-green-600 border-green-600 text-white hover:bg-green-700" 
- : "border-red-200 text-red-600 hover:bg-red-50"
- }`}
+ className="h-12 px-8 font-bold"
  >
  {allGuides.some(g => !g.isActive) ? (
  <><Eye className="w-4 h-4 mr-2" /> Activate All Experts</>
@@ -1273,7 +1270,8 @@ export function AdminDashboard() {
 
  <div className="flex flex-row lg:flex-col gap-3 justify-center pr-20 lg:pr-0">
  <Button 
- className="bg-green-600 hover:bg-green-700 text-white gap-2 h-12 px-8"
+ variant="success"
+ className="gap-2 h-12 px-8"
  onClick={() => handleGuideStatus(guide.id, 'APPROVED')}
  disabled={processingId === guide.id || guide.status === 'APPROVED'}
  >
@@ -1292,8 +1290,8 @@ export function AdminDashboard() {
  </Button>
  )}
  <Button 
- variant="outline" 
- className="border-red-200 text-red-600 hover:bg-red-50 gap-2 h-12 px-8"
+ variant="danger"
+ className="gap-2 h-12 px-8"
  onClick={() => handleGuideStatus(guide.id, 'REJECTED')}
  disabled={processingId === guide.id || guide.status === 'REJECTED'}
  >

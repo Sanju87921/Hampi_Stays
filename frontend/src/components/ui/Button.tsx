@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import type { HTMLMotionProps } from "framer-motion";
 
 export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
- variant?: "primary" | "secondary" | "outline" | "ghost" | "custom";
+ variant?: "primary" | "secondary" | "success" | "danger" | "warning" | "outline" | "ghost" | "custom";
  size?: "sm" | "md" | "lg";
  isLoading?: boolean;
 }
@@ -12,12 +12,15 @@ export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
  ({ className, variant = "primary", size = "md", isLoading, children, ...props }, ref) => {
  const variants = {
- primary: "bg-navy-950 text-white hover:bg-gold-500 shadow-luxury hover:shadow-gold",
- secondary: "bg-gold-500 text-navy-950 hover:bg-gold-400 shadow-luxury hover:shadow-gold",
- outline: "border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white",
- ghost: "text-navy-950 hover:bg-sand-100 :bg-sand-200 hover:text-navy-800",
- custom: "",
- };
+  primary: "bg-navy-950 text-white hover:bg-navy-900 focus:ring-navy-950 disabled:bg-navy-950/50 shadow-luxury hover:shadow-lg",
+  secondary: "bg-sand-100 text-navy-950 hover:bg-sand-200 focus:ring-sand-200 disabled:bg-sand-50",
+  success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-600 disabled:bg-green-600/50 shadow-md",
+  danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600 disabled:bg-red-600/50 shadow-md",
+  warning: "bg-gold-500 text-navy-950 hover:bg-gold-600 focus:ring-gold-500 disabled:bg-gold-500/50 shadow-md",
+  outline: "border-2 border-navy-950 text-navy-950 hover:bg-navy-950 hover:text-white focus:ring-navy-950 disabled:border-navy-950/50 disabled:text-navy-950/50",
+  ghost: "text-navy-950 hover:bg-sand-100 hover:text-navy-800 focus:ring-sand-200 disabled:text-navy-950/50",
+  custom: "",
+  };
 
  const sizes = {
  sm: "h-10 px-5 text-sm font-semibold",

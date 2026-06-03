@@ -951,7 +951,11 @@ export function OwnerDashboard() {
                 <h3 className="text-xl font-serif font-bold text-navy-950">Today's Arrivals</h3>
                 <p className="text-xs text-green-700 font-bold uppercase tracking-widest mt-1">Checking in Today</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white border border-green-100 flex items-center justify-center text-green-600 shadow-sm">
+              <div 
+                className="w-12 h-12 rounded-2xl bg-white border border-green-100 flex items-center justify-center text-green-600 shadow-sm cursor-pointer hover:bg-green-50 transition-colors"
+                onClick={() => navigate("/dashboard?tab=bookings")}
+                title="View All Bookings"
+              >
                 <CalendarCheck className="w-6 h-6" />
               </div>
             </div>
@@ -990,7 +994,11 @@ export function OwnerDashboard() {
                 <h3 className="text-xl font-serif font-bold text-navy-950">Today's Departures</h3>
                 <p className="text-xs text-red-700 font-bold uppercase tracking-widest mt-1">Checking out Today</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white border border-red-100 flex items-center justify-center text-red-600 shadow-sm">
+              <div 
+                className="w-12 h-12 rounded-2xl bg-white border border-red-100 flex items-center justify-center text-red-600 shadow-sm cursor-pointer hover:bg-red-50 transition-colors"
+                onClick={() => navigate("/dashboard?tab=bookings")}
+                title="View All Bookings"
+              >
                 <ChevronRight className="rotate-180 w-6 h-6" />
               </div>
             </div>
@@ -1013,7 +1021,7 @@ export function OwnerDashboard() {
                         <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • Room {(booking.id || '').slice(-4).toUpperCase()}</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50">Invoice</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(booking)} className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50">Invoice</Button>
                   </div>
                 ))
               ) : (
@@ -1266,18 +1274,19 @@ export function OwnerDashboard() {
                             <div className="flex gap-2 mt-2">
                               <Button 
                                 size="sm" 
+                                variant="success"
                                 onClick={() => handleBookingAction(booking.id, 'confirm')} 
                                 isLoading={actionLoadingId === booking.id}
-                                className="bg-green-600 hover:bg-green-700"
+                                className=""
                               >
                                 Accept
                               </Button>
                               <Button 
                                 size="sm" 
-                                variant="outline" 
+                                variant="danger" 
                                 onClick={() => handleBookingAction(booking.id, 'reject')} 
                                 isLoading={actionLoadingId === booking.id}
-                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                className=""
                               >
                                 Reject
                               </Button>
@@ -1377,9 +1386,14 @@ export function OwnerDashboard() {
                                      <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
                                         {member.status}
                                      </span>
-                                     <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg">
-                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                     </Button>
+                                     <div className="relative group">
+                                       <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg opacity-50 cursor-not-allowed" disabled>
+                                          <Trash2 className="w-4 h-4 text-red-500" />
+                                       </Button>
+                                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-950 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                         Coming Soon
+                                       </div>
+                                     </div>
                                   </div>
                                </div>
                             ))}
@@ -2151,8 +2165,8 @@ export function OwnerDashboard() {
                               <div className="flex flex-wrap items-center gap-3">
                                  {booking.status === "PENDING" && (
                                    <div className="flex flex-wrap gap-3">
-                                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
-                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
+                                     <Button size="sm" variant="danger" onClick={() => handleBookingAction(booking.id, 'reject')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-6">Decline</Button>
+                                     <Button size="sm" variant="success" onClick={() => handleBookingAction(booking.id, 'confirm')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-8 shadow-lg">Accept Request</Button>
                                    </div>
                                  )}
                                  {booking.status === "CONFIRMED" && (
