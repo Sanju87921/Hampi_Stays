@@ -25,10 +25,6 @@ export function ResortSetupPage() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCategoryText, setCustomCategoryText] = useState("");
 
-  const requiredDocTypes = useMemo(() => {
-    const reqs = settings?.verificationSettings?.resortOwnerRequirements || [];
-    return reqs.filter(req => !['EMAIL', 'PHONE'].includes(req));
-  }, [settings]);
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("hampi-resort-setup-draft");
@@ -74,7 +70,6 @@ export function ResortSetupPage() {
       mealPackages: [] as { name: string, price: number, description: string }[],
       roomTypes: [] as { name: string, description: string, pricePerNight: number, capacity: number, availableCount: number }[],
       images: [] as string[],
-      documents: [] as { type: string, url: string }[],
       checkInTime: "1:00 PM",
       checkOutTime: "11:00 AM"
     };
@@ -251,10 +246,7 @@ export function ResortSetupPage() {
                  p.description.trim() !== ""
                );
       case 7: {
-        const hasAllDocs = requiredDocTypes.every(type => 
-          formData.documents.some(d => d.type === type)
-        );
-        return formData.images.length >= 3 && hasAllDocs;
+        return formData.images.length >= 3;
       }
       default:
         return true;
@@ -270,7 +262,6 @@ export function ResortSetupPage() {
       if (step === 5 && formData.roomTypes.length === 0) msg = "Please add at least one room type.";
       if (step === 7) {
         if (formData.images.length < 3) msg = "Please upload at least 3 resort photos.";
-        else msg = "Please upload all mandatory documents.";
       }
       toast.error(msg);
     }
@@ -286,7 +277,7 @@ export function ResortSetupPage() {
       return;
     }
     if (!isStepValid()) {
-      toast.error("Verification pending: Please ensure 3+ photos and all mandatory documents are uploaded.");
+      toast.error("Please ensure you have uploaded at least 3 resort photos.");
       return;
     }
 
@@ -642,11 +633,11 @@ export function ResortSetupPage() {
               {step === 7 && (
                 <div className="space-y-12">
                   <div>
-                    <h2 className="text-4xl font-serif font-bold text-navy-950 mb-3">Verification & Assets</h2>
-                    <p className="text-navy-950/60 text-lg">Upload your property photos and business documents.</p>
+                    <h2 className="text-4xl font-serif font-bold text-navy-950 mb-3">Resort Photos</h2>
+                    <p className="text-navy-950/60 text-lg">Upload high-quality photos of your property to attract travellers.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="grid grid-cols-1 gap-10">
                     {/* Photos */}
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
@@ -700,75 +691,6 @@ export function ResortSetupPage() {
                         )}
                       </div>
                     </div>
-
-                    {/* Documents */}
-                    <div className="space-y-6">
-                      <h4 className="font-bold text-navy-950 uppercase tracking-widest text-xs">Verification Documents</h4>
-                      <div className="space-y-3">
-                        {requiredDocTypes.map(docType => {
-                          const DOC_TITLES: Record<string, string> = {
-                            'AADHAAR': 'Aadhaar',
-                            'PAN': 'PAN',
-                            'PROPERTY_OWNERSHIP_PROOF': 'Property Ownership Proof',
-                            'BANK_VERIFICATION': 'Bank Verification',
-                            'GST_CERTIFICATE': 'GST Certificate',
-                            'TRADE_LICENSE': 'Trade License',
-                            'TOURISM_REGISTRATION': 'Tourism Registration',
-                            'FSSAI_LICENSE': 'FSSAI License',
-                            'ID_DOCUMENT': 'ID Document',
-                            'GOVERNMENT_ID': 'Government ID',
-                            'GUIDE_LICENSE': 'Guide License',
-                            'PASSPORT': 'Passport'
-                          };
-                          const label = DOC_TITLES[docType] || docType.replace(/_/g, ' ');
-                          const isUploaded = formData.documents.some(d => d.type === docType);
-                          return (
-                            <div key={docType} className="p-5 rounded-2xl bg-sand-50 border border-sand-100 flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white rounded-xl border border-sand-200">
-                                  <FileText className="w-5 h-5 text-gold-600" />
-                                </div>
-                                <span className="text-sm font-bold text-navy-950 flex gap-2 items-center">
-                                  {label}
-                                  {!isUploaded && <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>}
-                                  {isUploaded && <span className="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Uploaded</span>}
-                                </span>
-                              </div>
-                              <label className="flex items-center gap-2 text-gold-600 hover:text-gold-700 cursor-pointer">
-                                <input 
-                                  type="file" 
-                                  className="hidden" 
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    
-                                    toast.loading("Optimizing document...", { id: "doc-compress" });
-                                    try {
-                                      const compressed = await imageCompression(file, { maxSizeMB: 0.2, maxWidthOrHeight: 1200 });
-                                      const reader = new FileReader();
-                                      reader.onloadend = () => {
-                                        setFormData(p => {
-                                          const existing = p.documents.filter(d => d.type !== docType);
-                                          return { ...p, documents: [...existing, { type: docType, url: reader.result as string }] };
-                                        });
-                                        toast.success("Document optimized!", { id: "doc-compress" });
-                                      };
-                                      reader.readAsDataURL(compressed);
-                                    } catch (err) {
-                                      toast.error("Upload failed", { id: "doc-compress" });
-                                    }
-                                  }}
-                                />
-                                {isUploaded ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <UploadCloud className="w-5 h-5" />}
-                                <span className={cn("text-[10px] font-bold uppercase tracking-widest", isUploaded && "text-green-600")}>
-                                  {isUploaded ? "Change" : "Upload"}
-                                </span>
-                              </label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
                   </div>
 
                   <div className="p-10 bg-gold-950 rounded-[3rem] text-white flex flex-col md:flex-row items-center gap-8">
@@ -777,7 +699,7 @@ export function ResortSetupPage() {
                     </div>
                     <div>
                       <h4 className="text-xl font-bold mb-2">Ready for Verification</h4>
-                      <p className="text-gold-100/60 leading-relaxed text-sm">Once submitted, our Hampi Experts will review your property within 24-48 hours. You'll receive a notification and a verified badge upon approval.</p>
+                      <p className="text-gold-100/60 leading-relaxed text-sm">Once submitted, your resort will be saved. You can then complete your KYC verification from the Owner Dashboard to publish your property.</p>
                     </div>
                   </div>
                 </div>

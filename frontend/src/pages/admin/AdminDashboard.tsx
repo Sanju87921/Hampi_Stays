@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
  ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
  User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
- TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
+ TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -22,9 +22,10 @@ import { BlogModule } from "./BlogModule";
 import { PromotionsModule } from "./PromotionsModule";
 import { UserManagement } from "./components/UserManagement";
 import { KycOperationsCenter } from "./components/KycOperationsCenter";
+import { OtaMarketAnalysis } from "./components/OtaMarketAnalysis";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -2094,6 +2095,7 @@ export function AdminDashboard() {
  { id: "commissions", label: "Commissions", icon: TrendingUp },
  { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
  { id: "audit-logs", label: "Audit Logs", icon: History },
+ { id: "ota-market", label: "OTA Market", icon: Globe },
  ].map((tab) => (
  <button
  key={tab.id}
@@ -2177,6 +2179,7 @@ export function AdminDashboard() {
  {activeTab === "reviews" && renderReviews()}
  {activeTab === "commissions" && renderCommissions()}
  {activeTab === "audit-logs" && renderAuditLogs()}
+ {activeTab === "ota-market" && <OtaMarketAnalysis />}
  </ErrorBoundary>
  </motion.div>
  )}

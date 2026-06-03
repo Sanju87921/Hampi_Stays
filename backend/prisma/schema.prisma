@@ -851,3 +851,21 @@ model MediaHash {
   
   @@map("media_hashes")
 }
+
+model ExternalPropertyPresence {
+  id               String   @id @default(cuid())
+  resortName       String
+  bookingComUrl    String?
+  airbnbUrl        String?
+  goibiboUrl       String?
+  makemytripUrl    String?
+  agodaUrl         String?
+  expediaUrl       String?
+  detectedChannels String?
+  reviewVolume     Int      @default(0)
+  rating           Float?
+  opportunityScore Int      @default(0)
+  lastChecked      DateTime @default(now())
+  
+  @@map("external_property_presence")
+}
