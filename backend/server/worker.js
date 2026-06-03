@@ -1395,6 +1395,18 @@ app.get('/owners/:id/resorts/summary', authMiddleware, async (c) => {
         description: true,
         images: true,
         createdAt: true,
+        mealPackages: true,
+        roomTypes: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            pricePerNight: true,
+            capacity: true,
+            availableCount: true,
+            photos: { orderBy: { sortOrder: 'asc' } }
+          }
+        },
         // Booking aggregates — no full booking objects
         _count: {
           select: {
@@ -1427,6 +1439,7 @@ app.get('/owners/:id/resorts/summary', authMiddleware, async (c) => {
         description: r.description,
         images: r.images,
         createdAt: r.createdAt,
+        mealPackages: r.mealPackages,
         totalRevenue,
         activeBookingsCount,
         totalBookingsCount: r._count.bookings,
@@ -1434,7 +1447,7 @@ app.get('/owners/:id/resorts/summary', authMiddleware, async (c) => {
         owner: { isVerified: owner.isVerified },
         // Placeholders for lazy-loaded data
         bookings: [],
-        roomTypes: [],
+        roomTypes: r.roomTypes,
         discountCodes: [],
         _summary: true  // Flag so frontend knows this is summary data
       };

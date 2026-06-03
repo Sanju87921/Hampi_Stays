@@ -93,9 +93,27 @@ async function main() {
   const deleted = await prisma.resort.deleteMany({ where: { id: { in: resortIds } } });
   console.log(`   ✅ Deleted ${deleted.count} resort(s)\n`);
 
+  // 5. Delete KYC documents and bank accounts
+  console.log('🔄 Deleting KYC documents and bank accounts...');
+  const kyc = await prisma.kycDocument.deleteMany({});
+  console.log(`   ✅ Deleted ${kyc.count} KYC document(s)`);
+  const bank = await prisma.bankAccount.deleteMany({});
+  console.log(`   ✅ Deleted ${bank.count} bank account(s)`);
+
+  const travellerKyc = await prisma.travellerKYC.deleteMany({});
+  console.log(`   ✅ Deleted ${travellerKyc.count} Traveller KYC document(s)`);
+  
+  const guideKyc = await prisma.guideKYC.deleteMany({});
+  console.log(`   ✅ Deleted ${guideKyc.count} Guide KYC document(s)`);
+
+  // 6. Delete Owner Profiles
+  console.log('🔄 Deleting Resort Owner Profiles...');
+  const owners = await prisma.resortOwner.deleteMany({});
+  console.log(`   ✅ Deleted ${owners.count} owner profile(s)`);
+
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`✅ Done! Resort database is now clean.`);
-  console.log('   Owner profiles and user accounts are preserved.\n');
+  console.log('   Owner profiles, KYC documents, and bank accounts have also been cleared.\n');
 }
 
 main()
