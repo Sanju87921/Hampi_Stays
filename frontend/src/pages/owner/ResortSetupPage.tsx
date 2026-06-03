@@ -309,6 +309,7 @@ export function ResortSetupPage() {
     try {
       await apiClient.post('/resorts', payload);
       localStorage.removeItem("hampi-resort-setup-draft");
+      sessionStorage.setItem("just_created_resort", "true");
       toast.success("Property saved! Complete KYC to publish.", { id: toastId });
       navigate("/dashboard");
     } catch (error: any) {

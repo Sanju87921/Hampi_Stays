@@ -93,7 +93,25 @@ export function OwnerDashboard() {
     if (showLoading) setIsLoading(true);
     try {
       // Add cache buster to ensure we get the newly created resort
-      const data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      let data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      
+      // Handle eventual consistency / D1 replication lag on creation
+      if (Array.isArray(data) && data.length === 0 && sessionStorage.getItem("just_created_resort") === "true") {
+        let retries = 0;
+        while (data.length === 0 && retries < 5) {
+          await new Promise(r => setTimeout(r, 2000));
+          data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+          retries++;
+        }
+        if (data.length > 0) {
+          sessionStorage.removeItem("just_created_resort");
+        }
+      } else if (Array.isArray(data) && data.length === 0) {
+        // Fallback quick retry just in case it's a minor network glitch without the flag
+        await new Promise(r => setTimeout(r, 1000));
+        data = await apiClient.get<any[]>(`/owners/${user.id}/resorts?_t=${Date.now()}`);
+      }
+      
       if (Array.isArray(data)) {
         setResorts(data);
       } else {
