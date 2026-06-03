@@ -18,7 +18,8 @@ import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { QRScannerModule } from "../admin/components/QRScannerModule";
 import { apiClient } from "../../utils/apiClient";
 import { compressImageFile } from "../../utils/image";
-import { Eye, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { uploadToCloudinary } from "../../utils/cloudinary";
+import { Eye, RefreshCw, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -213,14 +214,86 @@ export function OwnerDashboard() {
     }
   };
 
-  const handleDeleteRoomPhoto = async (roomId: string, photoUrl: string) => {
+  const handleDeleteRoomPhoto = async (roomId: string, photoId: string) => {
     try {
-      await apiClient.delete(`/rooms/${roomId}/photos`, { data: { url: photoUrl } });
+      await apiClient.delete(`/rooms/${roomId}/photos/${photoId}`);
       fetchResorts();
       toast.success("Photo deleted.");
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete photo.");
+    }
+  };
+
+  const handleRoomPhotoUpload = async (file: File | undefined, roomId: string) => {
+    if (!file) return;
+    const tId = toast.loading("Uploading photo...");
+    try {
+      const { url } = await uploadToCloudinary(file, 'room_photo');
+      const room = resorts[activeResortIdx]?.roomTypes?.find((r: any) => r.id === roomId);
+      const sortOrder = room?.photos?.length || 0;
+      await apiClient.post(`/rooms/${roomId}/photos`, {
+        imageUrl: url,
+        isCover: sortOrder === 0, // make cover if it's the first photo
+        sortOrder
+      });
+      fetchResorts();
+      toast.success("Room photo uploaded successfully!", { id: tId });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to upload photo", { id: tId });
+    }
+  };
+
+  const setRoomCoverPhoto = async (roomId: string, photoId: string) => {
+    try {
+      await apiClient.patch(`/rooms/${roomId}/photos/${photoId}`, { isCover: true });
+      fetchResorts();
+      toast.success("Cover photo updated.");
+    } catch (e) {
+      toast.error("Failed to set cover photo");
+    }
+  };
+
+  const handleMoveRoomPhoto = async (roomId: string, photoId: string, direction: 'left' | 'right') => {
+    const room = resorts[activeResortIdx]?.roomTypes?.find((r: any) => r.id === roomId);
+    if (!room || !room.photos) return;
+    const photos = [...room.photos].sort((a, b) => a.sortOrder - b.sortOrder);
+    const currentIndex = photos.findIndex((p: any) => p.id === photoId);
+    if (currentIndex === -1) return;
+    if (direction === 'left' && currentIndex === 0) return;
+    if (direction === 'right' && currentIndex === photos.length - 1) return;
+
+    const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+    // Swap sort orders
+    const currentOrder = photos[currentIndex].sortOrder;
+    const targetOrder = photos[targetIndex].sortOrder;
+    
+    photos[currentIndex].sortOrder = targetOrder;
+    photos[targetIndex].sortOrder = currentOrder;
+
+    try {
+      await apiClient.post(`/rooms/${roomId}/photos/reorder`, {
+        updates: [
+          { id: photos[currentIndex].id, sortOrder: photos[currentIndex].sortOrder },
+          { id: photos[targetIndex].id, sortOrder: photos[targetIndex].sortOrder }
+        ]
+      });
+      fetchResorts();
+    } catch (e) {
+      toast.error("Failed to reorder photos");
+    }
+  };
+
+  const handleResortPhotoUpload = async (file: File | undefined, resortId: string) => {
+    if (!file) return;
+    try {
+      const { url } = await uploadToCloudinary(file, 'resort_photo');
+      await apiClient.post(`/resorts/${resortId}/photos`, { url });
+      fetchResorts();
+      toast.success("Resort photo uploaded!");
+    } catch(e) {
+      toast.error("Failed to upload resort photo");
     }
   };
 
@@ -1089,42 +1162,27 @@ export function OwnerDashboard() {
                               <div className="mt-6 pt-6 border-t border-sand-100">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-navy-950/30 mb-3">Room Gallery</p>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  {room.images?.map((img: string, i: number) => (
-                                    <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden group border border-sand-200">
-                                      <img src={img} className="w-full h-full object-cover" />
-                                      {room.coverImage === img && (
+                                  {room.photos && [...room.photos].sort((a: any, b: any) => a.sortOrder - b.sortOrder).map((photo: any, i: number) => (
+                                    <div key={photo.id} className="relative aspect-[4/3] rounded-xl overflow-hidden group border border-sand-200 bg-sand-50">
+                                      <img src={photo.imageUrl} className="w-full h-full object-cover" />
+                                      {photo.isCover && (
                                         <div className="absolute top-2 left-2 bg-gold-500 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
                                           <Star className="w-3 h-3" fill="currentColor" /> Cover
                                         </div>
                                       )}
                                       <div className="absolute inset-0 bg-navy-950/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity p-2">
                                         <div className="flex items-center gap-2">
-                                          <button onClick={() => window.open(img, '_blank')} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors" title="View Image">
+                                          <button onClick={() => window.open(photo.imageUrl, '_blank')} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors" title="View Image">
                                             <Eye className="w-4 h-4" />
                                           </button>
-                                          <button onClick={() => setCoverImage(room.id, img)} className="p-2 bg-white/10 hover:bg-gold-500 rounded-lg text-white transition-colors" title="Set Cover Image">
+                                          <button onClick={() => setRoomCoverPhoto(room.id, photo.id)} className="p-2 bg-white/10 hover:bg-gold-500 rounded-lg text-white transition-colors" title="Set Cover Image">
                                             <Star className="w-4 h-4" />
                                           </button>
-                                          <label className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors cursor-pointer" title="Replace Image">
-                                            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={async (e) => {
-                                              const file = e.target.files?.[0];
-                                              if(!file) return;
-                                              await handlePhotoUpload(file, `/rooms/${room.id}/photos`);
-                                              await apiClient.delete(`/rooms/${room.id}/photos`, { data: { url: img } });
-                                            }} />
-                                            <RefreshCw className="w-4 h-4" />
-                                          </label>
                                           <button 
                                             onClick={() => {
                                               luxuryConfirm({
                                                 title: "Delete Room Photo",
-                                                onConfirm: async () => {
-                                                  try {
-                                                    await apiClient.delete(`/rooms/${room.id}/photos`, { data: { url: img } });
-                                                    fetchResorts();
-                                                    toast.success("Photo deleted successfully");
-                                                  } catch(e) { toast.error("Failed to delete photo. Please try again."); }
-                                                }
+                                                onConfirm: () => handleDeleteRoomPhoto(room.id, photo.id)
                                               });
                                             }}
                                             className="p-2 bg-red-500/80 hover:bg-red-600 rounded-lg text-white transition-colors" title="Delete Image"
@@ -1132,14 +1190,24 @@ export function OwnerDashboard() {
                                             <Trash2 className="w-4 h-4" />
                                           </button>
                                         </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <button onClick={() => handleMoveRoomPhoto(room.id, photo.id, 'left')} disabled={i === 0} className="p-1 bg-white/10 hover:bg-white/20 disabled:opacity-30 rounded-lg text-white transition-colors" title="Move Left">
+                                            <ChevronLeft className="w-4 h-4" />
+                                          </button>
+                                          <button onClick={() => handleMoveRoomPhoto(room.id, photo.id, 'right')} disabled={i === room.photos.length - 1} className="p-1 bg-white/10 hover:bg-white/20 disabled:opacity-30 rounded-lg text-white transition-colors" title="Move Right">
+                                            <ChevronRight className="w-4 h-4" />
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   ))}
-                                  <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-sand-200 flex flex-col items-center justify-center text-navy-950/40 hover:border-gold-300 hover:text-gold-500 hover:bg-gold-50/50 transition-all cursor-pointer">
-                                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handlePhotoUpload(e.target.files?.[0], `/rooms/${room.id}/photos`)} />
-                                    <Plus className="w-6 h-6 mb-2" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">Add Photo</span>
-                                  </label>
+                                  {(!room.photos || room.photos.length < 20) && (
+                                    <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-sand-200 flex flex-col items-center justify-center text-navy-950/40 hover:border-gold-300 hover:text-gold-500 hover:bg-gold-50/50 transition-all cursor-pointer">
+                                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleRoomPhotoUpload(e.target.files?.[0], room.id)} />
+                                      <Plus className="w-6 h-6 mb-2" />
+                                      <span className="text-xs font-bold uppercase tracking-widest">Add Photo</span>
+                                    </label>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1159,7 +1227,7 @@ export function OwnerDashboard() {
                         <label className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors bg-navy-950 text-white hover:bg-navy-900/90 h-10 px-4 cursor-pointer disabled:opacity-50 disabled:pointer-events-none">
                           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
                               setIsUpdatingResortPhotos(true);
-                              await handlePhotoUpload(e.target.files?.[0], `/resorts/${resort.id}/photos`);
+                              await handleResortPhotoUpload(e.target.files?.[0], resort.id);
                               setIsUpdatingResortPhotos(false);
                             }} />
                             {isUpdatingResortPhotos ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Add Photo"}

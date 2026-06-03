@@ -297,15 +297,29 @@ export function ResortDetailPage() {
                           : "bg-white border-sand-100 hover:border-gold-300"
                       )}
                     >
-                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0 bg-sand-100">
-                        <img
-                          src={optimizeImage(room.images?.[0] || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=600', 600)}
-                          alt={room.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/images/hampi-1.png';
-                          }}
-                        />
+                      <div className="w-full md:w-56 h-32 md:h-full rounded-2xl overflow-hidden shrink-0 bg-sand-100 relative group/slider">
+                        <div className="flex overflow-x-auto snap-x snap-mandatory h-full scrollbar-hide">
+                          {(room.photos && room.photos.length > 0) ? room.photos.map((photo: any) => (
+                            <img
+                              key={photo.id}
+                              src={optimizeImage(photo.imageUrl, 600)}
+                              alt={room.name}
+                              className="w-full h-full object-cover snap-center flex-shrink-0 group-hover:scale-105 transition-transform duration-1000"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/images/hampi-1.png';
+                              }}
+                            />
+                          )) : (
+                            <img
+                              src={optimizeImage(room.images?.[0] || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=600', 600)}
+                              alt={room.name}
+                              className="w-full h-full object-cover snap-center flex-shrink-0 group-hover:scale-105 transition-transform duration-1000"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/images/hampi-1.png';
+                              }}
+                            />
+                          )}
+                        </div>
                       </div>
                       <div className="flex-grow">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

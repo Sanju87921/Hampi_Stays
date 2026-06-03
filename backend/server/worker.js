@@ -1214,11 +1214,15 @@ app.get('/resorts/:slug', discoveryCache, async (c) => {
   try {
     const resort = await prisma.resort.findUnique({
       where: { slug },
-      include: { roomTypes: true, owner: { include: { user: true } } }
+      include: { roomTypes: { include: { photos: { orderBy: { sortOrder: 'asc' } } } }, owner: { include: { user: true } } }
     });
     if (!resort || resort.status !== 'APPROVED' || !resort.owner?.isVerified) {
       return c.json({ error: 'Resort not found' }, 404);
     }
+    // Validation: Room type cannot be published without at least one photo and cover photo
+    resort.roomTypes = resort.roomTypes.filter(room => 
+      room.photos && room.photos.length > 0 && room.photos.some(p => p.isCover)
+    );
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -1376,7 +1380,8 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
             availableCount: true,
             images: true,
             priceOverrides: true,
-            blockings: true
+            blockings: true,
+            photos: { orderBy: { sortOrder: 'asc' } }
           }
         }, 
         bookings: { 
@@ -2598,6 +2603,68 @@ app.patch('/rooms/:id', authMiddleware, async (c) => {
       }
     });
     return c.json(updated);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.post('/rooms/:id/photos', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const roomId = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const photo = await prisma.roomPhoto.create({
+      data: {
+        roomId,
+        imageUrl: body.imageUrl,
+        isCover: body.isCover || false,
+        sortOrder: body.sortOrder || 0
+      }
+    });
+    return c.json(photo, 201);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.patch('/rooms/:roomId/photos/:photoId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const photoId = c.req.param('photoId');
+  const body = await c.req.json();
+  try {
+    if (body.isCover) {
+      await prisma.roomPhoto.updateMany({
+        where: { roomId: c.req.param('roomId') },
+        data: { isCover: false }
+      });
+    }
+    const updated = await prisma.roomPhoto.update({
+      where: { id: photoId },
+      data: {
+        isCover: body.isCover,
+        sortOrder: body.sortOrder
+      }
+    });
+    return c.json(updated);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.delete('/rooms/:roomId/photos/:photoId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const photoId = c.req.param('photoId');
+  try {
+    await prisma.roomPhoto.delete({ where: { id: photoId } });
+    return c.json({ success: true });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.post('/rooms/:roomId/photos/reorder', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const body = await c.req.json();
+  try {
+    for (const update of body.updates) {
+      await prisma.roomPhoto.update({
+        where: { id: update.id },
+        data: { sortOrder: update.sortOrder }
+      });
+    }
+    return c.json({ success: true });
   } catch(e) { return c.json({error: e.message}, 500); }
 });
 
