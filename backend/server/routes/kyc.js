@@ -180,6 +180,10 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
 
     if (isNowVerified && !owner.isVerified) {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+      await prisma.resort.updateMany({ 
+        where: { ownerId: ownerId }, 
+        data: { isVerified: true, status: 'APPROVED' } 
+      });
     }
 
     await prisma.verificationAudit.create({

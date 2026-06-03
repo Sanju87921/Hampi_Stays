@@ -71,6 +71,10 @@ export async function recalculateAllKyc(prisma, adminId) {
     const isNowVerified = await evaluateResortOwnerKyc(prisma, owner.id, vSettings, owner.isVerified);
     if (isNowVerified) {
       await prisma.resortOwner.update({ where: { id: owner.id }, data: { isVerified: true } });
+      await prisma.resort.updateMany({ 
+        where: { ownerId: owner.id }, 
+        data: { isVerified: true, status: 'APPROVED' } 
+      });
       await prisma.verificationAudit.create({
         data: {
           adminId: adminId || 'SYSTEM',

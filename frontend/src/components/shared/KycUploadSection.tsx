@@ -176,7 +176,7 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
   // Phase 3: Verification Progress
   const completedDocs = requiredDocs.filter(type => {
     const s = getDocStatus(type).status;
-    return s === 'VERIFIED' || s === 'PENDING';
+    return s === 'VERIFIED';
   }).length;
   
   const progressPercent = requiredDocs.length > 0 ? Math.round((completedDocs / requiredDocs.length) * 100) : 100;
@@ -200,7 +200,7 @@ export function KycUploadSection({ userType, profileId }: { userType: 'guide' | 
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-navy-950">Verification Progress</p>
-            <p className="text-[10px] text-navy-950/60 mt-1">{completedDocs} of {requiredDocs.length} documents provided</p>
+            <p className="text-[10px] text-navy-950/60 mt-1">{completedDocs} of {requiredDocs.length} documents verified</p>
           </div>
         </div>
       </div>
