@@ -180,9 +180,10 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
 
     if (isNowVerified && !owner.isVerified) {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+      // Promote resorts that are KYC_PENDING or admin-APPROVED to ACTIVE now that owner is verified
       await prisma.resort.updateMany({ 
-        where: { ownerId: ownerId }, 
-        data: { isVerified: true, status: 'APPROVED' } 
+        where: { ownerId, status: { in: ['APPROVED', 'KYC_PENDING'] } }, 
+        data: { isVerified: true, status: 'ACTIVE' } 
       });
     }
 

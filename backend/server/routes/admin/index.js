@@ -520,7 +520,7 @@ app.get('/admin/resorts/pending', authMiddleware, adminMiddleware, async (c) => 
   const prisma = c.get('getPrisma')(c.env);
   try {
     const resorts = await prisma.resort.findMany({
-      where: { status: { not: 'APPROVED' }, deletedAt: null },
+      where: { status: { notIn: ['ACTIVE', 'REJECTED'] }, deletedAt: null },
       select: {
         id: true,
         slug: true,
@@ -581,9 +581,9 @@ app.get('/admin/resorts/active', authMiddleware, adminMiddleware, async (c) => {
 
   try {
     const [totalCount, resorts] = await Promise.all([
-      prisma.resort.count({ where: { status: 'APPROVED', deletedAt: null } }),
+      prisma.resort.count({ where: { status: 'ACTIVE', deletedAt: null } }),
       prisma.resort.findMany({
-        where: { status: 'APPROVED', deletedAt: null },
+        where: { status: 'ACTIVE', deletedAt: null },
         skip,
         take: limit,
         select: {
@@ -650,16 +650,17 @@ app.patch('/admin/resorts/:id/status', authMiddleware, adminMiddleware, async (c
   const id = c.req.param('id');
   const { status } = await c.req.json();
   try {
+    let finalStatus = status;
     if (status === 'APPROVED') {
       const resort = await prisma.resort.findUnique({
         where: { id },
         include: { owner: true }
       });
-      if (!resort || !resort.owner || !resort.owner.isVerified) {
-        return c.json({ error: 'KYC verification incomplete' }, 403);
+      if (resort && resort.owner && resort.owner.isVerified) {
+        finalStatus = 'ACTIVE';
       }
     }
-    const resort = await prisma.resort.update({ where: { id }, data: { status } });
+    const resort = await prisma.resort.update({ where: { id }, data: { status: finalStatus } });
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -915,6 +916,11 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
       const isVerified = await evaluateResortOwnerKyc(prisma, ownerId, vSettings, owner.isVerified);
       if (isVerified && !owner.isVerified) {
         await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: true } });
+        // Activate all pending/approved resorts for this now-verified owner
+        await prisma.resort.updateMany({
+          where: { ownerId, status: { in: ['APPROVED', 'KYC_PENDING'] } },
+          data: { isVerified: true, status: 'ACTIVE' }
+        });
       }
     }
 

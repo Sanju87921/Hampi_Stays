@@ -853,23 +853,23 @@ export function OwnerDashboard() {
 
         <ProfileIncompleteBanner />
 
-        {!resort.owner?.isVerified && (
+        {(resort.status === 'KYC_PENDING' || resort.status === 'DRAFT' || !resort.owner?.isVerified) && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4 shadow-sm"
+            className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4 shadow-sm"
           >
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5 text-red-600" />
+            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
             </div>
-            <div>
-              <h3 className="text-red-900 font-bold mb-1">Complete KYC Verification to make your property visible to travellers.</h3>
-              <p className="text-red-700 text-sm mb-3">
-                Your account is pending KYC verification. Until approved, your property remains hidden from travellers and you cannot accept new bookings.
+            <div className="flex-1">
+              <h3 className="text-amber-900 font-bold mb-1">⚠ Complete KYC Verification</h3>
+              <p className="text-amber-800 text-sm mb-3">
+                Your property has been saved successfully. To make your resort visible to travellers and start receiving bookings, complete the required KYC verification.
               </p>
               <Button 
                 onClick={() => navigate("/dashboard?tab=kyc")}
-                className="bg-red-600 hover:bg-red-700 text-white border-none text-xs h-8 px-4"
+                className="bg-amber-600 hover:bg-amber-700 text-white border-none text-xs h-8 px-4"
               >
                 Complete KYC Verification
               </Button>

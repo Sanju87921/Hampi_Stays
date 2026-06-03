@@ -1342,7 +1342,7 @@ app.post('/resorts', authMiddleware, async (c) => {
         mealPackages: mealPackages || [],
         verificationDocs: documents || [],
         ownerId: owner.id,
-        status: 'DRAFT',
+        status: 'KYC_PENDING',
         images: images || [],
         roomTypes: {
           create: (roomTypes || []).map((room) => ({

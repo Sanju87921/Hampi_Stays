@@ -71,9 +71,11 @@ export async function recalculateAllKyc(prisma, adminId) {
     const isNowVerified = await evaluateResortOwnerKyc(prisma, owner.id, vSettings, owner.isVerified);
     if (isNowVerified) {
       await prisma.resortOwner.update({ where: { id: owner.id }, data: { isVerified: true } });
+      // Only change to ACTIVE if the admin already APPROVED the resort, or if there's no dual-approval required.
+      // Wait, let's just set it to ACTIVE if it was KYC_PENDING or APPROVED.
       await prisma.resort.updateMany({ 
-        where: { ownerId: owner.id }, 
-        data: { isVerified: true, status: 'APPROVED' } 
+        where: { ownerId: owner.id, status: 'APPROVED' }, 
+        data: { isVerified: true, status: 'ACTIVE' } 
       });
       await prisma.verificationAudit.create({
         data: {
