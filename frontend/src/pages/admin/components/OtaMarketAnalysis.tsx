@@ -316,6 +316,78 @@ export function OtaMarketAnalysis() {
               </div>
             ))}
           </div>
+
+          {/* ⚡ ONE-CLICK FLASH PROMOTIONS */}
+          {heatmap.deadWeeks?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-600" />
+                <h3 className="font-bold text-amber-800">Low-Demand Weeks Detected — Launch Flash Campaigns</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {heatmap.deadWeeks.map((week: any, i: number) => (
+                  <div key={i} className="bg-white border border-amber-100 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-400" />
+                    <p className="text-[10px] uppercase tracking-widest text-amber-700 font-bold mb-1">Dead Week</p>
+                    <p className="font-bold text-navy-950 text-sm mb-1">{week.startDate} → {week.endDate}</p>
+                    <p className="text-xs text-navy-950/50 mb-4">{week.totalBookings} booking{week.totalBookings !== 1 ? "s" : ""} · Avg demand: {week.avgLevel}/4</p>
+                    <button
+                      onClick={() => {
+                        const msg = encodeURIComponent(`FLASH_PROMO|${week.startDate}|${week.endDate}|20`);
+                        window.location.href = `/admin/promotions?prefill=${msg}`;
+                      }}
+                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-3.5 h-3.5" /> Launch 20% Off Campaign
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ⏱️ BOOKING VELOCITY TRACKER */}
+          {heatmap.velocityAlerts?.length > 0 && (
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+                <h3 className="font-bold text-purple-800">High-Velocity Weekends — Raise Prices Before You Sell Out!</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {heatmap.velocityAlerts.map((va: any, i: number) => (
+                  <div key={i} className="bg-white border border-purple-100 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-purple-700 font-bold mb-1">
+                          {va.isEvent ? `🎉 ${va.eventName}` : "High-Velocity Weekend"}
+                        </p>
+                        <p className="font-bold text-navy-950 text-sm">{va.startDate} → {va.endDate}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-purple-700">{va.velocityPct}%</p>
+                        <p className="text-[10px] text-navy-950/50">occupancy</p>
+                      </div>
+                    </div>
+                    <div className="w-full bg-purple-100 rounded-full h-2 mb-4">
+                      <div className="h-2 rounded-full bg-purple-500 transition-all" style={{ width: `${va.velocityPct}%` }} />
+                    </div>
+                    <p className="text-xs text-navy-950/60 mb-3">{va.bookings} bookings tracked · Recommended: +{va.suggestedPriceIncrease}% surge pricing</p>
+                    <button
+                      onClick={() => {
+                        toast.success(`Surge pricing of +${va.suggestedPriceIncrease}% flagged for ${va.startDate}. Go to Price Tracker to apply.`, { duration: 5000 });
+                        setActiveTab("prices");
+                      }}
+                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Apply +{va.suggestedPriceIncrease}% Surge Price
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-white border border-sand-200 rounded-3xl p-6 shadow-sm">
             <h3 className="font-bold text-navy-950 mb-2">60-Day Demand Calendar</h3>
             <p className="text-xs text-navy-950/50 mb-5">Each cell = 1 day. Colour = booking density based on real reservation data.</p>

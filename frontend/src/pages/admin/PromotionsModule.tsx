@@ -2,7 +2,7 @@ import { useModal } from "../../components/shared/ModalProvider";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Tag, Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Percent, IndianRupee, Copy, TrendingUp, Calendar, AlertCircle, Clock, History, Award } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
@@ -87,6 +87,35 @@ export function PromotionsModule() {
   useEffect(() => {
     fetchPromotions();
     fetchAuditLogs();
+
+    // Handle ?prefill= from OTA Heatmap flash promotion
+    const params = new URLSearchParams(window.location.search);
+    const prefill = params.get('prefill');
+    if (prefill) {
+      const parts = decodeURIComponent(prefill).split('|');
+      if (parts[0] === 'FLASH_PROMO' && parts.length === 4) {
+        const [, startDate, endDate, discount] = parts;
+        const code = `FLASH${startDate.replace(/-/g, '')}`.toUpperCase();
+        setEditingPromo({
+          name: `⚡ Low-Demand Flash Sale (${startDate} – ${endDate})`,
+          code,
+          discountType: 'percentage',
+          discountValue: Number(discount),
+          active: true,
+          priority: 10,
+          firstBookingOnly: false,
+          usageCount: 0,
+          targetType: 'PLATFORM',
+          autoApply: false,
+          validFrom: new Date(startDate).toISOString(),
+          validUntil: new Date(endDate + 'T23:59:00').toISOString(),
+        });
+        setIsEditing(true);
+        // Clean URL without reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+        toast.success('Flash campaign pre-filled from Demand Heatmap! Review and save.', { duration: 5000 });
+      }
+    }
   }, []);
 
   const handleSave = async () => {
