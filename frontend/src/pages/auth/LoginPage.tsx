@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const emailParam = searchParams.get("email");
+  const premiumMessage = searchParams.get("message");
   const rememberedEmail = typeof window !== 'undefined' ? localStorage.getItem('rememberedEmail') : null;
   const [email, setEmail] = useState(emailParam || rememberedEmail || "");
   const [password, setPassword] = useState("");
@@ -27,8 +28,7 @@ export function LoginPage() {
   const [onboardingEmail, setOnboardingEmail] = useState("");
   const { login, loginWithOtp, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const premiumMessage = searchParams.get("message");
+  
   
   const hampiImages = [
     "/images/hampi-1.png", // Stone Chariot
