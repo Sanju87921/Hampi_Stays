@@ -1598,6 +1598,67 @@ app.post('/admin/ota-analytics/apply-smart-price', authMiddleware, adminMiddlewa
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// NEW: OtaIntegrations Hub
+app.get('/admin/ota-analytics/integrations', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const integrations = await prisma.otaIntegration.findMany();
+    // Mask API keys for security
+    const masked = integrations.map(i => ({
+      ...i,
+      apiKey: i.apiKey ? '****************' : null
+    }));
+    return c.json(masked);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/admin/ota-analytics/integrations', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const body = await c.req.json();
+    const { provider, apiKey, endpoint, isActive } = body;
+    
+    if (!provider) return c.json({ error: 'Provider is required' }, 400);
+
+    const existing = await prisma.otaIntegration.findUnique({ where: { provider } });
+    
+    // Simulate connection test
+    let syncStatus = 'SUCCESS';
+    if (isActive) {
+      if (!apiKey || apiKey.length < 5) syncStatus = 'FAILED';
+    }
+
+    let result;
+    if (existing) {
+      result = await prisma.otaIntegration.update({
+        where: { id: existing.id },
+        data: {
+          apiKey: apiKey && apiKey !== '****************' ? apiKey : undefined,
+          endpoint,
+          isActive,
+          syncStatus,
+          lastSyncAt: isActive && syncStatus === 'SUCCESS' ? new Date() : existing.lastSyncAt
+        }
+      });
+    } else {
+      result = await prisma.otaIntegration.create({
+        data: {
+          provider,
+          apiKey,
+          endpoint,
+          isActive,
+          syncStatus,
+          lastSyncAt: isActive && syncStatus === 'SUCCESS' ? new Date() : null
+        }
+      });
+    }
+
+    // Mask for response
+    result.apiKey = result.apiKey ? '****************' : null;
+    return c.json({ success: true, integration: result });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 // NEW: Market Demand Heatmap (trailing 4 weeks + 4 weeks forward)
 app.get('/admin/ota-analytics/demand-heatmap', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);

@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import {
   Globe, TrendingUp, Search, Target, AlertCircle,
   DollarSign, Star, BarChart2, Zap, ArrowUp, ArrowDown, Minus,
-  IndianRupee, Shield, TrendingDown, MessageSquare, Calendar, Sparkles
+  IndianRupee, Shield, TrendingDown, MessageSquare, Calendar, Sparkles,
+  Settings, CheckCircle2, XCircle, RefreshCw, Server
 } from "lucide-react";
 import { apiClient } from "../../../utils/apiClient";
 import { Button } from "../../../components/ui/Button";
@@ -16,6 +17,7 @@ const TABS = [
   { id: "heatmap", label: "Demand Heatmap", icon: Calendar },
   { id: "sentiment", label: "Review Sentiment", icon: MessageSquare },
   { id: "leakage", label: "Revenue Leakage", icon: Shield },
+  { id: "integrations", label: "Scraper Integrations", icon: Settings },
 ];
 
 const LEVEL_COLORS = ["bg-sand-100", "bg-green-200", "bg-yellow-300", "bg-orange-400", "bg-red-500"];
@@ -28,6 +30,7 @@ export function OtaMarketAnalysis() {
   const [heatmap, setHeatmap] = useState<any>(null);
   const [sentiment, setSentiment] = useState<any>(null);
   const [leakage, setLeakage] = useState<any>(null);
+  const [integrations, setIntegrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
 
@@ -38,18 +41,20 @@ export function OtaMarketAnalysis() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [ov, pr, hm, se, lk] = await Promise.allSettled([
+      const [ov, pr, hm, se, lk, ig] = await Promise.allSettled([
         apiClient.get<any[]>("/admin/ota-analytics"),
         apiClient.get<any>("/admin/ota-analytics/price-tracker"),
         apiClient.get<any>("/admin/ota-analytics/demand-heatmap"),
         apiClient.get<any>("/admin/ota-analytics/sentiment"),
         apiClient.get<any>("/admin/ota-analytics/revenue-leakage"),
+        apiClient.get<any[]>("/admin/ota-analytics/integrations")
       ]);
       if (ov.status === "fulfilled") setOverview(ov.value || []);
       if (pr.status === "fulfilled") setPrices(pr.value);
       if (hm.status === "fulfilled") setHeatmap(hm.value);
       if (se.status === "fulfilled") setSentiment(se.value);
       if (lk.status === "fulfilled") setLeakage(lk.value);
+      if (ig.status === "fulfilled") setIntegrations(ig.value || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -71,6 +76,16 @@ export function OtaMarketAnalysis() {
       await fetchAll();
     } catch {
       toast.error("Failed to apply smart price");
+    }
+  };
+
+  const handleSaveIntegration = async (provider: string, apiKey: string, endpoint: string, isActive: boolean) => {
+    try {
+      await apiClient.post("/admin/ota-analytics/integrations", { provider, apiKey, endpoint, isActive });
+      toast.success(`${provider} integration saved successfully!`);
+      await fetchAll();
+    } catch {
+      toast.error(`Failed to save ${provider} integration`);
     }
   };
 
@@ -441,6 +456,104 @@ export function OtaMarketAnalysis() {
               <p className="text-sm text-white/70 mt-0.5">
                 Every booking made directly on HampiStays saves guests an average of <span className="text-gold-400 font-bold">₹{(leakage.perBookingSaved || 0).toLocaleString()}</span> vs OTA rates — and saves the platform <span className="text-gold-400 font-bold">{leakage.avgOtaCommission}%</span> in OTA commissions. Amplify this with the Refer & Earn programme to accelerate direct bookings.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Integrations */}
+      {activeTab === "integrations" && (
+        <div className="space-y-6">
+          <div className="bg-white border border-sand-200 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6 border-b border-sand-100 pb-4">
+              <div className="bg-navy-50 p-2 rounded-xl">
+                <Server className="w-5 h-5 text-navy-700" />
+              </div>
+              <div>
+                <h3 className="font-bold text-navy-950">Live Scraper & Channel Manager Configuration</h3>
+                <p className="text-xs text-navy-950/50">Connect to external APIs to fetch real-time prices, reviews, and availability.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {[
+                { id: "APIFY", name: "Apify Integration", desc: "For scraping Booking.com and Airbnb reviews and basic rates.", img: "https://apify.com/img/favicon.svg" },
+                { id: "BRIGHT_DATA", name: "BrightData Web Unlocker", desc: "For real-time pricing without getting IP blocked by OTAs.", img: "https://brightdata.com/favicon.ico" },
+                { id: "SITEMINDER", name: "SiteMinder API", desc: "Direct channel manager integration for instant sync.", img: "https://www.siteminder.com/favicon.ico" },
+              ].map((provider) => {
+                const config = integrations.find(i => i.provider === provider.id) || { isActive: false, apiKey: "", endpoint: "" };
+                
+                return (
+                  <div key={provider.id} className={cn("border rounded-2xl p-5 transition-all", config.isActive ? "border-green-200 bg-green-50/20 shadow-sm" : "border-sand-200 bg-sand-50/20")}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        {config.isActive && config.syncStatus === 'SUCCESS' ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        ) : config.isActive && config.syncStatus === 'FAILED' ? (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        ) : (
+                          <Minus className="w-4 h-4 text-sand-400" />
+                        )}
+                        <span className="font-bold text-navy-950 text-sm">{provider.name}</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={config.isActive}
+                          onChange={(e) => handleSaveIntegration(provider.id, config.apiKey, config.endpoint, e.target.checked)}
+                        />
+                        <div className="w-9 h-5 bg-sand-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-sand-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                      </label>
+                    </div>
+                    
+                    <p className="text-xs text-navy-950/60 mb-4 h-8">{provider.desc}</p>
+
+                    <div className="space-y-3 mb-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/50 mb-1">API Key</label>
+                        <input 
+                          type="password"
+                          placeholder={config.apiKey ? "****************" : "Enter API Key"}
+                          className="w-full px-3 py-2 text-sm bg-white border border-sand-200 rounded-lg focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-colors"
+                          onBlur={(e) => {
+                            if (e.target.value && e.target.value !== "****************") {
+                              handleSaveIntegration(provider.id, e.target.value, config.endpoint, config.isActive);
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/50 mb-1">Webhook / Endpoint URL</label>
+                        <input 
+                          type="text"
+                          defaultValue={config.endpoint || ""}
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 text-sm bg-white border border-sand-200 rounded-lg focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-colors"
+                          onBlur={(e) => {
+                            if (e.target.value !== config.endpoint) {
+                              handleSaveIntegration(provider.id, config.apiKey, e.target.value, config.isActive);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-sand-200 flex items-center justify-between">
+                      <span className="text-[10px] text-navy-950/40 font-medium">
+                        Last Sync: {config.lastSyncAt ? new Date(config.lastSyncAt).toLocaleString() : "Never"}
+                      </span>
+                      <button 
+                        onClick={() => handleSaveIntegration(provider.id, config.apiKey, config.endpoint, config.isActive)}
+                        className="p-1.5 bg-navy-50 text-navy-700 rounded-md hover:bg-navy-100 transition-colors"
+                        title="Save & Sync Now"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
