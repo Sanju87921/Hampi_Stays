@@ -660,7 +660,32 @@ app.patch('/admin/resorts/:id/status', authMiddleware, adminMiddleware, async (c
         finalStatus = 'ACTIVE';
       }
     }
-    const resort = await prisma.resort.update({ where: { id }, data: { status: finalStatus } });
+    const resort = await prisma.resort.update({ 
+      where: { id }, 
+      data: { status: finalStatus },
+      include: { owner: { include: { user: true } } }
+    });
+    
+    // Notification for Resort Status
+    if (status === 'APPROVED' || status === 'REJECTED') {
+      const { sendNotification } = await import('../../services/notification.service.js').catch(() => import('../../services/notification.service.js'));
+      const notificationTitle = status === 'APPROVED' ? 'Resort Approved' : 'Resort Rejected';
+      const notificationMessage = status === 'APPROVED' 
+        ? `Your resort "${resort.name}" has been approved and is now active.` 
+        : `Your resort "${resort.name}" was rejected by the administration.`;
+        
+      await sendNotification(prisma, {
+        userId: resort.owner.userId,
+        userEmail: resort.owner.user?.email,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: status === 'APPROVED' ? 'RESORT_APPROVED' : 'RESORT_REJECTED',
+        sendEmail: !!resort.owner.user?.email,
+        env: c.env,
+        ctx: c.executionCtx
+      });
+    }
+
     return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -939,6 +964,23 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
           newStatus: status,
           rejectionReason: rejectionReason
         }
+      });
+      
+      const { sendNotification } = await import('../../services/notification.service.js').catch(() => import('../../services/notification.service.js'));
+      const notificationTitle = status === 'VERIFIED' || status === 'APPROVED' ? 'KYC Approved' : 'KYC Rejected';
+      const notificationMessage = status === 'VERIFIED' || status === 'APPROVED' 
+        ? 'Your KYC documents have been successfully verified.' 
+        : `Your KYC documents were rejected. Reason: ${rejectionReason || 'Invalid documents.'}`;
+      
+      await sendNotification(prisma, {
+        userId: doc.owner.userId,
+        userEmail: doc.owner.user?.email,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: status === 'VERIFIED' || status === 'APPROVED' ? 'KYC_APPROVED' : 'KYC_REJECTED',
+        sendEmail: !!doc.owner.user?.email,
+        env: c.env,
+        ctx: c.executionCtx
       });
     }
 

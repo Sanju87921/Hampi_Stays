@@ -1407,7 +1407,7 @@ export function AdminDashboard() {
  </Button>
  <Button 
  variant="outline" 
- className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50"
+ className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
  onClick={() => handleDeleteUser(user.id, user.name)}
  isLoading={processingId === user.id}
  >
@@ -1523,7 +1523,7 @@ export function AdminDashboard() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl gap-2 flex-1 md:flex-none"
+                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl gap-2 flex-1 md:flex-none"
                         onClick={() => handlePaymentReview(booking.id, "REFUND")}
                         isLoading={processingId === booking.id}
                       >
@@ -1531,7 +1531,7 @@ export function AdminDashboard() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl gap-2 flex-1 md:flex-none"
+                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl gap-2 flex-1 md:flex-none"
                         onClick={() => handlePaymentReview(booking.id, "REJECT")}
                         isLoading={processingId === booking.id}
                       >
@@ -1979,7 +1979,7 @@ export function AdminDashboard() {
  </div>
  <div className="flex gap-3">
  <Button className="rounded-xl h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white">Keep Review</Button>
- <Button variant="outline" className="rounded-xl h-12 px-6 border-red-200 text-red-600 hover:bg-red-50">Delete Permanently</Button>
+ <Button variant="outline" className="rounded-xl h-12 px-6 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">Delete Permanently</Button>
  </div>
  </div>
  )) : (

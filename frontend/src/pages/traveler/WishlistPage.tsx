@@ -40,7 +40,7 @@ export function WishlistPage() {
                   />
                   <button
                     onClick={() => toggleWishlist(resort.id)}
-                    className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-red-500 shadow-lg hover:bg-red-500 hover:text-white transition-all"
+                    className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-red-500 shadow-lg hover:bg-red-50 hover:text-red-7000 hover:text-white transition-all"
                   >
                     <Heart className="w-5 h-5 fill-current" />
                   </button>

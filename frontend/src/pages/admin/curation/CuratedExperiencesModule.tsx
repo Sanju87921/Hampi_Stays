@@ -193,7 +193,7 @@ const CuratedExperiencesModule = () => {
 
  <div className="mt-auto flex gap-2">
  <Button variant="outline" onClick={() => handleOpenEditor(exp)} className="flex-1 text-xs h-10">Edit</Button>
- <Button variant="outline" onClick={() => handleDelete(exp.id)} className="border-red-200 text-red-600 hover:bg-red-50 h-10 px-3">
+ <Button variant="outline" onClick={() => handleDelete(exp.id)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-10 px-3">
  <Trash2 className="w-4 h-4" />
  </Button>
  </div>

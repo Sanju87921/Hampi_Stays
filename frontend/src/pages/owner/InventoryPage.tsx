@@ -245,7 +245,7 @@ export function InventoryPage() {
                       <button key={day} onClick={() => toggleDate(day)}
                         className={cn("bg-white h-24 md:h-32 p-4 text-left transition-all hover:bg-gold-50/30 relative group",
                           isSelected && "bg-gold-100 border-2 border-gold-500 z-10",
-                          blocking && "bg-red-50/50 hover:bg-red-50/80")}>
+                          blocking && "bg-red-50/50 hover:bg-red-50 hover:text-red-700/80")}>
                         <div className="flex justify-between items-start">
                           <span className={cn("text-sm font-bold", isSelected ? "text-gold-700" : (blocking ? "text-red-400" : "text-navy-950"))}>
                             {day}
@@ -305,7 +305,7 @@ export function InventoryPage() {
 
                 <div className="pt-6 border-t border-sand-100 space-y-4">
                   <Input label="Blocking Reason" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="e.g. Maintenance" />
-                  <Button variant="outline" className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50" disabled={selectedDates.length === 0} onClick={handleBlockDates} isLoading={isSaving}>
+                  <Button variant="outline" className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" disabled={selectedDates.length === 0} onClick={handleBlockDates} isLoading={isSaving}>
                     <Lock className="w-4 h-4 mr-2" /> Block Selected Dates
                   </Button>
                 </div>

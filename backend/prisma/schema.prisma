@@ -313,15 +313,18 @@ model Wishlist {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int      @default(5)
-  comment   String?
-  images    String[]
-  createdAt DateTime @default(now())
-  userId    String
-  resortId  String
-  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  rating      Int      @default(5)
+  comment     String?
+  images      String[]
+  ownerReply  String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt   DateTime @default(now())
+  userId      String
+  resortId    String
+  bookingId   String?  @unique
+  resort      Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([resortId])
   @@index([userId])
@@ -884,4 +887,45 @@ model ExternalPropertyPresence {
   lastChecked      DateTime @default(now())
   
   @@map("external_property_presence")
+}
+
+model ResortOwnerPayout {
+  id              String      @id @default(cuid())
+  bookingId       String      @unique
+  resortId        String
+  ownerId         String
+  grossAmount     Float
+  commissionRate  Float
+  platformCommission Float
+  netAmount       Float
+  status          String      @default("PENDING") // PENDING, ELIGIBLE, PROCESSING, PAID, FAILED
+  settlementId    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  settlement      SettlementLedger? @relation(fields: [settlementId], references: [id])
+
+  @@index([resortId])
+  @@index([ownerId])
+  @@index([status])
+  @@map("resort_owner_payouts")
+}
+
+model SettlementLedger {
+  id              String      @id @default(cuid())
+  ownerId         String
+  totalGross      Float
+  totalCommission Float
+  totalNet        Float
+  status          String      @default("PENDING") // PENDING, PAID, FAILED
+  transactionRef  String?
+  settlementDate  DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  payouts         ResortOwnerPayout[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("settlement_ledger")
 }

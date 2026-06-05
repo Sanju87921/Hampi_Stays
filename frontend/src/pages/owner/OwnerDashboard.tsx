@@ -120,7 +120,7 @@ export function OwnerDashboard() {
     // Poll only if property was just created (D1 replication lag window)
     if (isJustCreated && (!success || finalData.length === 0)) {
       let retries = 0;
-      while (retries < 5) {
+      while (retries < 15) {
         await new Promise(r => setTimeout(r, 2000));
         try {
           const newData = await apiClient.get<any[]>(`/owners/${user.id}/resorts/summary?_t=${Date.now()}`);
@@ -135,7 +135,9 @@ export function OwnerDashboard() {
         }
         retries++;
       }
-      sessionStorage.removeItem("just_created_resort"); // Always clear after polling
+      if (success) {
+        sessionStorage.removeItem("just_created_resort"); // clear after polling if successful
+      }
     }
 
     setResorts(Array.isArray(finalData) ? finalData : []);
@@ -1070,7 +1072,7 @@ export function OwnerDashboard() {
             </Button>
             <Button 
               variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 hover:text-red-700"
               onClick={() => {
                 luxuryConfirm({
                   title: "Delete Resort",
@@ -1168,7 +1170,7 @@ export function OwnerDashboard() {
                 <p className="text-xs text-red-700 font-bold uppercase tracking-widest mt-1">Checking out Today</p>
               </div>
               <div 
-                className="w-12 h-12 rounded-2xl bg-white border border-red-100 flex items-center justify-center text-red-600 shadow-sm cursor-pointer hover:bg-red-50 transition-colors"
+                className="w-12 h-12 rounded-2xl bg-white border border-red-100 flex items-center justify-center text-red-600 shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-700 transition-colors"
                 onClick={() => navigate("/dashboard?tab=bookings")}
                 title="View All Bookings"
               >
@@ -1194,7 +1196,7 @@ export function OwnerDashboard() {
                         <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • Room {(booking.id || '').slice(-4).toUpperCase()}</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(booking)} className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50">Invoice</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(booking)} className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">Invoice</Button>
                   </div>
                 ))
               ) : (
@@ -1248,7 +1250,7 @@ export function OwnerDashboard() {
                                 Edit Room
                               </Button>
                               <Button 
-                                variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-red-200 text-red-600 hover:bg-red-50"
+                                variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                                 onClick={() => { 
                                   setBlockingFormData(prev => ({...prev, roomId: room.id})); 
                                   setShowBlockRoom(true); 
@@ -1345,7 +1347,7 @@ export function OwnerDashboard() {
                                 onConfirm: () => handleDeletePhoto(resort.id, img)
                               });
                             }} 
-                            className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg text-red-500 shadow-sm transition-all hover:bg-red-500 hover:text-white"
+                            className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg text-red-500 shadow-sm transition-all hover:bg-red-50 hover:text-red-7000 hover:text-white"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2473,7 +2475,7 @@ export function OwnerDashboard() {
                     </div>
                     <button type="button" onClick={() => {
                       setDiningPackages(diningPackages.filter((_, i) => i !== idx));
-                    }} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0 border border-transparent hover:border-red-100">
+                    }} className="p-3 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors shrink-0 border border-transparent hover:border-red-100">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>

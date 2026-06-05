@@ -682,7 +682,7 @@ export function BookingsPage() {
                       {activeTab === "upcoming" && booking.status !== "CHECKED_IN" && (
                         <Button
                           variant="outline"
-                          className="px-6 rounded-2xl gap-2 border-red-100 text-red-600 bg-red-50/30 hover:bg-red-50 hover:border-red-200"
+                          className="px-6 rounded-2xl gap-2 border-red-100 text-red-600 bg-red-50/30 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
                           isLoading={cancellingId === booking.id}
                           onClick={() => handleCancel(booking.id)}
                         >

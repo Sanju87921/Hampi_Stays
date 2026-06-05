@@ -166,7 +166,7 @@ const SponsoredAdsModule = () => {
  </p>
  <div className="mt-auto flex gap-2">
  <Button variant="outline" onClick={() => handleOpenEditor(ad)} className="flex-1 text-xs h-9">Edit</Button>
- <Button variant="outline" onClick={() => handleDelete(ad.id)} className="border-red-200 text-red-600 hover:bg-red-50 h-9 px-3">
+ <Button variant="outline" onClick={() => handleDelete(ad.id)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-9 px-3">
  <Trash2 className="w-4 h-4" />
  </Button>
  </div>

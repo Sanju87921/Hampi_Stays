@@ -232,7 +232,7 @@ export function UserManagement() {
  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
  <Button 
  variant="outline" 
- className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50"
+ className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
  onClick={() => handleDeleteUser(user?.id, user?.name)}
  isLoading={processingId === user?.id}
  >

@@ -154,8 +154,18 @@ export const createBooking = async (c) => {
         }
       });
 
-      // If all available units for this room type are taken, abort!
-      if (overlappingBookings >= room.availableCount) {
+      const overlappingBlockings = await tx.roomBlocking.count({
+        where: {
+          roomId: roomId,
+          date: {
+            gte: startDate,
+            lt: endDate
+          }
+        }
+      });
+
+      // If all available units for this room type are taken by bookings OR blockings, abort!
+      if (overlappingBookings + overlappingBlockings >= room.availableCount) {
         throw new Error('ROOM_UNAVAILABLE');
       }
 

@@ -736,7 +736,7 @@ export function GuideDashboard() {
               {/* Delete button */}
               <button 
                 onClick={() => handleDeleteExperience(exp.id)}
-                className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md rounded-xl text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-20"
+                className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md rounded-xl text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-700 z-20"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -1134,7 +1134,7 @@ export function GuideDashboard() {
           await logout();
           navigate("/login");
         }}
-        className="w-full h-14 rounded-2xl border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 gap-2"
+        className="w-full h-14 rounded-2xl border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 gap-2"
       >
         Sign Out of All Devices
       </Button>

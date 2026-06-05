@@ -79,6 +79,30 @@ export const verifyPayment = async (c) => {
       data: { status: 'PAID', paymentStatus: 'PAID' }
     });
 
+    const commissionRate = booking.commissionRate || booking.resort?.commissionRate || 15;
+    const grossAmount = booking.totalPrice;
+    const platformCommission = Math.round(grossAmount * (commissionRate / 100));
+    const netAmount = grossAmount - platformCommission;
+
+    if (booking.resort && booking.resort.ownerId) {
+      await prisma.resortOwnerPayout.upsert({
+        where: { bookingId: booking.id },
+        update: {
+          status: 'PENDING',
+        },
+        create: {
+          bookingId: booking.id,
+          resortId: booking.resort.id,
+          ownerId: booking.resort.ownerId,
+          grossAmount,
+          commissionRate,
+          platformCommission,
+          netAmount,
+          status: 'PENDING'
+        }
+      });
+    }
+
     if (booking.promotionId) {
       try {
         await prisma.promotion.update({

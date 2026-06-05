@@ -188,7 +188,7 @@ export function BlogModule() {
  <button onClick={() => handleOpenEditor(post)} className="w-10 h-10 rounded-xl bg-white border border-sand-200 text-navy-950 flex items-center justify-center hover:bg-sand-100 :bg-sand-200 transition-colors" title="Edit">
  <Edit3 className="w-4 h-4" />
  </button>
- <button onClick={() => handleDeletePost(post.id, post.title)} className="w-10 h-10 rounded-xl bg-white border border-sand-200 text-red-600 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors" title="Delete">
+ <button onClick={() => handleDeletePost(post.id, post.title)} className="w-10 h-10 rounded-xl bg-white border border-sand-200 text-red-600 flex items-center justify-center hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors" title="Delete">
  <Trash2 className="w-4 h-4" />
  </button>
  </div>

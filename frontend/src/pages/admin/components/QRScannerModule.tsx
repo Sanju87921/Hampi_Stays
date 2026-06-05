@@ -183,7 +183,7 @@ export function QRScannerModule() {
               </div>
               
               <div className="mt-8 flex items-center gap-4">
-                <button onClick={handleStopClick} className="flex items-center gap-2 px-6 py-3 bg-white border border-sand-200 text-navy-950 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-red-50 hover:text-red-600 transition-colors">
+                <button onClick={handleStopClick} className="flex items-center gap-2 px-6 py-3 bg-white border border-sand-200 text-navy-950 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-red-50 hover:text-red-700 hover:text-red-600 transition-colors">
                   <StopCircle className="w-4 h-4" /> Stop Scanner
                 </button>
                 <button onClick={handleRestartClick} className="flex items-center gap-2 px-6 py-3 bg-white border border-sand-200 text-navy-950 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-sand-100 transition-colors">

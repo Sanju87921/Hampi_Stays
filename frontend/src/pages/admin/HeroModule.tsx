@@ -442,7 +442,7 @@ const HeroModule = () => {
  </button>
  <button onClick={() => deleteSlide(slide.id)} 
  title="Delete Slide" 
- className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm">
+ className="p-2 bg-white border border-sand-200 text-red-500/70 hover:text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all shadow-sm">
  <Trash2 className="w-4 h-4" />
  </button>
  </div>

@@ -1286,8 +1286,13 @@ app.post('/reviews', authMiddleware, async (c) => {
     const resort = await prisma.resort.findUnique({ where: { id: resortId } });
     if (!resort) return c.json({ error: 'Resort not found' }, 404);
     
+    const owner = await prisma.resortOwner.findUnique({ where: { userId } });
+    if (owner && owner.id === resort.ownerId) {
+      return c.json({ error: 'You cannot review your own property.' }, 403);
+    }
+    
     // Verify user actually stayed here
-    const validBooking = await prisma.booking.findFirst({
+    const validBookings = await prisma.booking.findMany({
       where: {
         userId,
         resortId,
@@ -1295,16 +1300,31 @@ app.post('/reviews', authMiddleware, async (c) => {
       }
     });
     
-    if (!validBooking) {
+    if (validBookings.length === 0) {
       return c.json({ error: 'You can only leave a review for resorts you have checked into or completed a stay with' }, 403);
+    }
+
+    let bookingToReview = null;
+    for (const b of validBookings) {
+      const existingReview = await prisma.review.findFirst({ where: { bookingId: b.id } });
+      if (!existingReview) {
+        bookingToReview = b;
+        break;
+      }
+    }
+
+    if (!bookingToReview) {
+       return c.json({ error: 'You have already reviewed all your stays at this resort.' }, 403);
     }
     
     const review = await prisma.review.create({
       data: {
         resortId,
         userId,
+        bookingId: bookingToReview.id,
         rating: ratingVal,
-        comment: comment.trim()
+        comment: comment.trim(),
+        status: 'PENDING'
       },
       include: { user: { select: { name: true, email: true } } }
     });
@@ -1359,6 +1379,103 @@ app.post('/reviews', authMiddleware, async (c) => {
     }
     
     return c.json(review, 201);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/reviews/:id/reply', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const { ownerReply } = await c.req.json();
+  const userId = c.get('userId');
+
+  try {
+    const review = await prisma.review.findUnique({
+      where: { id },
+      include: { resort: true }
+    });
+
+    if (!review) return c.json({ error: 'Review not found' }, 404);
+
+    const owner = await prisma.resortOwner.findUnique({ where: { userId } });
+    if (!owner || owner.id !== review.resort.ownerId) {
+      return c.json({ error: 'Only the resort owner can reply to this review' }, 403);
+    }
+
+    const updatedReview = await prisma.review.update({
+      where: { id },
+      data: { ownerReply: ownerReply?.trim() }
+    });
+
+    return c.json(updatedReview);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/reviews/:id/status', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  const { status } = await c.req.json();
+
+  // Admin middleware can be injected or we verify role
+  const payload = c.get('user');
+  if (payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
+    return c.json({ error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const updatedReview = await prisma.review.update({
+      where: { id },
+      data: { status }
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId: payload.userId,
+        action: 'REVIEW_STATUS_UPDATED',
+        details: { reviewId: id, status }
+      }
+    });
+
+    return c.json(updatedReview);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/admin/reviews/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  
+  const payload = c.get('user');
+  if (payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
+    return c.json({ error: 'Unauthorized' }, 403);
+  }
+
+  try {
+    const review = await prisma.review.delete({ where: { id } });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: payload.userId,
+        action: 'REVIEW_DELETED',
+        details: { reviewId: id }
+      }
+    });
+
+    // Recalculate rating
+    const aggregates = await prisma.review.aggregate({
+      where: { resortId: review.resortId },
+      _avg: { rating: true },
+      _count: { id: true }
+    });
+    
+    await prisma.resort.update({
+      where: { id: review.resortId },
+      data: { 
+        rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
+        reviewCount: aggregates._count.id || 0 
+      }
+    });
+
+    return c.json({ success: true });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -3048,7 +3165,8 @@ export default {
       cleanupPendingBookings(env),
       cleanupOrphanedMedia(env),
       generateOwnerDailyAlerts(env, ctx),
-      processPromotionsLifecycle(env, ctx)
+      processPromotionsLifecycle(env, ctx),
+      processOwnerPayouts(env, ctx)
     ]));
   }
 };
@@ -3197,9 +3315,75 @@ async function cleanupOrphanedMedia(env) {
     console.error("Storage Cleanup Monitor error:", error);
   }
 }
+}
 
+async function processOwnerPayouts(env, ctx) {
+  const prisma = getPrisma(env);
+  try {
+    const now = new Date();
+    
+    // 1. Move PENDING payouts to ELIGIBLE if checkout date has passed by 24 hours
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    // Instead of querying Booking, query Payouts and manually check booking status
+    const pendingPayouts = await prisma.resortOwnerPayout.findMany({
+      where: { status: 'PENDING' }
+    });
 
+    for (const payout of pendingPayouts) {
+      const booking = await prisma.booking.findUnique({ where: { id: payout.bookingId } });
+      if (booking && ['COMPLETED', 'CHECKED_IN'].includes(booking.status) && booking.checkOut < yesterday) {
+        await prisma.resortOwnerPayout.update({
+          where: { id: payout.id },
+          data: { status: 'ELIGIBLE' }
+        });
+      }
+    }
 
+    // 2. Group ELIGIBLE payouts by Owner and create Settlements
+    const eligiblePayouts = await prisma.resortOwnerPayout.findMany({
+      where: { status: 'ELIGIBLE' }
+    });
 
+    if (eligiblePayouts.length === 0) return;
 
+    const payoutsByOwner = {};
+    for (const payout of eligiblePayouts) {
+      if (!payoutsByOwner[payout.ownerId]) payoutsByOwner[payout.ownerId] = [];
+      payoutsByOwner[payout.ownerId].push(payout);
+    }
+
+    for (const ownerId of Object.keys(payoutsByOwner)) {
+      const payouts = payoutsByOwner[ownerId];
+      const totalGross = payouts.reduce((sum, p) => sum + p.grossAmount, 0);
+      const totalCommission = payouts.reduce((sum, p) => sum + p.platformCommission, 0);
+      const totalNet = payouts.reduce((sum, p) => sum + p.netAmount, 0);
+
+      await prisma.$transaction(async (tx) => {
+        const settlement = await tx.settlementLedger.create({
+          data: {
+            ownerId,
+            totalGross,
+            totalCommission,
+            totalNet,
+            status: 'PENDING'
+          }
+        });
+
+        await tx.resortOwnerPayout.updateMany({
+          where: { id: { in: payouts.map(p => p.id) } },
+          data: {
+            status: 'PROCESSING',
+            settlementId: settlement.id
+          }
+        });
+      });
+    }
+
+    console.log(`Processed payouts and created ${Object.keys(payoutsByOwner).length} settlements.`);
+
+  } catch (error) {
+    console.error("Owner payouts processing error:", error);
+  }
+}
 

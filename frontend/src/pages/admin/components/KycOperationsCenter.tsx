@@ -539,7 +539,7 @@ export function KycOperationsCenter() {
                     <div className="flex gap-2">
                       <Button 
                         variant="custom"
-                        className="flex-1 h-12 rounded-xl border border-red-200 text-red-600 hover:bg-red-50"
+                        className="flex-1 h-12 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                         onClick={() => handleUpdateStatus(selectedDoc.id, selectedDoc.targetType, 'REJECTED')}
                       >
                         Reject

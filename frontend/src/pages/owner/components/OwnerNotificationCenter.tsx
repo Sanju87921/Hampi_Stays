@@ -131,7 +131,7 @@ export const OwnerNotificationCenter = () => {
                         )}
                         <button 
                           onClick={() => deleteNotification.mutate(n.id)}
-                          className="p-1.5 hover:bg-red-50 rounded-full text-navy-400 hover:text-red-500 transition-colors"
+                          className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded-full text-navy-400 hover:text-red-500 transition-colors"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
