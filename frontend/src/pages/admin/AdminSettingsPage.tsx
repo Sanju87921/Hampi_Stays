@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, User, Hotel, MapPin, TrendingUp } from 'lucide-react';
+import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, Shield, User, Hotel, MapPin, TrendingUp } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
