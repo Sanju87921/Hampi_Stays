@@ -130,7 +130,7 @@ export function AdminDashboard() {
 
  useEffect(() => {
  let interval: ReturnType<typeof setInterval>;
- const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions', 'audit-logs', 'guides', 'promotions'];
+ const pollTabs = ['security', 'otp-logs', 'overview', 'payouts', 'bookings', 'properties', 'users', 'commissions', 'audit-logs', 'guides', 'promotions', 'reviews'];
  
  if (pollTabs.includes(activeTab)) {
  // Pulse: Fast 10s refresh for admin command center
@@ -274,6 +274,33 @@ export function AdminDashboard() {
  setProcessingId(null);
  }
  };
+
+  const handleApproveReview = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await apiClient.patch(`/admin/reviews/${id}/status`, { status: 'APPROVED' });
+      setFlaggedReviews(prev => prev.filter(r => r.id !== id));
+      toast.success("Review approved and published.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve review.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (!(await confirm({ title: "Delete Review", message: "Are you sure you want to permanently delete this review?" }))) return;
+    setProcessingId(id);
+    try {
+      await apiClient.delete(`/admin/reviews/${id}`);
+      setFlaggedReviews(prev => prev.filter(r => r.id !== id));
+      toast.success("Review deleted permanently.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete review.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
  const handleBankVerification = async (payoutId: string, profileId: string) => {
  setProcessingId(payoutId);
@@ -1978,8 +2005,8 @@ export function AdminDashboard() {
  </div>
  </div>
  <div className="flex gap-3">
- <Button className="rounded-xl h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white">Keep Review</Button>
- <Button variant="outline" className="rounded-xl h-12 px-6 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">Delete Permanently</Button>
+ <Button onClick={() => handleApproveReview(review.id)} isLoading={processingId === review.id} className="rounded-xl h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white">Keep Review</Button>
+ <Button onClick={() => handleDeleteReview(review.id)} isLoading={processingId === review.id} variant="outline" className="rounded-xl h-12 px-6 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">Delete Permanently</Button>
  </div>
  </div>
  )) : (
@@ -2125,6 +2152,7 @@ export function AdminDashboard() {
  { id: "commissions", label: "Commissions", icon: TrendingUp },
  { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
  { id: "audit-logs", label: "Audit Logs", icon: History },
+ { id: "reviews", label: "Reviews", icon: Star },
  { id: "ota-market", label: "OTA Market", icon: Globe },
  ].map((tab) => (
  <button

@@ -1455,7 +1455,22 @@ app.patch('/admin/payouts/:payoutId/status', authMiddleware, adminMiddleware, as
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 app.get('/admin/security/stats', authMiddleware, adminMiddleware, (c) => c.json({ logs: [], activeSessions: 1 }));
-app.get('/admin/reviews/flagged', authMiddleware, adminMiddleware, (c) => c.json([]));
+app.get('/admin/reviews/flagged', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const reviews = await prisma.review.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        user: { select: { name: true, avatar: true } },
+        resort: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(reviews);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
 app.get('/admin/otp-logs', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   const page = Math.max(1, parseInt(c.req.query('page') || '1'));

@@ -83,6 +83,10 @@ export function OwnerDashboard() {
   const [showDiningModal, setShowDiningModal] = useState(false);
   const [diningPackages, setDiningPackages] = useState<any[]>([]);
 
+  const [replyingToReviewId, setReplyingToReviewId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState<string | null>(null);
+
   const [housekeeping, setHousekeeping] = useState([
     { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
     { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
@@ -807,6 +811,34 @@ export function OwnerDashboard() {
     }
     return () => clearInterval(interval);
   }, [activeTab, activeMessageBooking]);
+
+  const handleSubmitReply = async (reviewId: string) => {
+    if (!replyContent.trim()) return;
+    setIsSubmittingReply(reviewId);
+    try {
+      await apiClient.patch(`/reviews/${reviewId}/reply`, { ownerReply: replyContent });
+      // Optimistically update the review in resorts state
+      const updatedResorts = resorts.map((r, i) => {
+        if (i === activeResortIdx && r.reviews) {
+          return {
+            ...r,
+            reviews: r.reviews.map((rev: any) => 
+              rev.id === reviewId ? { ...rev, ownerReply: replyContent } : rev
+            )
+          };
+        }
+        return r;
+      });
+      setResorts(updatedResorts);
+      setReplyingToReviewId(null);
+      setReplyContent("");
+      toast.success("Reply posted successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post reply");
+    } finally {
+      setIsSubmittingReply(null);
+    }
+  };
 
   const handleSaveDining = async () => {
     if (!resort) return;
@@ -2081,7 +2113,28 @@ export function OwnerDashboard() {
                           {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < review.rating ? "fill-current" : "text-sand-200")} />)}
                         </div>
                         <p className="text-sm text-navy-950/70 italic mb-4">{review.comment}</p>
-                        <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4">Reply to Review</Button>
+                        
+                        {review.ownerReply ? (
+                          <div className="mt-4 p-4 bg-white rounded-xl border border-sand-100">
+                            <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest mb-1">Your Reply</p>
+                            <p className="text-sm text-navy-950/80">{review.ownerReply}</p>
+                          </div>
+                        ) : replyingToReviewId === review.id ? (
+                          <div className="mt-4 space-y-3">
+                            <textarea 
+                              className="w-full h-24 bg-white border border-sand-200 rounded-xl p-3 text-sm focus:outline-none focus:border-gold-500 transition-colors resize-none"
+                              placeholder="Write your response to the guest..."
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" className="h-8 rounded-lg text-xs px-4 bg-navy-950 text-white" onClick={() => handleSubmitReply(review.id)} isLoading={isSubmittingReply === review.id}>Submit Reply</Button>
+                              <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4" onClick={() => { setReplyingToReviewId(null); setReplyContent(''); }}>Cancel</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4" onClick={() => { setReplyingToReviewId(review.id); setReplyContent(''); }}>Reply to Review</Button>
+                        )}
                       </div>
                     </div>
                   )) : (
