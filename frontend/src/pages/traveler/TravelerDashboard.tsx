@@ -697,44 +697,53 @@ export function TravelerDashboard() {
               {/* Refer & Earn Widget */}
               {referralData && (
                 <div className="mt-8">
-                  <div className="p-6 rounded-[2rem] bg-gradient-to-r from-gold-500 to-gold-400 border border-gold-300 shadow-luxury text-navy-950 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
-                      <Share className="w-32 h-32 text-navy-950" />
+                  <div className="p-8 rounded-[2rem] bg-gradient-to-br from-gold-500 to-gold-400 border border-gold-300 shadow-luxury text-navy-950 relative overflow-hidden">
+                    <div className="absolute -top-10 -right-10 p-4 opacity-10 pointer-events-none rotate-12">
+                      <Gift className="w-64 h-64 text-navy-950" />
                     </div>
                     <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Gift className="w-6 h-6" />
-                        <h2 className="text-2xl font-serif font-bold">Refer & Earn ₹500</h2>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center backdrop-blur-md shadow-sm">
+                          <Share className="w-6 h-6 text-navy-950" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-serif font-bold leading-tight">Refer & Earn ₹500</h2>
+                          {referralData.availableCredits > 0 && (
+                            <p className="text-sm font-bold bg-navy-950 text-white inline-block px-3 py-1 rounded-full mt-1">
+                              You have ₹{referralData.availableCredits} in travel credits
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-navy-900 mb-6 max-w-md font-medium">
+                      <p className="text-sm text-navy-900 mb-8 max-w-md font-medium leading-relaxed">
                         Share your unique code with friends. They get a discount on their first stay, and you earn ₹500 in HampiStays credits!
                       </p>
                       
-                      <div className="bg-white/40 backdrop-blur-md rounded-xl p-2 flex items-center justify-between max-w-sm border border-white/50">
-                        <span className="font-mono font-bold text-lg px-4 tracking-widest">{referralData.referralCode}</span>
+                      <div className="bg-white/50 backdrop-blur-md rounded-2xl p-2.5 flex items-center justify-between max-w-sm border border-white shadow-sm mb-8">
+                        <span className="font-mono font-bold text-xl px-4 tracking-widest text-navy-950">{referralData.referralCode}</span>
                         <Button 
-                          className="bg-navy-950 text-white hover:bg-navy-800 rounded-lg shadow-sm"
+                          className="bg-navy-950 text-white hover:bg-navy-800 rounded-xl shadow-md px-6 transition-all active:scale-95"
                           onClick={() => {
                             navigator.clipboard.writeText(referralData.referralCode);
                             toast.success("Referral code copied!");
                           }}
                         >
-                          <Copy className="w-4 h-4 mr-2" /> Copy Code
+                          <Copy className="w-4 h-4 mr-2" /> Copy
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-navy-950/10">
+                      <div className="grid grid-cols-3 gap-6 pt-6 border-t border-navy-950/10">
                         <div>
-                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Available Credits</p>
-                          <p className="text-xl font-bold">₹{referralData.availableCredits || 0}</p>
+                          <p className="text-[10px] text-navy-900/60 uppercase tracking-widest font-black mb-1">Available Credits</p>
+                          <p className="text-2xl font-black tracking-tight">₹{referralData.availableCredits || 0}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Pending</p>
-                          <p className="text-xl font-bold">{referralData.pendingCount}</p>
+                          <p className="text-[10px] text-navy-900/60 uppercase tracking-widest font-black mb-1">Pending Referrals</p>
+                          <p className="text-2xl font-black tracking-tight">{referralData.pendingCount}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Completed</p>
-                          <p className="text-xl font-bold">{referralData.completedCount}</p>
+                          <p className="text-[10px] text-navy-900/60 uppercase tracking-widest font-black mb-1">Completed</p>
+                          <p className="text-2xl font-black tracking-tight">{referralData.completedCount}</p>
                         </div>
                       </div>
                     </div>

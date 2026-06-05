@@ -16,7 +16,7 @@ export const verifyPayment = async (c) => {
     return c.json({ error: 'Invalid request body' }, 400);
   }
   
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, creditsToDeduct } = body;
   
   try {
     const isValid = await verifyPaymentSignature(
@@ -78,6 +78,25 @@ export const verifyPayment = async (c) => {
       where: { referenceNumber: ref },
       data: { status: 'PAID', paymentStatus: 'PAID' }
     });
+
+    // ✅ SAFE: Deduct reward credits ONLY now — after signature is verified and booking is PAID.
+    // This prevents credits being lost if the gateway fails before this point.
+    const creditsAmount = Number(creditsToDeduct) || 0;
+    if (creditsAmount > 0 && booking.userId) {
+      try {
+        await prisma.rewardCredit.create({
+          data: {
+            userId: booking.userId,
+            amount: -creditsAmount,
+            source: 'USED_FOR_BOOKING'
+          }
+        });
+        logSecureInfo('CREDITS_DEDUCTED', `Deducted ₹${creditsAmount} credits for booking ${ref}`, { ref });
+      } catch (creditErr) {
+        // Log but don't fail — booking is already confirmed; credits can be reconciled manually
+        logSecureError('CREDITS_DEDUCTION_FAILED', 'Failed to deduct credits post-payment', { ref, error: creditErr.message });
+      }
+    }
 
     const commissionRate = booking.commissionRate || booking.resort?.commissionRate || 15;
     const grossAmount = booking.totalPrice;

@@ -119,8 +119,9 @@ export function CheckoutPage() {
 
   const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
   let finalPrice = Math.max(0, grandTotal - (appliedCoupon?.discountAmount || 0));
+  // Cap credits at finalPrice to prevent negative total — enforced both here (UI) and on backend
   const creditsApplied = useCredits ? Math.min(availableCredits, finalPrice) : 0;
-  finalPrice -= creditsApplied;
+  finalPrice = Math.max(0, finalPrice - creditsApplied);
 
   const handleApplyCoupon = async (codeToApply: string = couponCodeInput) => {
     if (!codeToApply.trim()) return;
@@ -261,12 +262,13 @@ export function CheckoutPage() {
           },
           handler: async function (response: any) {
             try {
-              // Verify Payment
+              // Verify Payment — pass creditsToDeduct so backend deducts AFTER signature check
               await apiClient.post(`/bookings/${booking.referenceNumber}/verify-payment`, {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                referenceNumber: booking.referenceNumber
+                referenceNumber: booking.referenceNumber,
+                creditsToDeduct: booking.creditsToDeduct || 0
               });
 
               navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
@@ -295,6 +297,10 @@ export function CheckoutPage() {
         });
 
         rzp.open();
+      } else if (booking.paidByCredits) {
+        // Entire booking was covered by Reward Credits — no Razorpay modal needed
+        toast.success("🎉 Booking confirmed using your travel credits!");
+        navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
       } else {
         throw new Error("Payment gateway failed to initialize. Please try again.");
       }

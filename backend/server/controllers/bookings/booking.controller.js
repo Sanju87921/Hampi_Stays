@@ -119,7 +119,9 @@ export const createBooking = async (c) => {
     }
 
     // We run the concurrency check and booking creation in a transaction
-    const { booking, totalPrice, referenceNumber } = await prisma.$transaction(async (tx) => {
+    // NOTE: Credit deduction happens OUTSIDE the transaction (after Razorpay succeeds)
+    // to prevent credits being permanently lost if the payment gateway fails.
+    const { booking, totalPrice, referenceNumber, creditsToDeduct } = await prisma.$transaction(async (tx) => {
       // 1. RECALCULATE PRICE & FETCH ROOM DETAILS
       const resort = await tx.resort.findUnique({ 
         where: { id: resortId },
@@ -267,25 +269,20 @@ export const createBooking = async (c) => {
         });
       }
 
-      // Apply Reward Credits
+      // Calculate Credits to Apply — DEDUCTION happens OUTSIDE the transaction
+      // after Razorpay payment succeeds, to prevent losing credits on gateway failure.
       let creditsUsed = 0;
       if (useCredits && payload?.userId) {
         const credits = await tx.rewardCredit.findMany({ where: { userId: payload.userId } });
-        const totalCredits = credits.reduce((sum, c) => sum + c.amount, 0);
+        // Sum only positive credits (negative entries are prior deductions)
+        const totalPositiveCredits = credits.reduce((sum, c) => sum + (c.amount > 0 ? c.amount : 0), 0);
+        const totalUsedCredits = credits.reduce((sum, c) => sum + (c.amount < 0 ? Math.abs(c.amount) : 0), 0);
+        const netAvailableCredits = Math.max(0, totalPositiveCredits - totalUsedCredits);
         
-        if (totalCredits > 0) {
-          creditsUsed = Math.min(totalCredits, finalAmount);
-          finalAmount -= creditsUsed;
-          
-          if (creditsUsed > 0) {
-            await tx.rewardCredit.create({
-              data: {
-                userId: payload.userId,
-                amount: -creditsUsed,
-                source: 'USED_FOR_BOOKING'
-              }
-            });
-          }
+        if (netAvailableCredits > 0) {
+          // Cap credits at finalAmount to prevent negative total
+          creditsUsed = Math.min(netAvailableCredits, finalAmount);
+          finalAmount = Math.max(0, finalAmount - creditsUsed);
         }
       }
 
@@ -303,9 +300,16 @@ export const createBooking = async (c) => {
       // Prisma Booking model. They are tracked via the couponDb fallback layer.
       // totalPrice stores the final (post-discount) amount that matches the Razorpay order.
       let finalSpecialRequests = formattedSpecialRequests;
+      const auditParts = [];
       if (couponCode && discountAmount > 0) {
-        const couponNote = `[Coupon: ${couponCode.trim().toUpperCase()}, Discount: ₹${discountAmount}, Original: ₹${computedTotal}]`;
-        finalSpecialRequests = finalSpecialRequests ? `${couponNote} ${finalSpecialRequests}` : couponNote;
+        auditParts.push(`Coupon: ${couponCode.trim().toUpperCase()}, Discount: ₹${discountAmount}`);
+      }
+      if (creditsUsed > 0) {
+        auditParts.push(`Credits Applied: ₹${creditsUsed}`);
+      }
+      if (auditParts.length > 0) {
+        const auditNote = `[${auditParts.join(' | ')}, Original: ₹${computedTotal}, Final: ₹${finalAmount}]`;
+        finalSpecialRequests = finalSpecialRequests ? `${auditNote} ${finalSpecialRequests}` : auditNote;
       }
 
       const newBooking = await tx.booking.create({
@@ -329,10 +333,11 @@ export const createBooking = async (c) => {
 
       return {
         booking: newBooking,
-        totalPrice: finalAmount,
+        totalPrice: finalAmount,   // This is the FINAL amount after all discounts + credits
         referenceNumber: refNum,
         couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
         discountAmount,
+        creditsToDeduct: creditsUsed, // Passed out to apply AFTER Razorpay succeeds
         originalAmount: computedTotal
       };
     }, {
@@ -342,7 +347,28 @@ export const createBooking = async (c) => {
     });
 
     // 5. CREATE RAZORPAY ORDER (OUTSIDE TRANSACTION TO AVOID HOLDING LOCKS)
+    // SECURITY: Use `totalPrice` (= finalAmount after all discounts/credits) for Razorpay.
+    // This ensures the customer is never charged more than what the ledger shows.
     try {
+      // If the entire amount is covered by credits, skip Razorpay
+      if (totalPrice <= 0) {
+        // Deduct credits now (payment is fully covered, no Razorpay needed)
+        if (creditsToDeduct > 0 && payload?.userId) {
+          await prisma.rewardCredit.create({
+            data: {
+              userId: payload.userId,
+              amount: -creditsToDeduct,
+              source: 'USED_FOR_BOOKING'
+            }
+          });
+        }
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { status: 'CONFIRMED' }
+        });
+        return c.json({ ...booking, orderId: null, paidByCredits: true, referenceNumber });
+      }
+
       const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',
         headers: {
@@ -350,7 +376,7 @@ export const createBooking = async (c) => {
           'Authorization': `Basic ${btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`)}`
         },
         body: JSON.stringify({
-          amount: Math.round(totalPrice * 100),
+          amount: Math.round(totalPrice * 100), // totalPrice is already finalAmount (post-discount+credits)
           currency: 'INR',
           receipt: referenceNumber
         })
@@ -362,9 +388,11 @@ export const createBooking = async (c) => {
         throw new Error(order.error?.description || 'Razorpay order creation failed');
       }
 
-      return c.json({ ...booking, orderId: order.id });
+      // Return orderId AND creditsToDeduct so the verify-payment endpoint
+      // can safely deduct credits ONLY after payment signature is confirmed.
+      return c.json({ ...booking, orderId: order.id, creditsToDeduct, referenceNumber });
     } catch (rzpErr) {
-      // If Razorpay fails, immediately release the held room reservation
+      // If Razorpay fails, release the held room reservation — credits are NOT touched
       await prisma.booking.update({
         where: { id: booking.id },
         data: { status: 'FAILED' }

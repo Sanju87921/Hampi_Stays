@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from '@tanstack/react-query';
 import { luxuryConfirm } from "../../utils/luxuryConfirm";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,8 +68,33 @@ export function OwnerDashboard() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("RECEPTIONIST");
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [settingsForm, setSettingsForm] = useState({
+    checkInTime: "14:00",
+    checkOutTime: "11:00",
+    houseRules: "No smoking indoors. Valid ID required."
+  });
   
+  const PREDEFINED_RULES = [
+    "No smoking indoors",
+    "Valid ID required",
+    "No pets allowed",
+    "Quiet hours 10 PM - 6 AM",
+    "No parties or events",
+    "Outside food not allowed"
+  ];  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  
+  const handleToggleRule = (rule: string) => {
+    setSettingsForm(prev => {
+      let currentRules = prev.houseRules.split('. ').map(r => r.trim()).filter(Boolean);
+      if (currentRules.includes(rule)) {
+        currentRules = currentRules.filter(r => r !== rule);
+      } else {
+        currentRules.push(rule);
+      }
+      return { ...prev, houseRules: currentRules.join('. ') + (currentRules.length > 0 ? '.' : '') };
+    });
+  };
+
   // New States for Edit / Block functionalities
   const [showEditRoom, setShowEditRoom] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -92,6 +118,20 @@ export function OwnerDashboard() {
     { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
     { id: '3', room: '202', type: 'Garden Villa', status: 'READY', color: 'bg-emerald-500', lastCleaned: 'Just now', staff: 'Sanjay K.' }
   ]);
+
+  // ── Analytics Real-time Data Fetching ──────────────────────────────────
+  const { data: analyticsData } = useQuery({
+    queryKey: ['ownerAnalytics', user?.id],
+    queryFn: () => apiClient.get<any>(`/owners/${user?.id}/analytics`),
+    enabled: !!user?.id && activeTab === 'analytics',
+    refetchInterval: 60000 // Refetch every 60 seconds
+  });
+
+  const smartInsight = useMemo(() => {
+    if (!analyticsData?.roomPerformance || analyticsData.roomPerformance.length === 0) return null;
+    const topRoom = analyticsData.roomPerformance[0];
+    return `Bookings for ${topRoom.name} are leading your revenue. Consider a dynamic pricing increase of 10% for weekends to maximize yield.`;
+  }, [analyticsData]);
 
   // ── Phase 1: Fast summary fetch (initial dashboard render < 1s) ──────────
   const fetchResorts = async (showLoading = true) => {
@@ -1706,14 +1746,14 @@ export function OwnerDashboard() {
                           {[...Array(5)].map((_, i) => <div key={i} className="border-t border-navy-950 w-full" />)}
                        </div>
                        
-                       {[
-                         { month: 'Jan', val: 45, amt: '1.2L' },
-                         { month: 'Feb', val: 65, amt: '1.8L' },
-                         { month: 'Mar', val: 55, amt: '1.5L' },
-                         { month: 'Apr', val: 85, amt: '2.4L' },
-                         { month: 'May', val: 95, amt: '2.8L' },
-                         { month: 'Jun', val: 100, amt: '3.1L' }
-                       ].map((data, i) => (
+                       {(analyticsData?.monthlyRevenue || [
+                         { month: 'Jan', val: 0, amt: '0' },
+                         { month: 'Feb', val: 0, amt: '0' },
+                         { month: 'Mar', val: 0, amt: '0' },
+                         { month: 'Apr', val: 0, amt: '0' },
+                         { month: 'May', val: 0, amt: '0' },
+                         { month: 'Jun', val: 0, amt: '0' }
+                       ]).map((data: any, i: number) => (
                          <div key={data.month} className="flex-grow flex flex-col items-center group relative h-full justify-end">
                             <motion.div 
                               initial={{ height: 0 }}
@@ -1742,19 +1782,19 @@ export function OwnerDashboard() {
                               cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" 
                               strokeDasharray={552.92}
                               initial={{ strokeDashoffset: 552.92 }}
-                              animate={{ strokeDashoffset: 552.92 * (1 - 0.78) }}
+                              animate={{ strokeDashoffset: 552.92 * (1 - ((analyticsData?.liveOccupancy || 0) / 100)) }}
                               transition={{ duration: 2, ease: "easeOut" }}
                               className="text-gold-500" 
                               strokeLinecap="round"
                            />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                           <span className="text-4xl font-serif font-bold italic text-gold-500">78%</span>
-                           <span className="text-[8px] font-bold uppercase tracking-[0.2em] opacity-40 mt-1">Full House</span>
+                           <span className="text-4xl font-serif font-bold italic text-gold-500">{analyticsData?.liveOccupancy || 0}%</span>
+                           <span className="text-[8px] font-bold uppercase tracking-[0.2em] opacity-40 mt-1">Live Occupancy</span>
                         </div>
                      </div>
                      <p className="text-xs text-white/60 max-w-[180px] leading-relaxed relative z-10 font-medium">
-                        Higher than last month's average of 64%
+                        Based on currently confirmed check-ins for today.
                      </p>
                   </div>
                 </div>
@@ -1766,25 +1806,28 @@ export function OwnerDashboard() {
                         <Star className="w-4 h-4 text-gold-500" /> Room Performance
                       </h4>
                       <div className="space-y-6">
-                         {[
-                           { name: 'Heritage Suite', val: 85, color: 'bg-gold-500' },
-                           { name: 'Riverside Cottage', val: 62, color: 'bg-navy-950' },
-                           { name: 'Garden Villa', val: 45, color: 'bg-sand-300' }
-                         ].map(room => (
-                           <div key={room.name}>
+                         {(analyticsData?.roomPerformance?.length > 0 ? analyticsData.roomPerformance : [
+                           { name: 'Heritage Suite', percentage: 0 },
+                           { name: 'Riverside Cottage', percentage: 0 },
+                           { name: 'Garden Villa', percentage: 0 }
+                         ]).map((room: any, idx: number) => {
+                           const colors = ['bg-gold-500', 'bg-navy-950', 'bg-sand-300'];
+                           return (
+                           <div key={room.name || idx}>
                              <div className="flex justify-between text-[10px] font-bold mb-2 uppercase tracking-wide">
                                 <span>{room.name}</span>
-                                <span>{room.val}%</span>
+                                <span>{room.percentage}%</span>
                              </div>
                              <div className="h-1.5 bg-sand-50 rounded-full overflow-hidden">
                                 <motion.div 
                                   initial={{ width: 0 }}
-                                  animate={{ width: `${room.val}%` }}
-                                  className={cn("h-full rounded-full", room.color)}
+                                  animate={{ width: `${room.percentage}%` }}
+                                  className={cn("h-full rounded-full", colors[idx % colors.length])}
                                 />
                              </div>
                            </div>
-                         ))}
+                           )
+                         })}
                       </div>
                    </div>
 
@@ -1794,19 +1837,19 @@ export function OwnerDashboard() {
                          <div className="flex gap-4">
                             <div className="text-center">
                                <div className="w-16 h-16 rounded-2xl bg-sand-50 flex items-center justify-center mb-2 border border-sand-100 shadow-sm">
-                                  <span className="text-lg font-bold">42%</span>
+                                  <span className="text-lg font-bold">{analyticsData?.bookingSource?.direct || 0}%</span>
                                </div>
                                <p className="text-[8px] font-bold opacity-40 uppercase">Direct</p>
                             </div>
                             <div className="text-center">
                                <div className="w-16 h-16 rounded-2xl bg-gold-500/10 flex items-center justify-center mb-2 border border-gold-500/20 shadow-sm">
-                                  <span className="text-lg font-bold text-gold-700">38%</span>
+                                  <span className="text-lg font-bold text-gold-700">{analyticsData?.bookingSource?.platform || 0}%</span>
                                </div>
                                <p className="text-[8px] font-bold opacity-40 uppercase">HampiStays</p>
                             </div>
                             <div className="text-center">
                                <div className="w-16 h-16 rounded-2xl bg-navy-950 flex items-center justify-center mb-2 shadow-lg">
-                                  <span className="text-lg font-bold text-white">20%</span>
+                                  <span className="text-lg font-bold text-white">{analyticsData?.bookingSource?.other || 0}%</span>
                                </div>
                                <p className="text-[8px] font-bold opacity-40 uppercase">Other</p>
                             </div>
@@ -1822,11 +1865,11 @@ export function OwnerDashboard() {
                            <p className="text-[10px] font-bold uppercase tracking-widest">Smart Insight</p>
                         </div>
                         <h4 className="text-xl font-serif font-bold italic leading-tight mb-4">
-                           Bookings are 24% higher for weekends.
+                           {smartInsight ? "Yield Optimization Opportunity" : "Gathering Data..."}
                         </h4>
                       </div>
                       <p className="text-sm font-medium opacity-90 leading-relaxed">
-                         Consider increasing your weekend "Riverside Cottage" rates by 10% to maximize revenue.
+                         {smartInsight || "We are currently analyzing your booking patterns. Check back later for automated pricing insights."}
                       </p>
                       <Button variant="outline" className="bg-white/20 border-white/40 text-navy-950 rounded-xl mt-6 font-bold hover:bg-white/40 transition-all shadow-sm">
                          Apply Auto-Pricing
@@ -2164,17 +2207,53 @@ export function OwnerDashboard() {
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-navy-950 border-b border-sand-100 pb-2">Operations & Policies</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input label="Check-In Time" placeholder="e.g. 14:00" defaultValue="14:00" />
-                      <Input label="Check-Out Time" placeholder="e.g. 11:00" defaultValue="11:00" />
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-bold text-navy-950 border-b border-sand-100 pb-2">Operations & Policies</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Input 
+                          label="Check-In Time" 
+                          placeholder="e.g. 14:00" 
+                          value={settingsForm.checkInTime}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, checkInTime: e.target.value })}
+                        />
+                        <Input 
+                          label="Check-Out Time" 
+                          placeholder="e.g. 11:00" 
+                          value={settingsForm.checkOutTime}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, checkOutTime: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-xs font-bold text-navy-950 uppercase tracking-widest">House Rules</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {PREDEFINED_RULES.map(rule => {
+                            const isSelected = settingsForm.houseRules.includes(rule);
+                            return (
+                              <button
+                                key={rule}
+                                onClick={() => handleToggleRule(rule)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5",
+                                  isSelected 
+                                    ? "bg-gold-500 border-gold-500 text-white shadow-sm" 
+                                    : "bg-white border-sand-200 text-navy-950/60 hover:border-gold-300 hover:text-navy-950"
+                                )}
+                              >
+                                {isSelected && <CheckCircle className="w-3 h-3" />}
+                                {rule}
+                                {!isSelected && <Plus className="w-3 h-3" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <textarea 
+                          className="w-full bg-sand-50/50 border border-sand-200 rounded-2xl p-4 h-24 focus:outline-none focus:border-gold-500 transition-colors resize-none text-navy-950" 
+                          placeholder="e.g. No smoking, no pets allowed." 
+                          value={settingsForm.houseRules}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, houseRules: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-navy-950 uppercase tracking-widest">House Rules</label>
-                      <textarea className="w-full bg-sand-50/50 border border-sand-200 rounded-2xl p-4 h-24 focus:outline-none focus:border-gold-500 transition-colors resize-none text-navy-950" placeholder="e.g. No smoking, no pets allowed." defaultValue="No smoking indoors. Valid ID required." />
-                    </div>
-                  </div>
                   
                   <div className="pt-4 border-t border-sand-100 flex justify-end">
                     <Button className="rounded-2xl px-10 shadow-gold">Save Property Changes</Button>
