@@ -510,8 +510,30 @@ app.delete('/admin/users/:id', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   const id = c.req.param('id');
   try {
-    await prisma.user.delete({ where: { id } });
-    return c.json({ success: true });
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    // If already suspended, maybe hard delete? Or just return success.
+    if (user.deletedAt) {
+      // Actually hard delete if they are already suspended?
+      // Wait, let's just do soft delete for now.
+      // But to be safe from foreign keys, let's delete their sessions first.
+      await prisma.adminSession.deleteMany({ where: { userId: id } });
+      await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
+    } else {
+      await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
+    }
+    
+    // Log the suspension
+    await prisma.auditLog.create({
+      data: {
+        adminId: c.get('userId') || 'system',
+        action: 'USER_SUSPENDED',
+        details: { targetUserId: id }
+      }
+    });
+
+    return c.json({ success: true, message: 'User suspended successfully' });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
