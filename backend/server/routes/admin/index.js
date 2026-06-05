@@ -1643,7 +1643,7 @@ app.get('/admin/ota-analytics/sentiment', authMiddleware, adminMiddleware, async
   try {
     // Get real internal reviews
     const reviews = await prisma.review.findMany({
-      select: { rating: true, content: true, resortId: true, createdAt: true },
+      select: { rating: true, comment: true, resortId: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
       take: 200
     });
@@ -1656,7 +1656,7 @@ app.get('/admin/ota-analytics/sentiment', authMiddleware, adminMiddleware, async
     const negativeFreq = {};
 
     for (const r of reviews) {
-      const text = (r.content || '').toLowerCase();
+      const text = (r.comment || '').toLowerCase();
       for (const kw of positiveKeywords) {
         if (text.includes(kw)) positiveFreq[kw] = (positiveFreq[kw] || 0) + 1;
       }

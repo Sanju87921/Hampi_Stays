@@ -12,7 +12,7 @@ import { cn } from "../../../utils/cn";
 
 const TABS = [
   { id: "overview", label: "Distribution Report", icon: Globe },
-  { id: "prices", label: "Price Tracker", icon: DollarSign },
+  { id: "prices", label: "Price Tracker", icon: IndianRupee },
   { id: "heatmap", label: "Demand Heatmap", icon: Calendar },
   { id: "sentiment", label: "Review Sentiment", icon: MessageSquare },
   { id: "leakage", label: "Revenue Leakage", icon: Shield },
