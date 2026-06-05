@@ -1681,12 +1681,12 @@ app.get('/admin/ota-analytics/sentiment', authMiddleware, adminMiddleware, async
 
     // Top complaints (sorted by frequency)
     const topComplaints = Object.entries(negativeFreq)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([keyword, count]) => ({ keyword, count, category: keyword === 'wifi' || keyword === 'slow' ? 'Connectivity' : keyword === 'road' ? 'Access' : keyword === 'noisy' ? 'Noise' : 'Quality' }));
 
     const topPraises = Object.entries(positiveFreq)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([keyword, count]) => ({ keyword, count }));
 

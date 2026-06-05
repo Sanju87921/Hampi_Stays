@@ -158,9 +158,3 @@ export async function recalculateAllKyc(prisma, adminId) {
   return { ownersVerifiedCount, ownersRevokedCount, guidesVerifiedCount, guidesRevokedCount };
 }
 
-module.exports = {
-  evaluateResortOwnerKyc,
-  evaluateGuideKyc,
-  evaluateTravellerKyc,
-  recalculateAllKyc
-};
