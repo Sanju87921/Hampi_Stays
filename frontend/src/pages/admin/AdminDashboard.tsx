@@ -26,6 +26,7 @@ const PromotionsModule = lazy(() => import("./PromotionsModule").then(m => ({ de
 const UserManagement = lazy(() => import("./components/UserManagement").then(m => ({ default: m.UserManagement })));
 const KycOperationsCenter = lazy(() => import("./components/KycOperationsCenter").then(m => ({ default: m.KycOperationsCenter })));
 const OtaMarketAnalysis = lazy(() => import("./components/OtaMarketAnalysis").then(m => ({ default: m.OtaMarketAnalysis })));
+const CommissionsModule = lazy(() => import("./components/CommissionsModule").then(m => ({ default: m.CommissionsModule })));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-24">
@@ -2258,7 +2259,7 @@ export function AdminDashboard() {
  {activeTab === "security" && renderSecurity()}
  {activeTab === "otp-logs" && renderOtpLogs()}
  {activeTab === "reviews" && renderReviews()}
- {activeTab === "commissions" && renderCommissions()}
+ {activeTab === "commissions" && <Suspense fallback={<TabLoader />}><CommissionsModule /></Suspense>}
  {activeTab === "audit-logs" && renderAuditLogs()}
  {activeTab === "ota-market" && <Suspense fallback={<TabLoader />}><OtaMarketAnalysis /></Suspense>}
  </ErrorBoundary>

@@ -489,8 +489,12 @@ app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const limit = parseInt(c.req.query('limit') || '20', 10);
   const skip = (page - 1) * limit;
 
+  const showSuspended = c.req.query('showSuspended') === 'true';
+
   try {
     const whereClause = {
+      // Only show active users by default; show suspended if explicitly requested
+      deletedAt: showSuspended ? { not: null } : null,
       ...(role && role !== 'ALL' ? { role } : {}),
       ...(search ? {
         OR: [
@@ -2686,7 +2690,102 @@ app.get('/admin/coupons/analytics', authMiddleware, adminMiddleware, async (c) =
 });
 
 
+
+// PAYOUTS & COMMISSIONS ENGINE
+app.post('/admin/payouts/generate', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const bookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ['CONFIRMED', 'COMPLETED'] },
+        paymentStatus: 'PAID',
+        payoutStatus: 'PENDING'
+      },
+      include: { resort: { include: { owner: true } } }
+    });
+    if (bookings.length === 0) return c.json({ message: 'No pending bookings to process', processed: 0 });
+
+    const payoutsByOwner = {};
+    for (const b of bookings) {
+      if (!b.resort || !b.resort.owner) continue;
+      const ownerId = b.resort.owner.id;
+      const gross = b.totalPrice;
+      const commRate = b.commissionRate || 7.0;
+      const platComm = (gross * commRate) / 100;
+      const net = gross - platComm;
+
+      if (!payoutsByOwner[ownerId]) payoutsByOwner[ownerId] = { totalGross: 0, totalComm: 0, totalNet: 0, payouts: [] };
+      payoutsByOwner[ownerId].totalGross += gross;
+      payoutsByOwner[ownerId].totalComm += platComm;
+      payoutsByOwner[ownerId].totalNet += net;
+      payoutsByOwner[ownerId].payouts.push({
+        bookingId: b.id,
+        resortId: b.resortId,
+        ownerId,
+        grossAmount: gross,
+        commissionRate: commRate,
+        platformCommission: platComm,
+        netAmount: net,
+        status: 'ELIGIBLE'
+      });
+    }
+
+    let processedCount = 0;
+    for (const [ownerId, data] of Object.entries(payoutsByOwner)) {
+      const ledger = await prisma.settlementLedger.create({
+        data: {
+          ownerId,
+          totalGross: data.totalGross,
+          totalCommission: data.totalComm,
+          totalNet: data.totalNet,
+          status: 'PENDING'
+        }
+      });
+      for (const p of data.payouts) {
+        await prisma.resortOwnerPayout.create({
+          data: { ...p, settlementId: ledger.id }
+        });
+        await prisma.booking.update({ where: { id: p.bookingId }, data: { payoutStatus: 'PROCESSED' } });
+      }
+      processedCount += data.payouts.length;
+    }
+    return c.json({ success: true, processed: processedCount, message: Processed  bookings into settlement ledgers. });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.get('/admin/payouts/ledgers', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const ledgers = await prisma.settlementLedger.findMany({
+      include: {
+        payouts: { include: { booking: true } },
+        owner: { include: { user: { select: { name: true, email: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(ledgers);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/admin/payouts/disburse/:id', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  try {
+    const ledger = await prisma.settlementLedger.findUnique({ where: { id } });
+    if (!ledger) return c.json({ error: 'Ledger not found' }, 404);
+    if (ledger.status === 'PAID') return c.json({ error: 'Already paid' }, 400);
+
+    // Simulate Payment Gateway Transfer (e.g. Stripe/Razorpay Route)
+    await prisma.settlementLedger.update({
+      where: { id },
+      data: { status: 'PAID', settlementDate: new Date(), transactionRef: 'TXN_' + Math.random().toString(36).substr(2, 9).toUpperCase() }
+    });
+    await prisma.resortOwnerPayout.updateMany({
+      where: { settlementId: id },
+      data: { status: 'PAID' }
+    });
+    return c.json({ success: true, message: 'Funds disbursed to owner successfully.' });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 };
-
-
-
