@@ -553,27 +553,59 @@ app.delete('/admin/users/:id', authMiddleware, adminMiddleware, async (c) => {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return c.json({ error: 'User not found' }, 404);
 
-    // If already suspended, maybe hard delete? Or just return success.
     if (user.deletedAt) {
-      // Actually hard delete if they are already suspended?
-      // Wait, let's just do soft delete for now.
-      // But to be safe from foreign keys, let's delete their sessions first.
+      // Hard delete if they are already suspended
       await prisma.adminSession.deleteMany({ where: { userId: id } });
-      await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
-    } else {
-      await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
-    }
-    
-    // Log the suspension
-    await prisma.auditLog.create({
-      data: {
-        adminId: c.get('userId') || 'system',
-        action: 'USER_SUSPENDED',
-        details: { targetUserId: id }
-      }
-    });
+      await prisma.notification.deleteMany({ where: { userId: id } });
+      await prisma.message.deleteMany({ where: { senderId: id } });
+      await prisma.message.deleteMany({ where: { receiverId: id } });
+      await prisma.couponRedemption.deleteMany({ where: { userId: id } });
+      await prisma.rewardCredit.deleteMany({ where: { userId: id } });
+      await prisma.otpVerification.deleteMany({ where: { userId: id } });
+      await prisma.review.deleteMany({ where: { userId: id } });
+      await prisma.wishlist.deleteMany({ where: { userId: id } });
+      await prisma.booking.deleteMany({ where: { userId: id } });
+      await prisma.guideBooking.deleteMany({ where: { userId: id } });
 
-    return c.json({ success: true, message: 'User suspended successfully' });
+      // Owner and guide profiles and resorts should cascade if schema has it,
+      // but let's delete them explicitly if needed.
+      const owner = await prisma.resortOwner.findUnique({ where: { userId: id } });
+      if (owner) {
+        // Find resorts
+        const resorts = await prisma.resort.findMany({ where: { ownerId: owner.id } });
+        for (const resort of resorts) {
+          await prisma.room.deleteMany({ where: { resortId: resort.id } });
+          await prisma.review.deleteMany({ where: { resortId: resort.id } });
+        }
+        await prisma.resort.deleteMany({ where: { ownerId: owner.id } });
+        await prisma.kycDocument.deleteMany({ where: { ownerId: owner.id } });
+        await prisma.resortOwner.delete({ where: { userId: id } });
+      }
+
+      await prisma.user.delete({ where: { id } });
+
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.get('userId') || 'system',
+          action: 'USER_DELETED',
+          details: { targetUserId: id, action: 'HARD_DELETE' }
+        }
+      });
+      return c.json({ success: true, message: 'User permanently deleted' });
+
+    } else {
+      // Soft delete (suspend)
+      await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
+      
+      await prisma.auditLog.create({
+        data: {
+          adminId: c.get('userId') || 'system',
+          action: 'USER_SUSPENDED',
+          details: { targetUserId: id }
+        }
+      });
+      return c.json({ success: true, message: 'User suspended' });
+    }
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
