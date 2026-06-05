@@ -4,7 +4,7 @@ import { Calendar, Heart, User, LogOut,
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield, Download, Smartphone, Share,
-  Copy, CheckCircle, Gift
+  Copy, CheckCircle, Gift, Landmark
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -557,8 +557,9 @@ export function TravelerDashboard() {
                       
                       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex-1 space-y-4 text-center md:text-left">
-                          <h3 className="text-2xl md:text-3xl font-serif font-bold text-white">
-                            {promoSettings.bannerText}
+                          <h3 className="text-2xl md:text-3xl font-serif font-bold text-white flex items-center justify-center md:justify-start gap-3">
+                            <Landmark className="w-8 h-8 shrink-0 text-sand-100" />
+                            {promoSettings.bannerText?.replace('🏛️', '').trim() || promoSettings.bannerText}
                           </h3>
                           <p className="text-navy-200 text-sm md:text-base max-w-md font-medium leading-relaxed">
                             Discover hidden temples, royal stories, sunrise viewpoints, and hidden gems with certified Hampi guides.
