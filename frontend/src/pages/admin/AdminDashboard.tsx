@@ -12,6 +12,7 @@ import {
  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode
 } from "lucide-react";
+import { CinematicLogo } from "../../components/ui/CinematicLogo";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Select";
 import { jsPDF } from "jspdf";
