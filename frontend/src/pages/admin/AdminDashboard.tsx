@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Select";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
@@ -95,6 +97,38 @@ const normalizeArray = (d: any) => {
 export function AdminDashboard() {
  const { confirm } = useModal();
  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  const exportToPDF = async () => {
+    setIsExportingPDF(true);
+    const toastId = toast.loading("Generating High-Resolution PDF...");
+    try {
+      const element = document.getElementById("overview-report-content");
+      if (!element) throw new Error("Content not found");
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: "#FDFBF7" });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = pdfHeight;
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pdf.internal.pageSize.getHeight();
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+      }
+      pdf.save(`HampiStays_Performance_Report_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("Report exported successfully!", { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate PDF report.", { id: toastId });
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
  const [propertySubTab, setPropertySubTab] = useState<"pending" | "active">("pending");
  const [pendingResorts, setPendingResorts] = useState<any[]>([]);
  const [activeResorts, setActiveResorts] = useState<any[]>([]);
