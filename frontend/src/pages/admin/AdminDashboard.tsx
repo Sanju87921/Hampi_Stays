@@ -456,13 +456,16 @@ export function AdminDashboard() {
  const handleUpdateGlobalCommission = async () => {
  setIsSavingGlobalCommission(true);
  try {
- await updateSettings({ defaultCommissionRate });
- toast.success("Global default commission rate updated successfully!");
+   await updateSettings({ defaultCommissionRate });
+   // Re-fetch active resorts so every card immediately shows the new rate
+   const ar = await apiClient.get<any[]>('/admin/resorts/active');
+   setActiveResorts(Array.isArray(ar?.data) ? ar.data : (Array.isArray(ar) ? ar : []));
+   toast.success(`✅ Global commission updated to ${defaultCommissionRate}% — applied to all resorts!`);
  } catch (err) {
- console.error(err);
- toast.error("Failed to update global commission rate");
+   console.error(err);
+   toast.error("Failed to update global commission rate");
  } finally {
- setIsSavingGlobalCommission(false);
+   setIsSavingGlobalCommission(false);
  }
  };
 

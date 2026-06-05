@@ -1085,14 +1085,25 @@ export const updateSettings = async (c) => {
       });
     }
 
+    // ✅ KEY FIX: Propagate global commission rate to ALL approved resorts
+    // Without this, individual resort records keep their old values and the UI shows stale data.
+    if (defaultCommissionRate !== undefined) {
+      const updatedResorts = await prisma.resort.updateMany({
+        where: { status: 'APPROVED' },
+        data: { commissionRate: defaultCommissionRate }
+      });
+      console.log(`[AUDIT] Global commission rate changed to ${defaultCommissionRate}% — applied to ${updatedResorts.count} resort(s) by ${adminEmail}`);
+    }
+
     // Audit Log in Cloudflare Worker
     console.log(`[AUDIT] System Settings updated by Admin: ${adminEmail}. ` + 
       `Changes: ${JSON.stringify(data)}. ` + 
       `Previous: ${JSON.stringify(previousSettings)}`);
 
-    return c.json(settings);
+    return c.json({ ...settings, resortsUpdated: defaultCommissionRate !== undefined });
   } catch (err) { return c.json({ error: err.message }, 500); }
 };
+
 
 
 export const syncAlgoliaSearch = async (c) => {
