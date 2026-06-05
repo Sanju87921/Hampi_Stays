@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, 
@@ -14,6 +15,7 @@ import { apiClient } from "../../utils/apiClient";
 
 export function InventoryPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [resorts, setResorts] = useState<any[]>([]);
   const [activeResortIdx] = useState(0);
   const [activeRoomIdx, setActiveRoomIdx] = useState(0);
@@ -178,6 +180,9 @@ export function InventoryPage() {
       <div className="container mx-auto px-4 max-w-6xl">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
+            <Button variant="outline" className="mb-6 rounded-xl border-sand-200 text-navy-950 font-medium hover:bg-gold-50" onClick={() => navigate("/dashboard")}>
+              <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+            </Button>
             <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Inventory & Pricing</h1>
             <p className="text-navy-950/50">Manage seasonal rates and block availability for <span className="text-gold-600 font-bold">{resort.name}</span>.</p>
           </div>
