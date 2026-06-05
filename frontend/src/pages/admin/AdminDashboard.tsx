@@ -532,7 +532,7 @@ export function AdminDashboard() {
      <div key={i} className="flex-grow group relative flex flex-col justify-end h-full">
         <motion.div 
            initial={{ height: 0 }}
-           animate={{ height: \`${val}%\` }}
+           animate={{ height: `${val}%` }}
            transition={{ delay: i * 0.1, duration: 1 }}
            className="w-full bg-navy-950 rounded-t-xl group-hover:bg-gold-500 transition-colors cursor-pointer"
         />
