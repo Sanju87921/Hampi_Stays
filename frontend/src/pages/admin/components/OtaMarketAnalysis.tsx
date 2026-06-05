@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Globe, TrendingUp, Search, ExternalLink, Target, AlertCircle } from "lucide-react";
 import { apiClient } from "../../../utils/apiClient";
 import { Button } from "../../../components/ui/Button";
+import toast from "react-hot-toast";
 
 interface OtaData {
   id: string;
@@ -37,6 +38,20 @@ export function OtaMarketAnalysis() {
     fetchOtaData();
   }, []);
 
+  const handleScan = async () => {
+    try {
+      setLoading(true);
+      await apiClient.post("/admin/ota-analytics/scan");
+      toast.success("Market scan completed");
+      const response = await apiClient.get<OtaData[]>("/admin/ota-analytics");
+      setData(response);
+    } catch (err: any) {
+      toast.error(err.message || "Market scan failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -60,7 +75,7 @@ export function OtaMarketAnalysis() {
             Real-time tracking of Hampi resort distributions across major OTAs. Use opportunity scores to target high-value acquisitions.
           </p>
         </div>
-        <Button className="bg-navy-950 text-white rounded-xl gap-2">
+        <Button className="bg-navy-950 text-white rounded-xl gap-2" onClick={handleScan} isLoading={loading}>
           <Search className="w-4 h-4" /> Run Market Scan
         </Button>
       </div>

@@ -129,36 +129,36 @@ model Resort {
 }
 
 model Room {
-  id             String              @id @default(cuid())
-  name           String
-  description    String
-  pricePerNight  Float
-  capacity       Int
-  amenities      String[]
-  images         String[]
-  coverImage     String?
-  availableCount Int
-  resortId       String
-  maxNights      Int                 @default(30)
-  minNights      Int                 @default(1)
-  externalIcalUrls String[]          @default([])
-  bookings       Booking[]
-  blockings      RoomBlocking[]
-  priceOverrides RoomPriceOverride[]
-  photos         RoomPhoto[]
-  resort         Resort              @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  id               String              @id @default(cuid())
+  name             String
+  description      String
+  pricePerNight    Float
+  capacity         Int
+  amenities        String[]
+  images           String[]
+  coverImage       String?
+  availableCount   Int
+  resortId         String
+  maxNights        Int                 @default(30)
+  minNights        Int                 @default(1)
+  externalIcalUrls String[]            @default([])
+  bookings         Booking[]
+  blockings        RoomBlocking[]
+  priceOverrides   RoomPriceOverride[]
+  photos           RoomPhoto[]
+  resort           Resort              @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
 }
 
 model RoomPhoto {
-  id         String   @id @default(cuid())
-  roomId     String
-  imageUrl   String
-  isCover    Boolean  @default(false)
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  roomId    String
+  imageUrl  String
+  isCover   Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@map("room_photos")
 }
@@ -190,29 +190,29 @@ model SystemSettings {
 }
 
 model GuidePromotionSettings {
-  id                      String   @id @default(cuid())
-  enableRecommendations   Boolean  @default(true)
-  enableSuccessUpsell     Boolean  @default(true)
-  enableDashboardBanner   Boolean  @default(true)
-  enableBundleOffers      Boolean  @default(true)
-  bundleDiscountAmount    Float    @default(200.0)
-  bannerText              String   @default("🏛️ Explore Hampi With a Local Expert")
-  ctaText                 String   @default("Explore Guides")
-  updatedBy               String?
-  updatedAt               DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  enableRecommendations Boolean  @default(true)
+  enableSuccessUpsell   Boolean  @default(true)
+  enableDashboardBanner Boolean  @default(true)
+  enableBundleOffers    Boolean  @default(true)
+  bundleDiscountAmount  Float    @default(200.0)
+  bannerText            String   @default("🏛️ Explore Hampi With a Local Expert")
+  ctaText               String   @default("Explore Guides")
+  updatedBy             String?
+  updatedAt             DateTime @updatedAt
 
   @@map("guide_promotion_settings")
 }
 
 model GuidePromotionAnalytics {
-  id                    String   @id @default(cuid())
-  impressions           Int      @default(0)
-  clicks                Int      @default(0)
-  profileViews          Int      @default(0)
-  guideBookings         Int      @default(0)
-  bundleConversions     Int      @default(0)
-  revenueGenerated      Float    @default(0.0)
-  date                  DateTime @default(now())
+  id                String   @id @default(cuid())
+  impressions       Int      @default(0)
+  clicks            Int      @default(0)
+  profileViews      Int      @default(0)
+  guideBookings     Int      @default(0)
+  bundleConversions Int      @default(0)
+  revenueGenerated  Float    @default(0.0)
+  date              DateTime @default(now())
 
   @@map("guide_promotion_analytics")
 }
@@ -227,7 +227,6 @@ model VerificationSettings {
 
   @@map("verification_settings")
 }
-
 
 model RoomBlocking {
   id     String   @id @default(cuid())
@@ -261,27 +260,27 @@ model DiscountCode {
 }
 
 model Booking {
-  id               String            @id @default(cuid())
-  checkIn          DateTime
-  checkOut         DateTime
-  guests           Int
-  totalPrice       Float
-  status           BookingStatus     @default(PENDING)
-  specialRequests  String?
-  referenceNumber  String            @unique
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  userId           String
-  resortId         String
-  roomId           String?
-  commissionRate   Float             @default(7.0)
-  paymentStatus    String            @default("PENDING")
-  payoutStatus     String            @default("PENDING")
+  id              String        @id @default(cuid())
+  checkIn         DateTime
+  checkOut        DateTime
+  guests          Int
+  totalPrice      Float
+  status          BookingStatus @default(PENDING)
+  specialRequests String?
+  referenceNumber String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  resortId        String
+  roomId          String?
+  commissionRate  Float         @default(7.0)
+  paymentStatus   String        @default("PENDING")
+  payoutStatus    String        @default("PENDING")
 
-  promotionId      String?
-  promotionName    String?
-  discountAmount   Float?
-  promotion        Promotion?        @relation(fields: [promotionId], references: [id])
+  promotionId    String?
+  promotionName  String?
+  discountAmount Float?
+  promotion      Promotion? @relation(fields: [promotionId], references: [id])
 
   resort           Resort            @relation(fields: [resortId], references: [id])
   room             Room?             @relation(fields: [roomId], references: [id])
@@ -313,18 +312,18 @@ model Wishlist {
 }
 
 model Review {
-  id          String   @id @default(cuid())
-  rating      Int      @default(5)
-  comment     String?
-  images      String[]
-  ownerReply  String?
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt   DateTime @default(now())
-  userId      String
-  resortId    String
-  bookingId   String?  @unique
-  resort      Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  rating     Int      @default(5)
+  comment    String?
+  images     String[]
+  ownerReply String?
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt  DateTime @default(now())
+  userId     String
+  resortId   String
+  bookingId  String?  @unique
+  resort     Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([resortId])
   @@index([userId])
@@ -369,14 +368,14 @@ model BlogPost {
 }
 
 model ResortOwner {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   businessName String?
   gstNumber    String?
-  isVerified   Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isVerified   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   resorts      Resort[]
   kycDocuments KycDocument[]
   bankAccount  BankAccount?
@@ -385,16 +384,16 @@ model ResortOwner {
 }
 
 model KycDocument {
-  id           String      @id @default(cuid())
-  ownerId      String
-  type         String      // AADHAAR, PAN
-  documentUrl  String
-  status       String      @default("PENDING") // PENDING, VERIFIED, REJECTED
-  extractedText String?
+  id             String      @id @default(cuid())
+  ownerId        String
+  type           String // AADHAAR, PAN
+  documentUrl    String
+  status         String      @default("PENDING") // PENDING, VERIFIED, REJECTED
+  extractedText  String?
   rejectedReason String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  owner        ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  owner          ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("kyc_documents")
 }
@@ -415,55 +414,55 @@ model BankAccount {
 }
 
 model TravellerKYC {
-  id             String    @id @default(cuid())
+  id             String   @id @default(cuid())
   userId         String
-  type           String    // GOVERNMENT_ID, AADHAAR, PASSPORT
+  type           String // GOVERNMENT_ID, AADHAAR, PASSPORT
   documentUrl    String
-  status         String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  status         String   @default("PENDING") // PENDING, VERIFIED, REJECTED
   extractedText  String?
   rejectedReason String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("traveller_kyc_documents")
 }
 
 model GuideProfile {
-  id              String         @id @default(cuid())
-  bio             String
-  specialties     String[]
-  languages       String[]
-  pricePerDay     Float
-  pricePerHour    Float
-  yearsExperience Int
-  contactNumber   String?
-  emergencyContact String?
-  city            String?
-  state           String?
-  profileCompletion Int          @default(0)
-  isVerified      Boolean        @default(false)
-  rating          Float          @default(0)
-  reviewCount     Int            @default(0)
-  images          String[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  userId          String         @unique
-  idImage         String?
-  idNumber        String?
-  idType          String?
-  status          ResortStatus   @default(PENDING)
-  rejectionReason String?
-  isActive        Boolean        @default(true)
-  deletedAt       DateTime?
-  fraudScore      Int            @default(0)
-  fraudFlags      String[]       @default([])
-  experiences     Experience[]
-  bookings        GuideBooking[]
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kycDocuments    GuideKYC[]
-  payouts         GuidePayout[]
-  blockedDates    DateTime[]     @default([])
+  id                String         @id @default(cuid())
+  bio               String
+  specialties       String[]
+  languages         String[]
+  pricePerDay       Float
+  pricePerHour      Float
+  yearsExperience   Int
+  contactNumber     String?
+  emergencyContact  String?
+  city              String?
+  state             String?
+  profileCompletion Int            @default(0)
+  isVerified        Boolean        @default(false)
+  rating            Float          @default(0)
+  reviewCount       Int            @default(0)
+  images            String[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  userId            String         @unique
+  idImage           String?
+  idNumber          String?
+  idType            String?
+  status            ResortStatus   @default(PENDING)
+  rejectionReason   String?
+  isActive          Boolean        @default(true)
+  deletedAt         DateTime?
+  fraudScore        Int            @default(0)
+  fraudFlags        String[]       @default([])
+  experiences       Experience[]
+  bookings          GuideBooking[]
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycDocuments      GuideKYC[]
+  payouts           GuidePayout[]
+  blockedDates      DateTime[]     @default([])
 
   @@map("guide_profiles")
 }
@@ -513,7 +512,7 @@ model Experience {
 model GuideKYC {
   id              String       @id @default(cuid())
   guideProfileId  String
-  type            String       // AADHAAR, PAN, DRIVING_LICENSE, GUIDE_CERTIFICATE
+  type            String // AADHAAR, PAN, DRIVING_LICENSE, GUIDE_CERTIFICATE
   documentUrl     String
   status          String       @default("PENDING") // PENDING, VERIFIED, REJECTED
   extractedText   String?
@@ -526,20 +525,20 @@ model GuideKYC {
 }
 
 model GuidePayout {
-  id              String       @id @default(cuid())
-  guideProfileId  String
-  amount          Float
-  commission      Float
-  netAmount       Float
-  status          String       @default("PENDING") // PENDING, PAID, FAILED
-  bankName        String?
-  accountName     String?
-  accountNumber   String?
-  ifsc            String?
-  transactionRef  String?
-  createdAt       DateTime     @default(now())
-  paidAt          DateTime?
-  guideProfile    GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  guideProfileId String
+  amount         Float
+  commission     Float
+  netAmount      Float
+  status         String       @default("PENDING") // PENDING, PAID, FAILED
+  bankName       String?
+  accountName    String?
+  accountNumber  String?
+  ifsc           String?
+  transactionRef String?
+  createdAt      DateTime     @default(now())
+  paidAt         DateTime?
+  guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
 
   @@map("guide_payouts")
 }
@@ -827,38 +826,38 @@ model AuditLog {
 }
 
 model Promotion {
-  id                String   @id @default(cuid())
-  name              String
-  code              String?  @unique
-  description       String?
+  id          String  @id @default(cuid())
+  name        String
+  code        String? @unique
+  description String?
 
-  discountType      String
-  discountValue     Float
+  discountType  String
+  discountValue Float
 
-  minBookingAmount  Float?
-  maxDiscount       Float?
+  minBookingAmount Float?
+  maxDiscount      Float?
 
-  firstBookingOnly  Boolean @default(false)
-  maxUsesPerUser    Int?
+  firstBookingOnly Boolean @default(false)
+  maxUsesPerUser   Int?
 
-  usageLimit        Int?
-  usageCount        Int @default(0)
+  usageLimit Int?
+  usageCount Int  @default(0)
 
-  active            Boolean @default(true)
-  autoApply         Boolean @default(false)
+  active    Boolean @default(true)
+  autoApply Boolean @default(false)
 
-  validFrom         DateTime?
-  validUntil        DateTime?
+  validFrom  DateTime?
+  validUntil DateTime?
 
-  priority          Int @default(1)
+  priority Int @default(1)
 
-  applicableRoles   String?
-  targetType        String @default("PLATFORM") // PLATFORM, RESORT, CATEGORY, OWNER
-  targetId          String?
+  applicableRoles String?
+  targetType      String  @default("PLATFORM") // PLATFORM, RESORT, CATEGORY, OWNER
+  targetId        String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  bookings          Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
 }
 
 model MediaHash {
@@ -867,7 +866,7 @@ model MediaHash {
   url       String
   userId    String?
   createdAt DateTime @default(now())
-  
+
   @@map("media_hashes")
 }
 
@@ -885,25 +884,25 @@ model ExternalPropertyPresence {
   rating           Float?
   opportunityScore Int      @default(0)
   lastChecked      DateTime @default(now())
-  
+
   @@map("external_property_presence")
 }
 
 model ResortOwnerPayout {
-  id              String      @id @default(cuid())
-  bookingId       String      @unique
-  resortId        String
-  ownerId         String
-  grossAmount     Float
-  commissionRate  Float
+  id                 String   @id @default(cuid())
+  bookingId          String   @unique
+  resortId           String
+  ownerId            String
+  grossAmount        Float
+  commissionRate     Float
   platformCommission Float
-  netAmount       Float
-  status          String      @default("PENDING") // PENDING, ELIGIBLE, PROCESSING, PAID, FAILED
-  settlementId    String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  netAmount          Float
+  status             String   @default("PENDING") // PENDING, ELIGIBLE, PROCESSING, PAID, FAILED
+  settlementId       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  settlement      SettlementLedger? @relation(fields: [settlementId], references: [id])
+  settlement SettlementLedger? @relation(fields: [settlementId], references: [id])
 
   @@index([resortId])
   @@index([ownerId])
@@ -912,20 +911,37 @@ model ResortOwnerPayout {
 }
 
 model SettlementLedger {
-  id              String      @id @default(cuid())
+  id              String    @id @default(cuid())
   ownerId         String
   totalGross      Float
   totalCommission Float
   totalNet        Float
-  status          String      @default("PENDING") // PENDING, PAID, FAILED
+  status          String    @default("PENDING") // PENDING, PAID, FAILED
   transactionRef  String?
   settlementDate  DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  payouts         ResortOwnerPayout[]
+  payouts ResortOwnerPayout[]
 
   @@index([ownerId])
   @@index([status])
   @@map("settlement_ledger")
+}
+
+model OtaMarketData {
+  id               String   @id @default(uuid())
+  resortName       String
+  bookingComUrl    String?
+  airbnbUrl        String?
+  goibiboUrl       String?
+  makemytripUrl    String?
+  agodaUrl         String?
+  expediaUrl       String?
+  detectedChannels String?
+  reviewVolume     Int      @default(0)
+  rating           Float?
+  opportunityScore Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

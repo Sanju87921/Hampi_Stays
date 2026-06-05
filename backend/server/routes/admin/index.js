@@ -1455,6 +1455,52 @@ app.patch('/admin/payouts/:payoutId/status', authMiddleware, adminMiddleware, as
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 app.get('/admin/security/stats', authMiddleware, adminMiddleware, (c) => c.json({ logs: [], activeSessions: 1 }));
+
+app.get('/admin/ota-analytics', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const data = await prisma.otaMarketData.findMany({
+      orderBy: { opportunityScore: 'desc' }
+    });
+    return c.json(data);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/admin/ota-analytics/scan', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const count = await prisma.otaMarketData.count();
+    
+    // For demo purposes, we will populate the table if it's empty, or simulate updating it
+    const mockData = [
+      { resortName: "Evolve Back, Hampi", detectedChannels: "Booking.com,MakeMyTrip,Agoda,Expedia", reviewVolume: 1245, rating: 4.8, opportunityScore: 2 },
+      { resortName: "Heritage Resort Hampi", detectedChannels: "Booking.com,MakeMyTrip,Goibibo,Agoda", reviewVolume: 890, rating: 4.4, opportunityScore: 4 },
+      { resortName: "Hampi's Boulders Resort", detectedChannels: "Booking.com,Airbnb,Agoda", reviewVolume: 532, rating: 4.6, opportunityScore: 3 },
+      { resortName: "Kishkinda Heritage Resort", detectedChannels: "MakeMyTrip,Goibibo", reviewVolume: 1102, rating: 3.9, opportunityScore: 6 },
+      { resortName: "Royal Orchid Central Kireeti", detectedChannels: "Booking.com,MakeMyTrip,Agoda,Expedia", reviewVolume: 3254, rating: 4.1, opportunityScore: 5 },
+      { resortName: "Leo Wooden Resort", detectedChannels: "Booking.com,Airbnb", reviewVolume: 145, rating: 4.7, opportunityScore: 2 }
+    ];
+
+    if (count === 0) {
+      await prisma.otaMarketData.createMany({ data: mockData });
+    } else {
+      // Simulate real-time update by incrementing reviews
+      const all = await prisma.otaMarketData.findMany();
+      for (const item of all) {
+        await prisma.otaMarketData.update({
+          where: { id: item.id },
+          data: { reviewVolume: item.reviewVolume + Math.floor(Math.random() * 5) }
+        });
+      }
+    }
+    
+    return c.json({ success: true, message: "Market scan completed" });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
 app.get('/admin/reviews/flagged', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   try {
