@@ -461,7 +461,9 @@ export function CheckoutPage() {
 
                   <div className="flex flex-col sm:flex-row gap-4 pt-4">
                     <Button variant="outline" className="w-full sm:w-auto rounded-xl h-14" onClick={() => setStep(1)}>Back</Button>
-                    <Button className="w-full sm:flex-1 px-12 shadow-gold h-14" onClick={() => setStep(3)}>Continue to Payment</Button>
+                    <Button className="w-full sm:flex-1 px-12 shadow-gold h-14" onClick={() => setStep(3)}>
+                      {appliedCoupon ? "Continue to Payment" : "Skip & Continue to Payment"}
+                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -580,7 +582,7 @@ export function CheckoutPage() {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="ENTER PROMO CODE"
+                        placeholder="PROMO CODE (OPTIONAL)"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value)}
                         disabled={isValidatingCoupon}

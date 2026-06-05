@@ -10,7 +10,10 @@ export const bookingSchema = z.object({
   specialRequests: z.string().max(500).optional(),
   addInsurance: z.boolean().default(false),
   airportPickup: z.boolean().default(false),
-  couponCode: z.string().optional()
+  couponCode: z.string().nullable().optional(),
+  promotionId: z.string().nullable().optional(),
+  promotionName: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional()
 });
 
 const formatError = (result, c) => {
