@@ -15,7 +15,10 @@ import { toast } from "react-hot-toast";
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
 export function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get("email");
+  const rememberedEmail = typeof window !== 'undefined' ? localStorage.getItem('rememberedEmail') : null;
+  const [email, setEmail] = useState(emailParam || rememberedEmail || "");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
@@ -171,6 +174,10 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+    
+    // Remember the user's ID for next time
+    if (email) localStorage.setItem('rememberedEmail', email);
+
     try {
       await login(email, password);
       const redirectUrl = searchParams.get("redirect");

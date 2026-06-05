@@ -50,34 +50,34 @@ export function Navbar() {
  const navLinks = isDashboard 
  ? user?.role?.toUpperCase() === 'GUIDE'
  ? [
- { name: t("navbar.dashboard"), path: "/dashboard" },
- { name: "My Tours", path: "/dashboard?tab=tours" },
- { name: t("navbar.profile"), path: "/dashboard?tab=profile" },
+ { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
+ { name: t("navbar.myTours", "My Tours"), path: "/dashboard?tab=tours" },
+ { name: t("navbar.profile", "Profile"), path: "/dashboard?tab=profile" },
  
  
  ]
  : user?.role?.toUpperCase() === 'TRAVELLER'
  ? [
- { name: t("navbar.dashboard"), path: "/dashboard" },
- { name: "Book Stays", path: "/resorts" },
- { name: t("navbar.wishlist"), path: "/dashboard/wishlist" },
- { name: t("navbar.bookings"), path: "/dashboard/bookings" },
- { name: "Notifications", path: "/dashboard/notifications" },
- { name: t("navbar.profile"), path: "/dashboard/profile" },
+ { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
+ { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
+ { name: t("navbar.wishlist", "Wishlist"), path: "/dashboard/wishlist" },
+ { name: t("navbar.bookings", "Bookings"), path: "/dashboard/bookings" },
+ { name: t("navbar.notifications", "Notifications"), path: "/dashboard/notifications" },
+ { name: t("navbar.profile", "Profile"), path: "/dashboard/profile" },
  ]
  : user?.role?.toUpperCase() === 'ADMIN'
  ? [
- { name: "Profile", path: "/admin/profile" },
- { name: "Settings", path: "/admin/settings" },
+ { name: t("navbar.profile", "Profile"), path: "/admin/profile" },
+ { name: t("navbar.settings", "Settings"), path: "/admin/settings" },
  ]
  : [
- { name: t("navbar.dashboard"), path: "/dashboard" },
+ { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  ]
  : [
- { name: t("navbar.resorts"), path: "/resorts" },
- { name: t("navbar.discover"), path: "/discovery" },
- ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard") || "Dashboard", path: "/dashboard" }] : []),
- ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: "Command Center", path: "/admin" }] : []),
+ { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
+ { name: t("navbar.discover", "Discover"), path: "/discovery" },
+ ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
+ ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
  ];
 
  return (
@@ -127,7 +127,7 @@ export function Navbar() {
  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
  </div>
  <Shield className="w-3 h-3 mr-1.5" />
- Administrator
+ {t("navbar.administrator", "Administrator")}
  </div>
  )}
  </div>
@@ -176,7 +176,7 @@ export function Navbar() {
  : "border-white/30 text-white hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
  )}
  >
- Logout
+ {t("navbar.logout", "Logout")}
  </button>
  </div>
  ) : (
@@ -252,7 +252,7 @@ export function Navbar() {
  {isAuthenticated && (
  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
- <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Secure Session</span>
+ <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">{t("navbar.secureSession", "Secure Session")}</span>
  </div>
  )}
  </Link>
@@ -305,7 +305,7 @@ export function Navbar() {
  }}
  className="w-full h-14 sm:h-16 rounded-2xl border border-navy-200 text-navy-950 font-bold text-sm uppercase tracking-[0.15em] hover:bg-navy-950 hover:text-white transition-all duration-300"
  >
- Logout
+ {t("navbar.logout", "Logout")}
  </button>
  )}
  </div>

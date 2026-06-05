@@ -128,6 +128,8 @@ export function RegisterPage() {
           apiRole as any,
           "email"
         );
+        if (formData.email) localStorage.setItem('rememberedEmail', formData.email);
+
         if (res?.status === 'verified' && res?.token && res?.user) {
           localStorage.setItem("hampi-token", res.token);
           localStorage.setItem("hampi-user", JSON.stringify(res.user));
@@ -188,6 +190,8 @@ export function RegisterPage() {
         apiRole as any,
         method
       );
+      if (formData.email) localStorage.setItem('rememberedEmail', formData.email);
+
       if (res?.devOtp) {
         toast.success(`[Test Mode] Verification code: ${res.devOtp}`, { duration: 10000 });
       }
@@ -479,7 +483,7 @@ export function RegisterPage() {
                     <p className="text-navy-800/60 font-medium text-sm">
                       Already have an account?{" "}
                       <Link
-                        to={searchParams.get("redirect") ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : "/login"}
+                        to={`/login?email=${encodeURIComponent(formData.email || '')}${searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : ''}`}
                         className="text-gold-600 font-bold hover:text-sunset-500 transition-colors"
                       >
                         Sign in
@@ -626,7 +630,7 @@ export function RegisterPage() {
                     <p className="text-navy-800/60 font-medium text-sm">
                       Already have an account?{" "}
                       <Link
-                        to={searchParams.get("redirect") ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : "/login"}
+                        to={`/login?email=${encodeURIComponent(formData.email || '')}${searchParams.get("redirect") ? `&redirect=${encodeURIComponent(searchParams.get("redirect")!)}` : ''}`}
                         className="text-gold-600 font-bold hover:text-sunset-500 transition-colors"
                       >
                         Sign in
