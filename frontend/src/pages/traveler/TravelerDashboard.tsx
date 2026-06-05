@@ -4,7 +4,7 @@ import { Calendar, Heart, User, LogOut,
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield, Download, Smartphone, Share,
-  Copy, CheckCircle
+  Copy, CheckCircle, Gift
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -40,17 +40,23 @@ export function TravelerDashboard() {
   const [activePromotions, setActivePromotions] = useState<any[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [hideKycBanner, setHideKycBanner] = useState(sessionStorage.getItem('hideKycBanner') === 'true');
+  const [referralData, setReferralData] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
       try {
-        const [bookingsData, wishlistData, notificationsData] = await Promise.all([
+        const [bookingsData, wishlistData, notificationsData, activePromos, referralRes] = await Promise.all([
           apiClient.get<Booking[]>(`/users/bookings`),
           apiClient.get<any[]>(`/users/${user.id}/wishlist`),
           apiClient.get<any[]>(`/users/notifications`).catch(() => []),
-          apiClient.get<any[]>(`/promotions/active`).catch(() => [])
+          apiClient.get<any[]>(`/promotions/active`).catch(() => []),
+          apiClient.get<any>(`/referrals/dashboard`).catch(() => null)
         ]);
+
+        if (referralRes && referralRes.data) {
+          setReferralData(referralRes.data);
+        }
 
         const normalizedWishlist = (wishlistData || []).map((r: any) => ({
           ...r,
@@ -687,6 +693,54 @@ export function TravelerDashboard() {
                 }
                 return null;
               })()}
+
+              {/* Refer & Earn Widget */}
+              {referralData && (
+                <div className="mt-8">
+                  <div className="p-6 rounded-[2rem] bg-gradient-to-r from-gold-500 to-gold-400 border border-gold-300 shadow-luxury text-navy-950 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
+                      <Share className="w-32 h-32 text-navy-950" />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gift className="w-6 h-6" />
+                        <h2 className="text-2xl font-serif font-bold">Refer & Earn ₹500</h2>
+                      </div>
+                      <p className="text-sm text-navy-900 mb-6 max-w-md font-medium">
+                        Share your unique code with friends. They get a discount on their first stay, and you earn ₹500 in HampiStays credits!
+                      </p>
+                      
+                      <div className="bg-white/40 backdrop-blur-md rounded-xl p-2 flex items-center justify-between max-w-sm border border-white/50">
+                        <span className="font-mono font-bold text-lg px-4 tracking-widest">{referralData.referralCode}</span>
+                        <Button 
+                          className="bg-navy-950 text-white hover:bg-navy-800 rounded-lg shadow-sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralData.referralCode);
+                            toast.success("Referral code copied!");
+                          }}
+                        >
+                          <Copy className="w-4 h-4 mr-2" /> Copy Code
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-navy-950/10">
+                        <div>
+                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Available Credits</p>
+                          <p className="text-xl font-bold">₹{referralData.availableCredits || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Pending</p>
+                          <p className="text-xl font-bold">{referralData.pendingCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-navy-900 uppercase tracking-widest font-bold mb-1">Completed</p>
+                          <p className="text-xl font-bold">{referralData.completedCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Active Promotions */}
               {activePromotions.length > 0 && (

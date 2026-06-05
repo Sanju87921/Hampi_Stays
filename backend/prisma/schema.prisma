@@ -36,6 +36,7 @@ model User {
   kycRejectionReason      String?
   deletedAt               DateTime?
   fraudScore              Int                @default(0)
+  myReferralCode          String?            @unique
   fraudFlags              String[]           @default([])
   location                String?
   bookings                Booking[]

@@ -32,7 +32,7 @@ export const register = async (c) => {
   
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
-  const { name, email, password, role, phone, verificationType } = await c.req.json();
+  const { name, email, password, role, phone, verificationType, referralCode } = await c.req.json();
   const lowerEmail = email.toLowerCase();
   try {
     const settings = await prisma.systemSettings.findFirst();
@@ -90,6 +90,22 @@ export const register = async (c) => {
             }
           });
         }
+
+        // Handle Referral
+        if (referralCode) {
+          const referrer = await tx.user.findUnique({ where: { myReferralCode: referralCode } });
+          if (referrer) {
+            await tx.referral.create({
+              data: {
+                referrerId: referrer.id,
+                referredUserId: newUser.id,
+                referralCode: referralCode,
+                status: 'PENDING'
+              }
+            });
+          }
+        }
+
         return newUser;
       });
 
@@ -685,7 +701,7 @@ export const verifyOtp = async (c) => {
   
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
-  const { otp, email, phone, otpType } = await c.req.json();
+  const { otp, email, phone, otpType, referralCode } = await c.req.json();
   const lowerEmail = email?.toLowerCase();
   const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
   try {
@@ -745,6 +761,22 @@ export const verifyOtp = async (c) => {
             }
           });
         }
+
+        // Handle Referral
+        if (referralCode) {
+          const referrer = await tx.user.findUnique({ where: { myReferralCode: referralCode } });
+          if (referrer) {
+            await tx.referral.create({
+              data: {
+                referrerId: referrer.id,
+                referredUserId: newUser.id,
+                referralCode: referralCode,
+                status: 'PENDING'
+              }
+            });
+          }
+        }
+
         return newUser;
       });
 

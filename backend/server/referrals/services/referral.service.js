@@ -7,10 +7,24 @@ export class ReferralService {
     this.prisma = getPrisma(env);
   }
 
-  generateReferralCode(userId) {
+  async generateReferralCode(userId) {
+    // Try to get existing code
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user && user.myReferralCode) {
+      return user.myReferralCode;
+    }
+
     // Generate an 8-character alphanumeric code based on User ID
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `HAMP${randomSuffix}${userId.substring(0, 2).toUpperCase()}`;
+    const newCode = `HAMP${randomSuffix}${userId.substring(0, 2).toUpperCase()}`;
+
+    // Save to user
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { myReferralCode: newCode }
+    });
+
+    return newCode;
   }
 
   async getReferralStats(userId) {
@@ -23,11 +37,17 @@ export class ReferralService {
     const completedCount = referrals.filter(r => r.status === 'COMPLETED').length;
     const totalEarned = referrals.reduce((sum, r) => sum + (r.rewardAmount || 0), 0);
 
+    const credits = await this.prisma.rewardCredit.findMany({
+      where: { userId }
+    });
+    const availableCredits = credits.reduce((sum, c) => sum + c.amount, 0);
+
     return {
       referrals,
       pendingCount,
       completedCount,
-      totalEarned
+      totalEarned,
+      availableCredits
     };
   }
 

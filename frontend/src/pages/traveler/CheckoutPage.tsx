@@ -60,11 +60,19 @@ export function CheckoutPage() {
   } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [activePromotions, setActivePromotions] = useState<any[]>([]);
+  const [availableCredits, setAvailableCredits] = useState(0);
+  const [useCredits, setUseCredits] = useState(false);
 
   useEffect(() => {
-    apiClient.get<any[]>('/promotions/active')
-      .then(data => setActivePromotions(data || []))
-      .catch(console.error);
+    Promise.all([
+      apiClient.get<any[]>('/promotions/active').catch(() => []),
+      apiClient.get<any>('/referrals/dashboard').catch(() => null)
+    ]).then(([promos, referralRes]) => {
+      setActivePromotions(promos || []);
+      if (referralRes && referralRes.data && referralRes.data.availableCredits) {
+        setAvailableCredits(referralRes.data.availableCredits);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -110,7 +118,9 @@ export function CheckoutPage() {
   const mealTaxes = Math.round(mealTotal * 0.05);
 
   const grandTotal = nightsTotal + taxes + insuranceCost + airportPickupCost + mealTotal + mealTaxes;
-  const finalPrice = Math.max(0, grandTotal - (appliedCoupon?.discountAmount || 0));
+  let finalPrice = Math.max(0, grandTotal - (appliedCoupon?.discountAmount || 0));
+  const creditsApplied = useCredits ? Math.min(availableCredits, finalPrice) : 0;
+  finalPrice -= creditsApplied;
 
   const handleApplyCoupon = async (codeToApply: string = couponCodeInput) => {
     if (!codeToApply.trim()) return;
@@ -214,7 +224,8 @@ export function CheckoutPage() {
         promotionId: appliedCoupon ? activePromotions.find(p => p.code === appliedCoupon.code)?.id : null,
         promotionName: appliedCoupon?.name || null,
         discountAmount: appliedCoupon?.discountAmount || 0,
-        couponCode: appliedCoupon?.code || null
+        couponCode: appliedCoupon?.code || null,
+        useCredits
       });
 
       // 2. Load Razorpay Script dynamically if not present
@@ -651,6 +662,27 @@ export function CheckoutPage() {
                     <div className="flex justify-between text-gold-600 font-bold bg-gold-50/30 p-2 rounded-xl border border-gold-100/50">
                       <span>Discount ({appliedCoupon.name})</span>
                       <span>-{fmt(appliedCoupon.discountAmount)}</span>
+                    </div>
+                  )}
+                  {availableCredits > 0 && (
+                    <div className="pt-2 pb-2">
+                      <label className="flex items-center justify-between p-3 rounded-xl border border-gold-200 bg-gold-50/50 cursor-pointer transition-all hover:bg-gold-50">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={useCredits} 
+                            onChange={(e) => setUseCredits(e.target.checked)} 
+                            className="w-4 h-4 text-gold-600 rounded focus:ring-gold-500 border-gold-300"
+                          />
+                          <div>
+                            <span className="text-sm font-bold text-navy-950 block">Apply Referral Credits</span>
+                            <span className="text-[10px] text-navy-950/60 font-bold uppercase tracking-widest">Available: {fmt(availableCredits)}</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-gold-600">
+                          {useCredits ? `-${fmt(creditsApplied)}` : ''}
+                        </span>
+                      </label>
                     </div>
                   )}
                   <div className="flex justify-between pt-3 border-t border-sand-100">

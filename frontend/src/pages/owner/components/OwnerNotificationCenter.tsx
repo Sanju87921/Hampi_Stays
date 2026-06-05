@@ -5,10 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../utils/apiClient';
 import { Button } from '../../../components/ui/Button';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 export const OwnerNotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['ownerNotifications'],
@@ -42,6 +44,24 @@ export const OwnerNotificationCenter = () => {
     if (type.includes('REVIEW')) return <Star className="w-5 h-5 text-gold-500" />;
     if (type.includes('KYC') || type.includes('REJECTED')) return <AlertCircle className="w-5 h-5 text-red-500" />;
     return <Info className="w-5 h-5 text-navy-500" />;
+  };
+
+  const handleNotificationClick = (n: any) => {
+    if (!n.isRead) {
+      markAsRead.mutate(n.id);
+    }
+    
+    // Deep-linking logic based on notification type
+    if (n.type.includes('BOOKING')) {
+      navigate('/owner/dashboard?tab=bookings');
+      setIsOpen(false);
+    } else if (n.type.includes('REVIEW')) {
+      navigate('/owner/dashboard?tab=reviews');
+      setIsOpen(false);
+    } else if (n.type.includes('KYC') || n.type.includes('REJECTED') || n.type.includes('APPROVED')) {
+      navigate('/owner/dashboard?tab=overview');
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -100,7 +120,8 @@ export const OwnerNotificationCenter = () => {
                   notifications.map((n: any) => (
                     <div 
                       key={n.id} 
-                      className={`relative p-4 rounded-xl transition-all ${n.isRead ? 'bg-transparent opacity-75' : 'bg-sand-50 border border-sand-100 shadow-sm'}`}
+                      onClick={() => handleNotificationClick(n)}
+                      className={`relative p-4 rounded-xl transition-all cursor-pointer hover:bg-sand-100 ${n.isRead ? 'bg-transparent opacity-75' : 'bg-sand-50 border border-sand-100 shadow-sm'}`}
                     >
                       <div className="flex gap-3">
                         <div className="shrink-0 mt-1">
@@ -122,7 +143,7 @@ export const OwnerNotificationCenter = () => {
                       <div className="absolute top-3 right-3 flex flex-col gap-2">
                         {!n.isRead && (
                           <button 
-                            onClick={() => markAsRead.mutate(n.id)}
+                            onClick={(e) => { e.stopPropagation(); markAsRead.mutate(n.id); }}
                             className="p-1.5 hover:bg-white rounded-full text-navy-400 hover:text-green-600 transition-colors shadow-sm bg-white/50"
                             title="Mark as read"
                           >
@@ -130,7 +151,7 @@ export const OwnerNotificationCenter = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => deleteNotification.mutate(n.id)}
+                          onClick={(e) => { e.stopPropagation(); deleteNotification.mutate(n.id); }}
                           className="p-1.5 hover:bg-red-50 hover:text-red-700 rounded-full text-navy-400 hover:text-red-500 transition-colors"
                           title="Delete"
                         >

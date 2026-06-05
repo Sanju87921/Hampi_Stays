@@ -4,7 +4,7 @@ export const getReferralDashboard = async (c) => {
   const user = c.get('user');
   const service = new ReferralService(c.env);
   
-  const code = service.generateReferralCode(user.id);
+  const code = await service.generateReferralCode(user.id);
   const stats = await service.getReferralStats(user.id);
 
   return c.json({

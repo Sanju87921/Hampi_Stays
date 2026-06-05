@@ -1,6 +1,4 @@
 export async function evaluateResortOwnerKyc(prisma, ownerId, vSettings, currentIsVerified = false) {
-  // Grandfathering: If they are already verified, changing settings shouldn't revoke it
-  if (currentIsVerified) return true;
 
   const allDocs = await prisma.kycDocument.findMany({ where: { ownerId } });
   const bank = await prisma.bankAccount.findUnique({ where: { ownerId } });
@@ -20,8 +18,6 @@ export async function evaluateResortOwnerKyc(prisma, ownerId, vSettings, current
 }
 
 export async function evaluateGuideKyc(prisma, guideProfileId, vSettings, currentIsVerified = false) {
-  // Grandfathering
-  if (currentIsVerified) return true;
 
   const allDocs = await prisma.guideKYC.findMany({ where: { guideProfileId } });
   const reqs = vSettings.guideRequirements || [];
@@ -66,15 +62,16 @@ export async function recalculateAllKyc(prisma, adminId) {
     guideRequirements: ['AADHAAR']
   };
 
-  // 1. Recalculate Pending Resort Owners
-  const pendingOwners = await prisma.resortOwner.findMany({ where: { isVerified: false } });
+  // 1. Recalculate Resort Owners
+  const allOwners = await prisma.resortOwner.findMany();
   let ownersVerifiedCount = 0;
-  for (const owner of pendingOwners) {
+  let ownersRevokedCount = 0;
+  for (const owner of allOwners) {
     const isNowVerified = await evaluateResortOwnerKyc(prisma, owner.id, vSettings, owner.isVerified);
-    if (isNowVerified) {
+    
+    if (isNowVerified && !owner.isVerified) {
+      // Upgraded to Verified
       await prisma.resortOwner.update({ where: { id: owner.id }, data: { isVerified: true } });
-      // Only change to ACTIVE if the admin already APPROVED the resort, or if there's no dual-approval required.
-      // Wait, let's just set it to ACTIVE if it was KYC_PENDING or APPROVED.
       await prisma.resort.updateMany({ 
         where: { ownerId: owner.id, status: 'APPROVED' }, 
         data: { isVerified: true, status: 'ACTIVE' } 
@@ -90,15 +87,36 @@ export async function recalculateAllKyc(prisma, adminId) {
         }
       });
       ownersVerifiedCount++;
+    } else if (!isNowVerified && owner.isVerified) {
+      // Revoked
+      await prisma.resortOwner.update({ where: { id: owner.id }, data: { isVerified: false } });
+      await prisma.resort.updateMany({ 
+        where: { ownerId: owner.id, status: 'ACTIVE' }, 
+        data: { isVerified: false, status: 'KYC_PENDING' } 
+      });
+      await prisma.verificationAudit.create({
+        data: {
+          adminId: adminId || 'SYSTEM',
+          targetUserId: owner.userId,
+          targetType: 'RESORT',
+          action: 'OWNER_REVOKED',
+          newStatus: 'REJECTED',
+          details: 'Verification revoked by new requirement recalculation'
+        }
+      });
+      ownersRevokedCount++;
     }
   }
 
-  // 2. Recalculate Pending Guides
-  const pendingGuides = await prisma.guideProfile.findMany({ where: { isVerified: false } });
+  // 2. Recalculate Guides
+  const allGuides = await prisma.guideProfile.findMany();
   let guidesVerifiedCount = 0;
-  for (const guide of pendingGuides) {
+  let guidesRevokedCount = 0;
+  for (const guide of allGuides) {
     const isNowVerified = await evaluateGuideKyc(prisma, guide.id, vSettings, guide.isVerified);
-    if (isNowVerified) {
+    
+    if (isNowVerified && !guide.isVerified) {
+      // Upgraded
       await prisma.guideProfile.update({ where: { id: guide.id }, data: { isVerified: true } });
       await prisma.verificationAudit.create({
         data: {
@@ -111,6 +129,20 @@ export async function recalculateAllKyc(prisma, adminId) {
         }
       });
       guidesVerifiedCount++;
+    } else if (!isNowVerified && guide.isVerified) {
+      // Revoked
+      await prisma.guideProfile.update({ where: { id: guide.id }, data: { isVerified: false } });
+      await prisma.verificationAudit.create({
+        data: {
+          adminId: adminId || 'SYSTEM',
+          targetUserId: guide.userId,
+          targetType: 'GUIDE',
+          action: 'GUIDE_REVOKED',
+          newStatus: 'REJECTED',
+          details: 'Verification revoked by new requirement recalculation'
+        }
+      });
+      guidesRevokedCount++;
     }
   }
 
@@ -119,11 +151,11 @@ export async function recalculateAllKyc(prisma, adminId) {
     data: {
       adminId: adminId,
       action: 'KYC_RECALCULATED',
-      details: { ownersVerifiedCount, guidesVerifiedCount }
+      details: { ownersVerifiedCount, ownersRevokedCount, guidesVerifiedCount, guidesRevokedCount }
     }
   });
 
-  return { ownersVerifiedCount, guidesVerifiedCount };
+  return { ownersVerifiedCount, ownersRevokedCount, guidesVerifiedCount, guidesRevokedCount };
 }
 
 module.exports = {

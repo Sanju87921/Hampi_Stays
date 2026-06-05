@@ -108,7 +108,7 @@ export const createBooking = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
-  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup, selectedMeals, couponCode } = data;
+  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup, selectedMeals, couponCode, useCredits } = data;
   const payload = c.get('user');
   
   try {
@@ -265,6 +265,28 @@ export const createBooking = async (c) => {
           where: { id: promotion.id },
           data: { usageCount: { increment: 1 } }
         });
+      }
+
+      // Apply Reward Credits
+      let creditsUsed = 0;
+      if (useCredits && payload?.userId) {
+        const credits = await tx.rewardCredit.findMany({ where: { userId: payload.userId } });
+        const totalCredits = credits.reduce((sum, c) => sum + c.amount, 0);
+        
+        if (totalCredits > 0) {
+          creditsUsed = Math.min(totalCredits, finalAmount);
+          finalAmount -= creditsUsed;
+          
+          if (creditsUsed > 0) {
+            await tx.rewardCredit.create({
+              data: {
+                userId: payload.userId,
+                amount: -creditsUsed,
+                source: 'USED_FOR_BOOKING'
+              }
+            });
+          }
+        }
       }
 
       const refNum = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
