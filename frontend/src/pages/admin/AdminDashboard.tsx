@@ -3,7 +3,7 @@ import { useModal } from '../../components/shared/ModalProvider';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-case-declarations */
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -18,12 +18,23 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
 import { API_BASE_URL } from "../../config/api";
-import { BlogModule } from "./BlogModule";
-import { PromotionsModule } from "./PromotionsModule";
-import { UserManagement } from "./components/UserManagement";
-import { KycOperationsCenter } from "./components/KycOperationsCenter";
-import { OtaMarketAnalysis } from "./components/OtaMarketAnalysis";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
+
+// Lazy-loaded heavy admin sub-modules (reduces initial bundle by ~300kB)
+const BlogModule = lazy(() => import("./BlogModule").then(m => ({ default: m.BlogModule })));
+const PromotionsModule = lazy(() => import("./PromotionsModule").then(m => ({ default: m.PromotionsModule })));
+const UserManagement = lazy(() => import("./components/UserManagement").then(m => ({ default: m.UserManagement })));
+const KycOperationsCenter = lazy(() => import("./components/KycOperationsCenter").then(m => ({ default: m.KycOperationsCenter })));
+const OtaMarketAnalysis = lazy(() => import("./components/OtaMarketAnalysis").then(m => ({ default: m.OtaMarketAnalysis })));
+
+const TabLoader = () => (
+  <div className="flex items-center justify-center py-24">
+    <div className="flex flex-col items-center gap-3">
+      <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+      <p className="text-xs font-semibold tracking-widest text-navy-900/40 uppercase">Loading Module</p>
+    </div>
+  </div>
+);
 
 type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market";
 
@@ -2222,16 +2233,16 @@ export function AdminDashboard() {
  key={activeTab}
  initial={{ opacity: 0, x: 20 }}
  animate={{ opacity: 1, x: 0 }}
- transition={{ duration: 0.4 }}
+ transition={{ duration: 0.18 }}
  >
  <ErrorBoundary>
  {activeTab === "overview" && renderOverview()}
  {activeTab === "properties" && renderProperties()}
- {activeTab === "kyc" && <KycOperationsCenter />}
- {activeTab === "promotions" && <PromotionsModule />}
- {activeTab === "content" && <BlogModule />}
+ {activeTab === "kyc" && <Suspense fallback={<TabLoader />}><KycOperationsCenter /></Suspense>}
+ {activeTab === "promotions" && <Suspense fallback={<TabLoader />}><PromotionsModule /></Suspense>}
+ {activeTab === "content" && <Suspense fallback={<TabLoader />}><BlogModule /></Suspense>}
  {activeTab === "guides" && renderGuides()}
- {activeTab === "users" && <UserManagement />}
+ {activeTab === "users" && <Suspense fallback={<TabLoader />}><UserManagement /></Suspense>}
  {activeTab === "bookings" && renderBookings()}
  {activeTab === "payouts" && renderPayouts()}
  {activeTab === "newsletter" && renderNewsletter()}
@@ -2240,7 +2251,7 @@ export function AdminDashboard() {
  {activeTab === "reviews" && renderReviews()}
  {activeTab === "commissions" && renderCommissions()}
  {activeTab === "audit-logs" && renderAuditLogs()}
- {activeTab === "ota-market" && <OtaMarketAnalysis />}
+ {activeTab === "ota-market" && <Suspense fallback={<TabLoader />}><OtaMarketAnalysis /></Suspense>}
  </ErrorBoundary>
  </motion.div>
  )}

@@ -5,7 +5,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
-    include: ['jspdf', 'jspdf-autotable', 'qrcode'],
+    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
   },
   server: {
     proxy: {
