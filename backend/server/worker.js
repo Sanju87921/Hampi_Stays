@@ -3315,7 +3315,6 @@ async function cleanupOrphanedMedia(env) {
     console.error("Storage Cleanup Monitor error:", error);
   }
 }
-}
 
 async function processOwnerPayouts(env, ctx) {
   const prisma = getPrisma(env);
