@@ -62,7 +62,7 @@ async function runStressTest() {
         await prisma.$transaction(async (tx) => {
           const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
           
-          const overlappingBookings = await tx.booking.count({
+          const overlappingBookings = await tx.booking.findMany({
             where: {
               roomId: room.id,
               checkIn: { lt: new Date('2026-06-10') },
@@ -71,10 +71,40 @@ async function runStressTest() {
                 { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] } },
                 { status: 'PENDING', createdAt: { gt: fifteenMinsAgo } }
               ]
-            }
+            },
+            select: { checkIn: true, checkOut: true }
           });
 
-          if (overlappingBookings >= room.availableCount) {
+          const overlappingBlockings = await tx.roomBlocking.findMany({
+            where: {
+              roomId: room.id,
+              date: { gte: new Date('2026-06-05'), lt: new Date('2026-06-10') }
+            },
+            select: { date: true }
+          });
+
+          let maxDailyUsage = 0;
+          let currDate = new Date('2026-06-05');
+          while (currDate < new Date('2026-06-10')) {
+            let dailyUsage = 0;
+            
+            for (const b of overlappingBookings) {
+              if (new Date(b.checkIn) <= currDate && new Date(b.checkOut) > currDate) {
+                dailyUsage++;
+              }
+            }
+            
+            for (const blk of overlappingBlockings) {
+              if (new Date(blk.date).getTime() === currDate.getTime()) {
+                dailyUsage++;
+              }
+            }
+            
+            if (dailyUsage > maxDailyUsage) maxDailyUsage = dailyUsage;
+            currDate.setDate(currDate.getDate() + 1);
+          }
+
+          if (maxDailyUsage >= room.availableCount) {
             throw new Error('ROOM_UNAVAILABLE');
           }
 

@@ -142,7 +142,7 @@ export const createBooking = async (c) => {
       
       // 2. CONCURRENCY CHECK: OVERLAP VALIDATION
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
-      const overlappingBookings = await tx.booking.count({
+      const overlappingBookings = await tx.booking.findMany({
         where: {
           roomId: roomId,
           checkIn: { lt: endDate },
@@ -151,21 +151,46 @@ export const createBooking = async (c) => {
             { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] } },
             { status: 'PENDING', createdAt: { gt: fifteenMinsAgo } }
           ]
-        }
+        },
+        select: { checkIn: true, checkOut: true }
       });
 
-      const overlappingBlockings = await tx.roomBlocking.count({
+      const overlappingBlockings = await tx.roomBlocking.findMany({
         where: {
           roomId: roomId,
           date: {
             gte: startDate,
             lt: endDate
           }
-        }
+        },
+        select: { date: true }
       });
 
-      // If all available units for this room type are taken by bookings OR blockings, abort!
-      if (overlappingBookings + overlappingBlockings >= room.availableCount) {
+      // Calculate max daily usage correctly instead of blindly summing totals
+      let maxDailyUsage = 0;
+      let currDate = new Date(startDate);
+      while (currDate < endDate) {
+        let dailyUsage = 0;
+        
+        for (const b of overlappingBookings) {
+          if (new Date(b.checkIn) <= currDate && new Date(b.checkOut) > currDate) {
+            dailyUsage++;
+          }
+        }
+        
+        for (const blk of overlappingBlockings) {
+          if (new Date(blk.date).getTime() === currDate.getTime()) {
+            dailyUsage++;
+          }
+        }
+        
+        if (dailyUsage > maxDailyUsage) maxDailyUsage = dailyUsage;
+        
+        // Move to next day
+        currDate.setDate(currDate.getDate() + 1);
+      }
+
+      if (maxDailyUsage >= room.availableCount) {
         throw new Error('ROOM_UNAVAILABLE');
       }
 
