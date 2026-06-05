@@ -3,7 +3,7 @@ import nodeIcal from 'node-ical';
 
 export const setupIcalRoutes = (app, authMiddleware, adminMiddleware) => {
   // 1. Export iCal feed for a specific room (Public route, no auth needed, so Airbnb can fetch it)
-  app.get('/api/ical/export/room/:roomId', async (c) => {
+  app.get('/ical/export/room/:roomId', async (c) => {
     const roomId = c.req.param('roomId');
     const getPrisma = c.get('getPrisma');
     const prisma = getPrisma(c.env);
@@ -75,7 +75,7 @@ export const setupIcalRoutes = (app, authMiddleware, adminMiddleware) => {
   });
 
   // 2. Add/Update external iCal URLs for a room (Owner/Admin only)
-  app.post('/api/ical/urls/:roomId', authMiddleware, async (c) => {
+  app.post('/ical/urls/:roomId', authMiddleware, async (c) => {
     const roomId = c.req.param('roomId');
     const { urls } = await c.req.json();
     const getPrisma = c.get('getPrisma');
@@ -108,7 +108,7 @@ export const setupIcalRoutes = (app, authMiddleware, adminMiddleware) => {
   });
 
   // 3. Trigger manual sync for a room
-  app.post('/api/ical/sync/:roomId', authMiddleware, async (c) => {
+  app.post('/ical/sync/:roomId', authMiddleware, async (c) => {
     const roomId = c.req.param('roomId');
     const getPrisma = c.get('getPrisma');
     const prisma = getPrisma(c.env);
