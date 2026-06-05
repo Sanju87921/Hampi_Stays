@@ -715,7 +715,7 @@ export function CheckoutPage() {
         {step === 3 && (
           <motion.div 
             initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
-            className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-sand-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 md:hidden pb-[calc(1rem+env(safe-area-inset-bottom))]"
+            className="fixed bottom-[72px] left-0 right-0 p-4 bg-white border-t border-sand-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-[60] md:hidden pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex items-center justify-between mb-3 px-2">
               <span className="text-sm font-bold text-navy-950 font-serif">Total</span>
