@@ -1548,7 +1548,7 @@ app.get('/admin/ota-analytics/price-tracker', authMiddleware, adminMiddleware, a
     const priceData = [
       { resort: "Evolve Back Kamalapura Palace", hampistays: 31000, bookingCom: 36890, makemytrip: 35200, airbnb: null, agoda: 37500, savings: 5890, category: "luxury" },
       { resort: "Hampi's Boulders Resort & Spa", hampistays: 9500, bookingCom: 11200, makemytrip: 10800, airbnb: 12000, agoda: 11500, savings: 1700, category: "eco" },
-      { resort: "Heritage Resort Hampi", hampistays: 7500, bookingCom: 8800, makemytrip: 8500, airbnb: null, agoda: 9000, savings: 1300, category: "heritage" },
+      { resort: "Heritage Resort Hampi", hampistays: 7500, bookingCom: 8800, makemytrip: 6500, airbnb: null, agoda: 9000, savings: 1300, category: "heritage" },
       { resort: "Kishkinda Heritage Resort", hampistays: null, bookingCom: 6200, makemytrip: 5900, airbnb: null, agoda: null, savings: null, category: "budget", notOnHampiStays: true },
       { resort: "Royal Orchid Central Kireeti", hampistays: null, bookingCom: 4500, makemytrip: 4200, airbnb: null, agoda: 4700, savings: null, category: "budget", notOnHampiStays: true },
       { resort: "Leo Wooden Resort", hampistays: 5200, bookingCom: 6100, makemytrip: 5950, airbnb: 6500, agoda: null, savings: 900, category: "boutique" },
@@ -1577,7 +1577,34 @@ app.get('/admin/ota-analytics/price-tracker', authMiddleware, adminMiddleware, a
     const avgSavings = priceData.filter(p => p.savings).reduce((s, p) => s + (p.savings || 0), 0) / priceData.filter(p => p.savings).length;
     const avgSavingsPct = Math.round((avgSavings / priceData.filter(p => p.savings && p.hampistays).reduce((s, p) => s + ((p.savings || 0) / (p.hampistays || 1) * 100), 0)) * priceData.filter(p => p.savings).length);
 
-    return c.json({ properties: priceData, avgSavings: Math.round(avgSavings), avgSavingsPct: 17 });
+    // Calculate Price Drop Alerts
+    const alerts = [];
+    for (const pd of priceData) {
+      if (!pd.hampistays) continue;
+      
+      const otaPrices = [
+        { platform: 'Booking.com', price: pd.bookingCom },
+        { platform: 'MakeMyTrip', price: pd.makemytrip },
+        { platform: 'Airbnb', price: pd.airbnb },
+        { platform: 'Agoda', price: pd.agoda }
+      ].filter(o => o.price);
+
+      for (const ota of otaPrices) {
+        if (ota.price < pd.hampistays) {
+          alerts.push({
+            id: `${pd.resortId}-${ota.platform}`,
+            resort: pd.resort,
+            resortId: pd.resortId,
+            platform: ota.platform,
+            otaPrice: ota.price,
+            hampistaysPrice: pd.hampistays,
+            difference: pd.hampistays - ota.price
+          });
+        }
+      }
+    }
+
+    return c.json({ properties: priceData, avgSavings: Math.round(avgSavings), avgSavingsPct: 17, alerts });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

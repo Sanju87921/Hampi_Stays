@@ -111,6 +111,46 @@ export function OtaMarketAnalysis() {
         </Button>
       </div>
 
+      {/* Alerts */}
+      {prices?.alerts?.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="w-5 h-5" />
+            <h3 className="font-bold">URGENT: Competitor Price Drops Detected</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {prices.alerts.map((alert: any) => (
+              <div key={alert.id} className="bg-white border border-red-100 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                <p className="text-[10px] uppercase tracking-widest text-navy-950/60 font-bold mb-2 truncate" title={alert.resort}>{alert.resort}</p>
+                <div className="flex justify-between items-end mb-4">
+                  <div>
+                    <span className="text-2xl font-bold text-navy-950">₹{alert.otaPrice.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-red-600 ml-1.5 block">on {alert.platform}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-navy-950/40 uppercase font-bold mb-0.5">Our Rate</p>
+                    <p className="text-sm font-bold text-navy-950 line-through">₹{alert.hampistaysPrice.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      setActiveTab("prices");
+                      // Match price by undercutting by ₹100
+                      handleApplySmartPrice(alert.resortId, alert.otaPrice - 100);
+                    }}
+                    className="flex-1 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-[10px] uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Zap className="w-3 h-3" /> Match & Undercut (-₹100)
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
