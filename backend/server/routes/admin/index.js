@@ -91,18 +91,55 @@ export const setupAdminRoutes = (app, authMiddleware, adminMiddleware) => {
 app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
   const prisma = c.get('getPrisma')(c.env);
   try {
-    const [userCount, resortCount, bookingCount, revenueData] = await Promise.all([
+    const [userCount, resortCount, bookingCount, revenueData, cancelledCount, recentBookings, allBookings] = await Promise.all([
       prisma.user.count(),
       prisma.resort.count(),
       prisma.booking.count(),
       prisma.booking.findMany({
         where: { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED'] } },
         select: { totalPrice: true, commissionRate: true }
+      }),
+      prisma.booking.count({ where: { status: 'CANCELLED' } }),
+      prisma.booking.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { resort: { select: { name: true } }, user: { select: { name: true } } }
+      }),
+      prisma.booking.findMany({
+        where: { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED'] } },
+        select: { createdAt: true, totalPrice: true }
       })
     ]);
 
     const totalRevenue = revenueData.reduce((sum, b) => sum + b.totalPrice, 0);
-    const platformEarnings = revenueData.reduce((sum, b) => sum + (b.totalPrice * (b.commissionRate / 100)), 0);
+    const platformEarnings = revenueData.reduce((sum, b) => sum + (b.totalPrice * ((b.commissionRate || 7.0) / 100)), 0);
+    const totalBookingsAllStatus = bookingCount + cancelledCount;
+    const cancellationRate = totalBookingsAllStatus > 0 ? (cancelledCount / totalBookingsAllStatus) * 100 : 0;
+
+    // Calculate monthly revenue for the last 7 months
+    const monthlyRevenue = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      
+      const monthSum = allBookings
+        .filter(b => b.createdAt >= monthStart && b.createdAt <= monthEnd)
+        .reduce((sum, b) => sum + b.totalPrice, 0);
+        
+      monthlyRevenue.push({
+        label: `M-${i+1}`,
+        revenue: monthSum
+      });
+    }
+
+    // Format recent activity
+    const recentActivity = recentBookings.map(b => ({
+      id: b.id,
+      title: 'New Booking Confirmed',
+      description: `Traveler booked ${b.resort.name} for ${Math.ceil((new Date(b.checkOutDate).getTime() - new Date(b.checkInDate).getTime()) / (1000 * 3600 * 24))} nights.`,
+      timeAgo: Math.floor((new Date().getTime() - new Date(b.createdAt).getTime()) / (1000 * 3600)) + 'h ago'
+    }));
 
     return c.json({
       userCount,
@@ -111,7 +148,10 @@ app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
       revenue: totalRevenue,
       platformEarnings: platformEarnings,
       platformRating: 4.9,
-      avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0
+      avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0,
+      cancellationRate: parseFloat(cancellationRate.toFixed(1)),
+      monthlyRevenue,
+      recentActivity
     });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });

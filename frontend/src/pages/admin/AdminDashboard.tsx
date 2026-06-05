@@ -522,17 +522,24 @@ export function AdminDashboard() {
  </div>
 
  <div className="h-64 flex items-end gap-3 relative">
- {[35, 42, 38, 55, 72, 85, 95].map((val, i) => (
- <div key={i} className="flex-grow group relative flex flex-col justify-end h-full">
- <motion.div 
- initial={{ height: 0 }}
- animate={{ height: `${val}%` }}
- transition={{ delay: i * 0.1, duration: 1 }}
- className="w-full bg-navy-950 rounded-t-xl group-hover:bg-gold-500 transition-colors cursor-pointer"
- />
- <p className="mt-4 text-[8px] font-bold text-navy-950 text-center uppercase">M-{i+1}</p>
- </div>
- ))}
+ {(stats?.monthlyRevenue && stats.monthlyRevenue.length > 0 ? stats.monthlyRevenue : [
+  { revenue: 35000, label: "M-1" }, { revenue: 42000, label: "M-2" }, { revenue: 38000, label: "M-3" },
+  { revenue: 55000, label: "M-4" }, { revenue: 72000, label: "M-5" }, { revenue: 85000, label: "M-6" }, { revenue: 95000, label: "M-7" }
+]).map((item: any, i: number, arr: any[]) => {
+  const maxRevenue = Math.max(...arr.map((a: any) => a.revenue), 100);
+  const val = (item.revenue / maxRevenue) * 100;
+  return (
+     <div key={i} className="flex-grow group relative flex flex-col justify-end h-full">
+        <motion.div 
+           initial={{ height: 0 }}
+           animate={{ height: \`${val}%\` }}
+           transition={{ delay: i * 0.1, duration: 1 }}
+           className="w-full bg-navy-950 rounded-t-xl group-hover:bg-gold-500 transition-colors cursor-pointer"
+        />
+        <p className="mt-4 text-[8px] font-bold text-navy-950 text-center uppercase">{item.label}</p>
+     </div>
+  );
+})}
  </div>
  </div>
 
@@ -547,9 +554,9 @@ export function AdminDashboard() {
  </div>
  <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
  <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest mb-4">Cancellation Rate</p>
- <p className="text-3xl font-serif font-bold text-navy-950 italic">{(stats?.cancellationRate || 4.2)}%</p>
+ <p className="text-3xl font-serif font-bold text-navy-950 italic">{(stats?.cancellationRate !== undefined ? stats.cancellationRate : 4.2)}%</p>
  <div className="mt-4 w-full bg-sand-100 h-1.5 rounded-full overflow-hidden">
- <div className="bg-navy-950 h-full w-[4.2%]" />
+ <div className="bg-navy-950 h-full transition-all duration-1000" style={{ width: `${(stats?.cancellationRate !== undefined ? stats.cancellationRate : 4.2)}%` }} />
  </div>
  </div>
  </div>
@@ -563,18 +570,20 @@ export function AdminDashboard() {
  <Button variant="outline" onClick={() => setActiveTab('bookings')} className="text-xs h-8 px-4 rounded-full transition-all hover:bg-navy-950 hover:text-white">View All</Button>
  </div>
  <div className="space-y-6">
- {[1, 2, 3].map((_, i) => (
- <div key={i} className="flex items-center gap-4 p-4 hover:bg-sand-50 :bg-sand-100 rounded-2xl transition-colors">
- <div className="w-10 h-10 bg-sand-100 rounded-full flex items-center justify-center">
- <CheckCircle className="w-5 h-5 text-emerald-500" />
- </div>
- <div className="flex-grow">
- <p className="text-sm font-bold text-navy-950 ">New Booking Confirmed</p>
- <p className="text-xs text-navy-950 ">Traveler booked Heritage Resort Hampi for 3 nights.</p>
- </div>
- <p className="text-[10px] font-bold text-navy-950 uppercase">2h ago</p>
- </div>
- ))}
+ {(stats?.recentActivity?.length > 0 ? stats.recentActivity : [
+  { id: '1', title: 'System Active', description: 'Waiting for new bookings to appear.', timeAgo: 'Just now' }
+]).map((activity: any, i: number) => (
+<div key={activity.id || i} className="flex items-center gap-4 p-4 hover:bg-sand-50 :bg-sand-100 rounded-2xl transition-colors">
+<div className="w-10 h-10 bg-sand-100 rounded-full flex items-center justify-center">
+<CheckCircle className="w-5 h-5 text-emerald-500" />
+</div>
+<div className="flex-grow">
+<p className="text-sm font-bold text-navy-950 ">{activity.title}</p>
+<p className="text-xs text-navy-950 ">{activity.description}</p>
+</div>
+<p className="text-[10px] font-bold text-navy-950 uppercase">{activity.timeAgo}</p>
+</div>
+))}
  </div>
  </div>
 
