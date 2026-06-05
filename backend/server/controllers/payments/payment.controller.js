@@ -2,6 +2,7 @@ import { verifyPaymentSignature } from '../../services/payments/verification.ser
 import { logSecureError, logSecureInfo } from '../../logging/logger.js';
 import { Resend } from 'resend';
 import crypto from 'crypto';
+import { sendNotification } from '../../services/notification.service.js';
 
 export const verifyPayment = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -26,15 +27,37 @@ export const verifyPayment = async (c) => {
       c.env.RAZORPAY_KEY_SECRET
     );
 
-    if (!isValid) {
-      logSecureError('PAYMENT_VERIFICATION_FAILED', 'Invalid Razorpay Signature', { ref, razorpay_order_id });
-      return c.json({ error: 'Invalid signature' }, 400);
-    }
-
     const booking = await prisma.booking.findUnique({
       where: { referenceNumber: ref },
-      include: { user: true, resort: true }
+      include: { 
+        user: true, 
+        room: true,
+        resort: { 
+          include: { 
+            owner: { 
+              include: { user: true } 
+            } 
+          } 
+        } 
+      }
     });
+
+    if (!isValid) {
+      logSecureError('PAYMENT_VERIFICATION_FAILED', 'Invalid Razorpay Signature', { ref, razorpay_order_id });
+      
+      // Notify owner of failed payment if booking exists
+      if (booking && booking.resort?.owner?.user) {
+        await sendNotification(prisma, {
+          userId: booking.resort.owner.user.id,
+          title: '❌ Payment Failed',
+          message: `Payment failed for booking ${ref}. Room inventory remains locked until timeout.`,
+          type: 'PAYMENT_FAILED',
+          env: c.env,
+          ctx: c.executionCtx
+        });
+      }
+      return c.json({ error: 'Invalid signature' }, 400);
+    }
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
 
@@ -56,6 +79,17 @@ export const verifyPayment = async (c) => {
       data: { status: 'PAID', paymentStatus: 'PAID' }
     });
 
+    if (booking.promotionId) {
+      try {
+        await prisma.promotion.update({
+          where: { id: booking.promotionId },
+          data: { usageCount: { increment: 1 } }
+        });
+      } catch (e) {
+        logSecureError('PROMOTION_UPDATE_FAILED', 'Failed to increment promotion usage', { error: e.message, ref });
+      }
+    }
+
     logSecureInfo('PAYMENT_VERIFIED', 'Payment successfully verified', { ref, razorpay_order_id });
     
     // Async Notifications
@@ -69,6 +103,45 @@ export const verifyPayment = async (c) => {
           html: `<h1>Your booking is confirmed!</h1><p>Reference: ${ref}</p>`
         }).catch(console.error)
       );
+    }
+
+    // Owner Notification
+    if (booking.resort?.owner?.user) {
+      const ownerUser = booking.resort.owner.user;
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>🏨 New Booking Received</h2>
+          <p><strong>Guest Name:</strong> ${booking.user.name}</p>
+          <p><strong>Booking ID:</strong> ${ref}</p>
+          <p><strong>Room Type:</strong> ${booking.room?.name || 'Standard'}</p>
+          <p><strong>Check-In Date:</strong> ${new Date(booking.checkIn).toLocaleDateString()}</p>
+          <p><strong>Check-Out Date:</strong> ${new Date(booking.checkOut).toLocaleDateString()}</p>
+          <p><strong>Guest Count:</strong> ${booking.guests}</p>
+          <p><strong>Booking Amount:</strong> ₹${booking.totalPrice}</p>
+        </div>
+      `;
+
+      await sendNotification(prisma, {
+        userId: ownerUser.id,
+        userEmail: ownerUser.email,
+        title: `🏨 New Booking Received - ${ref}`,
+        message: `New booking received for ${booking.room?.name || 'Standard'} from ${booking.user.name}.`,
+        type: 'NEW_BOOKING',
+        sendEmail: true,
+        emailSubject: `New Booking Confirmed - ${ref}`,
+        emailHtml: htmlContent,
+        env: c.env,
+        ctx: c.executionCtx
+      });
+
+      await sendNotification(prisma, {
+        userId: ownerUser.id,
+        title: `💳 Payment Received`,
+        message: `₹${booking.totalPrice} paid for Booking ${ref}. Status: PAID.`,
+        type: 'PAYMENT_SUCCESS',
+        env: c.env,
+        ctx: c.executionCtx
+      });
     }
 
     return c.json({ success: true, booking: updatedBooking });
@@ -122,10 +195,22 @@ export const handleWebhook = async (c) => {
            });
            logSecureError('WEBHOOK_TIMEOUT', 'Webhook received after lock expired. Manual review required.', { ref });
          } else {
-           await prisma.booking.update({
+           const updatedBooking = await prisma.booking.update({
              where: { referenceNumber: ref },
              data: { status: 'PAID', paymentStatus: 'PAID' }
            });
+           
+           if (booking.promotionId) {
+             try {
+               await prisma.promotion.update({
+                 where: { id: booking.promotionId },
+                 data: { usageCount: { increment: 1 } }
+               });
+             } catch (e) {
+               logSecureError('PROMOTION_UPDATE_FAILED', 'Failed to increment promotion usage via webhook', { error: e.message, ref });
+             }
+           }
+
            logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically reconciled via webhook to PAID', { ref });
          }
       }

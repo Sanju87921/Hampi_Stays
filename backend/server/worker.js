@@ -844,6 +844,18 @@ app.get('/users/notifications', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.patch('/users/notifications/read-all', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  try {
+    await prisma.notification.updateMany({
+      where: { userId: payload.userId, isRead: false },
+      data: { isRead: true }
+    });
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 app.patch('/users/notifications/:id/read', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const payload = c.get('user');
@@ -858,6 +870,20 @@ app.patch('/users/notifications/:id/read', authMiddleware, async (c) => {
       data: { isRead: true }
     });
     return c.json(updated);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/users/notifications/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const id = c.req.param('id');
+  try {
+    const notification = await prisma.notification.findUnique({ where: { id } });
+    if (!notification || notification.userId !== payload.userId) {
+      return c.json({ error: 'Notification not found' }, 404);
+    }
+    await prisma.notification.delete({ where: { id } });
+    return c.json({ success: true });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1296,6 +1322,41 @@ app.post('/reviews', authMiddleware, async (c) => {
       where: { id: resortId },
       data: { rating: averageRating, reviewCount: totalReviews }
     });
+
+    // Notify Owner
+    const resortWithOwner = await prisma.resort.findUnique({
+      where: { id: resortId },
+      include: { owner: { include: { user: true } } }
+    });
+
+    if (resortWithOwner?.owner?.user) {
+      const ownerUser = resortWithOwner.owner.user;
+      const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
+      
+      c.executionCtx.waitUntil(
+        sendNotification(prisma, {
+          userId: ownerUser.id,
+          userEmail: ownerUser.email,
+          title: `⭐ New Review Received`,
+          message: `${review.user.name} left a ${ratingVal}-star review for ${resortWithOwner.name}.`,
+          type: 'NEW_REVIEW',
+          sendEmail: true,
+          emailSubject: `New ${ratingVal}-Star Review for ${resortWithOwner.name}`,
+          emailHtml: `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>⭐ New Review Received</h2>
+              <p><strong>Resort:</strong> ${resortWithOwner.name}</p>
+              <p><strong>Guest:</strong> ${review.user.name}</p>
+              <p><strong>Rating:</strong> ${ratingVal} Stars</p>
+              <p><strong>Comment:</strong> "${comment.trim()}"</p>
+              <p>Log in to your dashboard to view or reply to this review.</p>
+            </div>
+          `,
+          env: c.env,
+          ctx: c.executionCtx
+        }).catch(err => console.error("Owner review notification failed:", err))
+      );
+    }
     
     return c.json(review, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
@@ -1518,6 +1579,50 @@ app.get('/owners/:id/resorts', authMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+
+// --- Owner Promotions ---
+app.get('/owners/promotions', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.query('resortId');
+  if (!resortId) return c.json({ error: 'resortId required' }, 400);
+  try {
+    const promos = await prisma.promotion.findMany({
+      where: { targetType: 'RESORT', targetId: resortId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(promos);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/owners/promotions', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const data = await c.req.json();
+    const promo = await prisma.promotion.create({ data });
+    return c.json(promo);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/owners/promotions/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    const data = await c.req.json();
+    const promo = await prisma.promotion.update({ where: { id }, data });
+    return c.json(promo);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/owners/promotions/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const id = c.req.param('id');
+  try {
+    await prisma.promotion.delete({ where: { id } });
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Owner Onboarding & Profile
 app.get('/owners/:id/stats', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const userId = c.req.param('id');
@@ -1770,7 +1875,10 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
     const booking = await prisma.booking.update({
       where: { id },
       data: { status: 'CANCELLED' },
-      include: { resort: true }
+      include: { 
+        resort: { include: { owner: { include: { user: true } } } }, 
+        user: true 
+      }
     });
 
     c.executionCtx.waitUntil(
@@ -1784,7 +1892,36 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       }).catch(err => console.error("Async cancel notification failed:", err))
     );
 
-    // (Removed broken GuidePayout block from Resort Booking cancel)
+    // Notify Owner of Cancellation
+    if (booking.resort?.owner?.user) {
+      const ownerUser = booking.resort.owner.user;
+      const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
+      
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>⚠ Booking Cancelled</h2>
+          <p><strong>Guest Name:</strong> ${booking.user.name}</p>
+          <p><strong>Booking ID:</strong> ${booking.referenceNumber}</p>
+          <p><strong>Refund Status:</strong> Initiated (if applicable)</p>
+          <p>Room inventory has been automatically released.</p>
+        </div>
+      `;
+
+      c.executionCtx.waitUntil(
+        sendNotification(prisma, {
+          userId: ownerUser.id,
+          userEmail: ownerUser.email,
+          title: `⚠ Booking Cancelled - ${booking.referenceNumber}`,
+          message: `${booking.user.name} has cancelled their booking. Room inventory has been released.`,
+          type: 'BOOKING_CANCELLED',
+          sendEmail: true,
+          emailSubject: `Booking Cancelled - ${booking.referenceNumber}`,
+          emailHtml: htmlContent,
+          env: c.env,
+          ctx: c.executionCtx
+        }).catch(err => console.error("Owner cancel notification failed:", err))
+      );
+    }
 
     return c.json(booking);
   } catch (err) { 
@@ -2909,10 +3046,140 @@ export default {
       processUpcomingStays(env),
       cleanupPendingVerifications(env),
       cleanupPendingBookings(env),
-      cleanupOrphanedMedia(env)
+      cleanupOrphanedMedia(env),
+      generateOwnerDailyAlerts(env, ctx),
+      processPromotionsLifecycle(env, ctx)
     ]));
   }
 };
+
+async function generateOwnerDailyAlerts(env, ctx) {
+  const prisma = getPrisma(env);
+  try {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const activeBookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] },
+        OR: [
+          { checkIn: { gte: today, lt: tomorrow } }, // Arrival today
+          { checkOut: { gte: today, lt: tomorrow } } // Departure today
+        ]
+      },
+      include: { 
+        resort: { include: { owner: { include: { user: true } } } },
+        user: true,
+        room: true
+      }
+    });
+
+    for (const booking of activeBookings) {
+      if (!booking.resort?.owner?.user) continue;
+
+      const ownerUser = booking.resort.owner.user;
+      const checkInDate = new Date(booking.checkIn);
+      const checkOutDate = new Date(booking.checkOut);
+      checkInDate.setUTCHours(0, 0, 0, 0);
+      checkOutDate.setUTCHours(0, 0, 0, 0);
+
+      const isArrival = checkInDate.getTime() === today.getTime();
+      const isDeparture = checkOutDate.getTime() === today.getTime();
+
+      let typeKey = '';
+      let title = '';
+      let message = '';
+      let typeLabel = '';
+
+      if (isArrival) {
+        typeKey = `OWNER_ARRIVAL_${booking.id}_${today.getTime()}`;
+        title = `🛎 Guest Arriving Today`;
+        message = `${booking.user.name} is checking into ${booking.room?.name || 'Standard'} (Booking: ${booking.referenceNumber}).`;
+        typeLabel = 'ARRIVAL_ALERT';
+      } else if (isDeparture) {
+        typeKey = `OWNER_DEPARTURE_${booking.id}_${today.getTime()}`;
+        title = `🚪 Guest Checking Out Today`;
+        message = `${booking.user.name} is checking out of ${booking.room?.name || 'Standard'} (Booking: ${booking.referenceNumber}).`;
+        typeLabel = 'DEPARTURE_ALERT';
+      }
+
+      // Check for duplicates
+      const existing = await prisma.notification.findFirst({
+        where: { userId: ownerUser.id, type: typeKey }
+      });
+
+      if (!existing && typeKey) {
+        const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
+        
+        await sendNotification(prisma, {
+          userId: ownerUser.id,
+          userEmail: ownerUser.email,
+          title,
+          message,
+          type: typeKey,
+          sendEmail: true,
+          emailSubject: title,
+          emailHtml: `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>${title}</h2>
+              <p><strong>Guest Name:</strong> ${booking.user.name}</p>
+              <p><strong>Booking ID:</strong> ${booking.referenceNumber}</p>
+              <p><strong>Room:</strong> ${booking.room?.name || 'Standard'}</p>
+              <p>Please ensure your staff is prepared.</p>
+            </div>
+          `,
+          env,
+          ctx
+        }).catch(err => console.error("Daily owner alert failed:", err));
+      }
+    }
+  } catch (error) {
+    console.error("Scheduled owner alerts error:", error);
+  }
+}
+
+async function processPromotionsLifecycle(env, ctx) {
+  const prisma = getPrisma(env);
+  try {
+    const now = new Date();
+    
+    // Disable expired promotions
+    const expiredPromotions = await prisma.promotion.findMany({
+      where: {
+        active: true,
+        validUntil: { lt: now }
+      }
+    });
+
+    if (expiredPromotions.length > 0) {
+      await prisma.promotion.updateMany({
+        where: { id: { in: expiredPromotions.map(p => p.id) } },
+        data: { active: false }
+      });
+      
+      const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
+
+      // Notify owners if applicable
+      for (const promo of expiredPromotions) {
+        if (promo.targetType === 'OWNER') {
+          await sendNotification(prisma, {
+            userId: promo.targetId,
+            title: `🏷️ Promotion Expired: ${promo.code}`,
+            message: `Your campaign "${promo.name}" has ended automatically.`,
+            type: 'PROMOTION_EXPIRED',
+            env, ctx
+          }).catch(console.error);
+        }
+      }
+      console.log(`Auto-disabled ${expiredPromotions.length} expired promotions.`);
+    }
+
+  } catch (error) {
+    console.error("Promotions lifecycle error:", error);
+  }
+}
 
 async function cleanupOrphanedMedia(env) {
   console.log("Running Storage Cleanup Monitor...");

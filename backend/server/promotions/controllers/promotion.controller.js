@@ -172,24 +172,56 @@ export const validatePromotion = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   try {
-    const { code, bookingAmount, userId } = await c.req.json();
+    const { code, bookingAmount, userId, resortId } = await c.req.json();
     if (!code) return c.json({ error: "No code provided" }, 400);
 
     const now = new Date();
     const promotion = await prisma.promotion.findFirst({ where: { code: { equals: code.trim(), mode: 'insensitive' } } });
     
     if (!promotion) return c.json({ error: "Invalid promotion code" }, 404);
-    if (!promotion.active) return c.json({ error: "Promotion is disabled" }, 400);
+    if (!promotion.active) return c.json({ error: "Promotion is currently disabled" }, 400);
     if (promotion.validFrom && new Date(promotion.validFrom) > now) return c.json({ error: "Promotion not yet active" }, 400);
     if (promotion.validUntil && new Date(promotion.validUntil) < now) return c.json({ error: "Promotion expired" }, 400);
     if (promotion.usageLimit && promotion.usageCount >= promotion.usageLimit) return c.json({ error: "Promotion usage limit reached" }, 400);
     if (promotion.minBookingAmount && bookingAmount < promotion.minBookingAmount) return c.json({ error: `Minimum booking amount is ₹${promotion.minBookingAmount}` }, 400);
     
-    if (promotion.firstBookingOnly && userId) {
-      const userBookingsCount = await prisma.booking.count({ where: { userId } });
-      if (userBookingsCount > 0) {
-         return c.json({ error: "Promotion valid for first booking only" }, 400);
+    // 1. Target Scope Enforcement
+    if (promotion.targetType && promotion.targetType !== 'PLATFORM') {
+      if (!resortId) return c.json({ error: "Resort context required for this promotion" }, 400);
+      
+      if (promotion.targetType === 'RESORT') {
+        if (promotion.targetId !== resortId) return c.json({ error: "Promotion not valid for this resort" }, 400);
+      } else {
+        const resort = await prisma.resort.findUnique({ where: { id: resortId }, select: { ownerId: true, categories: true } });
+        if (!resort) return c.json({ error: "Invalid resort context" }, 400);
+        
+        if (promotion.targetType === 'OWNER') {
+          if (resort.ownerId !== promotion.targetId) return c.json({ error: "Promotion not valid for this property owner" }, 400);
+        } else if (promotion.targetType === 'CATEGORY') {
+          if (!resort.categories.includes(promotion.targetId)) return c.json({ error: "Promotion not valid for this property category" }, 400);
+        }
       }
+    }
+
+    // 2. User-specific Constraints
+    if (userId) {
+      if (promotion.firstBookingOnly) {
+        const userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED', 'FAILED'] } } });
+        if (userBookingsCount > 0) {
+           return c.json({ error: "Promotion valid for your first booking only" }, 400);
+        }
+      }
+
+      if (promotion.maxUsesPerUser) {
+        const userRedemptions = await prisma.booking.count({
+          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED', 'FAILED'] } }
+        });
+        if (userRedemptions >= promotion.maxUsesPerUser) {
+          return c.json({ error: `You have reached the maximum allowed uses (${promotion.maxUsesPerUser}) for this promotion` }, 400);
+        }
+      }
+    } else if (promotion.firstBookingOnly || promotion.maxUsesPerUser) {
+      return c.json({ error: "Please log in to use this promotion" }, 400);
     }
 
     let discountAmount = 0;
@@ -202,7 +234,7 @@ export const validatePromotion = async (c) => {
       discountAmount = promotion.discountValue;
     }
 
-    // prevent negative totals
+    // Prevent negative totals
     if (discountAmount > bookingAmount) discountAmount = bookingAmount;
 
     return c.json({ ...promotion, discountAmount });
@@ -211,6 +243,84 @@ export const validatePromotion = async (c) => {
   }
 };
 
+
+export const getBestAutoApplyPromotion = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  try {
+    const { bookingAmount, userId, resortId } = await c.req.json();
+    if (!bookingAmount || !userId || !resortId) return c.json({ error: "Missing required fields" }, 400);
+
+    const now = new Date();
+    const promotions = await prisma.promotion.findMany({
+      where: {
+        active: true,
+        autoApply: true,
+        OR: [{ validFrom: null }, { validFrom: { lte: now } }],
+        AND: [{ OR: [{ validUntil: null }, { validUntil: { gte: now } }] }]
+      },
+      orderBy: { priority: 'desc' }
+    });
+
+    let resortCache = null;
+    let userBookingsCount = -1;
+
+    for (const promotion of promotions) {
+      if (promotion.usageLimit && promotion.usageCount >= promotion.usageLimit) continue;
+      if (promotion.minBookingAmount && bookingAmount < promotion.minBookingAmount) continue;
+
+      // Target Scope
+      if (promotion.targetType && promotion.targetType !== 'PLATFORM') {
+        if (promotion.targetType === 'RESORT' && promotion.targetId !== resortId) continue;
+        
+        if (promotion.targetType === 'OWNER' || promotion.targetType === 'CATEGORY') {
+          if (!resortCache) {
+            resortCache = await prisma.resort.findUnique({ where: { id: resortId }, select: { ownerId: true, categories: true } });
+          }
+          if (!resortCache) continue;
+          if (promotion.targetType === 'OWNER' && resortCache.ownerId !== promotion.targetId) continue;
+          if (promotion.targetType === 'CATEGORY' && !resortCache.categories.includes(promotion.targetId)) continue;
+        }
+      }
+
+      // User Constraints
+      let skip = false;
+      if (promotion.firstBookingOnly) {
+        if (userBookingsCount === -1) {
+          userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED', 'FAILED'] } } });
+        }
+        if (userBookingsCount > 0) skip = true;
+      }
+
+      if (!skip && promotion.maxUsesPerUser) {
+        const userRedemptions = await prisma.booking.count({
+          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED', 'FAILED'] } }
+        });
+        if (userRedemptions >= promotion.maxUsesPerUser) skip = true;
+      }
+
+      if (skip) continue;
+
+      // Calculate discount
+      let discountAmount = 0;
+      if (promotion.discountType?.toUpperCase() === 'PERCENTAGE') {
+        discountAmount = bookingAmount * (promotion.discountValue / 100);
+        if (promotion.maxDiscount && discountAmount > promotion.maxDiscount) {
+          discountAmount = promotion.maxDiscount;
+        }
+      } else {
+        discountAmount = promotion.discountValue;
+      }
+      if (discountAmount > bookingAmount) discountAmount = bookingAmount;
+
+      return c.json({ ...promotion, discountAmount });
+    }
+
+    return c.json({ promotion: null }); // No valid auto-apply promo found
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+};
 
 export const getPromotionAnalytics = async (c) => {
   const getPrisma = c.get('getPrisma');

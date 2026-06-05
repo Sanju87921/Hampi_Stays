@@ -14,4 +14,7 @@ export const setupPromotionRoutes = (app, authMiddleware, adminMiddleware) => {
   
   // Admin Analytics
   app.get('/admin/promotions/analytics', authMiddleware, adminMiddleware, promotionController.getPromotionAnalytics);
+  
+  // Auto Apply
+  app.post('/promotions/best-auto-apply', authMiddleware, promotionController.getBestAutoApplyPromotion);
 };

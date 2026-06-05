@@ -16,6 +16,8 @@ import { cn } from "../../utils/cn";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { QRScannerModule } from "../admin/components/QRScannerModule";
+import { OwnerPromotionsModule } from "./components/OwnerPromotionsModule";
+import { OwnerNotificationCenter } from "./components/OwnerNotificationCenter";
 import { apiClient } from "../../utils/apiClient";
 import { compressImageFile } from "../../utils/image";
 import { uploadToCloudinary } from "../../utils/cloudinary";
@@ -172,7 +174,7 @@ export function OwnerDashboard() {
   }, [user, authLoading]);
 
   // Phase 2: Lazy-load full data when detail tabs are opened
-  const DETAIL_TABS = ["bookings", "finance", "rooms", "analytics", "reviews", "settings"];
+  const DETAIL_TABS = ["bookings", "finance", "rooms", "analytics", "reviews", "settings", "promotions"];
   useEffect(() => {
     if (DETAIL_TABS.includes(activeTab) && !detailLoaded) {
       fetchFullResortData();
@@ -991,7 +993,8 @@ export function OwnerDashboard() {
               <Building2 className="w-4 h-4" /> {resort.locationArea}, Hampi • <span className="text-gold-600 font-medium capitalize">{resort.category || resort.type}</span>
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <OwnerNotificationCenter />
             <Button 
               variant="outline" 
               className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
@@ -1406,6 +1409,12 @@ export function OwnerDashboard() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {activeTab === "promotions" && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                <OwnerPromotionsModule resortId={resort.id} />
+              </motion.div>
             )}
 
             {activeTab === "bookings" && (

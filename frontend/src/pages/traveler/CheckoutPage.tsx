@@ -119,7 +119,8 @@ export function CheckoutPage() {
       const response = await apiClient.post<any>('/promotions/validate', {
         code: codeToApply.trim(),
         bookingAmount: grandTotal,
-        userId: user?.id
+        userId: user?.id,
+        resortId: bookingData.resortId
       });
       
       if (!response.error && response.discountAmount !== undefined) {
@@ -144,18 +145,31 @@ export function CheckoutPage() {
     }
   };
 
-  // Auto-apply the best promotion when the grand total changes or active promotions load
   useEffect(() => {
-    if (activePromotions.length > 0 && !appliedCoupon && !isValidatingCoupon) {
-      // Priority is already sorted from backend (descending)
-      // Find the first promotion that matches the minimum booking amount
-      const bestPromo = activePromotions.find(p => !p.minBookingAmount || grandTotal >= p.minBookingAmount);
-      if (bestPromo && bestPromo.code) {
-        // Automatically try to apply it
-        handleApplyCoupon(bestPromo.code);
+    // Auto-apply best promotion on load
+    const fetchAutoApply = async () => {
+      if (appliedCoupon || isValidatingCoupon || !bookingData?.resortId) return;
+      try {
+        const res = await apiClient.post<any>('/promotions/best-auto-apply', {
+          bookingAmount: grandTotal,
+          userId: user?.id,
+          resortId: bookingData.resortId
+        });
+        if (res && res.code && res.discountAmount !== undefined) {
+          setAppliedCoupon({
+            code: res.code,
+            discountAmount: res.discountAmount,
+            name: res.name
+          });
+          toast.success(`🎉 Auto-applied Best Offer: ${res.name}`);
+        }
+      } catch (err) {
+        console.error("Failed to fetch auto-apply promotion", err);
       }
-    }
-  }, [activePromotions, grandTotal, user]); // Run when these change
+    };
+    
+    fetchAutoApply();
+  }, [grandTotal, user, bookingData]);
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
