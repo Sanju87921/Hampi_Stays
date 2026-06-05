@@ -2749,7 +2749,7 @@ app.post('/admin/payouts/generate', authMiddleware, adminMiddleware, async (c) =
       }
       processedCount += data.payouts.length;
     }
-    return c.json({ success: true, processed: processedCount, message: Processed  bookings into settlement ledgers. });
+    return c.json({ success: true, processed: processedCount, message: `Processed ${processedCount} bookings into settlement ledgers.` });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
