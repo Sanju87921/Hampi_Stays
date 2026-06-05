@@ -857,6 +857,23 @@ app.patch('/admin/kyc/travellers/:id', authMiddleware, adminMiddleware, async (c
       }
     });
 
+    const { sendNotification } = await import('../../services/notification.service.js').catch(() => import('../../services/notification.service.js'));
+    const notificationTitle = status === 'VERIFIED' ? 'Identity Verified' : 'Identity Verification Rejected';
+    const notificationMessage = status === 'VERIFIED' 
+      ? 'Your identity documents have been successfully verified.' 
+      : `Your identity verification was rejected. Reason: ${rejectionReason || 'Invalid documents.'}`;
+      
+    await sendNotification(prisma, {
+      userId: doc.user.id,
+      userEmail: doc.user.email,
+      title: notificationTitle,
+      message: notificationMessage,
+      type: status === 'VERIFIED' ? 'KYC_APPROVED' : 'KYC_REJECTED',
+      sendEmail: !!doc.user.email,
+      env: c.env,
+      ctx: c.executionCtx
+    });
+
     return c.json({ success: true, doc });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -939,6 +956,26 @@ app.patch('/admin/kyc/guides/:id', authMiddleware, adminMiddleware, async (c) =>
         newStatus: status,
         rejectionReason: rejectionReason
       }
+    });
+
+    const { sendNotification } = await import('../../services/notification.service.js').catch(() => import('../../services/notification.service.js'));
+    const notificationTitle = status === 'VERIFIED' ? 'Guide Profile Verified' : 'Guide Verification Rejected';
+    const notificationMessage = status === 'VERIFIED' 
+      ? 'Your guide profile documents have been successfully verified.' 
+      : `Your guide verification was rejected. Reason: ${rejectionReason || 'Invalid documents.'}`;
+      
+    // Fetch user email if not included in guideProfile
+    const user = await prisma.user.findUnique({ where: { id: doc.guideProfile.userId }, select: { email: true } });
+
+    await sendNotification(prisma, {
+      userId: doc.guideProfile.userId,
+      userEmail: user?.email,
+      title: notificationTitle,
+      message: notificationMessage,
+      type: status === 'VERIFIED' ? 'KYC_APPROVED' : 'KYC_REJECTED',
+      sendEmail: !!user?.email,
+      env: c.env,
+      ctx: c.executionCtx
     });
 
     return c.json(doc);
