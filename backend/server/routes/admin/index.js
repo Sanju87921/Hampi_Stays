@@ -1541,7 +1541,7 @@ app.get('/admin/ota-analytics/price-tracker', authMiddleware, adminMiddleware, a
     // Get our actual resorts + their real prices from DB
     const ours = await prisma.resort.findMany({
       where: { status: 'APPROVED' },
-      select: { name: true, pricePerNight: true, rating: true }
+      select: { id: true, name: true, pricePerNight: true, rating: true }
     });
 
     // Build comparison data (OTA prices are typically 15-25% higher due to commissions)
@@ -1557,8 +1557,20 @@ app.get('/admin/ota-analytics/price-tracker', authMiddleware, adminMiddleware, a
     // Augment with real resort data where name matches
     for (const pd of priceData) {
       const match = ours.find(r => r.name.toLowerCase().includes(pd.resort.split(' ')[0].toLowerCase()));
-      if (match && pd.hampistays === null) {
-        pd.hampistays = match.pricePerNight;
+      if (match) {
+        pd.resortId = match.id;
+        if (pd.hampistays === null) {
+          pd.hampistays = match.pricePerNight;
+        }
+      }
+      
+      // Calculate suggested price based on competitors
+      const competitorPrices = [pd.bookingCom, pd.makemytrip, pd.airbnb, pd.agoda].filter(Boolean);
+      if (competitorPrices.length > 0) {
+        const lowestCompetitor = Math.min(...competitorPrices);
+        // Smart price: 10% lower than the lowest competitor, rounded to nearest 100
+        const suggested = Math.round((lowestCompetitor * 0.9) / 100) * 100;
+        pd.suggestedPrice = suggested;
       }
     }
 
@@ -1566,6 +1578,23 @@ app.get('/admin/ota-analytics/price-tracker', authMiddleware, adminMiddleware, a
     const avgSavingsPct = Math.round((avgSavings / priceData.filter(p => p.savings && p.hampistays).reduce((s, p) => s + ((p.savings || 0) / (p.hampistays || 1) * 100), 0)) * priceData.filter(p => p.savings).length);
 
     return c.json({ properties: priceData, avgSavings: Math.round(avgSavings), avgSavingsPct: 17 });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/admin/ota-analytics/apply-smart-price', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  try {
+    const { resortId, newPrice } = await c.req.json();
+    if (!resortId || !newPrice) {
+      return c.json({ error: 'resortId and newPrice are required' }, 400);
+    }
+    
+    await prisma.resort.update({
+      where: { id: resortId },
+      data: { pricePerNight: newPrice }
+    });
+
+    return c.json({ success: true, message: 'Price updated successfully' });
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

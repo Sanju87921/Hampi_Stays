@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Globe, TrendingUp, Search, Target, AlertCircle,
   DollarSign, Star, BarChart2, Zap, ArrowUp, ArrowDown, Minus,
-  IndianRupee, Shield, TrendingDown, MessageSquare, Calendar
+  IndianRupee, Shield, TrendingDown, MessageSquare, Calendar, Sparkles
 } from "lucide-react";
 import { apiClient } from "../../../utils/apiClient";
 import { Button } from "../../../components/ui/Button";
@@ -62,6 +62,16 @@ export function OtaMarketAnalysis() {
       await fetchAll();
     } catch { toast.error("Scan failed"); }
     finally { setScanning(false); }
+  };
+
+  const handleApplySmartPrice = async (resortId: string, newPrice: number) => {
+    try {
+      await apiClient.post("/admin/ota-analytics/apply-smart-price", { resortId, newPrice });
+      toast.success("Smart price applied successfully!");
+      await fetchAll();
+    } catch {
+      toast.error("Failed to apply smart price");
+    }
   };
 
   const totalReviews = overview.reduce((s, d) => s + (d.reviewVolume || 0), 0);
@@ -192,6 +202,7 @@ export function OtaMarketAnalysis() {
                     <th className="p-4 font-bold text-center">Airbnb</th>
                     <th className="p-4 font-bold text-center">Agoda</th>
                     <th className="p-4 font-bold text-center">You Save</th>
+                    <th className="p-4 font-bold text-center">Smart Rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-sand-100">
@@ -209,6 +220,21 @@ export function OtaMarketAnalysis() {
                       <td className="p-4 text-center">
                         {p.savings ? (
                           <span className="font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg text-xs">₹{p.savings.toLocaleString()}</span>
+                        ) : "—"}
+                      </td>
+                      <td className="p-4 text-center">
+                        {p.suggestedPrice && p.resortId ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="font-bold text-purple-600 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3" /> ₹{p.suggestedPrice.toLocaleString()}
+                            </span>
+                            <button 
+                              onClick={() => handleApplySmartPrice(p.resortId, p.suggestedPrice)}
+                              className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider bg-purple-100 text-purple-700 hover:bg-purple-200 rounded transition-colors"
+                            >
+                              Apply
+                            </button>
+                          </div>
                         ) : "—"}
                       </td>
                     </tr>
