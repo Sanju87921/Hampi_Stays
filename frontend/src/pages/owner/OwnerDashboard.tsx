@@ -2027,7 +2027,7 @@ export function OwnerDashboard() {
                     <div key={status} className="p-6 rounded-3xl border border-sand-100 bg-sand-50/50">
                       <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-2">{status} Payouts</p>
                       <p className="text-2xl font-bold text-navy-950">
-                        ₹{resort.bookings?.filter((b: any) => b.payoutStatus === status.toUpperCase()).reduce((acc: number, b: any) => acc + ((b.totalPrice || 0) * 0.93), 0).toLocaleString() || 0}
+                        ₹{resort.bookings?.filter((b: any) => b.payoutStatus === status.toUpperCase()).reduce((acc: number, b: any) => acc + ((b.totalPrice || 0) * (1 - (resort.commissionRate || 7) / 100)), 0).toLocaleString() || 0}
                       </p>
                     </div>
                   ))}
@@ -2041,7 +2041,7 @@ export function OwnerDashboard() {
                         <th className="py-4 font-bold">Booking Ref</th>
                         <th className="py-4 font-bold">Guest</th>
                         <th className="py-4 font-bold">Total Amount</th>
-                        <th className="py-4 font-bold">Commission (7%)</th>
+                        <th className="py-4 font-bold">Commission ({resort.commissionRate || 7}%)</th>
                         <th className="py-4 font-bold">Net Earnings</th>
                         <th className="py-4 font-bold">Payment Status</th>
                         <th className="py-4 font-bold">Payout Status</th>
@@ -2053,8 +2053,8 @@ export function OwnerDashboard() {
                           <td className="py-4 font-medium text-navy-950">{b.referenceNumber}</td>
                           <td className="py-4 text-navy-950/70">{b.user?.name}</td>
                           <td className="py-4 font-bold text-navy-950">₹{(b.totalPrice || 0).toLocaleString()}</td>
-                          <td className="py-4 text-red-600 font-medium">-₹{((b.totalPrice || 0) * 0.07).toLocaleString()}</td>
-                          <td className="py-4 text-green-600 font-bold">₹{((b.totalPrice || 0) * 0.93).toLocaleString()}</td>
+                          <td className="py-4 text-red-600 font-medium">-₹{((b.totalPrice || 0) * ((resort.commissionRate || 7) / 100)).toLocaleString()}</td>
+                          <td className="py-4 text-green-600 font-bold">₹{((b.totalPrice || 0) * (1 - (resort.commissionRate || 7) / 100)).toLocaleString()}</td>
                           <td className="py-4">
                             <span className={cn("px-2 py-1 rounded text-[10px] font-bold", b.paymentStatus === 'PAID' ? "bg-green-100 text-green-700" : "bg-sand-100 text-navy-950")}>{b.paymentStatus || 'PENDING'}</span>
                           </td>

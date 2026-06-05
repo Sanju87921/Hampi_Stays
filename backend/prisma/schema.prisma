@@ -81,6 +81,8 @@ model OtpVerification {
 }
 
 model Resort {
+  payouts ResortOwnerPayout[]
+
   id               String          @id @default(cuid())
   slug             String          @unique
   name             String
@@ -275,6 +277,8 @@ model DiscountCode {
 }
 
 model Booking {
+  payout ResortOwnerPayout?
+
   id              String        @id @default(cuid())
   checkIn         DateTime
   checkOut        DateTime
@@ -383,6 +387,9 @@ model BlogPost {
 }
 
 model ResortOwner {
+  payouts ResortOwnerPayout[]
+  settlements SettlementLedger[]
+
   id           String        @id @default(cuid())
   businessName String?
   gstNumber    String?
@@ -912,12 +919,15 @@ model ResortOwnerPayout {
   commissionRate     Float
   platformCommission Float
   netAmount          Float
-  status             String   @default("PENDING") // PENDING, ELIGIBLE, PROCESSING, PAID, FAILED
+  status             String   @default("PENDING")
   settlementId       String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   settlement SettlementLedger? @relation(fields: [settlementId], references: [id])
+  booking    Booking           @relation(fields: [bookingId], references: [id])
+  resort     Resort            @relation(fields: [resortId], references: [id])
+  owner      ResortOwner       @relation(fields: [ownerId], references: [id])
 
   @@index([resortId])
   @@index([ownerId])
@@ -931,17 +941,18 @@ model SettlementLedger {
   totalGross      Float
   totalCommission Float
   totalNet        Float
-  status          String    @default("PENDING") // PENDING, PAID, FAILED
+  status          String    @default("PENDING")
   transactionRef  String?
   settlementDate  DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   payouts ResortOwnerPayout[]
+  owner   ResortOwner         @relation(fields: [ownerId], references: [id])
 
   @@index([ownerId])
   @@index([status])
-  @@map("settlement_ledger")
+  @@map("settlement_ledgers")
 }
 
 model OtaMarketData {

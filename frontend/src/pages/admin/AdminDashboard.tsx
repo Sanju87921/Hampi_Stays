@@ -2294,7 +2294,7 @@ export function AdminDashboard() {
  {activeTab === "security" && renderSecurity()}
  {activeTab === "otp-logs" && renderOtpLogs()}
  {activeTab === "reviews" && renderReviews()}
- {activeTab === "commissions" && <Suspense fallback={<TabLoader />}><CommissionsModule /></Suspense>}
+ {activeTab === "commissions" && <div className="space-y-12"><Suspense fallback={<TabLoader />}><CommissionsModule /></Suspense>{renderCommissions()}</div>}
  {activeTab === "audit-logs" && renderAuditLogs()}
  {activeTab === "ota-market" && <Suspense fallback={<TabLoader />}><OtaMarketAnalysis /></Suspense>}
  </ErrorBoundary>
