@@ -39,6 +39,7 @@ export function TravelerDashboard() {
   const [recommendedGuides, setRecommendedGuides] = useState<any[]>([]);
   const [activePromotions, setActivePromotions] = useState<any[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
+  const [hideKycBanner, setHideKycBanner] = useState(sessionStorage.getItem('hideKycBanner') === 'true');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -370,6 +371,40 @@ export function TravelerDashboard() {
         </header>
 
         <ProfileIncompleteBanner />
+        
+        {user?.kycStatus !== 'VERIFIED' && !hideKycBanner && (
+          <div className="bg-gradient-to-r from-navy-950 to-navy-800 rounded-3xl p-6 md:p-8 mb-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-luxury border border-gold-900/30 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 mix-blend-screen" />
+            <div className="relative z-10 flex items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-gold-500 flex items-center justify-center shrink-0">
+                <Shield className="w-8 h-8 text-navy-950" />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif font-bold text-white mb-1">Verify Your Identity</h3>
+                <p className="text-sand-200 text-sm max-w-xl">
+                  Complete Your KYC to unlock additional features and become a verified traveller. Unlocks Verified Traveller Badge, Loyalty Rewards, Premium Offers, and Faster Support.
+                </p>
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+              <Button 
+                variant="outline" 
+                className="border-sand-300 text-sand-100 hover:bg-white/10"
+                onClick={() => {
+                  sessionStorage.setItem('hideKycBanner', 'true');
+                  setHideKycBanner(true);
+                }}
+              >
+                Remind Me Later
+              </Button>
+              <Link to="/dashboard/kyc" className="w-full sm:w-auto">
+                <Button className="w-full bg-gold-500 text-navy-950 hover:bg-gold-400">
+                  Complete KYC
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         {/* Quick Actions Grid */}

@@ -115,14 +115,7 @@ export const createBooking = async (c) => {
     if (payload?.userId) {
       const user = await prisma.user.findUnique({ where: { id: payload.userId } });
       if (!user) return c.json({ error: 'User not found' }, 404);
-
-      const { evaluateTravellerKyc } = await import('../../utils/kycEngine.js');
-      const vSettings = await prisma.verificationSettings.findFirst() || {};
-      const isVerified = await evaluateTravellerKyc(prisma, user, vSettings);
-      
-      if (!isVerified) {
-        return c.json({ error: 'Please complete your mandatory Traveller Verification before booking.' }, 403);
-      }
+      // KYC is now optional and non-blocking for booking
     }
 
     // We run the concurrency check and booking creation in a transaction
