@@ -2788,4 +2788,60 @@ app.post('/admin/payouts/disburse/:id', authMiddleware, adminMiddleware, async (
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+
+// ==========================================
+// ⚡ Real-Time WebSocket Alerts Layer
+// ==========================================
+app.get('/admin/ws/live', async (c) => {
+  const upgradeHeader = c.req.header('Upgrade');
+  if (upgradeHeader !== 'websocket') {
+    return c.text('Expected Upgrade: websocket', 426);
+  }
+
+  // Use Cloudflare's native WebSocketPair
+  const webSocketPair = new WebSocketPair();
+  const [client, server] = Object.values(webSocketPair);
+  server.accept();
+
+  // Polling the database from the worker edge to simulate push
+  const getPrismaFunc = c.get('getPrisma');
+  const prisma = getPrismaFunc ? getPrismaFunc(c.env) : null;
+  let lastCheckedId = null;
+
+  if (!prisma) {
+    server.close(1011, 'Database not available');
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  const interval = setInterval(async () => {
+    try {
+      const recentBooking = await prisma.booking.findFirst({
+        orderBy: { createdAt: 'desc' },
+        include: { resort: { select: { name: true } }, user: { select: { firstName: true } } }
+      });
+      if (recentBooking && recentBooking.id !== lastCheckedId) {
+        if (lastCheckedId !== null) {
+          server.send(JSON.stringify({ 
+            type: 'NEW_BOOKING', 
+            message: `🔔 Live: ${recentBooking.resort.name} booked for ${recentBooking.numberOfNights || 1} nights!`,
+            booking: recentBooking 
+          }));
+        }
+        lastCheckedId = recentBooking.id;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, 5000);
+
+  server.addEventListener('close', () => {
+    clearInterval(interval);
+  });
+
+  return new Response(null, {
+    status: 101,
+    webSocket: client,
+  });
+});
+
 };
