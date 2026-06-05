@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, User, Mail, Activity, Lock, Key, X, Loader2 } from 'lucide-react';
+import { Shield, User, Mail, Activity, Lock, Key, X, Loader2, ChevronLeft } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 
 export function AdminProfilePage() {
  const { user, refreshUser } = useAuth();
+ const navigate = useNavigate();
  
  // Modals state
  const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -126,6 +129,9 @@ export function AdminProfilePage() {
  
  <div className="flex items-center justify-between mb-12">
  <div>
+ <Button variant="outline" className="mb-6 rounded-xl border-sand-200 text-navy-950 font-medium hover:bg-gold-50" onClick={() => navigate("/admin/dashboard")}>
+   <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+ </Button>
  <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Administrator Profile</h1>
  <p className="text-navy-950 font-medium">Manage your identity, security, and session settings.</p>
  </div>

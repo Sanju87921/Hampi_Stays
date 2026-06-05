@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
   Star, XCircle, ChevronRight, Sparkles,
-  Navigation, CheckCircle2, History, QrCode, Loader2
+  Navigation, CheckCircle2, History, QrCode, Loader2, ChevronLeft
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
@@ -30,9 +30,10 @@ const downloadPdf = (doc: any, filename: string) => {
 };
 
 export function BookingsPage() {
-  const { confirm, showModal } = useModal();
-
   const { user } = useAuth();
+  const { confirm, showModal } = useModal();
+  const navigate = useNavigate();
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -384,6 +385,9 @@ export function BookingsPage() {
         <div className="absolute bottom-[-30%] left-[-5%] w-[400px] h-[400px] rounded-full opacity-15" style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.2) 0%, transparent 70%)' }} />
         <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 60%)' }} />
         <div className="container mx-auto px-4 relative z-10">
+          <Button variant="ghost" className="mb-6 hover:bg-white/10 px-0 text-white font-medium" onClick={() => navigate("/dashboard")}>
+            <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+          </Button>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

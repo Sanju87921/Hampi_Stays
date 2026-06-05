@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ShieldCheck, Check, Upload, AlertCircle, Loader2, X } from "lucide-react";
+import { Camera, ShieldCheck, Check, Upload, AlertCircle, Loader2, X, ChevronLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -92,6 +93,7 @@ function buildFormData(u: any): ProfileFormData {
 export function ProfilePage() {
   const { user, updateUser } = useAuth();
   const { settings } = useSystem();
+  const navigate = useNavigate();
   
   const travellerKycReqs = settings?.verificationSettings?.travellerRequirements || [];
   const hasKycRequirements = travellerKycReqs.some((r: string) => !['EMAIL', 'PHONE'].includes(r));
@@ -221,6 +223,9 @@ export function ProfilePage() {
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-4xl">
         <header className="mb-10">
+          <Button variant="ghost" className="mb-6 hover:bg-transparent px-0 text-navy-950 font-medium" onClick={() => navigate("/dashboard")}>
+            <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+          </Button>
           <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">My Profile</h1>
           <p className="text-navy-950/50">Manage your personal information and preferences.</p>
         </header>

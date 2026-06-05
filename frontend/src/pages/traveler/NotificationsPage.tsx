@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Info, Calendar, Plane, CheckCircle2 } from "lucide-react";
+import { Bell, Info, Calendar, Plane, CheckCircle2, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext";
 import { apiClient } from "../../utils/apiClient";
 
@@ -17,6 +19,7 @@ export function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
@@ -84,6 +87,9 @@ export function NotificationsPage() {
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-4xl">
+        <Button variant="ghost" className="mb-6 hover:bg-transparent px-0 text-navy-950 font-medium" onClick={() => navigate("/dashboard")}>
+          <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+        </Button>
         <header className="mb-10 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Notifications</h1>

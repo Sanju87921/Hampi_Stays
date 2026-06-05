@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Wifi, Coffee, Utensils, Waves, 
-  Shield, CheckCircle2, ArrowRight, ArrowLeft,
+  Shield, CheckCircle2, ArrowRight, ArrowLeft, ChevronLeft,
   Clock, Plus, Trash2, Info, Camera, FileText, UploadCloud, X, IndianRupee
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -323,6 +323,9 @@ export function ResortSetupPage() {
   return (
     <div className="min-h-screen bg-sand-50 pt-24 pb-24">
       <div className="container mx-auto px-4 max-w-5xl">
+        <Button variant="ghost" className="mb-8 hover:bg-transparent px-0 text-navy-950 font-medium" onClick={() => navigate("/dashboard")}>
+          <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+        </Button>
         {/* Step Indicator */}
         <div className="mb-12">
           <div className="flex justify-between items-center px-4">

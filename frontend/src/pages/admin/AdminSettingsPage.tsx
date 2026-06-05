@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, Shield, User, Hotel, MapPin, TrendingUp } from 'lucide-react';
+import { Settings2, Globe, Bell, ShieldAlert, Sliders, Check, Loader2, ShieldCheck, Shield, User, Hotel, MapPin, TrendingUp, ChevronLeft } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import { apiClient } from '../../utils/apiClient';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +12,7 @@ import { useSystem } from '../../context/SystemContext';
 export function AdminSettingsPage() {
  const { user, refreshUser } = useAuth();
  const { refreshSettings } = useSystem();
+ const navigate = useNavigate();
  
  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
  
@@ -118,6 +121,9 @@ export function AdminSettingsPage() {
  <div className="container mx-auto px-4 md:px-8 max-w-4xl">
  
  <div className="mb-12">
+   <Button variant="outline" className="mb-6 rounded-xl border-sand-200 text-navy-950 font-medium hover:bg-gold-50" onClick={() => navigate("/admin/dashboard")}>
+     <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+   </Button>
  <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Platform Settings</h1>
  <p className="text-navy-950 font-medium">Configure global preferences and operational toggles.</p>
  </div>
