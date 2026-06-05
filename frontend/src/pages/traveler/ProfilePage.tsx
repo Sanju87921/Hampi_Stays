@@ -360,37 +360,32 @@ export function ProfilePage() {
         </div>
       </div>
       {user?.role === 'RESORT_OWNER' && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className='max-w-4xl mx-auto mt-12 mb-20 px-4 md:px-6'>
-          <div className='bg-white rounded-[2.5rem] p-10 md:p-14 shadow-sm border border-sand-100'>
-            <h2 className='text-3xl font-serif text-navy-950 font-bold mb-8'>Verification & KYC Center</h2>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-              <div className='space-y-6'>
-                <h3 className='text-xl font-bold text-navy-950'>Identity Status</h3>
-                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100'>
-                  <KycUploadSection userType="resort" profileId={user?.id || ""} />
-                </div>
-              </div>
-              <div className='space-y-6'>
-                <h3 className='text-xl font-bold text-navy-950'>Bank Account</h3>
-                <div className='bg-sand-50/50 p-6 rounded-3xl border border-sand-100 space-y-4'>
-                  <Input label='Account Holder' defaultValue={bankData?.accountHolderName || user?.name} disabled />
-                  <Input label='Bank Name' placeholder='HDFC Bank' value={bankData?.bankName || ''} disabled />
-                  <Input label='Account Number' placeholder='**** **** 1234' value={bankData?.accountNumber || ''} disabled />
-                  <Input label='IFSC Code' placeholder='HDFC0001234' value={bankData?.ifscCode || ''} disabled />
-                  <Button className='w-full' onClick={() => {
-                    setBankFormData({
-                      accountHolderName: bankData?.accountHolderName || user?.name || "",
-                      bankName: bankData?.bankName || "",
-                      accountNumber: bankData?.accountNumber || "",
-                      ifscCode: bankData?.ifscCode || ""
-                    });
-                    setShowBankModal(true);
-                  }}>Update Bank Details</Button>
-                </div>
+        <div className='max-w-4xl mx-auto mt-12 mb-20 px-4 md:px-6 space-y-8'>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
+            <KycUploadSection userType="resort" profileId={user?.id || ""} />
+          </motion.div>
+          
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className='bg-white rounded-[3rem] p-10 md:p-14 shadow-sm border border-sand-100'>
+            <h2 className='text-3xl font-serif text-navy-950 font-bold mb-8'>Bank Account Details</h2>
+            <div className='bg-sand-50/50 p-8 rounded-3xl border border-sand-100 space-y-4 max-w-2xl'>
+              <Input label='Account Holder' defaultValue={bankData?.accountHolderName || user?.name} disabled />
+              <Input label='Bank Name' placeholder='HDFC Bank' value={bankData?.bankName || ''} disabled />
+              <Input label='Account Number' type='password' placeholder='**** **** 1234' value={bankData?.accountNumber || ''} disabled />
+              <Input label='IFSC Code' placeholder='HDFC0001234' value={bankData?.ifscCode || ''} disabled />
+              <div className="pt-4">
+                <Button className='w-full' onClick={() => {
+                  setBankFormData({
+                    accountHolderName: bankData?.accountHolderName || user?.name || "",
+                    bankName: bankData?.bankName || "",
+                    accountNumber: bankData?.accountNumber || "",
+                    ifscCode: bankData?.ifscCode || ""
+                  });
+                  setShowBankModal(true);
+                }}>Update Bank Details</Button>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
       {user?.role === 'TRAVELLER' && hasKycRequirements && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className='max-w-4xl mx-auto mt-12 mb-20 px-4 md:px-6'>
