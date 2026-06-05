@@ -39,6 +39,7 @@ const ProfilePage = lazyWithRetry(() => import("./pages/traveler/ProfilePage").t
 const NotificationsPage = lazyWithRetry(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
 const DashboardSelector = lazyWithRetry(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
 const ResortSetupPage = lazyWithRetry(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
+const InventoryPage = lazyWithRetry(() => import("./pages/owner/InventoryPage").then(m => ({ default: m.InventoryPage })));
 const CurationDashboard = lazyWithRetry(() => import("./pages/admin/CurationDashboard").then(m => ({ default: m.default })));
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 const AdminProfilePage = lazyWithRetry(() => import("./pages/admin/AdminProfilePage").then(m => ({ default: m.AdminProfilePage })));
@@ -263,6 +264,7 @@ function AnimatedRoutes() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/dashboard/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
               <Route path="/dashboard/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
               <Route path="/dashboard/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
               <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
