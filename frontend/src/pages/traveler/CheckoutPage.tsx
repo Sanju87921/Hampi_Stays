@@ -516,7 +516,7 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex-col sm:flex-row items-center gap-6 pt-4 hidden md:flex">
+                  <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
                     <Button size="lg" className="w-full sm:w-auto px-12 h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
                       Pay {fmt(finalPrice)} Securely
                     </Button>

@@ -206,7 +206,7 @@ export const validatePromotion = async (c) => {
     // 2. User-specific Constraints
     if (userId) {
       if (promotion.firstBookingOnly) {
-        const userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED', 'FAILED'] } } });
+        const userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED'] } } });
         if (userBookingsCount > 0) {
            return c.json({ error: "Promotion valid for your first booking only" }, 400);
         }
@@ -214,7 +214,7 @@ export const validatePromotion = async (c) => {
 
       if (promotion.maxUsesPerUser) {
         const userRedemptions = await prisma.booking.count({
-          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED', 'FAILED'] } }
+          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED'] } }
         });
         if (userRedemptions >= promotion.maxUsesPerUser) {
           return c.json({ error: `You have reached the maximum allowed uses (${promotion.maxUsesPerUser}) for this promotion` }, 400);
@@ -287,14 +287,14 @@ export const getBestAutoApplyPromotion = async (c) => {
       let skip = false;
       if (promotion.firstBookingOnly) {
         if (userBookingsCount === -1) {
-          userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED', 'FAILED'] } } });
+          userBookingsCount = await prisma.booking.count({ where: { userId, status: { notIn: ['CANCELLED'] } } });
         }
         if (userBookingsCount > 0) skip = true;
       }
 
       if (!skip && promotion.maxUsesPerUser) {
         const userRedemptions = await prisma.booking.count({
-          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED', 'FAILED'] } }
+          where: { userId, promotionId: promotion.id, status: { notIn: ['CANCELLED'] } }
         });
         if (userRedemptions >= promotion.maxUsesPerUser) skip = true;
       }
