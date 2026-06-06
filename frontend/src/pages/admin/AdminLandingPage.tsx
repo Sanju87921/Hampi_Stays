@@ -12,10 +12,8 @@ export function AdminLandingPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-navy-950">
       <Hero />
-      <Statistics />
-      <LocalExpertise />
     </main>
   );
 }
