@@ -204,9 +204,7 @@
   animation: slide-in-from-top 0.2s ease-out forwards;
 }
 
-img {
-  padding: 8px;
-}
+
 
 
 @layer base {
