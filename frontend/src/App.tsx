@@ -226,11 +226,7 @@ function AnimatedRoutes() {
               {/* --- ADMIN GATEWAY --- */}
               <Route
                 path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <LandingPage />
-                  </ProtectedRoute>
-                }
+                element={<Navigate to="/admin/dashboard" replace />}
               />
               <Route
                 path="/admin/dashboard"
