@@ -18,6 +18,7 @@ import type { Resort } from "../../types/resort";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { useSystem } from "../../context/SystemContext";
 import { StayPassModal } from "../../components/shared/StayPassModal";
+import { HampiSurvivalWidget } from "./components/HampiSurvivalWidget";
 
 export function TravelerDashboard() {
   const navigate = useNavigate();
@@ -464,6 +465,13 @@ export function TravelerDashboard() {
             {/* Left Column */}
             <section className="lg:col-span-8">
               
+              {/* Pre-Arrival Hampi Survival Kit Widget */}
+              {upcomingTrip && (
+                <div className="mb-8">
+                  <HampiSurvivalWidget checkInDate={upcomingTrip.checkIn} />
+                </div>
+              )}
+
               {/* Booking Summary Section */}
               <div className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm mb-8">
                 <h3 className="text-sm font-bold text-navy-950 uppercase tracking-widest mb-4">Booking Summary</h3>

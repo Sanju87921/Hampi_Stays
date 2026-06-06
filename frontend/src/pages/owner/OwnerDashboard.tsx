@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { luxuryConfirm } from "../../utils/luxuryConfirm";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Building2, Plus, Calendar as CalIcon,
   Trash2, CheckCircle, AlertCircle, Loader2,
-  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X, Mail, Star, User, QrCode
+  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X, Mail, Star, User, QrCode, CalendarRange
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
@@ -19,6 +19,7 @@ import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { QRScannerModule } from "../admin/components/QRScannerModule";
 import { OwnerPromotionsModule } from "./components/OwnerPromotionsModule";
 import { OwnerNotificationCenter } from "./components/OwnerNotificationCenter";
+import { RoomPricingModule } from "./components/RoomPricingModule";
 import { apiClient } from "../../utils/apiClient";
 import { compressImageFile } from "../../utils/image";
 import { uploadToCloudinary } from "../../utils/cloudinary";
@@ -67,7 +68,6 @@ export function OwnerDashboard() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("RECEPTIONIST");
-  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [settingsForm, setSettingsForm] = useState({
     checkInTime: "14:00",
     checkOutTime: "11:00",
@@ -100,6 +100,8 @@ export function OwnerDashboard() {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [showBlockRoom, setShowBlockRoom] = useState(false);
   const [blockingFormData, setBlockingFormData] = useState({ date: "", reason: "", roomId: "" });
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [pricingRoom, setPricingRoom] = useState<any | null>(null);
   
   const [showEditBooking, setShowEditBooking] = useState(false);
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
@@ -113,11 +115,76 @@ export function OwnerDashboard() {
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState<string | null>(null);
 
-  const [housekeeping, setHousekeeping] = useState([
-    { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
-    { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
-    { id: '3', room: '202', type: 'Garden Villa', status: 'READY', color: 'bg-emerald-500', lastCleaned: 'Just now', staff: 'Sanjay K.' }
-  ]);
+  const queryClient = useQueryClient();
+
+  const { data: housekeepingTasks = [], isLoading: isHousekeepingLoading } = useQuery({
+    queryKey: ['housekeeping', resort?.id],
+    queryFn: () => apiClient.get<any>(`/resorts/${resort?.id}/housekeeping`),
+    enabled: !!resort?.id && activeTab === 'staff',
+    refetchInterval: 30000 // Real-time pulse every 30s
+  });
+
+  const updateHousekeepingStatus = useMutation({
+    mutationFn: (data: { id: string, status: string }) => 
+      apiClient.put(`/resorts/${resort?.id}/housekeeping/${data.id}`, { status: data.status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['housekeeping', resort?.id] });
+    }
+  });
+
+  const handleHousekeepingStatus = async (task: any) => {
+    const statuses = ['DIRTY', 'CLEANING', 'READY'];
+    const currentIndex = statuses.indexOf(task.status);
+    const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+    
+    toast.promise(
+      updateHousekeepingStatus.mutateAsync({ id: task.id, status: nextStatus }),
+      {
+        loading: 'Updating status...',
+        success: `Room ${task.roomNumber} marked as ${nextStatus}`,
+        error: 'Failed to update status'
+      }
+    );
+  };
+
+  // ── Staff Management Real-time Data Fetching ─────────────────────────────
+  const { data: staffMembers = [], isLoading: isStaffLoading } = useQuery({
+    queryKey: ['staff', resort?.id],
+    queryFn: () => apiClient.get<any[]>(`/resorts/${resort?.id}/staff`),
+    enabled: !!resort?.id && activeTab === 'staff',
+  });
+
+  const { data: pendingInvitations = [], isLoading: isInvitationsLoading } = useQuery({
+    queryKey: ['invitations', resort?.id],
+    queryFn: () => apiClient.get<any[]>(`/resorts/${resort?.id}/staff/invitations`),
+    enabled: !!resort?.id && activeTab === 'staff',
+  });
+
+  const sendInviteMutation = useMutation({
+    mutationFn: (data: { email: string, role: string }) => 
+      apiClient.post(`/resorts/${resort?.id}/staff/invite`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', resort?.id] });
+      setInviteEmail("");
+      setIsInviteModalOpen(false);
+      toast.success("Invitation sent successfully!");
+    },
+    onError: () => toast.error("Failed to send invitation")
+  });
+
+  const removeStaffMutation = useMutation({
+    mutationFn: (staffId: string) => 
+      apiClient.delete(`/resorts/${resort?.id}/staff/${staffId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', resort?.id] });
+      toast.success("Staff member removed");
+    }
+  });
+
+  const handleSendInvite = () => {
+    if (!inviteEmail || !resort?.id) return;
+    sendInviteMutation.mutate({ email: inviteEmail, role: inviteRole });
+  };
 
   // ── Analytics Real-time Data Fetching ──────────────────────────────────
   const { data: analyticsData } = useQuery({
@@ -742,51 +809,7 @@ export function OwnerDashboard() {
     downloadPdf(doc, `HampiStays_Confirmation_${safeRef}.pdf`);
   };
 
-  const fetchStaffData = async () => {
-    if (!resorts.length) return;
-    try {
-      const data = await apiClient.get<any[]>(`/admin/staff/invitations/${resorts[0].id}`);
-      setPendingInvitations(data);
-    } catch (error) {
-      console.error("Failed to fetch staff data:", error);
-    }
-  };
 
-  const handleSendInvite = async () => {
-    if (!inviteEmail || !resorts.length) return;
-    try {
-      await apiClient.post('/admin/staff/invite', {
-        email: inviteEmail,
-        role: inviteRole,
-        resortId: resorts?.[0]?.id
-      });
-      setInviteEmail("");
-      setIsInviteModalOpen(false);
-      fetchStaffData();
-    } catch (error) {
-      console.error("Failed to send invite:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (resorts.length) fetchStaffData();
-  }, [resorts]);
-
-  const handleHousekeepingStatus = (id: string) => {
-    const statusCycle: Record<string, { next: string; color: string }> = {
-      'DIRTY': { next: 'CLEANING', color: 'bg-blue-500' },
-      'CLEANING': { next: 'READY', color: 'bg-emerald-500' },
-      'READY': { next: 'DIRTY', color: 'bg-red-500' }
-    };
-    
-    setHousekeeping(prev => prev.map(item => {
-      if (item.id === id) {
-        const nextState = statusCycle[item.status];
-        return { ...item, status: nextState.next, color: nextState.color, lastCleaned: 'Just now' };
-      }
-      return item;
-    }));
-  };
 
   const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'checkin' | 'checkout') => {
     setActionLoadingId(bookingId);
@@ -1330,6 +1353,16 @@ export function OwnerDashboard() {
                               >
                                 Block Inventory
                               </Button>
+                              <Button 
+                                variant="outline" size="sm" className="h-8 rounded-lg text-xs px-3 border-gold-200 text-gold-700 hover:bg-gold-50"
+                                onClick={() => { 
+                                  setPricingRoom(room);
+                                  setShowPricingModal(true); 
+                                }}
+                              >
+                                <CalendarRange className="w-4 h-4 mr-1" />
+                                Surge Pricing
+                              </Button>
                             </div>
                             
                             {/* Room Photos Manager */}
@@ -1616,32 +1649,46 @@ export function OwnerDashboard() {
                             <h3 className="text-lg font-bold text-navy-950">Active Team</h3>
                          </div>
                          <div className="divide-y divide-sand-50">
-                            {[
-                               { name: 'Sanjay Kumar', role: 'General Manager', email: 'sanjay@hampi.com', status: 'Active' },
-                               { name: 'Priya Das', role: 'Receptionist', email: 'priya@hampi.com', status: 'On Shift' }
-                            ].map((member, i) => (
-                               <div key={i} className="p-6 flex items-center justify-between hover:bg-sand-50 transition-colors">
-                                  <div className="flex items-center gap-4">
-                                     <div className="w-12 h-12 rounded-2xl bg-sand-100 flex items-center justify-center font-bold text-navy-950">
-                                        {member.name[0]}
-                                     </div>
-                                     <div>
-                                        <p className="text-sm font-bold text-navy-950">{member.name}</p>
-                                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{member.role}</p>
-                                     </div>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                     <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                        {member.status}
-                                     </span>
-                                     <div className="relative group">
-                                       <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg opacity-50 cursor-not-allowed" disabled>
-                                          <Trash2 className="w-4 h-4 text-red-500" />
-                                       </Button>
-                                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-950 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                         Coming Soon
-                                       </div>
-                                     </div>
+                             {isStaffLoading ? (
+                                <div className="p-8 text-center text-navy-950/40 text-sm">Loading staff members...</div>
+                             ) : staffMembers.length > 0 ? staffMembers.map((member: any) => (
+                                <div key={member.id} className="p-6 flex items-center justify-between hover:bg-sand-50 transition-colors">
+                                   <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 rounded-2xl bg-sand-100 flex items-center justify-center font-bold text-navy-950">
+                                         {(member.user?.name?.[0] || member.role[0]).toUpperCase()}
+                                      </div>
+                                      <div>
+                                         <p className="text-sm font-bold text-navy-950">{member.user?.name || 'Pending Onboarding'}</p>
+                                         <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{member.role}</p>
+                                      </div>
+                                   </div>
+                                   <div className="flex items-center gap-4">
+                                      <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                         Active
+                                      </span>
+                                      <div className="relative group">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="h-8 w-8 p-0 rounded-lg hover:border-red-200 hover:bg-red-50"
+                                          onClick={() => {
+                                            luxuryConfirm({
+                                              title: "Remove Staff Member",
+                                              description: "Are you sure you want to remove this staff member? They will lose access immediately.",
+                                              onConfirm: () => removeStaffMutation.mutate(member.id)
+                                            })
+                                          }}
+                                        >
+                                           <Trash2 className="w-4 h-4 text-red-500" />
+                                        </Button>
+                                      </div>
+                                   </div>
+                                </div>
+                             )) : (
+                                <div className="p-8 text-center text-navy-950/40 text-sm">No staff members found.</div>
+                             )}
+                         </div>
+                      </div>                           </div>
                                   </div>
                                </div>
                             ))}
@@ -1683,23 +1730,27 @@ export function OwnerDashboard() {
                             <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Live Status</span>
                          </div>
                          <div className="space-y-4">
-                            {housekeeping.map((task) => (
+                            {isHousekeepingLoading ? (
+                               <div className="flex justify-center items-center h-32">
+                                 <Loader2 className="w-6 h-6 animate-spin text-gold-500" />
+                               </div>
+                            ) : housekeepingTasks.length > 0 ? housekeepingTasks.map((task: any) => (
                                <div key={task.id} 
-                                 onClick={() => handleHousekeepingStatus(task.id)}
+                                 onClick={() => handleHousekeepingStatus(task)}
                                  className="p-5 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
                                >
                                   <div className="flex-grow">
                                      <div className="flex items-center gap-2 mb-1">
-                                        <p className="text-sm font-bold">Room {task.room}</p>
-                                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">• {task.lastCleaned}</span>
+                                        <p className="text-sm font-bold">Room {task.roomNumber}</p>
+                                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">• {new Date(task.lastCleaned).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                      </div>
                                      <div className="flex items-center gap-4">
-                                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{task.type}</p>
+                                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{task.roomType?.name}</p>
                                         <div className="flex items-center gap-1.5">
                                            <div className="w-3 h-3 bg-white/10 rounded-full flex items-center justify-center">
                                               <User className="w-2 h-2 text-gold-400" />
                                            </div>
-                                           <span className="text-[8px] font-bold text-white/30 uppercase">{task.staff}</span>
+                                           <span className="text-[8px] font-bold text-white/30 uppercase">{task.staff?.user?.name || 'Unassigned'}</span>
                                         </div>
                                      </div>
                                   </div>
@@ -1709,13 +1760,20 @@ export function OwnerDashboard() {
                                         task.status === 'CLEANING' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                                         'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                                      )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", task.color)} />
+                                        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", 
+                                          task.status === 'DIRTY' ? 'bg-red-500' : 
+                                          task.status === 'CLEANING' ? 'bg-blue-500' : 'bg-emerald-500'
+                                        )} />
                                         <span className="text-[9px] font-bold uppercase tracking-widest">{task.status}</span>
                                      </div>
                                      <p className="text-[7px] font-bold text-white/20 uppercase">Click to Update</p>
                                   </div>
                                </div>
-                            ))}
+                            )) : (
+                              <div className="text-center py-8">
+                                <p className="text-xs text-white/40 uppercase font-bold tracking-widest">No Housekeeping Tasks Found</p>
+                              </div>
+                            )}
                          </div>
                       </div>
                    </div>
@@ -2571,6 +2629,24 @@ export function OwnerDashboard() {
                   <Button variant="outline" className="flex-1" onClick={() => setShowEditBooking(false)}>Cancel</Button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {showPricingModal && pricingRoom && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm" onClick={() => setShowPricingModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[3rem] p-10 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto border border-sand-100">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-serif font-bold text-navy-950">Room Pricing Options</h2>
+                <button type="button" onClick={() => setShowPricingModal(false)} className="p-2 hover:bg-sand-50 rounded-full transition-colors"><X className="w-6 h-6 text-navy-950/40" /></button>
+              </div>
+              <RoomPricingModule 
+                roomId={pricingRoom.id}
+                basePrice={pricingRoom.pricePerNight}
+                roomName={pricingRoom.name}
+              />
             </motion.div>
           </div>
         )}

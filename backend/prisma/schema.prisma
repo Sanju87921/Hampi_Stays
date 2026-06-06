@@ -121,6 +121,7 @@ model Resort {
   wishlist         Wishlist[]
   resortAmenities  ResortAmenity[]
   coupons          Coupon[]        @relation("ResortCoupons")
+  housekeepingTasks HousekeepingTask[]
 
   @@index([status])
   @@index([pricePerNight])
@@ -149,6 +150,7 @@ model Room {
   blockings        RoomBlocking[]
   priceOverrides   RoomPriceOverride[]
   photos           RoomPhoto[]
+  housekeepingTasks HousekeepingTask[]
   resort           Resort              @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
@@ -582,9 +584,11 @@ model StaffMember {
   role      String
   resortId  String
   userId    String   @unique
-  createdAt DateTime @default(now())
-  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  resort        Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  housekeepingTasks HousekeepingTask[]
 
   @@map("staff_members")
 }
@@ -980,4 +984,23 @@ model OtaMarketData {
   updatedAt        DateTime @updatedAt
 
   @@map("ota_market_data")
+}
+
+model HousekeepingTask {
+  id          String       @id @default(cuid())
+  resortId    String
+  roomNumber  String       // The physical room number, e.g., "101"
+  roomTypeId  String       // Refers to the Room (type) model
+  status      String       @default("DIRTY") // DIRTY, CLEANING, READY
+  staffId     String?      // Refers to StaffMember
+  notes       String?
+  lastCleaned DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  resort      Resort       @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  roomType    Room         @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  staff       StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@map("housekeeping_tasks")
 }

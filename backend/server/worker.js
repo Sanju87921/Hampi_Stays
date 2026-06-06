@@ -3196,6 +3196,203 @@ app.post('/rooms/:id/blockings', authMiddleware, async (c) => {
   } catch(e) { return c.json({error: e.message}, 500); }
 });
 
+app.post('/rooms/:id/price-overrides', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const roomId = c.req.param('id');
+  const body = await c.req.json();
+  try {
+    const date = new Date(body.date);
+    date.setUTCHours(0,0,0,0);
+    const override = await prisma.roomPriceOverride.upsert({
+      where: {
+        roomId_date: {
+          roomId,
+          date
+        }
+      },
+      update: {
+        price: parseFloat(body.price),
+        minNights: body.minNights ? parseInt(body.minNights) : null
+      },
+      create: {
+        roomId,
+        date,
+        price: parseFloat(body.price),
+        minNights: body.minNights ? parseInt(body.minNights) : null
+      }
+    });
+    return c.json(override, 201);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.delete('/rooms/:roomId/price-overrides', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const roomId = c.req.param('roomId');
+  const { date } = c.req.query();
+  if (!date) return c.json({error: 'Date required'}, 400);
+  try {
+    const d = new Date(date);
+    d.setUTCHours(0,0,0,0);
+    await prisma.roomPriceOverride.delete({ 
+      where: { roomId_date: { roomId, date: d } } 
+    });
+    return c.json({ success: true });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.get('/rooms/:id/price-overrides', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const roomId = c.req.param('id');
+  const { startDate, endDate } = c.req.query();
+  try {
+    const overrides = await prisma.roomPriceOverride.findMany({
+      where: {
+        roomId,
+        date: {
+          gte: startDate ? new Date(startDate) : undefined,
+          lte: endDate ? new Date(endDate) : undefined
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+// Staff Management & Invitations Routes
+app.get('/resorts/:resortId/staff', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('resortId');
+  try {
+    const staff = await prisma.staffMember.findMany({
+      where: { resortId },
+      include: {
+        user: { select: { name: true, email: true } }
+      }
+    });
+    return c.json(staff);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.delete('/resorts/:resortId/staff/:staffId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const staffId = c.req.param('staffId');
+  try {
+    await prisma.staffMember.delete({ where: { id: staffId } });
+    return c.json({ success: true });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.get('/resorts/:resortId/staff/invitations', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('resortId');
+  try {
+    const invitations = await prisma.invitation.findMany({
+      where: { resortId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(invitations);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.post('/resorts/:resortId/staff/invite', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('resortId');
+  const body = await c.req.json();
+  try {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const invite = await prisma.invitation.create({
+      data: {
+        resortId,
+        email: body.email,
+        role: body.role,
+        code
+      }
+    });
+    // In a real system, we'd trigger an email via SendGrid/Postmark here.
+    return c.json(invite);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.delete('/resorts/:resortId/staff/invitations/:inviteId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const inviteId = c.req.param('inviteId');
+  try {
+    await prisma.invitation.delete({ where: { id: inviteId } });
+    return c.json({ success: true });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+// Housekeeping Routes
+app.get('/resorts/:resortId/housekeeping', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('resortId');
+  try {
+    const tasks = await prisma.housekeepingTask.findMany({
+      where: { resortId },
+      include: {
+        roomType: { select: { name: true } },
+        staff: { select: { user: { select: { name: true } } } }
+      },
+      orderBy: { lastCleaned: 'desc' }
+    });
+    return c.json(tasks);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.post('/resorts/:resortId/housekeeping', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const resortId = c.req.param('resortId');
+  const body = await c.req.json();
+  try {
+    const task = await prisma.housekeepingTask.create({
+      data: {
+        resortId,
+        roomNumber: body.roomNumber,
+        roomTypeId: body.roomTypeId,
+        status: body.status || 'DIRTY',
+        staffId: body.staffId,
+        notes: body.notes
+      },
+      include: {
+        roomType: { select: { name: true } },
+        staff: { select: { user: { select: { name: true } } } }
+      }
+    });
+    return c.json(task);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.put('/resorts/:resortId/housekeeping/:taskId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const taskId = c.req.param('taskId');
+  const body = await c.req.json();
+  try {
+    const task = await prisma.housekeepingTask.update({
+      where: { id: taskId },
+      data: {
+        status: body.status,
+        staffId: body.staffId,
+        notes: body.notes,
+        lastCleaned: body.status === 'READY' ? new Date() : undefined
+      },
+      include: {
+        roomType: { select: { name: true } },
+        staff: { select: { user: { select: { name: true } } } }
+      }
+    });
+    return c.json(task);
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
+app.delete('/resorts/:resortId/housekeeping/:taskId', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const taskId = c.req.param('taskId');
+  try {
+    await prisma.housekeepingTask.delete({ where: { id: taskId } });
+    return c.json({ success: true });
+  } catch(e) { return c.json({error: e.message}, 500); }
+});
+
 app.patch('/bookings/:id', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');

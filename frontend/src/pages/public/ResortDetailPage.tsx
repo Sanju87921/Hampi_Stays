@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Star, MapPin, CheckCircle, XCircle,
-  Wifi, Coffee, Car, Dumbbell, Waves, Share2, Heart
+  Wifi, Coffee, Car, Dumbbell, Waves, Share2, Heart, Users
 } from "lucide-react";
 import { BookingWidget } from "../../components/resort/BookingWidget";
 import { AttractionsGuide } from "../../components/resort/AttractionsGuide";
@@ -325,9 +325,15 @@ export function ResortDetailPage() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
                             <h4 className="text-lg font-bold text-navy-950 mb-1">{room.name}</h4>
+                            <div className="flex items-center gap-3 mb-2 text-navy-950/60 text-sm">
+                              <span className="flex items-center gap-1"><Users className="w-4 h-4" /> Sleeps {room.capacity || 2}</span>
+                              {room.availableCount > 0 && room.availableCount <= 3 && (
+                                <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-0.5 rounded-full">Only {room.availableCount} left</span>
+                              )}
+                            </div>
                             <p className="text-sm text-navy-950/60 mb-3">{room.description}</p>
                             <div className="flex flex-wrap gap-2">
-                              {room.amenities.map((a: string) => (
+                              {(room.amenities || []).map((a: string) => (
                                 <span key={a} className="text-[10px] font-bold uppercase tracking-wider text-navy-950/40 bg-sand-50 px-2 py-0.5 rounded-md border border-sand-100">
                                   {a}
                                 </span>

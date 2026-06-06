@@ -87,9 +87,9 @@ export function SearchBar() {
  if (guests.children > 0) params.set("children", String(guests.children));
  setActivePanel(null);
 
- // If destination OR dates are selected → go to Register
+ // If destination OR dates are selected → go to Resorts Page
  if (location || dateRange.from) {
- navigate(`/register?${params.toString()}`);
+ navigate(`/resorts?${params.toString()}`);
  } else {
  // Nothing selected yet — open location panel to guide user
  setActivePanel("location");

@@ -1,5 +1,6 @@
 import { Hero } from "../../components/layout/Hero";
 import { FeaturedResorts } from "../../components/resort/FeaturedResorts";
+import { DestinationDiscovery } from "../../components/layout/DestinationDiscovery";
 import { Experiences } from "../../components/layout/Experiences";
 import { Testimonials } from "../../components/layout/Testimonials";
 import { Statistics } from "../../components/layout/Statistics";
@@ -21,6 +22,7 @@ export function LandingPage() {
       <Hero />
       <Statistics />
       <FeaturedResorts />
+      <DestinationDiscovery />
       <Experiences />
       <Testimonials />
       <CTASection />

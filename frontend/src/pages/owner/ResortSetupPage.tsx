@@ -700,7 +700,24 @@ export function ResortSetupPage() {
                                   if (!files.length) return;
                                   setIsUploadingPhotos(true);
                                   try {
-                                    const uploadPromises = files.map(file => uploadToCloudinary(file, 'resort_photo'));
+                                    const options = {
+                                      maxSizeMB: 0.8,
+                                      maxWidthOrHeight: 1600,
+                                      useWebWorker: true,
+                                      initialQuality: 0.8,
+                                    };
+                                    
+                                    const uploadPromises = files.map(async (file) => {
+                                      try {
+                                        const compressedFile = await imageCompression(file, options);
+                                        return uploadToCloudinary(compressedFile, 'resort_photo');
+                                      } catch (error) {
+                                        console.error('Compression error:', error);
+                                        // Fallback to original if compression fails
+                                        return uploadToCloudinary(file, 'resort_photo');
+                                      }
+                                    });
+                                    
                                     const uploadedImages = await Promise.all(uploadPromises);
                                     setFormData(p => ({
                                       ...p,

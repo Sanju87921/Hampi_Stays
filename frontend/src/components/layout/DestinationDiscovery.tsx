@@ -1,0 +1,126 @@
+import { motion } from "framer-motion";
+import { Map, ArrowRight, Compass, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "../ui/Button";
+
+export function DestinationDiscovery() {
+  return (
+    <section className="py-24 md:py-32 bg-navy-950 text-white relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gold-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-sunset-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Content Left */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-xl"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-8">
+              <Compass className="w-3.5 h-3.5" /> Dynamic Cartography
+            </span>
+            
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 leading-[1.1]">
+              Navigate the <span className="text-gold-400 italic">Ruins</span>
+            </h2>
+            
+            <p className="text-sand-100/70 text-lg leading-relaxed mb-10">
+              Immerse yourself in our interactive cartographic grid. Seamlessly discover nearby temples, historical landmarks, and nature trails, and connect them with luxury accommodations curated exclusively for you.
+            </p>
+
+            <ul className="space-y-6 mb-12">
+              {[
+                { title: "Real-time Proximity", desc: "Instantly locate the finest resorts near iconic heritage sites." },
+                { title: "Hybrid Satellite View", desc: "Toggle between ancient cartography and high-res satellite mapping." },
+                { title: "Curated Trails", desc: "Access recommended excursions mapped directly to your stay." },
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-4">
+                  <div className="mt-1 w-8 h-8 rounded-full bg-gold-500/10 flex items-center justify-center border border-gold-500/20 shrink-0">
+                    <Sparkles className="w-4 h-4 text-gold-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                    <p className="text-sm text-sand-100/50 leading-relaxed">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <Link to="/discovery">
+              <Button size="lg" className="h-16 px-10 rounded-2xl bg-gold-500 text-navy-950 hover:bg-gold-400 border-none font-bold group shadow-[0_0_40px_rgba(197,160,89,0.3)] hover:shadow-[0_0_60px_rgba(197,160,89,0.5)] transition-all">
+                Launch Explorer Map
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </motion.div>
+
+          {/* Image/Map Preview Right */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1 }}
+            className="relative"
+          >
+            <div className="relative rounded-[2.5rem] overflow-hidden border border-gold-500/20 shadow-2xl group">
+              <img 
+                src="/hampi-temple.png" 
+                alt="Interactive Map Preview" 
+                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000 opacity-60"
+              />
+              
+              {/* Fake UI Overlay */}
+              <div className="absolute inset-0 bg-navy-950/40" />
+              
+              {/* Center Map Element */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute -inset-8 bg-gold-500/20 rounded-full animate-ping opacity-60 duration-[3000ms]" />
+                  <div className="w-20 h-20 rounded-full bg-navy-950/90 border border-gold-500/50 shadow-gold backdrop-blur-md flex items-center justify-center z-10 text-gold-400">
+                    <Map className="w-8 h-8" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Cards */}
+              <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-8 left-8 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block"
+              >
+                <div className="w-32 h-20 bg-sand-200/20 rounded-lg mb-3" />
+                <div className="h-2 w-24 bg-white/40 rounded-full mb-2" />
+                <div className="h-2 w-16 bg-gold-400/60 rounded-full" />
+              </motion.div>
+
+              <motion.div 
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute bottom-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center">
+                    <Compass className="w-5 h-5 text-gold-400" />
+                  </div>
+                  <div>
+                    <div className="h-2 w-20 bg-white/60 rounded-full mb-2" />
+                    <div className="h-2 w-12 bg-white/30 rounded-full" />
+                  </div>
+                </div>
+              </motion.div>
+
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
+  );
+}

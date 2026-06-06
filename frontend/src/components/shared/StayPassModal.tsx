@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Calendar, User, Compass, QrCode, ShieldCheck } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -9,6 +10,27 @@ interface StayPassModalProps {
 }
 
 export function StayPassModal({ isOpen, onClose, booking }: StayPassModalProps) {
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen && booking) {
+      import('qrcode').then(QRCode => {
+        const qrData = JSON.stringify({
+          bookingId: booking.id,
+          reference: booking.referenceNumber,
+          guests: booking.guests
+        });
+        QRCode.toDataURL(qrData, { 
+          width: 256,
+          margin: 1,
+          color: { dark: '#020617', light: '#f8fafc' } // navy-950 and sand-50
+        })
+        .then(url => setQrCodeUrl(url))
+        .catch(err => console.error("QR Code generation failed", err));
+      });
+    }
+  }, [isOpen, booking]);
+
   if (!booking) return null;
 
   return (
@@ -56,9 +78,13 @@ export function StayPassModal({ isOpen, onClose, booking }: StayPassModalProps) 
                   </p>
                 </div>
 
-                {/* QR Code Placeholder */}
+                {/* QR Code */}
                 <div className="w-48 h-48 mx-auto bg-sand-50 rounded-2xl border-2 border-dashed border-sand-200 flex flex-col items-center justify-center mb-6 relative group overflow-hidden">
-                  <QrCode className="w-32 h-32 text-navy-950/80 group-hover:scale-105 transition-transform duration-500" />
+                  {qrCodeUrl ? (
+                    <img src={qrCodeUrl} alt="Booking QR Code" className="w-40 h-40 group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <QrCode className="w-32 h-32 text-navy-950/80 group-hover:scale-105 transition-transform duration-500" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-b from-gold-500/20 to-transparent w-full h-1/2 -translate-y-full animate-[scan_2s_ease-in-out_infinite]" />
                 </div>
 
