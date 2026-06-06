@@ -92,7 +92,7 @@ export const OwnerNotificationCenter = () => {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-sand-200 z-50 overflow-hidden flex flex-col max-h-[80vh]"
+              className="absolute left-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-sand-200 z-50 overflow-hidden flex flex-col max-h-[80vh] origin-top-left"
             >
               <div className="p-4 border-b border-sand-100 flex items-center justify-between bg-sand-50/50">
                 <h3 className="font-serif font-bold text-lg text-navy-950 flex items-center gap-2">
