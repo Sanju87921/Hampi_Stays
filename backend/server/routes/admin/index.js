@@ -562,7 +562,7 @@ app.delete('/admin/users/:id', authMiddleware, adminMiddleware, async (c) => {
       await prisma.adminSession.deleteMany({ where: { userId: id } });
       await prisma.notification.deleteMany({ where: { userId: id } });
       await prisma.message.deleteMany({ where: { senderId: id } });
-      await prisma.message.deleteMany({ where: { receiverId: id } });
+
       await prisma.couponRedemption.deleteMany({ where: { userId: id } });
       await prisma.rewardCredit.deleteMany({ where: { userId: id } });
       await prisma.otpVerification.deleteMany({ where: { userId: id } });
