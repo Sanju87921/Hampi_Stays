@@ -288,6 +288,13 @@ export function CheckoutPage() {
           }
         };
 
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          const baseUrl = import.meta.env.VITE_API_URL || (window.location.origin + "/api");
+          (options as any).callback_url = `${baseUrl}/bookings/${booking.referenceNumber}/verify-payment-callback`;
+          (options as any).redirect = true;
+        }
+
         const rzp = new (window as any).Razorpay(options);
         
         rzp.on('payment.failed', function (response: any) {
@@ -308,7 +315,6 @@ export function CheckoutPage() {
     } catch (err: any) {
       console.error("Payment error:", err);
       toast.error(err.message || "Something went wrong. Please check your connection.");
-    } finally {
       setIsProcessing(false);
     }
   };

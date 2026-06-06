@@ -274,3 +274,54 @@ export const handleWebhook = async (c) => {
     return c.json({ error: err.message }, 500);
   }
 };
+
+export const verifyPaymentCallback = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const ref = c.req.param('ref');
+  
+  let body;
+  try {
+    body = await c.req.parseBody(); // parse form data
+  } catch {
+    return c.text('Invalid request body', 400);
+  }
+  
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+  const frontendUrl = c.env.FRONTEND_URL || 'https://hampistays.com'; // or use origin if possible
+  
+  try {
+    const isValid = await verifyPaymentSignature(
+      crypto, 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature, 
+      c.env.RAZORPAY_KEY_SECRET
+    );
+
+    if (!isValid) {
+      logSecureError('CALLBACK_VERIFICATION_FAILED', 'Invalid Razorpay Signature', { ref, razorpay_order_id });
+      return c.redirect(`${frontendUrl}/checkout?error=verification_failed`);
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { referenceNumber: ref },
+    });
+
+    if (!booking) return c.redirect(`${frontendUrl}/checkout?error=booking_not_found`);
+
+    // Only update if PENDING to prevent double-processing
+    if (booking.status === 'PENDING') {
+      await prisma.booking.update({
+        where: { referenceNumber: ref },
+        data: { status: 'PAID', paymentStatus: 'PAID' }
+      });
+      // Webhook will handle the rest (commissions, emails, etc) for simplicity, or we can trigger them here.
+      // Since webhook is reliable, we can just update status and redirect.
+    }
+
+    return c.redirect(`${frontendUrl}/checkout/success?order_id=${ref}`);
+  } catch (err) {
+    return c.redirect(`${frontendUrl}/checkout?error=server_error`);
+  }
+};
