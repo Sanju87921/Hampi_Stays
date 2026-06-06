@@ -306,11 +306,14 @@ export function OwnerDashboard() {
     ?? resort?.bookings?.filter((b: any) => b.status === "CONFIRMED" || b.status === "PENDING").length
     ?? 0;
 
+  const totalGuests = resort?.bookings?.filter((b: any) => b.status === "CONFIRMED" || b.status === "COMPLETED")
+    .reduce((sum: number, b: any) => sum + (b.guests || 1), 0) ?? 0;
+
   const stats = [
-    { label: "Total Revenue", value: resort ? `₹${totalRevenue.toLocaleString("en-IN")}` : "₹0", icon: IndianRupee, trend: "+12.5%", color: "text-green-600 bg-green-50" },
-    { label: "Active Bookings", value: resort ? activeBookingsCount.toString() : "0", icon: CalendarCheck, trend: "+3", color: "text-blue-600 bg-blue-50", onClick: () => setShowBookingsModal(true) },
-    { label: "Guest Satisfaction", value: resort ? (resort.rating || "N/A").toString() + "/5" : "N/A", icon: Users, trend: "+0.2", color: "text-gold-600 bg-gold-50" },
-    { label: "Resort Views", value: resort ? "12.8k" : "0", icon: TrendingUp, trend: "+18%", color: "text-purple-600 bg-purple-50" },
+    { label: "Total Revenue", value: resort ? `₹${totalRevenue.toLocaleString("en-IN")}` : "₹0", icon: IndianRupee, color: "text-green-600 bg-green-50" },
+    { label: "Active Bookings", value: resort ? activeBookingsCount.toString() : "0", icon: CalendarCheck, color: "text-blue-600 bg-blue-50", onClick: () => setShowBookingsModal(true) },
+    { label: "Guest Satisfaction", value: resort ? (resort.rating || "N/A").toString() + "/5" : "N/A", icon: Star, color: "text-gold-600 bg-gold-50" },
+    { label: "Total Guests", value: resort ? totalGuests.toString() : "0", icon: Users, color: "text-purple-600 bg-purple-50" },
   ];
 
   const handleAddRoom = async (e: React.FormEvent) => {
@@ -1204,7 +1207,9 @@ export function OwnerDashboard() {
                 <div className={cn("p-3 rounded-2xl", stat.color)}>
                   <stat.icon className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">{stat.trend}</span>
+                {stat.trend && (
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">{stat.trend}</span>
+                )}
               </div>
               <p className="text-sm font-medium text-navy-950/40 mb-1">{stat.label}</p>
               <p className="text-3xl font-serif font-bold text-navy-950">{stat.value}</p>
@@ -1688,13 +1693,7 @@ export function OwnerDashboard() {
                                 <div className="p-8 text-center text-navy-950/40 text-sm">No staff members found.</div>
                              )}
                          </div>
-                      </div>                           </div>
-                                  </div>
-                               </div>
-                            ))}
-                         </div>
                       </div>
-
                       {/* Pending Invitations */}
                       {pendingInvitations.length > 0 && (
                         <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden mt-8">
