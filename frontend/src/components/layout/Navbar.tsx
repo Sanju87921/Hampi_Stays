@@ -82,7 +82,20 @@ export function Navbar() {
  ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
  ];
 
- const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; const useDarkText = isScrolled || !isHeroPage; return (<motion.nav initial={{ y: 0 }} animate={{ y: isVisible ? 0 : -100 }} transition={{ duration: 0.3, ease: "easeInOut" }} className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]", isScrolled ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" : "bg-transparent py-4 md:py-[1.15rem]")}>
+ const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
+ const useDarkText = isScrolled || !isHeroPage; 
+ const isSolidBg = isScrolled || !isHeroPage;
+
+ return (
+ <motion.nav 
+   initial={{ y: 0 }} 
+   animate={{ y: isVisible ? 0 : -100 }} 
+   transition={{ duration: 0.3, ease: "easeInOut" }} 
+   className={cn(
+     "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]", 
+     isSolidBg ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" : "bg-transparent py-4 md:py-[1.15rem]"
+   )}
+ >
  <div className="container mx-auto px-4 md:px-6">
  <div className="flex items-center justify-between">
  {/* Mobile Left Spacer (to help center logo) */}
@@ -139,9 +152,8 @@ export function Navbar() {
  <span className="relative z-10">{link.name}</span>
  <span 
  className={cn(
- "absolute -bottom-1 left-0 w-full h-[1.5px] rounded-full transform origin-right transition-transform duration-500 ease-out",
- isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left",
- useDarkText ? "bg-gold-500" : "bg-gold-400"
+ "absolute -bottom-1 left-0 w-full h-[2px] rounded-full transform origin-right transition-transform duration-500 ease-out",
+ isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left bg-gold-500/50"
  )}
  />
  </Link>
