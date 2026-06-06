@@ -305,34 +305,37 @@ function App() {
         toastOptions={{
           duration: 5000,
           style: {
-            background: 'rgba(10, 17, 40, 0.95)', // Luxury Navy with slight transparency
+            background: '#F5F5F0', // Light Sand/Cream
             backdropFilter: 'blur(16px)',
-            color: '#F5F1E9',      // Sand White
+            color: '#0A0F1E',      // Navy Text
             borderRadius: '1.25rem',
-            border: '1px solid rgba(197, 160, 89, 0.3)', // Subtle Gold border
+            border: '1px solid rgba(197, 160, 89, 0.4)', // Subtle Gold border
             padding: '12px 20px',
             fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 20px 40px -12px rgba(10, 17, 40, 0.15)',
             fontFamily: 'Outfit, sans-serif',
             letterSpacing: '0.02em',
           },
           success: {
             iconTheme: {
               primary: '#C5A059', // Gold
-              secondary: '#0A1128',
+              secondary: '#FFFFFF',
             },
             style: {
-              border: '1px solid rgba(197, 160, 89, 0.5)',
+              border: '1px solid rgba(197, 160, 89, 0.6)',
+              background: '#FFFFFF',
             }
           },
           error: {
             iconTheme: {
-              primary: '#EF4444', 
+              primary: '#DC2626', // Red
               secondary: '#FFFFFF',
             },
             style: {
-              border: '1px solid rgba(239, 68, 68, 0.4)',
+              border: '1px solid rgba(220, 38, 38, 0.3)',
+              background: '#FEF2F2',
+              color: '#991B1B',
             }
           }
         }}
