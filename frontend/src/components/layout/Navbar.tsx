@@ -146,7 +146,7 @@ export function Navbar() {
  to={link.path}
  className={cn(
  "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
- useDarkText ? "text-navy-950 hover:text-gold-600" : "text-gold-400 hover:text-gold-300"
+ useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-300"
  )}
  >
  <span className="relative z-10">{link.name}</span>
@@ -165,14 +165,14 @@ export function Navbar() {
  <div className="flex-1 flex justify-end items-center gap-5 z-10">
  {/* Desktop Actions */}
  <div className="hidden md:flex items-center gap-6">
- <LanguageSwitcher />
+ <LanguageSwitcher useDarkText={useDarkText} />
  {isAuthenticated ? (
  <div className="flex items-center gap-6">
  <button
  onClick={logout}
  className={cn(
  "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
- useDarkText ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" : "border-gold-400/60 text-gold-400 hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
+ useDarkText ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" : "border-white/60 text-white hover:bg-white hover:text-navy-950 hover:border-white"
  )}
  >
  {t("navbar.logout", "Logout")}
@@ -266,7 +266,7 @@ export function Navbar() {
  ))}
  <div className="flex flex-col gap-3 sm:gap-4 mt-2">
  <div className="flex justify-center mb-2">
- <LanguageSwitcher />
+ <LanguageSwitcher useDarkText={useDarkText} />
  </div>
  {!isAuthenticated ? (
  <>
