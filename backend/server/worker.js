@@ -3504,6 +3504,40 @@ app.patch('/rooms/:id/cover', authMiddleware, async (c) => {
 });
 
 
+app.post('/public/support', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    const data = await c.req.json();
+    const { name, email, subject, message } = data;
+    
+    if (!name || !email || !subject || !message) {
+      return c.json({ error: 'All fields are required' }, 400);
+    }
+    
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        userName: name,
+        userEmail: email,
+        subject: subject,
+        category: 'GENERAL',
+        priority: 'NORMAL',
+        status: 'OPEN',
+        messages: {
+          create: {
+            sender: 'USER',
+            senderName: name,
+            content: message
+          }
+        }
+      }
+    });
+    
+    return c.json({ success: true, ticket });
+  } catch (err) {
+    console.error("[PublicSupport] Error:", err);
+    return c.json({ error: err.message }, 500);
+  }
+});
 export default {
   fetch: app.fetch,
   async scheduled(event, env, ctx) {
@@ -3733,6 +3767,7 @@ async function processOwnerPayouts(env, ctx) {
     console.error("Owner payouts processing error:", error);
   }
 }
+
 
 
 
