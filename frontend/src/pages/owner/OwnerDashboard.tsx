@@ -1027,7 +1027,7 @@ export function OwnerDashboard() {
                 variant="outline" 
                 size="lg" 
                 className="rounded-2xl px-10 py-6 text-lg"
-                onClick={() => toast.info("The Partner Guide is currently being updated for the new season. Please check back soon!")}
+                onClick={() => toast("The Partner Guide is currently being updated for the new season. Please check back soon!", { icon: "ℹ️" })}
               >
                 View Partner Guide
               </Button>
