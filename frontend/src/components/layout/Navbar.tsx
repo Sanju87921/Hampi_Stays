@@ -75,12 +75,11 @@ export function Navbar() {
  : [
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  ]
- : [
- { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
- { name: t("navbar.discover", "Discover"), path: "/discovery" },
- ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
- ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
- ];
+ : user?.role?.toUpperCase() === 'ADMIN' ? [] : [
+  { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
+  { name: t("navbar.discover", "Discover"), path: "/discovery" },
+  ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
+  ];
 
   const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
   const useDarkText = !isHeroPage; 
