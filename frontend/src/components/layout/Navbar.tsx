@@ -66,7 +66,9 @@ export function Navbar() {
  { name: t("navbar.profile", "Profile"), path: "/dashboard/profile" },
  ]
  : user?.role?.toUpperCase() === 'ADMIN'
- ? [
+ ? location.pathname === '/admin'
+ ? [] // No links on admin landing page - clean hero look
+ : [
  { name: t("navbar.profile", "Profile"), path: "/admin/profile" },
  { name: t("navbar.settings", "Settings"), path: "/admin/settings" },
  ]
