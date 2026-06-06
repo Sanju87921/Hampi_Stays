@@ -1067,7 +1067,7 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
     const doc = await prisma.kycDocument.update({
       where: { id },
       data: { status, rejectedReason: rejectionReason },
-      include: { owner: true }
+      include: { owner: { include: { user: true } } }
     });
     
     const ownerId = doc.ownerId;
