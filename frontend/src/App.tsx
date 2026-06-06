@@ -10,6 +10,7 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 // Lazy Loaded Public Pages
 const LandingPage = lazyWithRetry(() => import("./pages/public/LandingPage").then(m => ({ default: m.LandingPage })));
+const AdminLandingPage = lazyWithRetry(() => import("./pages/admin/AdminLandingPage").then(m => ({ default: m.AdminLandingPage })));
 const ResortsPage = lazyWithRetry(() => import("./pages/public/ResortsPage").then(m => ({ default: m.ResortsPage })));
 const ResortDetailPage = lazyWithRetry(() => import("./pages/public/ResortDetailPage").then(m => ({ default: m.ResortDetailPage })));
 const ResortComparePage = lazyWithRetry(() => import("./pages/public/ResortComparePage").then(m => ({ default: m.ResortComparePage })));
@@ -227,7 +228,7 @@ function AnimatedRoutes() {
                 path="/admin"
                 element={
                   <ProtectedRoute>
-                    <LandingPage />
+                    <AdminLandingPage />
                   </ProtectedRoute>
                 }
               />
@@ -348,6 +349,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
