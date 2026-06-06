@@ -87,7 +87,8 @@ export function ContactPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/public/support", {
+      const { API_BASE_URL } = await import("../../config/api");
+      const res = await fetch(`${API_BASE_URL}/public/support`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
