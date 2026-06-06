@@ -82,7 +82,7 @@ export function Navbar() {
  ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
  ];
 
- const isHeroPage = location.pathname === "/admin" || location.pathname === "/dashboard" || location.pathname === "/"; const useDarkText = isScrolled || !isHeroPage; return (<motion.nav initial={{ y: 0 }} animate={{ y: isVisible ? 0 : -100 }} transition={{ duration: 0.3, ease: "easeInOut" }} className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]", isScrolled ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" : "bg-transparent py-4 md:py-[1.15rem]")}>
+ const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; const useDarkText = isScrolled || !isHeroPage; return (<motion.nav initial={{ y: 0 }} animate={{ y: isVisible ? 0 : -100 }} transition={{ duration: 0.3, ease: "easeInOut" }} className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]", isScrolled ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" : "bg-transparent py-4 md:py-[1.15rem]")}>
  <div className="container mx-auto px-4 md:px-6">
  <div className="flex items-center justify-between">
  {/* Mobile Left Spacer (to help center logo) */}
@@ -301,6 +301,7 @@ export function Navbar() {
  </motion.nav>
  );
 }
+
 
 
 
