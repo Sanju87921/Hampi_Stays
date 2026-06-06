@@ -17,7 +17,7 @@ import type { Booking, Message } from "../../types/booking";
 import type { Resort } from "../../types/resort";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { useSystem } from "../../context/SystemContext";
-
+import { StayPassModal } from "../../components/shared/StayPassModal";
 
 export function TravelerDashboard() {
   const navigate = useNavigate();
@@ -1198,126 +1198,11 @@ export function TravelerDashboard() {
       </main>
 
       {/* Luxurious Digital Stay Pass Modal */}
-      <AnimatePresence>
-        {showStayPassModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowStayPassModal(null)}
-              className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm"
-            />
-            
-            {/* Modal Card */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="relative bg-white w-full max-w-sm rounded-[3rem] border border-sand-200 overflow-hidden shadow-2xl p-8 text-center"
-            >
-              {/* Gold luxury accents */}
-              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-gold-400 via-gold-600 to-gold-400" />
-              
-              <button 
-                onClick={() => setShowStayPassModal(null)}
-                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-sand-50 border border-sand-100 flex items-center justify-center text-navy-950 hover:bg-gold-500 hover:text-navy-950 transition-all font-bold text-xs"
-              >
-                ✕
-              </button>
-
-              <div className="flex items-center justify-center gap-2 mb-2 mt-4">
-                <Shield className="w-5 h-5 text-gold-600 animate-pulse" />
-                <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest font-mono">Contactless Stay Pass Active</p>
-              </div>
-
-              <h3 className="text-xl font-serif font-bold text-navy-950 mb-1">{showStayPassModal.resort?.name}</h3>
-              <p className="text-xs text-navy-950/40 font-medium mb-6">Vijayanagara Valley Retreat, Hampi</p>
-
-              {/* QR Code Container */}
-              <div className="flex justify-center mb-6">
-                <div className="relative w-48 h-48 bg-white p-4 rounded-3xl shadow-inner border border-gold-200 flex items-center justify-center group hover:scale-[1.02] transition-transform duration-300">
-                  {/* Frame corners */}
-                  <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-gold-500 rounded-tl" />
-                  <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-gold-500 rounded-tr" />
-                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-gold-500 rounded-bl" />
-                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-gold-500 rounded-br" />
-                  
-                  {/* High-fidelity simulated SVG QR Code */}
-                  <svg className="w-40 h-40 text-navy-950" viewBox="0 0 100 100">
-                    {/* Position detection markers */}
-                    <rect x="5" y="5" width="20" height="20" fill="currentColor" rx="2" />
-                    <rect x="9" y="9" width="12" height="12" fill="white" rx="1" />
-                    <rect x="12" y="12" width="6" height="6" fill="currentColor" rx="0.5" />
-
-                    <rect x="75" y="5" width="20" height="20" fill="currentColor" rx="2" />
-                    <rect x="79" y="9" width="12" height="12" fill="white" rx="1" />
-                    <rect x="82" y="12" width="6" height="6" fill="currentColor" rx="0.5" />
-
-                    <rect x="5" y="75" width="20" height="20" fill="currentColor" rx="2" />
-                    <rect x="9" y="79" width="12" height="12" fill="white" rx="1" />
-                    <rect x="12" y="82" width="6" height="6" fill="currentColor" rx="0.5" />
-
-                    {/* Simulated random QR data blocks */}
-                    <path d="M 30,5 h 5 v 5 h -5 z M 40,5 h 10 v 5 h -10 z M 55,5 h 5 v 10 h -5 z M 65,5 h 5 v 5 h -5 z" fill="currentColor" />
-                    <path d="M 30,15 h 15 v 5 h -15 z M 50,15 h 5 v 5 h -5 z M 60,15 h 10 v 5 h -10 z" fill="currentColor" />
-                    <path d="M 5,30 h 5 v 15 h -5 z M 15,30 h 10 v 5 h -10 z M 35,30 h 5 v 10 h -5 z M 45,30 h 15 v 5 h -15 z M 65,30 h 15 v 5 h -15 z M 85,30 h 10 v 5 h -10 z" fill="currentColor" />
-                    <path d="M 10,40 h 5 v 5 h -5 z M 20,40 h 10 v 5 h -10 z M 40,40 h 5 v 10 h -5 z M 50,40 h 10 v 5 h -10 z M 70,40 h 5 v 15 h -5 z" fill="currentColor" />
-                    <path d="M 30,55 h 5 v 5 h -5 z M 40,55 h 15 v 5 h -15 z M 60,55 h 5 v 5 h -5 z M 75,55 h 10 v 5 h -10 z" fill="currentColor" />
-                    <path d="M 35,65 h 10 v 5 h -10 z M 50,65 h 5 v 15 h -5 z M 60,65 h 15 v 5 h -15 z M 80,65 h 10 v 5 h -10 z" fill="currentColor" />
-                    <path d="M 30,75 h 10 v 5 h -10 z M 45,75 h 5 v 5 h -5 z M 65,75 h 5 v 15 h -5 z M 75,75 h 15 v 5 h -15 z" fill="currentColor" />
-                    <path d="M 35,85 h 5 v 10 h -5 z M 45,85 h 10 v 5 h -10 z M 60,85 h 5 v 5 h -5 z M 80,85 h 10 v 5 h -10 z" fill="currentColor" />
-
-                    {/* Decorative Brand Logo in center of QR */}
-                    <rect x="42" y="42" width="16" height="16" fill="white" rx="3" />
-                    <circle cx="50" cy="50" r="6" fill="#0f172a" />
-                    <path d="M 48,50 L 52,50 L 50,47 Z" fill="#eab308" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Pass details */}
-              <div className="bg-sand-50/50 rounded-2xl p-4 border border-sand-100 space-y-2 mb-6">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-navy-950/40">Guest Name</span>
-                  <span className="font-bold text-navy-950">{user?.name}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-navy-950/40">Pass Number</span>
-                  <span className="font-mono font-bold text-gold-700">{showStayPassModal.referenceNumber}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-navy-950/40">Dates</span>
-                  <span className="font-bold text-navy-950">
-                    {new Date(showStayPassModal.checkIn).toLocaleDateString()} - {new Date(showStayPassModal.checkOut).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
-                  <Download className="w-3 h-3 mr-1.5" /> PDF
-                </Button>
-                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
-                  <Smartphone className="w-3 h-3 mr-1.5" /> Wallet
-                </Button>
-                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
-                  <Share className="w-3 h-3 mr-1.5" /> Share
-                </Button>
-                <Button variant="outline" className="w-full text-[10px] uppercase tracking-widest rounded-xl py-2 flex items-center justify-center">
-                  <Phone className="w-3 h-3 mr-1.5" /> Contact
-                </Button>
-              </div>
-
-              <div className="text-[10px] text-navy-950/40 leading-relaxed max-w-xs mx-auto">
-                Present this QR code at the contactless gateway or baggage counter upon your arrival for seamless entry.
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <StayPassModal 
+        isOpen={!!showStayPassModal} 
+        onClose={() => setShowStayPassModal(null)} 
+        booking={showStayPassModal} 
+      />
     </div>
   );
 }
