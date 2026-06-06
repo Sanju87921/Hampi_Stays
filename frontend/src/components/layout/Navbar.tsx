@@ -45,7 +45,7 @@ export function Navbar() {
  return () => window.removeEventListener("scroll", handleScroll);
  }, []);
 
- const isDashboard = false;
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
 
  const navLinks = isDashboard 
  ? user?.role?.toUpperCase() === 'GUIDE'
