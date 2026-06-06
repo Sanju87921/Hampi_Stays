@@ -415,11 +415,12 @@ export function TravelerDashboard() {
               >
                 Remind Me Later
               </Button>
-              <Link to="/dashboard/kyc" className="w-full sm:w-auto">
-                <Button className="w-full bg-gold-500 text-navy-950 hover:bg-gold-400">
-                  Complete KYC
-                </Button>
-              </Link>
+              <Button 
+                className="w-full sm:w-auto bg-gold-500 text-navy-950 hover:bg-gold-400"
+                onClick={() => setActiveTab('kyc')}
+              >
+                Complete KYC
+              </Button>
             </div>
           </div>
         )}
