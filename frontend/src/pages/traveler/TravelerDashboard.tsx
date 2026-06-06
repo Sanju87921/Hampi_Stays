@@ -4,7 +4,7 @@ import { Calendar, Heart, User, LogOut,
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield, Download, Smartphone, Share,
-  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer, Cloud, CheckSquare, Square, Luggage
+  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer, Cloud, CheckSquare, Square, Luggage, ChevronLeft
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -1002,9 +1002,9 @@ export function TravelerDashboard() {
         )}
 
         {activeTab === "inbox" && (
-          <div className="bg-white rounded-[3.5rem] border border-sand-200 shadow-xl overflow-hidden flex h-[600px] relative">
+          <div className="bg-white rounded-[2rem] lg:rounded-[3.5rem] border border-sand-200 shadow-xl overflow-hidden flex flex-col lg:flex-row h-auto lg:h-[600px] relative">
             {/* Sidebar */}
-            <div className="w-1/3 border-r border-sand-100 flex flex-col bg-sand-50/30">
+            <div className={cn("w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-sand-100 flex flex-col bg-sand-50/30 transition-all", activeMessageBooking ? "hidden lg:flex" : "flex h-[600px] lg:h-auto")}>
               <div className="p-8 border-b border-sand-100">
                 <h3 className="text-2xl font-serif font-bold text-navy-950 mb-1">My Inbox</h3>
                 <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Resort Chats</p>
@@ -1045,14 +1045,17 @@ export function TravelerDashboard() {
             </div>
 
             {/* Chat Area & Sidebar Wrapper */}
-            <div className="flex-grow flex bg-white relative">
+            <div className={cn("flex-grow flex flex-col lg:flex-row bg-white relative", !activeMessageBooking ? "hidden lg:flex" : "flex h-auto lg:h-[600px]")}>
               {activeMessageBooking ? (
                 <>
                   {/* Chat Panel */}
-                  <div className="flex-grow flex flex-col border-r border-sand-100 h-full overflow-hidden">
-                    <div className="p-8 border-b border-sand-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                  <div className="flex-grow flex flex-col border-b lg:border-b-0 lg:border-r border-sand-100 h-[600px] lg:h-full overflow-hidden">
+                    <div className="p-4 lg:p-8 border-b border-sand-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
                       <div className="flex items-center gap-4">
-                         <div className="w-14 h-14 rounded-2xl bg-navy-950 text-gold-500 flex items-center justify-center font-bold text-xl">
+                         <button className="lg:hidden p-2 -ml-2 text-navy-950" onClick={() => setActiveMessageBooking(null)}>
+                           <ChevronLeft className="w-6 h-6" />
+                         </button>
+                         <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-2xl bg-navy-950 text-gold-500 flex items-center justify-center font-bold text-lg lg:text-xl">
                            {activeMessageBooking.resort?.name[0]}
                          </div>
                          <div>
@@ -1125,7 +1128,7 @@ export function TravelerDashboard() {
                   </div>
 
                   {/* Active Stay Details Sidebar Drawer */}
-                  <div className="w-80 shrink-0 border-l border-sand-100 flex flex-col bg-sand-50/10 h-full overflow-y-auto">
+                  <div className="w-full lg:w-80 shrink-0 border-l border-sand-100 flex flex-col bg-sand-50/10 h-auto lg:h-full overflow-y-auto">
                     <div className="p-6 border-b border-sand-100 text-center bg-white/40">
                       <div className="w-20 h-20 mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white mb-3">
                         <img 
