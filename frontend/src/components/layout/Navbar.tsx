@@ -45,53 +45,30 @@ export function Navbar() {
  return () => window.removeEventListener("scroll", handleScroll);
  }, []);
 
-  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+  const navLinks = [
+    { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
+    { name: t("navbar.discover", "Discover"), path: "/discovery" },
+    ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
+    ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
+  ];
 
- const navLinks = isDashboard 
- ? user?.role?.toUpperCase() === 'GUIDE'
- ? [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- { name: t("navbar.myTours", "My Tours"), path: "/dashboard?tab=tours" },
- { name: t("navbar.profile", "Profile"), path: "/dashboard?tab=profile" },
- 
- 
- ]
- : user?.role?.toUpperCase() === 'TRAVELLER'
- ? [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
- { name: t("navbar.wishlist", "Wishlist"), path: "/dashboard/wishlist" },
- { name: t("navbar.bookings", "Bookings"), path: "/dashboard/bookings" },
- { name: t("navbar.notifications", "Notifications"), path: "/dashboard/notifications" },
- { name: t("navbar.profile", "Profile"), path: "/dashboard/profile" },
- ]
- : user?.role?.toUpperCase() === 'ADMIN'
- ? [
- { name: t("navbar.profile", "Profile"), path: "/admin/profile" },
- { name: t("navbar.settings", "Settings"), path: "/admin/settings" },
- ]
- : [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- ]
- : [
- { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
- { name: t("navbar.discover", "Discover"), path: "/discovery" },
- ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
- ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
- ];
+  const isTransparentRoute = location.pathname === "/" || location.pathname === "/discovery" || (location.pathname.startsWith("/resorts/") && location.pathname.length > 9);
 
- return (
- <motion.nav
- initial={{ y: 0 }}
- animate={{ y: isVisible ? 0 : -100 }}
- transition={{ duration: 0.3, ease: "easeInOut" }}
- className={cn(
- "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
-        isScrolled
-          ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5"
-          : "bg-navy-950/60 backdrop-blur-xl border-b border-white/5 shadow-sm py-4 md:py-[1.15rem]"
- )}
- >
+  return (
+  <motion.nav
+  initial={{ y: 0 }}
+  animate={{ y: isVisible ? 0 : -100 }}
+  transition={{ duration: 0.3, ease: "easeInOut" }}
+  className={cn(
+  "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
+         isScrolled
+           ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5"
+           : cn(
+               "shadow-sm py-4 md:py-[1.15rem]",
+               !isTransparentRoute ? "bg-navy-950 border-b border-navy-900" : "bg-navy-950/60 backdrop-blur-xl border-b border-white/5"
+             )
+  )}
+  >
  <div className="container mx-auto px-4 md:px-6">
  <div className="flex items-center justify-between">
  {/* Mobile Left Spacer (to help center logo) */}
