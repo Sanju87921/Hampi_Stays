@@ -83,7 +83,7 @@ export function Navbar() {
  ];
 
   const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
-  const useDarkText = true; 
+  const useDarkText = !isHeroPage; 
   const isSolidBg = false;
 
  return (
