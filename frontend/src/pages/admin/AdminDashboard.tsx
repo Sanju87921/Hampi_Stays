@@ -10,7 +10,7 @@ import {
  ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
  User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
- Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode, RotateCcw, Headphones, Megaphone
+ Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode, RotateCcw, Headphones, Megaphone, Banknote
 } from "lucide-react";
 import { CinematicLogo } from "../../components/ui/CinematicLogo";
 import { Button } from "../../components/ui/Button";
@@ -33,6 +33,7 @@ const CommissionsModule = lazy(() => import("./components/CommissionsModule").th
 const RefundManagementModule = lazy(() => import("./components/RefundManagementModule").then(m => ({ default: m.RefundManagementModule })));
 const SupportHelpDeskModule = lazy(() => import("./components/SupportHelpDeskModule").then(m => ({ default: m.SupportHelpDeskModule })));
 const EmailCampaignsModule = lazy(() => import("./components/EmailCampaignsModule").then(m => ({ default: m.EmailCampaignsModule })));
+const PayoutHistoryModule = lazy(() => import("./components/PayoutHistoryModule").then(m => ({ default: m.PayoutHistoryModule })));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-24">
@@ -43,7 +44,7 @@ const TabLoader = () => (
   </div>
 );
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market" | "refunds" | "support" | "campaigns";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market" | "refunds" | "support" | "campaigns" | "payout-history";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -2219,6 +2220,7 @@ export function AdminDashboard() {
   { id: "refunds", label: "Refunds", icon: RotateCcw },
   { id: "support", label: "Help Desk", icon: Headphones },
   { id: "campaigns", label: "Campaigns", icon: Megaphone },
+  { id: "payout-history", label: "Payout History", icon: Banknote },
  ].map((tab) => (
  <button
  key={tab.id}
@@ -2306,6 +2308,7 @@ export function AdminDashboard() {
   {activeTab === "refunds" && <Suspense fallback={<TabLoader />}><RefundManagementModule /></Suspense>}
   {activeTab === "support" && <Suspense fallback={<TabLoader />}><SupportHelpDeskModule /></Suspense>}
   {activeTab === "campaigns" && <Suspense fallback={<TabLoader />}><EmailCampaignsModule /></Suspense>}
+  {activeTab === "payout-history" && <Suspense fallback={<TabLoader />}><PayoutHistoryModule /></Suspense>}
  </ErrorBoundary>
  </motion.div>
  )}
@@ -2596,6 +2599,7 @@ export function AdminDashboard() {
     </div>
   );
 }
+
 
 
 
