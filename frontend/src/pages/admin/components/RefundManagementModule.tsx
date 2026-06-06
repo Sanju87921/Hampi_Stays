@@ -2,10 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  RotateCcw, CheckCircle, XCircle, Search, Filter,
-  Clock, AlertCircle, IndianRupee, Calendar, User,
-  Building2, Eye, Loader2, ChevronDown, MessageSquare,
-  Download, RefreshCw, BadgeCheck, Ban
+  RotateCcw, CheckCircle, XCircle, Search,
+  Clock, IndianRupee, Calendar,
+  Building2, Loader2,
+  Download, RefreshCw
 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { apiClient } from "../../../utils/apiClient";
@@ -65,9 +65,7 @@ export function RefundManagementModule() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<RefundStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminNote, setAdminNote] = useState<Record<string, string>>({});
-  const [showNoteFor, setShowNoteFor] = useState<string | null>(null);
 
   // ─── Stats derived ──────────────────────────────────────────────────────────
   const stats = {
@@ -92,7 +90,10 @@ export function RefundManagementModule() {
     }
   }, []);
 
-  useEffect(() => { fetchRefunds(); }, [fetchRefunds]);
+  useEffect(() => { 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchRefunds(); 
+  }, [fetchRefunds]);
 
   // ─── Approve / Reject ───────────────────────────────────────────────────────
   const handleAction = async (id: string, action: "approve" | "reject") => {
@@ -241,7 +242,6 @@ export function RefundManagementModule() {
             {filtered.map((refund, idx) => {
               const cfg = STATUS_CONFIG[refund.status];
               const Icon = cfg.icon;
-              const isExpanded = expandedId === refund.id;
               const isActing = actionLoading?.startsWith(refund.id);
 
               return (
