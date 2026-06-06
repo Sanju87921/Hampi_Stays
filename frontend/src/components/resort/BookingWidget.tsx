@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, Info, ArrowRight } from "lucide-react";
+import { Calendar, Users, Info, ArrowRight, ShieldCheck, Zap, MapPin } from "lucide-react";
 import { Button } from "../ui/Button";
 import type { Resort } from "../../types/resort";
 
@@ -14,6 +14,7 @@ interface BookingWidgetProps {
 
 import { useAuth } from "../../context/AuthContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
+import { TrustPolicyModal } from "../shared/TrustPolicyModal";
 
 export function BookingWidget({ 
   resort, 
@@ -27,6 +28,7 @@ export function BookingWidget({
   const [checkIn, setCheckIn] = useState(initialCheckIn || "");
   const [checkOut, setCheckOut] = useState(initialCheckOut || "");
   const [adults, setAdults] = useState(initialAdults);
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
 
   const selectedRoom = resort.roomTypes.find(r => r.id === selectedRoomId);
   
@@ -209,7 +211,7 @@ export function BookingWidget({
       </div>
 
       <Button 
-        className="w-full h-14 text-lg rounded-2xl gap-2 shadow-gold"
+        className="w-full h-14 text-lg rounded-2xl gap-2 shadow-gold mb-6"
         disabled={!selectedRoomId || !checkIn || !checkOut || isBlocked || minNightsViolated}
         onClick={handleBook}
       >
@@ -217,9 +219,32 @@ export function BookingWidget({
         <ArrowRight className="w-5 h-5" />
       </Button>
 
-      <p className="text-center text-[10px] font-bold text-navy-950   uppercase tracking-widest mt-6">
-        Secure Payment via Razorpay
-      </p>
+      <div className="space-y-3 pt-6 border-t border-sand-100">
+        <div className="flex items-center gap-3 text-navy-950/80">
+          <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
+          <span className="text-xs font-semibold">Secure Local Payment</span>
+        </div>
+        <div className="flex items-center gap-3 text-navy-950/80">
+          <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+          <span className="text-xs font-semibold">Instant Confirmation</span>
+        </div>
+        <div className="flex items-center gap-3 text-navy-950/80">
+          <MapPin className="w-4 h-4 text-gold-600 shrink-0" />
+          <span className="text-xs font-semibold">24/7 Local Support in Hampi</span>
+        </div>
+      </div>
+
+      <button 
+        onClick={() => setIsPolicyOpen(true)}
+        className="w-full mt-4 text-[10px] font-bold text-navy-950/60 uppercase tracking-widest hover:text-gold-600 transition-colors underline underline-offset-4 decoration-navy-950/20 hover:decoration-gold-600"
+      >
+        View Trust & Cancellation Policy
+      </button>
+
+      <TrustPolicyModal 
+        isOpen={isPolicyOpen} 
+        onClose={() => setIsPolicyOpen(false)} 
+      />
     </div>
   );
 }

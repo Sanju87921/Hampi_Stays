@@ -9,7 +9,20 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { SystemProvider } from './context/SystemContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ModalProvider } from './components/shared/ModalProvider'
+import { registerSW } from 'virtual:pwa-register'
 
+// Register the PWA service worker to make the site installable
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // Optional: Prompt user to refresh for new content
+    if (confirm('New content available. Reload?')) {
+      updateSW(true)
+    }
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline')
+  },
+})
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

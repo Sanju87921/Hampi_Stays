@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Star, MapPin, Heart, ArrowRight, Loader2 } from "lucide-react";
+import { Star, MapPin, Heart, ArrowRight, Loader2, BadgeCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
@@ -122,8 +122,9 @@ export function FeaturedResorts() {
 
                 {/* Top Actions */}
                 <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-20">
-                  <span className="bg-white  backdrop-blur-md border border-white/20 px-4 py-1.5 text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-sm rounded-full">
-                    Signature
+                  <span className="flex items-center gap-1.5 bg-gradient-to-r from-gold-600 to-gold-400 border border-gold-300/30 px-4 py-1.5 text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-luxury rounded-full">
+                    <BadgeCheck className="w-3.5 h-3.5" />
+                    Hampi Verified
                   </span>
                   <button
                     onClick={(e) => handleToggleFavorite(e, resort.id)}
