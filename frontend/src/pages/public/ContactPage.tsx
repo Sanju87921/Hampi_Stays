@@ -79,9 +79,28 @@ export function ContactPage() {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/public/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send message");
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error("Error sending message:", err);
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -257,10 +276,11 @@ export function ContactPage() {
                       />
                     </div>
 
-                    <Button type="submit" className="w-full h-14 text-lg mt-2">
-                      <Send className="w-5 h-5 mr-2" />
-                      Send Message
+                    <Button type="submit" className="w-full h-14 text-lg mt-2" disabled={loading}>
+                      <Send className={`w-5 h-5 mr-2 ${loading ? 'animate-pulse' : ''}`} />
+                      {loading ? "Sending..." : "Send Message"}
                     </Button>
+                    {error && <p className="text-red-500 text-sm mt-2 text-center">{error}</p>}
                   </form>
                 </div>
               )}
