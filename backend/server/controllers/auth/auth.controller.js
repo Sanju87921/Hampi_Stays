@@ -40,6 +40,13 @@ export const register = async (c) => {
       return c.json({ error: 'Guide registration is currently disabled by the administrator.' }, 403);
     }
 
+    if (!password || password.length < 9 || !(/^(?=.*[a-zA-Z])(?=.*\d).+$/.test(password))) {
+      return c.json({ error: 'Password must be at least 9 characters and alphanumeric.' }, 400);
+    }
+    if (password.toLowerCase() === lowerEmail || (name && password.toLowerCase() === name.toLowerCase())) {
+      return c.json({ error: 'Password cannot be the same as your name or email.' }, 400);
+    }
+
     const existing = await prisma.user.findUnique({ where: { email: lowerEmail } });
     if (existing) return c.json({ error: 'Email already registered' }, 400);
 
@@ -342,6 +349,13 @@ export const resetPassword = async (c) => {
   const prisma = getPrisma(c.env);
   const { token, email, password } = await c.req.json();
   const normalizedEmail = email.toLowerCase();
+
+  if (!password || password.length < 9 || !(/^(?=.*[a-zA-Z])(?=.*\d).+$/.test(password))) {
+    return c.json({ error: 'Password must be at least 9 characters and alphanumeric.' }, 400);
+  }
+  if (password.toLowerCase() === normalizedEmail) {
+    return c.json({ error: 'Password cannot be the same as your email.' }, 400);
+  }
   try {
     const records = await prisma.otpVerification.findMany({
       where: {
@@ -374,6 +388,14 @@ export const resetPassword = async (c) => {
 
     if (!matchingRecord) {
       return c.json({ error: 'The password reset link is invalid or has expired. Please request a new link.' }, 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (user && user.passwordHash) {
+      const isSameAsOld = await bcrypt.compare(password, user.passwordHash);
+      if (isSameAsOld) {
+        return c.json({ error: 'New password must be different from your current password.' }, 400);
+      }
     }
 
     const salt = await bcrypt.genSalt(12);

@@ -39,9 +39,10 @@ export function ResetPasswordPage() {
 
   // Validation Rules
   const hasMinLength = password.length >= 9;
-  const hasSpecialChar = /^(?=.*[!@#$%^&*(),.?":{}|<>]).*$/.test(password);
+  const isAlphanumeric = /^(?=.*[a-zA-Z])(?=.*\d).+$/.test(password);
+  const isNotEmail = password.toLowerCase() !== email.toLowerCase() && password !== "";
   const passwordsMatch = password && password === confirmPassword;
-  const isFormValid = hasMinLength && hasSpecialChar && passwordsMatch;
+  const isFormValid = hasMinLength && isAlphanumeric && isNotEmail && passwordsMatch;
 
   const staggerContainer: Variants = {
     hidden: { opacity: 0 },
@@ -242,12 +243,20 @@ export function ResetPasswordPage() {
                         <span className={hasMinLength ? "text-green-700" : ""}>Minimum 9 characters</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasSpecialChar ? (
+                        {isAlphanumeric ? (
                           <Check className="w-3.5 h-3.5 text-green-600 font-bold" />
                         ) : (
                           <X className="w-3.5 h-3.5 text-red-500 font-bold" />
                         )}
-                        <span className={hasSpecialChar ? "text-green-700" : ""}>At least one special character (!@#$ etc.)</span>
+                        <span className={isAlphanumeric ? "text-green-700" : ""}>Alphanumeric (letters & numbers)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isNotEmail ? (
+                          <Check className="w-3.5 h-3.5 text-green-600 font-bold" />
+                        ) : (
+                          <X className="w-3.5 h-3.5 text-red-500 font-bold" />
+                        )}
+                        <span className={isNotEmail ? "text-green-700" : ""}>Different from your email</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {passwordsMatch ? (

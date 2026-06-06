@@ -105,9 +105,12 @@ export function RegisterPage() {
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
-    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{9,}$/;
+    if (formData.password.toLowerCase() === formData.email.toLowerCase() || formData.password.toLowerCase() === formData.name.toLowerCase()) {
+      return setError("Password cannot be the same as your name or email.");
+    }
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).{9,}$/;
     if (!passwordRegex.test(formData.password)) {
-      return setError("Password must be at least 9 characters and include at least one special character.");
+      return setError("Password must be at least 9 characters and be alphanumeric (include both letters and numbers).");
     }
     if (!formData.terms) return setError("You must agree to the terms");
     setError("");
@@ -553,7 +556,7 @@ export function RegisterPage() {
                     <Input
                       label="Password"
                       type="password"
-                      hint="Min. 9 characters + special character"
+                      hint="Min. 9 chars, alphanumeric (letters & numbers)"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
