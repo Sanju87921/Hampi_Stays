@@ -4,7 +4,7 @@ import { Calendar, Heart, User, LogOut,
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield, Download, Smartphone, Share,
-  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer, Cloud
+  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer, Cloud, CheckSquare, Square, Luggage
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
@@ -41,6 +41,16 @@ export function TravelerDashboard() {
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [hideKycBanner, setHideKycBanner] = useState(sessionStorage.getItem('hideKycBanner') === 'true');
   const [referralData, setReferralData] = useState<any>(null);
+  const [packingList, setPackingList] = useState([
+    { id: 1, text: "Grip shoes for Matanga Hill", checked: false },
+    { id: 2, text: "Wide-brim hat for the midday sun", checked: false },
+    { id: 3, text: "Light cottons & breathable fabrics", checked: false },
+    { id: 4, text: "Mosquito repellent for evenings", checked: false },
+  ]);
+
+  const togglePackingItem = (id: number) => {
+    setPackingList(prev => prev.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -898,6 +908,53 @@ export function TravelerDashboard() {
                           <p className="text-sm font-bold text-navy-950">Dinner Reservation</p>
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Pre-Arrival Checklist Widget */}
+                  <div className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm relative overflow-hidden">
+                    <div className="absolute -top-6 -right-6 opacity-[0.03] pointer-events-none">
+                      <Luggage className="w-32 h-32 text-navy-950" />
+                    </div>
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                      <h3 className="font-bold text-navy-950 flex items-center gap-2">
+                        <Luggage className="w-5 h-5 text-gold-500" />
+                        Hampi Survival Kit
+                      </h3>
+                      <span className="text-[10px] font-bold bg-sand-50 text-navy-950/60 px-2 py-1 rounded-md uppercase tracking-widest border border-sand-100">
+                        {packingList.filter(i => i.checked).length}/{packingList.length} Packed
+                      </span>
+                    </div>
+                    
+                    <p className="text-xs text-navy-950/50 mb-5 leading-relaxed relative z-10">
+                      Hampi’s rocky terrain and warm climate require some specific gear. Use this checklist to pack perfectly!
+                    </p>
+
+                    <div className="space-y-3 relative z-10">
+                      {packingList.map(item => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => togglePackingItem(item.id)}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                            item.checked 
+                              ? "bg-emerald-50/50 border-emerald-100/50" 
+                              : "bg-white border-sand-100 hover:border-gold-300 hover:shadow-sm"
+                          )}
+                        >
+                          {item.checked ? (
+                            <CheckSquare className="w-5 h-5 text-emerald-500 shrink-0" />
+                          ) : (
+                            <Square className="w-5 h-5 text-sand-300 shrink-0" />
+                          )}
+                          <span className={cn(
+                            "text-sm font-medium transition-colors",
+                            item.checked ? "text-emerald-700/60 line-through" : "text-navy-950"
+                          )}>
+                            {item.text}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
