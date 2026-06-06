@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Star, Loader2 } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '../ui/Button';
 import apiClient from '@/utils/apiClient';
 import toast from 'react-hot-toast';
 
