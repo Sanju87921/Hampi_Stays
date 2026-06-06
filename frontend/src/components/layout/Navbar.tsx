@@ -104,7 +104,7 @@ export function Navbar() {
  }}
  className={cn(
  "h-20 w-auto object-contain transition-all duration-500",
- !useDarkText && "brightness-0 invert opacity-90 hover:opacity-100"
+ !useDarkText ? "brightness-0 invert opacity-90 hover:opacity-100" : "brightness-0 opacity-80 hover:opacity-100"
  )}
  />
  </Link>
@@ -301,6 +301,7 @@ export function Navbar() {
  </motion.nav>
  );
 }
+
 
 
 
