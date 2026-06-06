@@ -133,7 +133,7 @@ export function Navbar() {
  to={link.path}
  className={cn(
  "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
- useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-400"
+ useDarkText ? "text-navy-950 hover:text-gold-600" : "text-gold-400 hover:text-gold-300"
  )}
  >
  <span className="relative z-10">{link.name}</span>
@@ -160,7 +160,7 @@ export function Navbar() {
  onClick={logout}
  className={cn(
  "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
- useDarkText ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" : "border-white/30 text-white hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
+ useDarkText ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" : "border-gold-400/60 text-gold-400 hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
  )}
  >
  {t("navbar.logout", "Logout")}
