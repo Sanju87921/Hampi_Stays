@@ -1,3 +1,5 @@
+import { Resend } from 'resend';
+
 export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
   
   // ==========================================
@@ -185,6 +187,34 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
         where: { ownerId, status: { in: ['APPROVED', 'KYC_PENDING'] } }, 
         data: { isVerified: true, status: 'ACTIVE' } 
       });
+
+      await prisma.notification.create({
+        data: {
+          userId: owner.userId,
+          title: 'KYC Verification Approved ✨',
+          message: 'Your documents have been verified. Your resort is now active and visible to travelers!',
+          type: 'account'
+        }
+      });
+
+      if (c.env.RESEND_API_KEY) {
+        const resend = new Resend(c.env.RESEND_API_KEY);
+        const ownerUser = await prisma.user.findUnique({ where: { id: owner.userId } });
+        if (ownerUser) {
+          c.executionCtx.waitUntil(
+            resend.emails.send({
+              from: c.env.EMAIL_FROM || 'noreply@hampistays.com',
+              to: ownerUser.email,
+              subject: 'HampiStays - Account Verified!',
+              html: `<div style="font-family: sans-serif; padding: 20px;">
+                <h1 style="color: #0A0F1E;">Congratulations, ${ownerUser.name}!</h1>
+                <p>Your KYC verification is complete. Your resort is now fully active and visible to travelers.</p>
+                <p>Welcome to HampiStays.</p>
+              </div>`
+            }).catch(e => console.error("Email send failed:", e))
+          );
+        }
+      }
     }
 
     await prisma.verificationAudit.create({
@@ -219,6 +249,36 @@ export const setupKycRoutes = (app, authMiddleware, adminMiddleware) => {
         details: `Rejected ${type}`
       }
     });
+
+    await prisma.notification.create({
+      data: {
+        userId: owner.userId,
+        title: 'Action Required: KYC Rejected ⚠️',
+        message: `Your ${type} document was rejected. Reason: ${reason}. Please upload a new document.`,
+        type: 'account'
+      }
+    });
+
+    if (c.env.RESEND_API_KEY) {
+      const resend = new Resend(c.env.RESEND_API_KEY);
+      const ownerUser = await prisma.user.findUnique({ where: { id: owner.userId } });
+      if (ownerUser) {
+        c.executionCtx.waitUntil(
+          resend.emails.send({
+            from: c.env.EMAIL_FROM || 'noreply@hampistays.com',
+            to: ownerUser.email,
+            subject: 'HampiStays - KYC Document Rejected',
+            html: `<div style="font-family: sans-serif; padding: 20px;">
+              <h1 style="color: #0A0F1E;">Action Required, ${ownerUser.name}</h1>
+              <p>Your recent KYC submission for <strong>${type}</strong> was unfortunately not accepted.</p>
+              <p><strong>Reason provided:</strong> ${reason}</p>
+              <p>Please log in to your dashboard to upload a new document.</p>
+            </div>`
+          }).catch(e => console.error("Email send failed:", e))
+        );
+      }
+    }
+
     return c.json({ success: true });
   });
 
