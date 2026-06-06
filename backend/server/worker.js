@@ -1345,13 +1345,13 @@ app.post('/reviews', authMiddleware, async (c) => {
         bookingId: bookingToReview.id,
         rating: ratingVal,
         comment: comment.trim(),
-        status: 'PENDING'
+        status: 'APPROVED'
       },
       include: { user: { select: { name: true, email: true } } }
     });
     
     const aggregates = await prisma.review.aggregate({
-      where: { resortId },
+      where: { resortId, status: 'APPROVED' },
       _avg: { rating: true },
       _count: { id: true }
     });
@@ -1457,6 +1457,21 @@ app.patch('/admin/reviews/:id/status', authMiddleware, async (c) => {
       }
     });
 
+    // Recalculate rating based on APPROVED reviews only
+    const aggregates = await prisma.review.aggregate({
+      where: { resortId: updatedReview.resortId, status: 'APPROVED' },
+      _avg: { rating: true },
+      _count: { id: true }
+    });
+    
+    await prisma.resort.update({
+      where: { id: updatedReview.resortId },
+      data: { 
+        rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
+        reviewCount: aggregates._count.id || 0 
+      }
+    });
+
     return c.json(updatedReview);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
@@ -1481,9 +1496,9 @@ app.delete('/admin/reviews/:id', authMiddleware, async (c) => {
       }
     });
 
-    // Recalculate rating
+    // Recalculate rating based on APPROVED reviews only
     const aggregates = await prisma.review.aggregate({
-      where: { resortId: review.resortId },
+      where: { resortId: review.resortId, status: 'APPROVED' },
       _avg: { rating: true },
       _count: { id: true }
     });
