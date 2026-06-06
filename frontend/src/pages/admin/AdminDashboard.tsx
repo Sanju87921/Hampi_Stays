@@ -211,7 +211,7 @@ export function AdminDashboard() {
  case 'properties':
  case 'commissions':
  const pr = await apiClient.get<any[]>('/admin/resorts/pending');
- const ar = await apiClient.get<any[]>('/admin/resorts/active');
+ const ar = await apiClient.get<any>('/admin/resorts/active');
  setPendingResorts(pr);
  setActiveResorts(Array.isArray(ar?.data) ? ar.data : (Array.isArray(ar) ? ar : []));
  break;
@@ -257,7 +257,7 @@ export function AdminDashboard() {
  case 'commissions':
  const [pending, active] = await Promise.all([
  apiClient.get<any[]>('/admin/resorts/pending'),
- apiClient.get<any[]>('/admin/resorts/active')
+ apiClient.get<any>('/admin/resorts/active')
  ]);
  setPendingResorts(pending);
  setActiveResorts(Array.isArray(active?.data) ? active.data : (Array.isArray(active) ? active : []));
@@ -509,7 +509,7 @@ export function AdminDashboard() {
  try {
    await updateSettings({ defaultCommissionRate });
    // Re-fetch active resorts so every card immediately shows the new rate
-   const ar = await apiClient.get<any[]>('/admin/resorts/active');
+   const ar = await apiClient.get<any>('/admin/resorts/active');
    setActiveResorts(Array.isArray(ar?.data) ? ar.data : (Array.isArray(ar) ? ar : []));
    toast.success(`✅ Global commission updated to ${defaultCommissionRate}% — applied to all resorts!`);
  } catch (err) {
