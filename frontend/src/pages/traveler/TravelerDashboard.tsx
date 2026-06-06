@@ -4,7 +4,7 @@ import { Calendar, Heart, User, LogOut,
   ChevronRight, MapPin, Star, Check,
   LayoutDashboard, ShoppingBag, Bell, Mail,
   Phone, Compass, Shield, Download, Smartphone, Share,
-  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer
+  Copy, CheckCircle, Gift, Landmark, Sun, Sunrise, Sunset, Thermometer, Cloud
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
