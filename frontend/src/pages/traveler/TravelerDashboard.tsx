@@ -288,6 +288,7 @@ export function TravelerDashboard() {
 
   const upcomingTrip = bookings[0] ? {
     resortName: bookings[0].resort?.name || "Resort",
+    checkIn: bookings[0].checkIn,
     dates: `${new Date(bookings[0].checkIn).toLocaleDateString()} - ${new Date(bookings[0].checkOut).toLocaleDateString()}`,
     status: "Confirmed",
     image: bookings[0].resort?.images?.[0] || "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1000",
