@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   RotateCcw, CheckCircle, XCircle, Search,
   Clock, IndianRupee, Calendar,
-  Building2, Loader2,
-  Download, RefreshCw
+  Building2, Loader2, MessageSquare,
+  Download, RefreshCw, BadgeCheck, Ban
 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { apiClient } from "../../../utils/apiClient";
@@ -66,6 +66,7 @@ export function RefundManagementModule() {
   const [filterStatus, setFilterStatus] = useState<RefundStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [adminNote, setAdminNote] = useState<Record<string, string>>({});
+  const [showNoteFor, setShowNoteFor] = useState<string | null>(null);
 
   // ─── Stats derived ──────────────────────────────────────────────────────────
   const stats = {
@@ -80,7 +81,7 @@ export function RefundManagementModule() {
   const fetchRefunds = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiClient("/api/admin/refunds");
+      const data = await apiClient.get<any>("/api/admin/refunds");
       setRefunds(data?.refunds || data || []);
     } catch {
       // If backend not yet wired, show empty state gracefully
@@ -100,10 +101,7 @@ export function RefundManagementModule() {
     setActionLoading(id + action);
     const note = adminNote[id] || "";
     try {
-      await apiClient(`/api/admin/refunds/${id}/${action}`, {
-        method: "POST",
-        body: JSON.stringify({ adminNote: note }),
-      });
+      await apiClient.post(`/api/admin/refunds/${id}/${action}`, { adminNote: note });
       toast.success(`Refund ${action === "approve" ? "approved" : "rejected"} successfully!`);
       setRefunds(prev =>
         prev.map(r =>
