@@ -2311,19 +2311,26 @@ app.post('/upload/check-hash', authMiddleware, async (c) => {
       where: { hash }
     });
 
-    if (existing) {
-      return c.json({ exists: true, message: 'This image has already been uploaded.' });
+    if (existing && existing.userId !== payload.userId) {
+      return c.json({ exists: true, message: 'This exact image has already been uploaded by another account.' });
+    }
+    
+    // If we're just checking existence and it doesn't exist (or is owned by the same user), return false
+    if (!url) {
+      return c.json({ exists: false });
     }
 
     // If a URL is provided, record it
     if (url) {
-      await prisma.mediaHash.create({
-        data: {
-          hash,
-          url,
-          userId: c.get('userId')
-        }
-      });
+      if (!existing) {
+        await prisma.mediaHash.create({
+          data: {
+            hash,
+            url,
+            userId: payload.userId
+          }
+        });
+      }
       return c.json({ exists: false, saved: true });
     }
 
