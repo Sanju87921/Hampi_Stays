@@ -1023,7 +1023,12 @@ export function OwnerDashboard() {
               <Button size="lg" className="rounded-2xl px-10 py-6 text-lg shadow-gold transition-transform hover:scale-105" onClick={() => navigate("/dashboard/resort-setup")}>
                 List Your Resort Now
               </Button>
-              <Button variant="outline" size="lg" className="rounded-2xl px-10 py-6 text-lg border-navy-200 text-navy-950 hover:bg-navy-50">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="rounded-2xl px-10 py-6 text-lg"
+                onClick={() => toast.info("The Partner Guide is currently being updated for the new season. Please check back soon!")}
+              >
                 View Partner Guide
               </Button>
             </div>
