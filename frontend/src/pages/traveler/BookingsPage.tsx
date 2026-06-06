@@ -46,9 +46,13 @@ export function BookingsPage() {
   
   const [activePassBooking, setActivePassBooking] = useState<Booking | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-    const [qrLockData, setQrLockData] = useState<{ message: string, unlockTime: string, checkInTime: string } | null>(null);
-    const [qrError, setQrError] = useState<string | null>(null);
+  const [qrLockData, setQrLockData] = useState<{ message: string, unlockTime: string, checkInTime: string } | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+
+  const [showReview, setShowReview] = useState<string | null>(null);
+  const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // Generate QR Code dynamically when a stay pass is viewed
   useEffect(() => {
