@@ -14,6 +14,7 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
 import { applyPdfWatermark } from "../../utils/pdfWatermark";
+import { GuideChat } from "../../components/guide/GuideChat";
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,10 +37,10 @@ export function BookingsPage() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [showReview, setShowReview] = useState<string | null>(null);
-  const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
-  const [activeTab, setActiveTab] = useState<"upcoming" | "completed" | "cancelled">("upcoming");
+  const [activeTab, setActiveTab] = useState<"upcoming" | "completed" | "cancelled" | "guides">("upcoming");
+  const [guideBookings, setGuideBookings] = useState<any[]>([]);
+  const [activeGuideChat, setActiveGuideChat] = useState<any>(null);
+  const [activeGuidePassBooking, setActiveGuidePassBooking] = useState<any>(null);
   
   const [activePassBooking, setActivePassBooking] = useState<Booking | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -68,11 +69,30 @@ export function BookingsPage() {
           .then(url => setQrCodeUrl(url))
           .catch(err => console.error("QR Code generation error:", err));
       });
+    } else if (activeGuidePassBooking) {
+      import("qrcode").then((QRCodeMod) => {
+        const QRCode = QRCodeMod.default || QRCodeMod;
+        const passData = {
+          bookingId: activeGuidePassBooking.id,
+          referenceNumber: activeGuidePassBooking.id.substring(0,8).toUpperCase(),
+          guideName: activeGuidePassBooking.guide?.user?.name,
+          guestName: user?.name,
+          meetingPoint: activeGuidePassBooking.meetingPoint,
+          date: activeGuidePassBooking.date
+        };
+        QRCode.toDataURL(JSON.stringify(passData), { 
+          margin: 1, 
+          width: 256,
+          color: { dark: "#0A0F1E", light: "#FFFFFF" }
+        })
+          .then(url => setQrCodeUrl(url))
+          .catch(err => console.error("QR Code generation error:", err));
+      });
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setQrCodeUrl(null);
     }
-  }, [activePassBooking, user]);
+  }, [activePassBooking, activeGuidePassBooking, user]);
 
   const handleContactlessCheckIn = async (bookingId: string) => {
     setIsCheckingIn(true);
@@ -101,8 +121,12 @@ export function BookingsPage() {
   const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      const data = await apiClient.get<Booking[]>(`/users/bookings`);
-      setBookings(data);
+      const [resortData, guideData] = await Promise.all([
+        apiClient.get<Booking[]>(`/users/bookings`),
+        apiClient.get<any[]>(`/users/guide-bookings`)
+      ]);
+      setBookings(resortData);
+      setGuideBookings(guideData);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
     } finally {
@@ -407,13 +431,13 @@ export function BookingsPage() {
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Navigation Tabs */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-          <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-sand-100 shadow-sm w-fit">
-            {(["upcoming", "completed", "cancelled"] as const).map(tab => (
+          <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-sand-100 shadow-sm w-fit overflow-x-auto">
+            {(["upcoming", "completed", "cancelled", "guides"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  "px-8 py-3 rounded-xl text-sm font-bold capitalize transition-all flex items-center gap-2",
+                  "px-6 md:px-8 py-3 rounded-xl text-sm font-bold capitalize transition-all flex items-center gap-2 whitespace-nowrap",
                   activeTab === tab
                     ? "bg-navy-950 text-white shadow-xl scale-105"
                     : "text-navy-950/40 hover:text-navy-950"
@@ -422,12 +446,13 @@ export function BookingsPage() {
                 {tab === 'upcoming' && <Calendar className="w-4 h-4" />}
                 {tab === 'completed' && <CheckCircle2 className="w-4 h-4" />}
                 {tab === 'cancelled' && <History className="w-4 h-4" />}
-                {tab}
+                {tab === 'guides' && <Navigation className="w-4 h-4" />}
+                {tab === 'guides' ? 'Local Guides' : tab}
                 <span className={cn(
                   "ml-1 px-1.5 py-0.5 rounded-md text-[10px]",
                   activeTab === tab ? "bg-white/20" : "bg-sand-100"
                 )}>
-                  {tabData[tab].length}
+                  {tab === 'guides' ? guideBookings.length : tabData[tab as keyof typeof tabData].length}
                 </span>
               </button>
             ))}
@@ -445,6 +470,60 @@ export function BookingsPage() {
             <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-navy-950/40 font-medium animate-pulse">Retrieving your itineraries...</p>
           </div>
+        ) : activeTab === 'guides' ? (
+          guideBookings.length > 0 ? (
+            <div className="grid grid-cols-1 gap-8">
+              {guideBookings.map((gb) => (
+                <motion.div
+                  key={gb.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-sm hover:shadow-luxury transition-all p-8 flex flex-col md:flex-row gap-8 items-center"
+                >
+                  <img src={gb.guide?.user?.avatar || 'https://images.unsplash.com/photo-1544168190-79c17527004f?auto=format&fit=crop&w=400&q=80'} className="w-32 h-32 rounded-full object-cover border-4 border-sand-100" alt="Guide" />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-2xl font-serif font-bold text-navy-950">{gb.guide?.user?.name || "Local Guide"}</h3>
+                        <p className="text-navy-950/50">Meeting Point: {gb.meetingPoint}</p>
+                      </div>
+                      <span className={cn("px-4 py-2 text-[10px] font-bold uppercase rounded-full border", 
+                        gb.status === "CONFIRMED" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : 
+                        gb.status === "PENDING" ? "bg-gold-50 text-gold-600 border-gold-200" :
+                        gb.status === "CANCELLED" ? "bg-red-50 text-red-600 border-red-200" :
+                        "bg-navy-50 text-navy-600 border-navy-200"
+                      )}>{gb.status}</span>
+                    </div>
+                    <div className="mt-4 flex gap-6 text-sm">
+                      <div><strong className="block text-[10px] text-navy-950/40 uppercase">Date</strong>{new Date(gb.date).toLocaleDateString()}</div>
+                      <div><strong className="block text-[10px] text-navy-950/40 uppercase">Duration</strong>{gb.durationHours} Hours</div>
+                      <div><strong className="block text-[10px] text-navy-950/40 uppercase">Price</strong>₹{gb.totalPrice.toLocaleString()}</div>
+                    </div>
+                    <div className="mt-6 flex gap-3">
+                      <Button onClick={() => setActiveGuideChat(gb)} variant="outline" className="rounded-xl px-6 border-navy-200">
+                        Chat with Guide
+                      </Button>
+                      {(gb.status === "CONFIRMED" || gb.status === "CHECKED_IN") && (
+                        <Button 
+                          className="rounded-xl px-6 bg-navy-950 text-white shadow-luxury"
+                          onClick={() => setActiveGuidePassBooking(gb)}
+                        >
+                          <QrCode className="w-4 h-4 text-gold-400 mr-2" />
+                          Digital Guide Pass
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[4rem] p-24 text-center border border-sand-100 shadow-sm max-w-3xl mx-auto">
+              <h2 className="text-3xl font-serif font-bold text-navy-950 mb-4">No Guide Bookings</h2>
+              <p className="text-navy-950/60 mb-12">You haven't booked any local experts yet.</p>
+              <Link to="/guides"><Button className="rounded-2xl shadow-gold">Discover Local Guides</Button></Link>
+            </div>
+          )
         ) : displayBookings.length > 0 ? (
           <div className="grid grid-cols-1 gap-8">
             {displayBookings.map((booking, i) => (
@@ -913,6 +992,118 @@ export function BookingsPage() {
               <div className="p-6 bg-sand-50 border-t border-sand-100 flex justify-end">
                 <Button variant="outline" className="px-8 rounded-2xl text-xs font-bold" onClick={() => setActivePassBooking(null)}>
                   Close Stay Pass
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Guide Chat Modal */}
+      <AnimatePresence>
+        {activeGuideChat && (
+          <GuideChat 
+            bookingId={activeGuideChat.id}
+            guideName={activeGuideChat.guide?.user?.name || "Guide"}
+            travellerName={user?.name || "Me"}
+            onClose={() => setActiveGuideChat(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Guide Stay Pass Modal */}
+      <AnimatePresence>
+        {activeGuidePassBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-navy-950/70 backdrop-blur-md"
+              onClick={() => setActiveGuidePassBooking(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="relative bg-white rounded-[3.5rem] max-w-xl w-full shadow-2xl border border-sand-100 overflow-hidden z-10"
+            >
+              {/* Premium Header */}
+              <div className="bg-navy-950 text-white p-8 relative overflow-hidden rounded-t-[3.5rem] border-b border-gold-500/30">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full blur-3xl -mr-12 -mt-12" />
+                <div className="flex justify-between items-center relative z-10">
+                  <div>
+                    <h3 className="text-xl font-serif font-bold tracking-[0.1em] text-white">HAMPISTAYS</h3>
+                    <p className="text-[9px] uppercase tracking-widest text-gold-400 font-bold">Local Guide Pass</p>
+                  </div>
+                  <span className={cn(
+                    "px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                    activeGuidePassBooking.status === "CHECKED_IN"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      : "bg-gold-500/10 border-gold-500/30 text-gold-400"
+                  )}>
+                    {activeGuidePassBooking.status === "CHECKED_IN" ? "Checked In" : "Ready for Tour"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pass details */}
+              <div className="p-8 md:p-10 space-y-8 bg-sand-50/20">
+                <div className="flex flex-col items-center justify-center p-6 bg-white rounded-[2.5rem] border border-sand-100 shadow-inner">
+                  {qrCodeUrl ? (
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="p-3 bg-white rounded-3xl border-2 border-navy-950/10 relative group"
+                    >
+                      <div className="absolute -inset-2 rounded-[2rem] bg-gold-500/10 opacity-0 group-hover:opacity-100 transition-opacity blur" />
+                      <img src={qrCodeUrl} alt="Contactless Check-In QR" className="w-48 h-48 relative z-10" />
+                    </motion.div>
+                  ) : (
+                    <div className="w-48 h-48 bg-sand-50 rounded-3xl animate-pulse flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+                    </div>
+                  )}
+                  <p className="text-xs font-mono font-bold text-navy-950 mt-4 tracking-wider uppercase">
+                    Ref: <span className="text-gold-600">{activeGuidePassBooking.id.substring(0,8).toUpperCase()}</span>
+                  </p>
+                  <p className="text-[9px] text-navy-950/40 uppercase tracking-widest font-bold mt-1">Guide will scan this QR at rendezvous</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 bg-white p-6 rounded-[2.5rem] border border-sand-100">
+                  <div>
+                    <p className="text-[9px] text-navy-950/40 uppercase tracking-widest font-bold">Lead Traveler</p>
+                    <p className="font-bold text-navy-950 text-sm mt-0.5">{user?.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-navy-950/40 uppercase tracking-widest font-bold">Local Guide</p>
+                    <p className="font-bold text-navy-950 text-sm mt-0.5">{activeGuidePassBooking.guide?.user?.name}</p>
+                  </div>
+                  <div className="border-t border-sand-100 pt-4 col-span-2">
+                    <p className="text-[9px] text-navy-950/40 uppercase tracking-widest font-bold">Meeting Point & Time</p>
+                    <p className="font-bold text-navy-950 text-xs mt-0.5">
+                      {activeGuidePassBooking.meetingPoint}
+                    </p>
+                    <p className="font-bold text-navy-950 text-xs mt-0.5">
+                      {new Date(activeGuidePassBooking.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "numeric" })}
+                    </p>
+                    <div className="mt-4 rounded-[1.5rem] overflow-hidden border border-sand-100 bg-sand-50 h-40">
+                      <iframe 
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0 }} 
+                        loading="lazy" 
+                        allowFullScreen 
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(activeGuidePassBooking.meetingPoint)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      ></iframe>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-sand-50 border-t border-sand-100 flex justify-end">
+                <Button variant="outline" className="px-8 rounded-2xl text-xs font-bold" onClick={() => setActiveGuidePassBooking(null)}>
+                  Close Guide Pass
                 </Button>
               </div>
             </motion.div>

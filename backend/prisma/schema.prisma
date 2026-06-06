@@ -506,6 +506,7 @@ model GuideBooking {
   guideId         String
   guide           GuideProfile  @relation(fields: [guideId], references: [id])
   user            User          @relation(fields: [userId], references: [id])
+  messages        Message[]
 
   @@index([guideId])
   @@index([userId])
@@ -569,13 +570,15 @@ model GuidePayout {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  text      String
-  senderId  String
-  bookingId String
-  createdAt DateTime @default(now())
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id])
+  id             String        @id @default(cuid())
+  text           String
+  senderId       String
+  bookingId      String?
+  guideBookingId String?
+  createdAt      DateTime      @default(now())
+  booking        Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  guideBooking   GuideBooking? @relation(fields: [guideBookingId], references: [id], onDelete: Cascade)
+  sender         User          @relation(fields: [senderId], references: [id])
 
   @@map("messages")
 }

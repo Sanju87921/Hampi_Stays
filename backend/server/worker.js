@@ -40,6 +40,7 @@ import { setupIcalRoutes } from "./routes/ical/index.js";
 
 import { Resend } from 'resend';
 import { validateCouponCode } from './utils/couponEngine.js';
+import { createRazorpayPayout } from './services/payments/razorpay.service.js';
 import { 
   getAllCoupons, 
   createCouponInDb, 
@@ -795,6 +796,24 @@ app.post('/users/kyc', authMiddleware, async (c) => {
   } catch (error) {
     return c.json({ error: error.message }, 500);
   }
+});
+app.get('/users/guide-bookings', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  try {
+    const bookings = await prisma.guideBooking.findMany({
+      where: { userId: payload.userId },
+      include: {
+        guide: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true } }
+          }
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+    return c.json(bookings);
+  } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
 app.get('/users/bookings', authMiddleware, async (c) => {
@@ -2749,18 +2768,88 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
 
     if (status === 'COMPLETED' && existingBooking.status !== 'COMPLETED') {
       const commission = booking.totalPrice * 0.1;
-      await prisma.guidePayout.create({
-        data: {
-          guideProfileId: existingBooking.guideId,
-          amount: booking.totalPrice,
-          commission: commission,
-          netAmount: booking.totalPrice - commission,
-          status: 'PENDING'
-        }
-      });
+      const netAmount = booking.totalPrice - commission;
+      
+      const payoutData = {
+        guideProfileId: existingBooking.guideId,
+        amount: booking.totalPrice,
+        commission: commission,
+        netAmount: netAmount,
+        status: 'PENDING'
+      };
+
+      try {
+        // Mocking the bank details since they aren't in schema yet, 
+        // normally they'd be fetched from guideProfile or guidePayoutSettings.
+        const transfer = await createRazorpayPayout(c, {
+          accountName: existingBooking.guide.user?.name || 'Local Guide',
+          accountNumber: '409000123456', // Placeholder
+          ifsc: 'HDFC0001234', // Placeholder
+          amount: netAmount,
+          reference: booking.id.substring(0,8)
+        });
+        
+        payoutData.status = 'PAID';
+        payoutData.transactionRef = transfer.id;
+        payoutData.paidAt = new Date();
+      } catch (err) {
+        console.error("Automated Payout Failed:", err.message);
+        payoutData.status = 'FAILED';
+      }
+
+      await prisma.guidePayout.create({ data: payoutData });
     }
 
     return c.json(booking);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Guide Messaging
+app.get('/guide-bookings/:bookingId/messages', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const bookingId = c.req.param('bookingId');
+  const payload = c.get('user');
+  try {
+    const booking = await prisma.guideBooking.findUnique({
+      where: { id: bookingId },
+      include: { guide: true }
+    });
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+    if (booking.userId !== payload.userId && booking.guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+    const messages = await prisma.message.findMany({
+      where: { guideBookingId: bookingId },
+      orderBy: { createdAt: 'asc' },
+      include: { sender: { select: { id: true, name: true, avatar: true } } }
+    });
+    return c.json(messages);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/guide-bookings/:bookingId/messages', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const bookingId = c.req.param('bookingId');
+  const payload = c.get('user');
+  const { text } = await c.req.json();
+  try {
+    const booking = await prisma.guideBooking.findUnique({
+      where: { id: bookingId },
+      include: { guide: true }
+    });
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+    if (booking.userId !== payload.userId && booking.guide.userId !== payload.userId && payload.role !== 'ADMIN') {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+    const message = await prisma.message.create({
+      data: {
+        text,
+        senderId: payload.userId,
+        guideBookingId: bookingId
+      },
+      include: { sender: { select: { id: true, name: true, avatar: true } } }
+    });
+    return c.json(message);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

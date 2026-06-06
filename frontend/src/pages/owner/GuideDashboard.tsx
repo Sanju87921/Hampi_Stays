@@ -16,6 +16,8 @@ import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
+import { GuideChat } from "../../components/guide/GuideChat";
+import { QrCode } from "lucide-react";
 
 // Direct-to-Cloudinary Signed Upload Helper
 async function uploadFile(file: File): Promise<string> {
@@ -126,6 +128,8 @@ export function GuideDashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [bookingFilter, setBookingFilter] = useState("ALL");
+  
+  const [activeChatBooking, setActiveChatBooking] = useState<any>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -434,9 +438,14 @@ export function GuideDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <a href={`mailto:${booking.user.email}`}>
-                      <Button variant="outline" size="sm" className="rounded-xl px-6">Message</Button>
-                    </a>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-xl px-6"
+                      onClick={() => setActiveChatBooking(booking)}
+                    >
+                      Chat
+                    </Button>
                     {booking.status === 'PENDING' ? (
                       <>
                         <Button size="sm" onClick={() => handleBookingStatus(booking.id, 'CANCELLED')} variant="danger" className="rounded-xl px-6">Decline</Button>
@@ -791,6 +800,17 @@ export function GuideDashboard() {
           </div>
         )}
       </div>
+      
+      <AnimatePresence>
+        {activeChatBooking && (
+          <GuideChat 
+            bookingId={activeChatBooking.id}
+            guideName={profile?.user?.name || "Me"}
+            travellerName={activeChatBooking.user.name}
+            onClose={() => setActiveChatBooking(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 
@@ -1104,10 +1124,21 @@ export function GuideDashboard() {
                   {booking.status === 'CONFIRMED' && (
                     <Button 
                       size="sm" 
-                      onClick={() => handleBookingStatus(booking.id, 'COMPLETED')} 
+                      onClick={() => handleBookingStatus(booking.id, 'CHECKED_IN')} 
                       className="h-9 px-4 text-[10px] bg-navy-950 text-white shadow-luxury hover:bg-gold-500 hover:text-navy-950"
                     >
-                      Mark Completed
+                      <QrCode className="w-3 h-3 mr-2" />
+                      Scan QR Pass (Check In)
+                    </Button>
+                  )}
+
+                  {booking.status === 'CHECKED_IN' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleBookingStatus(booking.id, 'COMPLETED')} 
+                      className="h-9 px-4 text-[10px] border border-navy-950 text-navy-950 hover:bg-navy-50"
+                    >
+                      Complete Tour
                     </Button>
                   )}
                 </div>

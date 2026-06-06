@@ -16,18 +16,18 @@ type RefundStatus = "PENDING" | "APPROVED" | "REJECTED" | "PROCESSING";
 
 interface RefundRequest {
   id: string;
-  bookingId: string;
-  travellerName: string;
-  travellerEmail: string;
+  bookingRef: string;
+  userName: string;
+  userEmail: string;
   resortName: string;
   amount: number;
   reason: string;
   status: RefundStatus;
-  createdAt: string;
-  updatedAt: string;
+  requestedAt: string;
+  processedAt?: string;
   checkIn?: string;
   checkOut?: string;
-  adminNote?: string;
+  adminNotes?: string;
 }
 
 const STATUS_CONFIG: Record<RefundStatus, { label: string; color: string; bg: string; icon: any }> = {
@@ -101,12 +101,12 @@ export function RefundManagementModule() {
     setActionLoading(id + action);
     const note = adminNote[id] || "";
     try {
-      await apiClient.post(`/api/admin/refunds/${id}/${action}`, { adminNote: note });
+      await apiClient.post(`/api/admin/refunds/${id}/process`, { action, notes: note });
       toast.success(`Refund ${action === "approve" ? "approved" : "rejected"} successfully!`);
       setRefunds(prev =>
         prev.map(r =>
           r.id === id
-            ? { ...r, status: action === "approve" ? "APPROVED" : "REJECTED", adminNote: note }
+            ? { ...r, status: action === "approve" ? "APPROVED" : "REJECTED", adminNotes: note }
             : r
         )
       );
@@ -124,10 +124,10 @@ export function RefundManagementModule() {
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       !q ||
-      r.travellerName?.toLowerCase().includes(q) ||
-      r.bookingId?.toLowerCase().includes(q) ||
+      r.userName?.toLowerCase().includes(q) ||
+      r.bookingRef?.toLowerCase().includes(q) ||
       r.resortName?.toLowerCase().includes(q) ||
-      r.travellerEmail?.toLowerCase().includes(q);
+      r.userEmail?.toLowerCase().includes(q);
     return matchesStatus && matchesSearch;
   });
 
@@ -135,9 +135,9 @@ export function RefundManagementModule() {
   const exportCsv = () => {
     const headers = ["ID", "Booking ID", "Traveller", "Resort", "Amount (₹)", "Status", "Reason", "Date"];
     const rows = filtered.map(r => [
-      r.id, r.bookingId, r.travellerName, r.resortName,
+      r.id, r.bookingRef, r.userName, r.resortName,
       r.amount, r.status, `"${r.reason}"`,
-      new Date(r.createdAt).toLocaleDateString("en-IN"),
+      new Date(r.requestedAt).toLocaleDateString("en-IN"),
     ]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -257,19 +257,19 @@ export function RefundManagementModule() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-xs font-black uppercase tracking-widest text-navy-950/40">
-                            #{refund.bookingId?.slice(-8) || refund.id?.slice(-8)}
+                            #{refund.bookingRef?.slice(-8) || refund.id?.slice(-8)}
                           </span>
                           <span className={cn("inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border", cfg.bg, cfg.color)}>
                             <Icon className="w-3 h-3" /> {cfg.label}
                           </span>
                         </div>
-                        <h3 className="text-base font-bold text-navy-950 truncate">{refund.travellerName}</h3>
-                        <p className="text-xs text-navy-950/50">{refund.travellerEmail}</p>
+                        <h3 className="text-base font-bold text-navy-950 truncate">{refund.userName}</h3>
+                        <p className="text-xs text-navy-950/50">{refund.userEmail}</p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-2xl font-black text-navy-950">₹{refund.amount?.toLocaleString("en-IN")}</p>
                         <p className="text-[10px] text-navy-950/40 mt-0.5">
-                          {new Date(refund.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          {new Date(refund.requestedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                       </div>
                     </div>
@@ -295,10 +295,10 @@ export function RefundManagementModule() {
                     </div>
 
                     {/* Admin Note (if any) */}
-                    {refund.adminNote && (
+                    {refund.adminNotes && (
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
                         <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 mb-1">Admin Note</p>
-                        <p className="text-sm text-navy-950/70">{refund.adminNote}</p>
+                        <p className="text-sm text-navy-950/70">{refund.adminNotes}</p>
                       </div>
                     )}
 
