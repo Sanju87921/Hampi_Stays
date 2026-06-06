@@ -45,40 +45,15 @@ export function Navbar() {
  return () => window.removeEventListener("scroll", handleScroll);
  }, []);
 
- const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+  const isTransparentRoute = location.pathname === "/" || location.pathname === "/discovery" || (location.pathname.startsWith("/resorts/") && location.pathname.length > 9);
+  const effectiveScrolled = isScrolled || !isTransparentRoute;
 
- const navLinks = isDashboard 
- ? user?.role?.toUpperCase() === 'GUIDE'
- ? [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- { name: t("navbar.myTours", "My Tours"), path: "/dashboard?tab=tours" },
- { name: t("navbar.profile", "Profile"), path: "/dashboard?tab=profile" },
- 
- 
- ]
- : user?.role?.toUpperCase() === 'TRAVELLER'
- ? [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
- { name: t("navbar.wishlist", "Wishlist"), path: "/dashboard/wishlist" },
- { name: t("navbar.bookings", "Bookings"), path: "/dashboard/bookings" },
- { name: t("navbar.notifications", "Notifications"), path: "/dashboard/notifications" },
- { name: t("navbar.profile", "Profile"), path: "/dashboard/profile" },
- ]
- : user?.role?.toUpperCase() === 'ADMIN'
- ? [
- { name: t("navbar.profile", "Profile"), path: "/admin/profile" },
- { name: t("navbar.settings", "Settings"), path: "/admin/settings" },
- ]
- : [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- ]
- : [
- { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
- { name: t("navbar.discover", "Discover"), path: "/discovery" },
- ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
- ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
- ];
+  const navLinks = [
+    { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
+    { name: t("navbar.discover", "Discover"), path: "/discovery" },
+    ...(user && user.role?.toUpperCase() !== 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
+    ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/admin" }] : []),
+  ];
 
  return (
  <motion.nav
@@ -87,7 +62,7 @@ export function Navbar() {
  transition={{ duration: 0.3, ease: "easeInOut" }}
  className={cn(
  "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
-        isScrolled
+        effectiveScrolled
           ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5"
           : "bg-navy-950/60 backdrop-blur-xl border-b border-white/5 shadow-sm py-4 md:py-[1.15rem]"
  )}
@@ -113,14 +88,14 @@ export function Navbar() {
  }}
  className={cn(
  "h-20 w-auto object-contain transition-all duration-500",
- !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
+ !effectiveScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
  )}
  />
  </Link>
  {user?.role?.toUpperCase() === 'ADMIN' && (
  <div className={cn(
  "hidden md:flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border transition-all duration-300",
- isScrolled ? "bg-navy-950 text-white border-navy-950/20 shadow-md" : "bg-white/15 text-white border-white/30 backdrop-blur-md shadow-sm"
+ effectiveScrolled ? "bg-navy-950 text-white border-navy-950/20 shadow-md" : "bg-white/15 text-white border-white/30 backdrop-blur-md shadow-sm"
  )}>
  <div className="relative flex h-2 w-2 mr-2">
  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -142,7 +117,7 @@ export function Navbar() {
  to={link.path}
  className={cn(
  "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
- isScrolled 
+ effectiveScrolled 
  ? "text-navy-950 hover:text-gold-600" 
  : "text-white hover:text-gold-400"
  )}
@@ -152,7 +127,7 @@ export function Navbar() {
  className={cn(
  "absolute -bottom-1 left-0 w-full h-[1.5px] rounded-full transform origin-right transition-transform duration-500 ease-out",
  isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left",
- isScrolled ? "bg-gold-500" : "bg-gold-400"
+ effectiveScrolled ? "bg-gold-500" : "bg-gold-400"
  )}
  />
  </Link>
@@ -171,7 +146,7 @@ export function Navbar() {
  onClick={logout}
  className={cn(
  "px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.15em] font-bold border transition-all duration-300",
- isScrolled 
+ effectiveScrolled 
  ? "border-navy-200 text-navy-950 hover:bg-navy-950 hover:text-white" 
  : "border-white/30 text-white hover:bg-gold-500 hover:text-navy-950 hover:border-gold-500"
  )}
@@ -185,7 +160,7 @@ export function Navbar() {
  to="/login"
  className={cn(
  "text-[12px] uppercase tracking-[0.15em] font-bold transition-all duration-300 hover:opacity-70",
- isScrolled ? "text-navy-950 " : "text-white"
+ effectiveScrolled ? "text-navy-950 " : "text-white"
  )}
  >
  {t("navbar.signIn")}
@@ -194,7 +169,7 @@ export function Navbar() {
  variant="primary"
  className={cn(
  "px-8 h-11 rounded-full transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-[0.2em] text-[10px] font-black",
- isScrolled 
+ effectiveScrolled 
  ? "bg-navy-950 text-white hover:bg-gold-600 hover:text-navy-950 shadow-2xl shadow-navy-950/20" 
  : "bg-gold-500 text-navy-950 hover:bg-gold-400 hover:text-navy-950 shadow-2xl shadow-gold-500/20"
  )}
@@ -217,9 +192,9 @@ export function Navbar() {
  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
  >
  {isMobileMenuOpen ? (
- <X className={cn("w-6 h-6", isScrolled ? "text-navy-950 " : "text-white")} />
+ <X className={cn("w-6 h-6", effectiveScrolled ? "text-navy-950 " : "text-white")} />
  ) : (
- <Menu className={cn("w-6 h-6", isScrolled ? "text-navy-950 " : "text-white")} />
+ <Menu className={cn("w-6 h-6", effectiveScrolled ? "text-navy-950 " : "text-white")} />
  )}
  </button>
  </div>
