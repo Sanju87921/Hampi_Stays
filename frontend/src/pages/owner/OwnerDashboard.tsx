@@ -27,7 +27,7 @@ import { Eye, RefreshCw, Image as ImageIcon, ChevronLeft } from "lucide-react";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as QRCode from "qrcode";
+import * as QrCodeGenerator from "qrcode";
 import { applyPdfWatermark } from "../../utils/pdfWatermark";
 
 const downloadPdf = (doc: any, filename: string) => {
@@ -47,6 +47,7 @@ export function OwnerDashboard() {
   const navigate = useNavigate();
   const [resorts, setResorts] = useState<any[]>([]);
   const [activeResortIdx, setActiveResortIdx] = useState(0);
+  const resort = resorts[activeResortIdx];
   const [isLoading, setIsLoading] = useState(false);
   const [detailLoaded, setDetailLoaded] = useState(false); // true after full data is fetched
   const [showAddRoom, setShowAddRoom] = useState(false);
@@ -294,7 +295,6 @@ export function OwnerDashboard() {
     }
   }, [activeTab, detailLoaded]);
 
-  const resort = resorts[activeResortIdx];
 
   // Use server-computed stats from summary (zero client-side work on initial load)
   const totalRevenue = resort?.totalRevenue
@@ -622,7 +622,7 @@ export function OwnerDashboard() {
 
     try {
       const qrUrl = `${window.location.origin}/dashboard/bookings`;
-      const qrCode = await QRCode.toDataURL(qrUrl, { 
+      const qrCode = await QrCodeGenerator.toDataURL(qrUrl, { 
         margin: 1, 
         width: 150,
         color: { dark: '#0A0F1E', light: '#FFFFFF' },
@@ -785,7 +785,7 @@ export function OwnerDashboard() {
     
     try {
       const qrUrl = `${window.location.origin}/dashboard/bookings`;
-      const qrCode = await QRCode.toDataURL(qrUrl, { 
+      const qrCode = await QrCodeGenerator.toDataURL(qrUrl, { 
         margin: 1, 
         width: 200,
         color: { dark: '#0A0F1E', light: '#FFFFFF' },
