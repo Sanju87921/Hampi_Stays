@@ -2311,7 +2311,8 @@ app.post('/upload/check-hash', authMiddleware, async (c) => {
       where: { hash }
     });
 
-    if (existing && existing.userId !== payload.userId) {
+    const currentUserId = c.get('userId');
+    if (existing && existing.userId !== currentUserId) {
       return c.json({ exists: true, message: 'This exact image has already been uploaded by another account.' });
     }
     
@@ -2327,7 +2328,7 @@ app.post('/upload/check-hash', authMiddleware, async (c) => {
           data: {
             hash,
             url,
-            userId: payload.userId
+            userId: currentUserId
           }
         });
       }
