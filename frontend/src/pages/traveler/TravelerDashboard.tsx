@@ -645,78 +645,7 @@ export function TravelerDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    {/* Hampi Weather Widget */}
-                    <div className="bg-gradient-to-br from-sky-50 to-indigo-50 p-6 rounded-[2rem] border border-sky-100 shadow-sm relative overflow-hidden">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <Sun className="w-5 h-5 text-amber-500" />
-                          <h3 className="font-bold text-navy-950">Hampi Weather</h3>
-                        </div>
-                        <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-md text-navy-950 shadow-sm uppercase tracking-widest">Today</span>
-                      </div>
-                      <div className="flex items-end gap-3 mb-6">
-                        <span className="text-4xl font-black text-navy-950">32°</span>
-                        <span className="text-sm font-bold text-navy-950/50 mb-1 flex items-center gap-1"><Cloud className="w-4 h-4"/> Clear Skies</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white/60 backdrop-blur-sm p-3 rounded-xl flex items-center gap-3">
-                          <Sunrise className="w-5 h-5 text-amber-500 shrink-0" />
-                          <div>
-                            <p className="text-[9px] uppercase font-bold text-navy-950/50">Sunrise</p>
-                            <p className="text-sm font-bold text-navy-950">06:12 AM</p>
-                          </div>
-                        </div>
-                        <div className="bg-white/60 backdrop-blur-sm p-3 rounded-xl flex items-center gap-3">
-                          <Sunset className="w-5 h-5 text-rose-500 shrink-0" />
-                          <div>
-                            <p className="text-[9px] uppercase font-bold text-navy-950/50">Sunset</p>
-                            <p className="text-sm font-bold text-navy-950">06:45 PM</p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-navy-950/60 mt-4 italic">
-                        ✨ Tip: Matanga Hill offers the best sunrise views.
-                      </p>
-                    </div>
 
-                    {/* Itinerary Timeline */}
-                    <div className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm">
-                      <h3 className="font-bold text-navy-950 mb-6 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gold-500" />
-                        Upcoming Itinerary
-                      </h3>
-                      <div className="space-y-6 relative before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-sand-200">
-                        <div className="relative flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-gold-100 border-2 border-white flex items-center justify-center shrink-0 z-10 shadow-sm">
-                            <div className="w-2 h-2 bg-gold-500 rounded-full" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-gold-600 uppercase tracking-widest mb-0.5">2:00 PM</p>
-                            <p className="text-sm font-bold text-navy-950">Check-in at {upcomingTrip.resortName}</p>
-                          </div>
-                        </div>
-                        <div className="relative flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-sand-100 border-2 border-white flex items-center justify-center shrink-0 z-10">
-                            <div className="w-2 h-2 bg-sand-300 rounded-full" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-navy-950/50 uppercase tracking-widest mb-0.5">4:30 PM</p>
-                            <p className="text-sm font-bold text-navy-950">Scheduled Buggy Tour</p>
-                          </div>
-                        </div>
-                        <div className="relative flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-sand-100 border-2 border-white flex items-center justify-center shrink-0 z-10">
-                            <div className="w-2 h-2 bg-sand-300 rounded-full" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-navy-950/50 uppercase tracking-widest mb-0.5">7:00 PM</p>
-                            <p className="text-sm font-bold text-navy-950">Dinner Reservation</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </>
               ) : (
                 <div className="bg-white rounded-[2.5rem] border border-dashed border-sand-300 p-12 text-center shadow-sm">
@@ -897,8 +826,84 @@ export function TravelerDashboard() {
 
             </section>
 
-            {/* Wishlist Section */}
+            {/* Right Column / Sidebar */}
             <section className="lg:col-span-4">
+              {upcomingTrip && (
+                <div className="flex flex-col gap-6 mb-8">
+                  {/* Hampi Weather Widget */}
+                  <div className="bg-gradient-to-br from-sky-50 to-indigo-50 p-6 rounded-[2rem] border border-sky-100 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-5 h-5 text-amber-500" />
+                        <h3 className="font-bold text-navy-950">Hampi Weather</h3>
+                      </div>
+                      <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-md text-navy-950 shadow-sm uppercase tracking-widest">Today</span>
+                    </div>
+                    <div className="flex items-end gap-3 mb-6">
+                      <span className="text-4xl font-black text-navy-950">32°</span>
+                      <span className="text-sm font-bold text-navy-950/50 mb-1 flex items-center gap-1"><Cloud className="w-4 h-4"/> Clear Skies</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/60 backdrop-blur-sm p-3 rounded-xl flex items-center gap-3">
+                        <Sunrise className="w-5 h-5 text-amber-500 shrink-0" />
+                        <div>
+                          <p className="text-[9px] uppercase font-bold text-navy-950/50">Sunrise</p>
+                          <p className="text-sm font-bold text-navy-950">06:12 AM</p>
+                        </div>
+                      </div>
+                      <div className="bg-white/60 backdrop-blur-sm p-3 rounded-xl flex items-center gap-3">
+                        <Sunset className="w-5 h-5 text-rose-500 shrink-0" />
+                        <div>
+                          <p className="text-[9px] uppercase font-bold text-navy-950/50">Sunset</p>
+                          <p className="text-sm font-bold text-navy-950">06:45 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-navy-950/60 mt-4 italic">
+                      ✨ Tip: Matanga Hill offers the best sunrise views.
+                    </p>
+                  </div>
+
+                  {/* Itinerary Timeline */}
+                  <div className="bg-white p-6 rounded-[2rem] border border-sand-100 shadow-sm">
+                    <h3 className="font-bold text-navy-950 mb-6 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-gold-500" />
+                      Upcoming Itinerary
+                    </h3>
+                    <div className="space-y-6 relative before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-sand-200">
+                      <div className="relative flex gap-4">
+                        <div className="w-6 h-6 rounded-full bg-gold-100 border-2 border-white flex items-center justify-center shrink-0 z-10 shadow-sm">
+                          <div className="w-2 h-2 bg-gold-500 rounded-full" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gold-600 uppercase tracking-widest mb-0.5">2:00 PM</p>
+                          <p className="text-sm font-bold text-navy-950">Check-in at {upcomingTrip.resortName}</p>
+                        </div>
+                      </div>
+                      <div className="relative flex gap-4">
+                        <div className="w-6 h-6 rounded-full bg-sand-100 border-2 border-white flex items-center justify-center shrink-0 z-10">
+                          <div className="w-2 h-2 bg-sand-300 rounded-full" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-navy-950/50 uppercase tracking-widest mb-0.5">4:30 PM</p>
+                          <p className="text-sm font-bold text-navy-950">Scheduled Buggy Tour</p>
+                        </div>
+                      </div>
+                      <div className="relative flex gap-4">
+                        <div className="w-6 h-6 rounded-full bg-sand-100 border-2 border-white flex items-center justify-center shrink-0 z-10">
+                          <div className="w-2 h-2 bg-sand-300 rounded-full" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-navy-950/50 uppercase tracking-widest mb-0.5">7:00 PM</p>
+                          <p className="text-sm font-bold text-navy-950">Dinner Reservation</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Wishlist Section */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-serif font-bold text-navy-950">Saved Resorts</h2>
                 <Link to="/resorts" className="text-navy-950/40 text-xs font-bold uppercase tracking-widest hover:text-gold-600 transition-colors">Browse</Link>
