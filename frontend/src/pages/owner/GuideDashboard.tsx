@@ -145,6 +145,12 @@ export function GuideDashboard() {
       const data = await apiClient.get<any>(`/guides/profile/${user.id}`);
       setProfile(data);
       if (data) {
+        setBankForm({
+          accountName: data.accountName || "",
+          bankName: data.bankName || "",
+          accountNumber: data.accountNumber || "",
+          ifsc: data.ifsc || ""
+        });
         setAvatarPreview(data.user?.avatar || data.avatar || user?.avatar || "");
         setProfileForm({
           bio: data.bio || "",
@@ -194,15 +200,6 @@ export function GuideDashboard() {
     try {
       const data = await apiClient.get<any[]>(`/guides/${profileId}/payouts`);
       setPayouts(data);
-      const bankInfo = data.find(p => p.status === 'BANK_INFO');
-      if (bankInfo) {
-        setBankForm({
-          accountName: bankInfo.accountName || "",
-          bankName: bankInfo.bankName || "",
-          accountNumber: bankInfo.accountNumber || "",
-          ifsc: bankInfo.ifsc || ""
-        });
-      }
     } catch (err) {
       console.error("Failed to fetch payouts", err);
     }
@@ -215,6 +212,7 @@ export function GuideDashboard() {
     try {
       await apiClient.post(`/guides/${profile.id}/bank`, bankForm);
       toast.success("Bank details saved successfully!");
+      fetchProfile();
       fetchPayouts(profile.id);
     } catch (err) {
       toast.error("Failed to save bank details.");

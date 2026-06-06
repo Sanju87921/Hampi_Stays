@@ -57,6 +57,7 @@ model User {
   adminSessions           AdminSession[]
   auditLogs               AuditLog[]
   travellerKycDocuments   TravellerKYC[]
+  guideReviews            GuideReview[]
 
   @@map("users")
 }
@@ -479,6 +480,10 @@ model GuideProfile {
   status            ResortStatus   @default(PENDING)
   rejectionReason   String?
   isActive          Boolean        @default(true)
+  bankName          String?
+  accountName       String?
+  accountNumber     String?
+  ifsc              String?
   deletedAt         DateTime?
   fraudScore        Int            @default(0)
   fraudFlags        String[]       @default([])
@@ -488,6 +493,7 @@ model GuideProfile {
   kycDocuments      GuideKYC[]
   payouts           GuidePayout[]
   blockedDates      DateTime[]     @default([])
+  reviews           GuideReview[]
 
   @@map("guide_profiles")
 }
@@ -507,6 +513,8 @@ model GuideBooking {
   guide           GuideProfile  @relation(fields: [guideId], references: [id])
   user            User          @relation(fields: [userId], references: [id])
   messages        Message[]
+  review          GuideReview?
+  payout          GuidePayout?
 
   @@index([guideId])
   @@index([userId])
@@ -564,7 +572,10 @@ model GuidePayout {
   transactionRef String?
   createdAt      DateTime     @default(now())
   paidAt         DateTime?
+  bookingId      String?      @unique
+  lockedUntil    DateTime?
   guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
+  booking        GuideBooking? @relation(fields: [bookingId], references: [id])
 
   @@map("guide_payouts")
 }
@@ -576,12 +587,16 @@ model Message {
   bookingId      String?
   guideBookingId String?
   createdAt      DateTime      @default(now())
-  booking        Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  guideBooking   GuideBooking? @relation(fields: [guideBookingId], references: [id], onDelete: Cascade)
+  booking        Booking?      @relation(fields: [bookingId], references: [id])
+  guideBooking   GuideBooking? @relation(fields: [guideBookingId], references: [id])
   sender         User          @relation(fields: [senderId], references: [id])
 
+  @@index([bookingId])
+  @@index([guideBookingId])
   @@map("messages")
 }
+
+
 
 model StaffMember {
   id        String   @id @default(cuid())
@@ -1075,4 +1090,21 @@ model Campaign {
   updatedAt       DateTime @updatedAt
 
   @@map("campaigns")
+}
+
+model GuideReview {
+  id             String       @id @default(cuid())
+  guideProfileId String
+  userId         String
+  bookingId      String       @unique
+  rating         Int
+  reviewText     String?
+  createdAt      DateTime     @default(now())
+
+  guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking        GuideBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookingId]) // 1 review per user per booking
+  @@map("guide_reviews")
 }

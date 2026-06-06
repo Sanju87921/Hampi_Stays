@@ -2772,36 +2772,65 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
       
       const payoutData = {
         guideProfileId: existingBooking.guideId,
+        bookingId: booking.id,
         amount: booking.totalPrice,
         commission: commission,
         netAmount: netAmount,
-        status: 'PENDING'
+        status: 'PENDING',
+        lockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hour cooling off
       };
-
-      try {
-        // Mocking the bank details since they aren't in schema yet, 
-        // normally they'd be fetched from guideProfile or guidePayoutSettings.
-        const transfer = await createRazorpayPayout(c, {
-          accountName: existingBooking.guide.user?.name || 'Local Guide',
-          accountNumber: '409000123456', // Placeholder
-          ifsc: 'HDFC0001234', // Placeholder
-          amount: netAmount,
-          reference: booking.id.substring(0,8)
-        });
-        
-        payoutData.status = 'PAID';
-        payoutData.transactionRef = transfer.id;
-        payoutData.paidAt = new Date();
-      } catch (err) {
-        console.error("Automated Payout Failed:", err.message);
-        payoutData.status = 'FAILED';
-      }
 
       await prisma.guidePayout.create({ data: payoutData });
     }
 
     return c.json(booking);
   } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/guides/bookings/:id/dispute', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const bookingId = c.req.param('id');
+  const payload = c.get('user');
+  const { reason } = await c.req.json();
+
+  try {
+    const booking = await prisma.guideBooking.findUnique({
+      where: { id: bookingId },
+      include: { payout: true }
+    });
+
+    if (!booking) return c.json({ error: 'Booking not found' }, 404);
+    if (booking.userId !== payload.userId) return c.json({ error: 'Unauthorized' }, 403);
+    
+    // Check if payout is still locked/pending
+    if (!booking.payout || booking.payout.status !== 'PENDING') {
+      return c.json({ error: 'Dispute window has closed or payout not found.' }, 400);
+    }
+
+    // Mark payout as disputed
+    const payout = await prisma.guidePayout.update({
+      where: { id: booking.payout.id },
+      data: { status: 'DISPUTED' }
+    });
+
+    // Create a support ticket for the admin to review manually
+    await prisma.supportTicket.create({
+      data: {
+        subject: `Guide Dispute: ${booking.id}`,
+        category: 'Guide Dispute',
+        status: 'OPEN',
+        priority: 'HIGH',
+        userName: payload.name || 'Traveler',
+        userEmail: payload.email || 'unknown',
+        bookingId: booking.id,
+        userId: payload.userId,
+      }
+    });
+
+    return c.json({ message: 'Dispute filed successfully', payout }, 200);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 // Guide Messaging
@@ -2896,20 +2925,16 @@ app.post('/guides/:guideId/bank', authMiddleware, async (c) => {
     if (guide.userId !== payload.userId && payload.role !== 'ADMIN') {
       return c.json({ error: 'Unauthorized' }, 403);
     }
-    const bank = await prisma.guidePayout.create({
+    const updatedGuide = await prisma.guideProfile.update({
+      where: { id: guideId },
       data: {
-        guideProfileId: guideId,
-        amount: 0,
-        commission: 0,
-        netAmount: 0,
-        status: 'BANK_INFO',
         accountName,
         bankName,
         accountNumber,
         ifsc
       }
     });
-    return c.json(bank, 201);
+    return c.json(updatedGuide, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -2929,6 +2954,73 @@ app.get('/guides/:guideId/payouts', authMiddleware, async (c) => {
     return c.json(payouts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
+
+// Guide Reviews
+app.post('/guides/:guideId/reviews', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  const payload = c.get('user');
+  const { bookingId, rating, reviewText } = await c.req.json();
+  
+  if (rating < 1 || rating > 5) return c.json({ error: 'Rating must be between 1 and 5' }, 400);
+
+  try {
+    // Check if booking belongs to user and is COMPLETED
+    const booking = await prisma.guideBooking.findUnique({ where: { id: bookingId } });
+    if (!booking || booking.userId !== payload.userId || booking.guideId !== guideId) {
+      return c.json({ error: 'Invalid booking' }, 400);
+    }
+    if (booking.status !== 'COMPLETED') {
+      return c.json({ error: 'Can only review completed tours' }, 400);
+    }
+
+    // Create review
+    const review = await prisma.guideReview.create({
+      data: {
+        guideProfileId: guideId,
+        userId: payload.userId,
+        bookingId,
+        rating,
+        reviewText
+      }
+    });
+
+    // Update guide's overall rating
+    const allReviews = await prisma.guideReview.findMany({ where: { guideProfileId: guideId } });
+    const totalRating = allReviews.reduce((acc, r) => acc + r.rating, 0);
+    const newAverage = totalRating / allReviews.length;
+
+    await prisma.guideProfile.update({
+      where: { id: guideId },
+      data: {
+        rating: newAverage,
+        reviewCount: allReviews.length
+      }
+    });
+
+    return c.json(review, 201);
+  } catch (err) { 
+    if (err.code === 'P2002') return c.json({ error: 'You have already reviewed this booking' }, 400);
+    return c.json({ error: err.message }, 500); 
+  }
+});
+
+app.get('/guides/:guideId/reviews', async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  try {
+    const reviews = await prisma.guideReview.findMany({
+      where: { guideProfileId: guideId },
+      include: {
+        user: { select: { name: true, avatar: true } },
+        booking: { select: { date: true, durationHours: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(reviews);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 
 app.post('/guides/:guideId/calendar/block', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const { date } = await c.req.json(); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: { push: new Date(date) } } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } }); app.delete('/guides/:guideId/calendar/block/:date', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const dateStr = c.req.param('date'); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const dateToRemove = new Date(dateStr).toISOString(); const newBlocked = guide.blockedDates.filter(d => d.toISOString() !== dateToRemove); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: newBlocked } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } });
 // Experiences
@@ -3637,10 +3729,100 @@ export default {
       cleanupOrphanedMedia(env),
       generateOwnerDailyAlerts(env, ctx),
       processPromotionsLifecycle(env, ctx),
-      processOwnerPayouts(env, ctx)
+      processOwnerPayouts(env, ctx),
+      processGuidePayouts(env, ctx),
+      processGuideReminders(env, ctx)
     ]));
   }
 };
+
+async function processGuideReminders(env, ctx) {
+  const prisma = getPrisma(env);
+  try {
+    const now = new Date();
+    // 12 hours from now
+    const targetStart = new Date(now.getTime() + 11.5 * 60 * 60 * 1000);
+    const targetEnd = new Date(now.getTime() + 12.5 * 60 * 60 * 1000);
+
+    const upcomingBookings = await prisma.guideBooking.findMany({
+      where: {
+        status: 'CONFIRMED',
+        date: { gte: targetStart, lte: targetEnd }
+      },
+      include: {
+        user: true,
+        guide: { include: { user: true } }
+      }
+    });
+
+    for (const booking of upcomingBookings) {
+      // Send message to traveler
+      await prisma.message.create({
+        data: {
+          text: `Hi ${booking.user.name}, your tour with ${booking.guide.user.name} is in 12 hours! Meeting Point: ${booking.meetingPoint}.`,
+          senderId: booking.guide.userId, // Sending as guide
+          guideBookingId: booking.id
+        }
+      });
+      // Send message to guide
+      await prisma.message.create({
+        data: {
+          text: `Reminder: You have a tour with ${booking.user.name} in 12 hours at ${booking.meetingPoint}.`,
+          senderId: booking.user.id, // Sending as user
+          guideBookingId: booking.id
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Scheduled guide reminders error:", err);
+  }
+}
+
+async function processGuidePayouts(env, ctx) {
+  const prisma = getPrisma(env);
+  try {
+    const now = new Date();
+    const readyPayouts = await prisma.guidePayout.findMany({
+      where: {
+        status: 'PENDING',
+        lockedUntil: { lte: now }
+      },
+      include: {
+        guideProfile: { include: { user: true } },
+        booking: true
+      }
+    });
+
+    for (const payout of readyPayouts) {
+      try {
+        const transfer = await createRazorpayPayout({ env }, {
+          accountName: payout.guideProfile.accountName || payout.guideProfile.user?.name || 'Local Guide',
+          accountNumber: payout.guideProfile.accountNumber || '409000123456',
+          ifsc: payout.guideProfile.ifsc || 'HDFC0001234',
+          amount: payout.netAmount,
+          reference: payout.booking?.id?.substring(0,8) || payout.id.substring(0,8)
+        });
+        
+        await prisma.guidePayout.update({
+          where: { id: payout.id },
+          data: {
+            status: 'PAID',
+            transactionRef: transfer.id,
+            paidAt: new Date()
+          }
+        });
+      } catch (err) {
+        console.error("Guide automated payout failed:", err);
+        await prisma.guidePayout.update({
+          where: { id: payout.id },
+          data: { status: 'FAILED' }
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Scheduled guide payouts error:", err);
+  }
+}
 
 async function generateOwnerDailyAlerts(env, ctx) {
   const prisma = getPrisma(env);

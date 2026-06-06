@@ -15,6 +15,7 @@ import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
 import { applyPdfWatermark } from "../../utils/pdfWatermark";
 import { GuideChat } from "../../components/guide/GuideChat";
+import { GuideReviewModal } from "../../components/guide/GuideReviewModal";
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,6 +42,7 @@ export function BookingsPage() {
   const [guideBookings, setGuideBookings] = useState<any[]>([]);
   const [activeGuideChat, setActiveGuideChat] = useState<any>(null);
   const [activeGuidePassBooking, setActiveGuidePassBooking] = useState<any>(null);
+  const [activeReviewBooking, setActiveReviewBooking] = useState<any>(null);
   
   const [activePassBooking, setActivePassBooking] = useState<Booking | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -133,6 +135,21 @@ export function BookingsPage() {
       setIsLoading(false);
     }
   }, [user]);
+
+  const handleReportIssue = async (bookingId: string) => {
+    const reason = window.prompt("Please describe the issue with this tour. This will escalate the payout for manual review:");
+    if (!reason) return;
+
+    try {
+      const loadingToast = toast.loading("Submitting dispute...");
+      await apiClient.post(`/guides/bookings/${bookingId}/dispute`, { reason });
+      toast.success("Dispute submitted successfully. Our team will review the issue.", { id: loadingToast });
+      fetchBookings();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit dispute");
+    }
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -510,6 +527,24 @@ export function BookingsPage() {
                         >
                           <QrCode className="w-4 h-4 text-gold-400 mr-2" />
                           Digital Guide Pass
+                        </Button>
+                      )}
+                      {gb.status === "COMPLETED" && !gb.review && (
+                        <Button 
+                          className="rounded-xl px-6 bg-gold-500 text-white shadow-luxury hover:bg-gold-600"
+                          onClick={() => setActiveReviewBooking(gb)}
+                        >
+                          <Star className="w-4 h-4 text-white mr-2 fill-current" />
+                          Leave a Review
+                        </Button>
+                      )}
+                      {gb.status === "COMPLETED" && gb.payout?.status === "PENDING" && (
+                        <Button 
+                          variant="outline"
+                          className="rounded-xl px-6 border-red-200 text-red-600 hover:bg-red-50"
+                          onClick={() => handleReportIssue(gb.id)}
+                        >
+                          Report Issue
                         </Button>
                       )}
                     </div>
@@ -1108,6 +1143,23 @@ export function BookingsPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Guide Review Modal */}
+      <AnimatePresence>
+        {activeReviewBooking && (
+          <GuideReviewModal
+            bookingId={activeReviewBooking.id}
+            guideId={activeReviewBooking.guideId}
+            guideName={activeReviewBooking.guide?.user?.name || 'Local Guide'}
+            onClose={() => setActiveReviewBooking(null)}
+            onSuccess={() => {
+              setActiveReviewBooking(null);
+              // Optimistically update UI or re-fetch
+              fetchBookings();
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

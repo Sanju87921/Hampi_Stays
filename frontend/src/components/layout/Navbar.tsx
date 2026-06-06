@@ -82,9 +82,9 @@ export function Navbar() {
  ...(user && user.role?.toUpperCase() === 'ADMIN' ? [{ name: t("navbar.commandCenter", "Command Center"), path: "/admin" }] : []),
  ];
 
- const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
- const useDarkText = isScrolled || !isHeroPage; 
- const isSolidBg = isScrolled || !isHeroPage;
+  const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
+  const useDarkText = false; 
+  const isSolidBg = false;
 
  return (
  <motion.nav 
