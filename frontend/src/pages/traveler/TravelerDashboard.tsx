@@ -1125,7 +1125,7 @@ export function TravelerDashboard() {
                   </div>
 
                   {/* Active Stay Details Sidebar Drawer */}
-                  <div className="w-80 border-l border-sand-100 flex flex-col bg-sand-50/10 h-full overflow-y-auto">
+                  <div className="w-80 shrink-0 border-l border-sand-100 flex flex-col bg-sand-50/10 h-full overflow-y-auto">
                     <div className="p-6 border-b border-sand-100 text-center bg-white/40">
                       <div className="w-20 h-20 mx-auto rounded-3xl overflow-hidden shadow-md border-2 border-white mb-3">
                         <img 
