@@ -384,10 +384,7 @@ export function BookingsPage() {
         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.3) 0%, transparent 70%)' }} />
         <div className="absolute bottom-[-30%] left-[-5%] w-[400px] h-[400px] rounded-full opacity-15" style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.2) 0%, transparent 70%)' }} />
         <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 60%)' }} />
-        <div className="container mx-auto px-4 relative z-10">
-          <Button variant="ghost" className="mb-6 hover:bg-white/10 px-0 text-white font-medium" onClick={() => navigate("/dashboard")}>
-            <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-          </Button>
+        <div className="container mx-auto px-4 relative z-10 pt-10 md:pt-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

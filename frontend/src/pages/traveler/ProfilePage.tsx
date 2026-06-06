@@ -221,11 +221,8 @@ export function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4 max-w-4xl pt-8 md:pt-12">
         <header className="mb-10">
-          <Button variant="ghost" className="mb-6 hover:bg-transparent px-0 text-navy-950 font-medium" onClick={() => navigate("/dashboard")}>
-            <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-          </Button>
           <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">My Profile</h1>
           <p className="text-navy-950/50">Manage your personal information and preferences.</p>
         </header>

@@ -87,9 +87,9 @@ export function Navbar() {
  transition={{ duration: 0.3, ease: "easeInOut" }}
  className={cn(
  "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]",
- isScrolled
- ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5"
- : "bg-gradient-to-b from-navy-950/80 via-navy-950/30 to-transparent py-4 md:py-[1.15rem]"
+        isScrolled
+          ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5"
+          : "bg-navy-950/60 backdrop-blur-xl border-b border-white/5 shadow-sm py-4 md:py-[1.15rem]"
  )}
  >
  <div className="container mx-auto px-4 md:px-6">

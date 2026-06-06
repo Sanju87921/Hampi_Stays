@@ -86,10 +86,7 @@ export function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <Button variant="ghost" className="mb-6 hover:bg-transparent px-0 text-navy-950 font-medium" onClick={() => navigate("/dashboard")}>
-          <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-        </Button>
+      <div className="container mx-auto px-4 max-w-4xl pt-8 md:pt-12">
         <header className="mb-10 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Notifications</h1>
