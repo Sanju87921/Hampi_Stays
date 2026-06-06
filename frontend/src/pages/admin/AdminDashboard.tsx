@@ -10,7 +10,7 @@ import {
  ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
  User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
- Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode
+ Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode, RotateCcw, RotateCcw
 } from "lucide-react";
 import { CinematicLogo } from "../../components/ui/CinematicLogo";
 import { Button } from "../../components/ui/Button";
@@ -30,6 +30,7 @@ const UserManagement = lazy(() => import("./components/UserManagement").then(m =
 const KycOperationsCenter = lazy(() => import("./components/KycOperationsCenter").then(m => ({ default: m.KycOperationsCenter })));
 const OtaMarketAnalysis = lazy(() => import("./components/OtaMarketAnalysis").then(m => ({ default: m.OtaMarketAnalysis })));
 const CommissionsModule = lazy(() => import("./components/CommissionsModule").then(m => ({ default: m.CommissionsModule })));
+const RefundManagementModule = lazy(() => import("./components/RefundManagementModule").then(m => ({ default: m.RefundManagementModule })));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-24">
@@ -40,7 +41,7 @@ const TabLoader = () => (
   </div>
 );
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market" | "refunds";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -2213,6 +2214,7 @@ export function AdminDashboard() {
  { id: "audit-logs", label: "Audit Logs", icon: History },
  { id: "reviews", label: "Reviews", icon: Star },
  { id: "ota-market", label: "OTA Market", icon: Globe },
+  { id: "refunds", label: "Refunds", icon: RotateCcw },
  ].map((tab) => (
  <button
  key={tab.id}
@@ -2297,6 +2299,7 @@ export function AdminDashboard() {
  {activeTab === "commissions" && <div className="space-y-12"><Suspense fallback={<TabLoader />}><CommissionsModule /></Suspense>{renderCommissions()}</div>}
  {activeTab === "audit-logs" && renderAuditLogs()}
  {activeTab === "ota-market" && <Suspense fallback={<TabLoader />}><OtaMarketAnalysis /></Suspense>}
+  {activeTab === "refunds" && <Suspense fallback={<TabLoader />}><RefundManagementModule /></Suspense>}
  </ErrorBoundary>
  </motion.div>
  )}
@@ -2587,6 +2590,11 @@ export function AdminDashboard() {
     </div>
   );
 }
+
+
+
+
+
 
 
 
