@@ -200,7 +200,7 @@ export const register = async (c) => {
       }
     }
 
-    const isTestEmail = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test') || lowerEmail === 'sanjay@gmail.com' || lowerEmail === 'admin@hampistays.com' || lowerEmail === 'sanjay@hampistays.com';
+    const isTestEmail = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test');
     const isTestPhone = normalizedPhone === '9876543210' || normalizedPhone.startsWith('99999');
     const isTest = isTestEmail || isTestPhone;
 
@@ -648,7 +648,7 @@ export const sendEmailOtp = async (c) => {
       );
     }
 
-    const isTestAccount = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test') || lowerEmail === 'sanjay@gmail.com' || lowerEmail === 'admin@hampistays.com' || lowerEmail === 'sanjay@hampistays.com';
+    const isTestAccount = lowerEmail.endsWith('@example.com') || lowerEmail.includes('test');
     return c.json({ 
       success: true, 
       message: `Verification code sent to ${lowerEmail}`,
