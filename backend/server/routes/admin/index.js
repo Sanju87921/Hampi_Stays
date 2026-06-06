@@ -1074,6 +1074,9 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
     
     if (status === 'REJECTED') {
       await prisma.resortOwner.update({ where: { id: ownerId }, data: { isVerified: false } });
+      if (doc.owner?.userId) {
+        await prisma.user.update({ where: { id: doc.owner.userId }, data: { kycStatus: 'REJECTED', kycRejectionReason: rejectionReason } });
+      }
     } else {
       const { evaluateResortOwnerKyc } = await import('../../utils/kycEngine.js');
       const vSettings = await prisma.verificationSettings.findFirst() || {};
@@ -1086,6 +1089,10 @@ app.patch('/admin/kyc/resorts/:id', authMiddleware, adminMiddleware, async (c) =
           where: { ownerId, status: { in: ['APPROVED', 'KYC_PENDING'] } },
           data: { isVerified: true, status: 'ACTIVE' }
         });
+      }
+      
+      if (status === 'VERIFIED' && doc.owner?.userId) {
+        await prisma.user.update({ where: { id: doc.owner.userId }, data: { kycStatus: 'VERIFIED' } });
       }
     }
 
