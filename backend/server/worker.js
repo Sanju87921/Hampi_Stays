@@ -33,6 +33,7 @@ import { setupHealthRoutes } from "./routes/health.js";
 import { setupAdminRoutes } from "./routes/admin/index.js";
 import { setupKycRoutes } from "./routes/kyc.js";
 import { setupAdminSecurityRoutes } from "./routes/admin/security.js";
+import { setupAdminModulesRoutes } from "./routes/admin/modules.js";
 import { setupIcalRoutes } from "./routes/ical/index.js";
 
 
@@ -186,6 +187,7 @@ setupCurationRoutes(app, authMiddleware, adminMiddleware);
 setupAdminRoutes(app, authMiddleware, adminMiddleware);
 setupKycRoutes(app, authMiddleware, adminMiddleware);
 setupAdminSecurityRoutes(app, authMiddleware, adminMiddleware);
+setupAdminModulesRoutes(app, authMiddleware, adminMiddleware);
 setupIcalRoutes(app, authMiddleware, adminMiddleware);
 setupHealthRoutes(app);
 app.route('/auth', setupAuthRoutes(authMiddleware));
@@ -3731,4 +3733,5 @@ async function processOwnerPayouts(env, ctx) {
     console.error("Owner payouts processing error:", error);
   }
 }
+
 

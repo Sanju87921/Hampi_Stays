@@ -280,6 +280,7 @@ model DiscountCode {
 
 model Booking {
   payout ResortOwnerPayout?
+  refundRequest RefundRequest?
 
   id              String        @id @default(cuid())
   checkIn         DateTime
@@ -1003,4 +1004,72 @@ model HousekeepingTask {
   staff       StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
 
   @@map("housekeeping_tasks")
+}
+
+model RefundRequest {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  amount      Float
+  reason      String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSING
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+
+  @@map("refund_requests")
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  subject     String
+  category    String
+  status      String   @default("OPEN")
+  priority    String   @default("MEDIUM")
+  userName    String
+  userEmail   String
+  userPhone   String?
+  resortName  String?
+  bookingId   String?
+  userId      String?
+  
+  messages    SupportMessage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  ticketId    String
+  sender      String   // USER, ADMIN
+  senderName  String
+  content     String
+  createdAt   DateTime @default(now())
+
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("support_messages")
+}
+
+model Campaign {
+  id              String   @id @default(cuid())
+  title           String
+  subject         String
+  body            String
+  audience        String   // ALL, TRAVELLERS, RESORT_OWNERS, GUIDES
+  status          String   @default("DRAFT")
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  totalRecipients Int      @default(0)
+  openRate        Float?
+  clickRate       Float?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("campaigns")
 }
