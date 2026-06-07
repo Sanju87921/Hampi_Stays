@@ -13,7 +13,7 @@ export function GuideLandingPage() {
       <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-navy-950">
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1590766940554-63cf3a66fbc0?q=80&w=2000&auto=format&fit=crop" 
+            src="/images/hero.png" 
             alt="Hampi Heritage" 
             className="w-full h-full object-cover opacity-30 mix-blend-luminosity"
           />
@@ -35,8 +35,7 @@ export function GuideLandingPage() {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-tight"
           >
-            Welcome to your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 italic">Expert Command Center</span>
+            Welcome to your <span className="text-gold-500 italic">Expert Command Center</span>
           </motion.h1>
           
           <motion.p 
