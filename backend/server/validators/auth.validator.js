@@ -9,7 +9,7 @@ export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+  phone: z.string().regex(/^\+?[0-9\s\-()]{7,20}$/, "Invalid phone number format").optional(),
   role: z.enum(['TRAVELLER', 'RESORT_OWNER', 'GUIDE', 'STAFF']).default('TRAVELLER')
 });
 
