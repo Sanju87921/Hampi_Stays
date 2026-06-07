@@ -14,6 +14,7 @@ import * as QRCode from "qrcode";
 import { useAuth } from "../../context/AuthContext";
 import type { Booking } from "../../types/booking";
 import { applyPdfWatermark } from "../../utils/pdfWatermark";
+import { PageLoader } from "../../components/shared/PageLoader";
 
 const downloadPdf = (doc: any, filename: string) => {
   const blob = doc.output("blob");
@@ -238,15 +239,7 @@ export function CheckoutSuccessPage() {
   };
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-sand-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-gold-600 animate-spin mx-auto mb-6" />
-          <h1 className="text-2xl font-serif font-bold text-navy-950">Verifying Payment...</h1>
-          <p className="text-navy-950/40 mt-2 text-sm uppercase tracking-widest font-bold">Please do not refresh the page</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (status === "failed") {

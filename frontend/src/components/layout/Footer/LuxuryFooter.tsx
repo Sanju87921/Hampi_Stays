@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Globe, Share2, MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../../context/AuthContext";
 
 export function LuxuryFooter() {
+  const { user } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [email, setEmail] = useState("");
 
@@ -32,15 +34,35 @@ export function LuxuryFooter() {
               />
             </Link>
             <p className="text-navy-950  text-lg md:text-xl font-serif italic leading-relaxed max-w-md mx-auto lg:mx-0">
-              "Where the whispers of history meet the embrace of modern luxury. Experience Hampi through a different lens."
+              {user?.role === "GUIDE"
+                ? "\"Empowering the storytellers of Hampi. Join us in preserving the whispers of history.\""
+                : "\"Where the whispers of history meet the embrace of modern luxury. Experience Hampi through a different lens.\""}
             </p>
           </div>
 
           <div className="lg:col-span-7 flex justify-end w-full">
-            <div className="w-full max-w-xl bg-white  p-10 rounded-[3rem] shadow-luxury border border-sand-100  relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gold-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
-              
-              <AnimatePresence mode="wait">
+            {user?.role === "GUIDE" ? (
+              <div className="w-full max-w-xl bg-navy-950 p-10 rounded-[3rem] shadow-luxury border border-navy-900 relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/20 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="relative z-10 text-center sm:text-left">
+                  <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold-400 mb-2">Hampi Expert Network</h4>
+                  <h3 className="text-2xl font-serif font-bold text-white mb-6">Manage Your Expertise</h3>
+                  <p className="text-white/60 text-sm leading-relaxed mb-6">
+                    Access your command center to update your availability, manage bookings, and refine your heritage narratives.
+                  </p>
+                  <Link to="/dashboard">
+                    <button className="bg-gold-500 text-navy-950 px-10 py-4 rounded-2xl font-bold text-sm hover:bg-gold-400 transition-all shadow-lg flex items-center justify-center gap-2 mx-auto sm:mx-0 w-full sm:w-auto">
+                      Enter Command Center
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-w-xl bg-white p-10 rounded-[3rem] shadow-luxury border border-sand-100 relative overflow-hidden group min-h-[220px] flex flex-col justify-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+                
+                <AnimatePresence mode="wait">
                 {!isSubscribed ? (
                   <motion.div 
                     key="form"
@@ -82,6 +104,7 @@ export function LuxuryFooter() {
                 )}
               </AnimatePresence>
             </div>
+            )}
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import { apiClient } from "../../utils/apiClient";
 import { API_BASE_URL } from "../../config/api";
 import { GuideChat } from "../../components/guide/GuideChat";
 import { QrCode } from "lucide-react";
+import { PageLoader } from "../../components/shared/PageLoader";
 
 // Direct-to-Cloudinary Signed Upload Helper
 async function uploadFile(file: File): Promise<string> {
@@ -577,7 +578,7 @@ export function GuideDashboard() {
             exit={{ opacity: 0, height: 0 }}
             className="bg-white rounded-[3rem] border-2 border-gold-500/20 shadow-2xl overflow-hidden mb-12"
           >
-            <form onSubmit={handleCreateExperience} className="p-10 space-y-8">
+            <form onSubmit={handleSaveExperience} className="p-10 space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-6">
                   {/* Cover Image Upload */}
@@ -1442,17 +1443,7 @@ export function GuideDashboard() {
     );
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-sand-50/50 pt-28 flex items-center justify-center">
-      <motion.img 
-        src="/logo.png" 
-        alt="HampiStays Loading..." 
-        className="w-32 h-auto"
-        animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-  );
+  if (loading) return <PageLoader />;
 
   return (
     <div className="min-h-screen bg-sand-50/50 flex flex-col pt-28">

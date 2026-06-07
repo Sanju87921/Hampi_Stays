@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { PageLoader } from "../../components/shared/PageLoader";
 
 export function InventoryPage() {
   const { user } = useAuth();
@@ -171,7 +172,7 @@ export function InventoryPage() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center pt-24"><Loader2 className="w-10 h-10 animate-spin text-gold-600" /></div>;
+  if (isLoading) return <PageLoader />;
 
   if (!resort) return <div className="min-h-screen flex items-center justify-center pt-24 text-navy-950/40">Please set up a resort first.</div>;
 

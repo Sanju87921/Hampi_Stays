@@ -22,6 +22,7 @@ const PrivacyPolicyPage = lazyWithRetry(() => import("./pages/public/PrivacyPoli
 const CookiesPage = lazyWithRetry(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
 const NotFoundPage = lazyWithRetry(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const LocalExpertsPage = lazyWithRetry(() => import("./pages/public/LocalExpertsPage").then(m => ({ default: m.LocalExpertsPage })));
+const GuideProfilePage = lazyWithRetry(() => import("./pages/public/GuideProfilePage").then(m => ({ default: m.GuideProfilePage })));
 const HampiGuidePage = lazyWithRetry(() => import("./pages/public/HampiGuidePage").then(m => ({ default: m.HampiGuidePage })));
 
 // Lazy Loaded Auth Pages
@@ -284,7 +285,8 @@ function AnimatedRoutes() {
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/cookies" element={<CookiesPage />} />
               <Route path="/guides" element={<LocalExpertsPage />} />
-              <Route path="/guides/:id" element={<HampiGuidePage />} />
+              <Route path="/guides/:id" element={<GuideProfilePage />} />
+              <Route path="/destination-guide" element={<HampiGuidePage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

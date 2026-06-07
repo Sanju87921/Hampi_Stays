@@ -6,7 +6,7 @@ import {
   Calendar, Clock, MapPin, X, Award, Star, ArrowRight
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { apiClient } from "../../utils/apiClient";
@@ -42,6 +42,8 @@ interface Guide {
 
 export function LocalExpertsPage() {
   const { user, requireAuth } = useAuth();
+  const [searchParams] = useSearchParams();
+  const guideIdParam = searchParams.get("guideId");
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,7 +62,12 @@ export function LocalExpertsPage() {
   const fetchGuides = async () => {
     try {
       const data = await apiClient.get<Guide[]>('/guides');
-      setGuides(Array.isArray(data) ? data : []);
+      const guidesArray = Array.isArray(data) ? data : [];
+      setGuides(guidesArray);
+      if (guideIdParam) {
+        const found = guidesArray.find(g => g.id === guideIdParam);
+        if (found) setSelectedGuide(found);
+      }
     } catch (err) {
       console.error("Failed to fetch guides", err);
       setGuides([]);

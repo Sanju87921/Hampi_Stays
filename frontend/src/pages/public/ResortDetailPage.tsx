@@ -24,6 +24,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
 import type { Resort } from "../../types/resort";
 import { optimizeImage } from "../../utils/image";
+import { PageLoader } from "../../components/shared/PageLoader";
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
   WiFi: <Wifi className="w-5 h-5" />,
@@ -115,22 +116,7 @@ export function ResortDetailPage() {
     }
   };
 
-  if (isLoading) return (
-    <div className="min-h-screen bg-sand-50 pt-32">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="h-[420px] md:h-[560px] bg-sand-100 rounded-3xl animate-pulse mb-10" />
-        <div className="flex flex-col lg:flex-row gap-10">
-          <div className="flex-1 space-y-6">
-            <div className="h-12 w-3/4 bg-sand-200 rounded-2xl animate-pulse" />
-            <div className="h-6 w-1/2 bg-sand-100 rounded-xl animate-pulse" />
-            <div className="h-32 bg-sand-50 rounded-2xl animate-pulse" />
-          </div>
-          <div className="w-96 h-[500px] bg-sand-200 rounded-3xl animate-pulse hidden lg:block" />
-        </div>
-      </div>
-    </div>
-  );
-
+  if (isLoading) return <PageLoader />;
   if (!resort || error) return <Navigate to="/resorts" replace />;
 
   const images = resort.images;
