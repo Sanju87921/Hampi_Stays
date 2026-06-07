@@ -12,13 +12,13 @@ export function GuideLandingPage() {
       {/* Expert Hero Section */}
       <section className="relative min-h-[100svh] flex items-center justify-center bg-navy-950 z-30">
         <div className="absolute inset-0 pointer-events-none z-0">
-          <img 
-            src="/images/hero.png" 
-            alt="Hampi Heritage" 
+          <img
+            src="/images/hero.png"
+            alt="Hampi Heritage"
             className="absolute inset-0 w-full h-full object-cover opacity-85"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-navy-950/60 via-navy-950/20 to-transparent" />
-          
+
           {/* Floating Ambient Orbs — warm gold tones */}
           <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-gold-400/5 rounded-full blur-[120px] animate-float pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/5 rounded-full blur-[150px] animate-float-slow pointer-events-none" />
@@ -33,17 +33,17 @@ export function GuideLandingPage() {
             <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse flex-shrink-0" />
             Official Hampi Expert
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-[1.1] text-shadow-lg"
           >
-            Welcome to your <span className="text-gold-400 italic">Command Center</span>
+            Welcome to your <span className="text-gold-400 italic">Guide PlatForm </span>
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -51,7 +51,7 @@ export function GuideLandingPage() {
           >
             Hello {user?.name?.split(' ')[0] || 'Guide'}, your expertise brings Hampi's rich history to life. Manage your tours, review bookings, and track your impact directly from your dashboard.
           </motion.p>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -78,7 +78,7 @@ export function GuideLandingPage() {
               { value: "12", label: "Heritage Sites" },
               { value: "100%", label: "Verified Expert" }
             ].map((stat, idx) => (
-              <motion.div 
+              <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
