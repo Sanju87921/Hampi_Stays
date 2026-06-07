@@ -7,7 +7,8 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil, ChevronLeft
+  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil, ChevronLeft,
+  Bell, XCircle
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
@@ -79,6 +80,7 @@ export function GuideDashboard() {
   if (subPath === 'expert-profile') activeTab = 'profile';
   if (subPath === 'kyc') activeTab = 'kyc';
   if (subPath === 'settings') activeTab = 'settings';
+  if (subPath === 'notifications') activeTab = 'notifications';
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,10 +150,37 @@ export function GuideDashboard() {
   
   const [activeChatBooking, setActiveChatBooking] = useState<any>(null);
 
+  // Notifications State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   useEffect(() => {
     fetchProfile();
     fetchSystemStatus();
+    fetchNotifications();
   }, [user]);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await apiClient.get<any[]>('/users/notifications');
+      const arr = Array.isArray(data) ? data : [];
+      setNotifications(arr);
+      setUnreadCount(arr.filter(n => !n.isRead).length);
+    } catch (err) {
+      console.error('Failed to fetch guide notifications', err);
+    }
+  };
+
+  const markNotificationRead = async (id: string, isRead: boolean) => {
+    if (isRead) return;
+    try {
+      await apiClient.patch(`/users/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) {
@@ -1146,7 +1175,112 @@ export function GuideDashboard() {
 
 
 
+  const renderNotifications = () => {
+    const formatTime = (dateString: string) => {
+      if (!dateString) return "Just now";
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return "Just now";
+      const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diff < 60) return "Just now";
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
+    };
+
+    const getIconStyle = (type: string) => {
+      if (type === 'KYC_APPROVED') return { icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', banner: 'bg-green-50 border-green-200' };
+      if (type === 'KYC_REJECTED') return { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', banner: 'bg-red-50 border-red-200' };
+      return { icon: Bell, color: 'text-gold-600', bg: 'bg-gold-50', border: 'border-gold-100', banner: '' };
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-serif font-bold text-navy-950">Notifications</h2>
+            <p className="text-sm text-navy-950/40 mt-1">Stay informed about your profile and booking updates.</p>
+          </div>
+          {unreadCount > 0 && (
+            <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm animate-pulse">
+              {unreadCount} New
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+          {notifications.length === 0 ? (
+            <div className="p-20 text-center">
+              <div className="w-16 h-16 bg-sand-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bell className="w-8 h-8 text-navy-950/20" />
+              </div>
+              <h3 className="text-xl font-bold text-navy-950 mb-2">All caught up!</h3>
+              <p className="text-navy-950/50">No notifications yet. You'll be notified when your KYC is reviewed.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-sand-50">
+              <AnimatePresence>
+                {notifications.map((n, i) => {
+                  const { icon: Icon, color, bg, border, banner } = getIconStyle(n.type);
+                  const isKyc = n.type === 'KYC_APPROVED' || n.type === 'KYC_REJECTED';
+                  return (
+                    <motion.div
+                      key={n.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => markNotificationRead(n.id, n.isRead)}
+                      className={`p-8 flex items-start gap-6 cursor-pointer transition-all duration-300 ${
+                        n.isRead ? 'opacity-60 hover:opacity-80 bg-white' : isKyc ? banner : 'bg-sand-50/20 hover:bg-sand-50/60'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl ${bg} border ${border} flex items-center justify-center shrink-0 shadow-sm relative`}>
+                        <Icon className={`w-6 h-6 ${color}`} />
+                        {!n.isRead && (
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`font-bold ${!n.isRead ? 'text-navy-950' : 'text-navy-950/70'}`}>{n.title}</h3>
+                          <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest shrink-0 ml-4">{formatTime(n.createdAt)}</span>
+                        </div>
+                        <p className={`text-sm leading-relaxed ${!n.isRead ? 'text-navy-950/80 font-medium' : 'text-navy-950/50'}`}>
+                          {n.message}
+                        </p>
+                        {n.type === 'KYC_APPROVED' && !n.isRead && (
+                          <div className="mt-3">
+                            <Button
+                              onClick={(e) => { e.stopPropagation(); navigate('/dashboard/expert-profile'); }}
+                              className="h-9 px-5 text-xs rounded-xl bg-green-700 text-white border-none hover:bg-green-800"
+                            >
+                              View Verified Profile →
+                            </Button>
+                          </div>
+                        )}
+                        {n.type === 'KYC_REJECTED' && !n.isRead && (
+                          <div className="mt-3">
+                            <Button
+                              onClick={(e) => { e.stopPropagation(); navigate('/dashboard/kyc'); }}
+                              className="h-9 px-5 text-xs rounded-xl bg-red-600 text-white border-none hover:bg-red-700"
+                            >
+                              Re-upload Documents →
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderBookings = () => {
+
     const filteredBookings = bookings.filter(b => bookingFilter === 'ALL' || b.status === bookingFilter);
 
     return (
