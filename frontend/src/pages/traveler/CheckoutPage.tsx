@@ -17,8 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { sanitizePhoneNumber } from "../../utils/phone";
-
-const USD_RATE = 0.012; // 1 INR ≈ 0.012 USD
+import { useCurrency } from "../../context/CurrencyContext";
 
 const SPECIAL_REQUEST_OPTIONS = [
   { id: "early_checkin", label: "Early Check-in (before 12pm)", icon: Clock },
@@ -37,9 +36,9 @@ export function CheckoutPage() {
   const location = useLocation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { currency, setCurrency, formatPrice } = useCurrency();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
   const [addInsurance, setAddInsurance] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
@@ -188,10 +187,7 @@ export function CheckoutPage() {
     toast.success("Coupon removed");
   };
 
-  const fmt = (amount: number) =>
-    currency === "INR"
-      ? `₹${amount.toLocaleString("en-IN")}`
-      : `$${(amount * USD_RATE).toFixed(2)}`;
+  const fmt = (amount: number) => formatPrice(amount);
 
   const toggleMeal = (name: string) => {
     setSelectedMeals(prev =>
@@ -485,9 +481,9 @@ export function CheckoutPage() {
                         </div>
                       </div>
                       <div className="flex w-full sm:w-auto rounded-xl overflow-hidden border border-sand-200">
-                        {(["INR", "USD"] as const).map(c => (
+                        {(["INR", "USD", "EUR", "GBP"] as const).map(c => (
                           <button key={c} onClick={() => setCurrency(c)}
-                            className={cn("flex-1 sm:flex-none px-6 py-2 text-sm font-bold transition-all",
+                            className={cn("flex-1 sm:flex-none px-4 py-2 text-xs font-bold transition-all",
                               currency === c ? "bg-navy-950 text-white" : "bg-white text-navy-950/40 hover:text-navy-950")}>
                             {c}
                           </button>
@@ -701,7 +697,7 @@ export function CheckoutPage() {
                     <span className="text-lg font-bold text-navy-950 font-serif">Total</span>
                     <span className="text-lg font-bold text-navy-950">{fmt(finalPrice)}</span>
                   </div>
-                  {currency === "USD" && (
+                  {currency !== "INR" && (
                     <p className="text-[10px] text-navy-950/30 italic text-right">*Approx. rate. Charged in INR</p>
                   )}
                 </div>

@@ -9,6 +9,7 @@ import { useSystem } from "../../context/SystemContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../ui/LanguageSwitcher";
+import { CurrencySwitcher } from "../ui/CurrencySwitcher";
 export function Navbar() {
  const [isScrolled, setIsScrolled] = useState(false);
  const [isVisible, setIsVisible] = useState(true);
@@ -164,6 +165,7 @@ export function Navbar() {
  <div className="flex-1 flex justify-end items-center gap-5 z-10">
  {/* Desktop Actions */}
  <div className="hidden md:flex items-center gap-6">
+ <CurrencySwitcher useDarkText={useDarkText} />
  <LanguageSwitcher useDarkText={useDarkText} />
  {isAuthenticated ? (
  <div className="flex items-center gap-6">
@@ -264,7 +266,8 @@ export function Navbar() {
  </Link>
  ))}
  <div className="flex flex-col gap-3 sm:gap-4 mt-2">
- <div className="flex justify-center mb-2">
+ <div className="flex justify-center gap-4 mb-2">
+ <CurrencySwitcher useDarkText={useDarkText} />
  <LanguageSwitcher useDarkText={useDarkText} />
  </div>
  {!isAuthenticated ? (

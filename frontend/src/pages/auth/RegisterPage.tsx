@@ -4,6 +4,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { ArrowLeft, Luggage, Key, Check, Users, Mail, Smartphone, ShieldCheck, RefreshCw, CheckCircle2, Compass } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { Select } from "../../components/ui/Select";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
@@ -51,7 +52,7 @@ export function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: emailParam || "",
-    phone: "",
+    phone: "+91 ",
     password: "",
     confirmPassword: "",
     terms: false
@@ -541,18 +542,49 @@ export function RegisterPage() {
                         required
                       />
                     )}
-                    {isPhoneRequired && (
-                      <Input
-                        label="Phone Number"
-                        type="tel"
-                        placeholder="+91 XXXXX XXXXX"
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
+                    {isPhoneRequired && (() => {
+                      const codes = ['+91', '+1', '+44', '+61', '+971', '+49', '+33'];
+                      let currentCode = '+91';
+                      for (const c of codes) {
+                        if (formData.phone.startsWith(c)) {
+                          currentCode = c;
+                          break;
                         }
-                        required
-                      />
-                    )}
+                      }
+                      const currentNumber = formData.phone.startsWith(currentCode) 
+                        ? formData.phone.slice(currentCode.length).trim() 
+                        : formData.phone.replace(/[^0-9\s]/g, "");
+
+                      return (
+                        <div className="flex items-start gap-3">
+                          <div className="w-[120px] shrink-0">
+                            <Select
+                              value={currentCode}
+                              onChange={(val) => setFormData({ ...formData, phone: val + " " + currentNumber })}
+                              options={[
+                                { value: '+91', label: '+91 (IN)' },
+                                { value: '+1', label: '+1 (US)' },
+                                { value: '+44', label: '+44 (UK)' },
+                                { value: '+61', label: '+61 (AU)' },
+                                { value: '+971', label: '+971 (AE)' },
+                                { value: '+49', label: '+49 (DE)' },
+                                { value: '+33', label: '+33 (FR)' },
+                              ]}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Input
+                              label="Phone Number"
+                              type="tel"
+                              placeholder="XXXXX XXXXX"
+                              value={currentNumber}
+                              onChange={(e) => setFormData({ ...formData, phone: currentCode + " " + e.target.value.replace(/[^0-9\s]/g, "") })}
+                              required
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <Input
                       label="Password"
                       type="password"

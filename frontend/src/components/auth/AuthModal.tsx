@@ -4,13 +4,14 @@ import { X, Mail, Lock, User, Phone, Sparkles } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../ui/Button";
 import { GoogleAuthButton } from "./GoogleAuthButton";
+import { Select } from "../ui/Select";
 
 export function AuthModal() {
  const { showAuthModal, setShowAuthModal, authModalView, login, register, loginWithGoogle, authMessage } = useAuth();
  const [email, setEmail] = useState("");
  const [password, setPassword] = useState("");
  const [name, setName] = useState("");
- const [phone, setPhone] = useState("");
+ const [phone, setPhone] = useState("+91 ");
  const [isLoading, setIsLoading] = useState(false);
  const [error, setError] = useState("");
 
@@ -160,22 +161,53 @@ export function AuthModal() {
  </div>
  </div>
 
- {authModalView === "register" && (
- <div className="group">
- <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Phone Number</label>
- <div className="relative">
- <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
- <input
- type="tel"
- required
- value={phone}
- onChange={(e) => setPhone(e.target.value)}
- className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
- placeholder="+91 98765 43210"
- />
- </div>
- </div>
- )}
+ {authModalView === "register" && (() => {
+   const codes = ['+91', '+1', '+44', '+61', '+971', '+49', '+33'];
+   let currentCode = '+91';
+   for (const c of codes) {
+     if (phone.startsWith(c)) {
+       currentCode = c;
+       break;
+     }
+   }
+   const currentNumber = phone.startsWith(currentCode) 
+     ? phone.slice(currentCode.length).trim() 
+     : phone.replace(/[^0-9\s]/g, "");
+
+   return (
+     <div className="group">
+       <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Phone Number</label>
+       <div className="flex gap-2">
+         <div className="w-[110px] shrink-0">
+           <Select
+             value={currentCode}
+             onChange={(val) => setPhone(val + " " + currentNumber)}
+             options={[
+               { value: '+91', label: '+91 (IN)' },
+               { value: '+1', label: '+1 (US)' },
+               { value: '+44', label: '+44 (UK)' },
+               { value: '+61', label: '+61 (AU)' },
+               { value: '+971', label: '+971 (AE)' },
+               { value: '+49', label: '+49 (DE)' },
+               { value: '+33', label: '+33 (FR)' },
+             ]}
+           />
+         </div>
+         <div className="relative flex-1">
+           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
+           <input
+             type="tel"
+             required
+             value={currentNumber}
+             onChange={(e) => setPhone(currentCode + " " + e.target.value.replace(/[^0-9\s]/g, ""))}
+             className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
+             placeholder="98765 43210"
+           />
+         </div>
+       </div>
+     </div>
+   );
+ })()}
 
  <div className="group">
  <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Password</label>
