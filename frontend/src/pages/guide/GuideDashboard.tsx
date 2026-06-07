@@ -552,6 +552,7 @@ export function GuideDashboard() {
       </div>
     </div>
   );
+};
 
   const renderTours = () => (
     <div className="space-y-10">
