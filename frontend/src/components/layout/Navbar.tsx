@@ -49,7 +49,16 @@ export function Navbar() {
  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
 
   const navLinks = isDashboard 
-  ? user?.role?.toUpperCase() === 'TRAVELLER'
+  ? user?.role?.toUpperCase() === 'GUIDE'
+  ? [
+      { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
+      { name: t("navbar.myTours", "My Tours"), path: "/dashboard/tours" },
+      { name: "Calendar", path: "/dashboard/calendar" },
+      { name: "Bookings", path: "/dashboard/bookings-expert" },
+      { name: "Earnings", path: "/dashboard/earnings" },
+      { name: t("navbar.profile", "Profile"), path: "/dashboard/expert-profile" },
+    ]
+  : user?.role?.toUpperCase() === 'TRAVELLER'
  ? [
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
@@ -69,7 +78,7 @@ export function Navbar() {
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  ]
   : user?.role?.toUpperCase() === 'ADMIN' ? [] 
-  : user?.role?.toUpperCase() === 'GUIDE' || user?.role?.toUpperCase() === 'RESORT_OWNER' ? [
+  : user?.role?.toUpperCase() === 'RESORT_OWNER' ? [
     { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }
   ]
   : [

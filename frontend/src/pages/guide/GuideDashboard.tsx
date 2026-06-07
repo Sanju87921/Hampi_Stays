@@ -63,9 +63,19 @@ export function GuideDashboard() {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get("tab") || "overview";
-
+  
+  // Parse path for routing instead of query params
+  const pathParts = location.pathname.split('/');
+  const subPath = pathParts[pathParts.length - 1];
+  
+  let activeTab = "overview";
+  if (subPath === 'tours') activeTab = 'tours';
+  if (subPath === 'calendar') activeTab = 'calendar';
+  if (subPath === 'bookings-expert') activeTab = 'bookings';
+  if (subPath === 'earnings') activeTab = 'payouts';
+  if (subPath === 'expert-profile') activeTab = 'profile';
+  if (subPath === 'kyc') activeTab = 'kyc';
+  if (subPath === 'settings') activeTab = 'settings';
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1370,74 +1380,9 @@ export function GuideDashboard() {
   if (loading) return <div className="min-h-screen bg-sand-50/50 pt-28 flex items-center justify-center">Loading Expert Portal...</div>;
 
   return (
-    <div className="min-h-screen bg-sand-50/50 flex">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-sand-200 hidden md:flex flex-col sticky top-0 h-screen pt-24 pb-8">
-        <div className="px-6 mb-8">
-          <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-2xl border border-sand-100">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-navy-950 to-navy-800 flex items-center justify-center text-white overflow-hidden shadow-sm border border-sand-200/50">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt={user?.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-[10px] font-bold tracking-tighter">
-                  {(user?.name || 'Guide').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-bold text-navy-950">{user?.name || "Guide"}</p>
-              <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">
-                Local Expert
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-grow px-4 space-y-1">
-          {[
-            { id: "overview", label: "Overview", icon: LayoutDashboard },
-            { id: "tours", label: "My Tours", icon: MapPin },
-            { id: "bookings", label: "Bookings", icon: Briefcase },
-            { id: "calendar", label: "Calendar", icon: Calendar },
-            { id: "profile", label: "Profile", icon: Users },
-            ...(isIdRequired ? [{ id: "kyc", label: "KYC Center", icon: ShieldCheck }] : []),
-            { id: "payouts", label: "Earnings", icon: IndianRupee },
-            { id: "settings", label: "Settings", icon: Settings },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 w-full text-left ${
-                  isActive 
-                    ? "bg-navy-950 text-white shadow-lg shadow-navy-950/20" 
-                    : "text-navy-950/60 hover:bg-sand-100 hover:text-navy-950"
-                }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="px-4 pt-4 border-t border-sand-100">
-          <button 
-            onClick={() => {
-              logout();
-              navigate("/");
-            }}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 hover:text-red-700 transition-all w-full text-left"
-          >
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 pt-28 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
+    <div className="min-h-screen bg-sand-50/50 flex flex-col pt-12">
+      {/* Main Content (No Sidebar) */}
+      <main className="flex-1 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <motion.div
