@@ -51,7 +51,7 @@ export function Navbar() {
   const navLinks = isDashboard 
   ? user?.role?.toUpperCase() === 'GUIDE'
   ? [
-      { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
+      { name: t("navbar.overview", "Overview"), path: "/dashboard" },
       { name: t("navbar.myTours", "My Tours"), path: "/dashboard/tours" },
       { name: "Calendar", path: "/dashboard/calendar" },
       { name: "Bookings", path: "/dashboard/bookings-expert" },

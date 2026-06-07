@@ -1445,7 +1445,7 @@ export function GuideDashboard() {
   if (loading) return <div className="min-h-screen bg-sand-50/50 pt-28 flex items-center justify-center">Loading Expert Portal...</div>;
 
   return (
-    <div className="min-h-screen bg-sand-50/50 flex flex-col pt-12">
+    <div className="min-h-screen bg-sand-50/50 flex flex-col pt-28">
       {/* Main Content (No Sidebar) */}
       <main className="flex-1 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
