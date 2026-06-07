@@ -76,7 +76,9 @@ export function GuideDashboard() {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
   const { settings } = useSystem();
-  const isIdRequired = settings?.verificationSettings?.guideRequirements?.some(req => !['EMAIL', 'PHONE'].includes(req));
+  const isIdRequired = settings?.verificationSettings?.guideRequirements 
+    ? settings.verificationSettings.guideRequirements.some(req => !['EMAIL', 'PHONE'].includes(req))
+    : true; // Default to true to be safe if settings are not loaded
   
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -916,7 +918,7 @@ export function GuideDashboard() {
                   <Award className="w-3 h-3" /> Specialties
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {profileForm.specialties.map((s: string) => (
+                  {(profileForm.specialties || []).map((s: string) => (
                     <div key={s} className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy-950 text-white text-xs font-bold transition-all hover:bg-gold-500 hover:text-navy-950">
                       {s}
                       <button 
@@ -971,7 +973,7 @@ export function GuideDashboard() {
                   <Globe className="w-3 h-3" /> Languages
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {profileForm.languages.map((l: string) => (
+                  {(profileForm.languages || []).map((l: string) => (
                     <div key={l} className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-50 border border-gold-200 text-gold-700 text-xs font-bold">
                       {l}
                       <button 
@@ -1498,7 +1500,7 @@ export function GuideDashboard() {
         </AnimatePresence>
 
         {/* Tab Content */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
