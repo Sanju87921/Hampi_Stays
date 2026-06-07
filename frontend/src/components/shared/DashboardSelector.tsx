@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { TravelerDashboard } from "../../pages/traveler/TravelerDashboard";
 import { OwnerDashboard } from "../../pages/owner/OwnerDashboard";
-import { GuideDashboard } from "../../pages/owner/GuideDashboard";
+import { GuideDashboard } from "../../pages/guide/GuideDashboard";
 
 export function DashboardSelector() {
   const { user } = useAuth();
