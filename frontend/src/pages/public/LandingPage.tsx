@@ -9,13 +9,19 @@ import { CTASection } from "../../components/layout/CTASection";
 
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { GuideLandingPage } from "../guide/GuideLandingPage";
 
 export function LandingPage() {
   const { user } = useAuth();
 
-  // Owners and Guides shouldn't see the public landing page, keep them in their dashboard
-  if (user?.role === "RESORT_OWNER" || user?.role === "GUIDE") {
+  // Owners should be kept in their dashboard
+  if (user?.role === "RESORT_OWNER") {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Guides get their own specialized landing page
+  if (user?.role === "GUIDE") {
+    return <GuideLandingPage />;
   }
 
   return (
