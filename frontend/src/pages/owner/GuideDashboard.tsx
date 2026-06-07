@@ -1378,7 +1378,7 @@ export function GuideDashboard() {
                 <img src={avatarPreview} alt={user?.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-[10px] font-bold tracking-tighter">
-                  {user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "G"}
+                  {(user?.name || 'Guide').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                 </span>
               )}
             </div>
@@ -1446,7 +1446,7 @@ export function GuideDashboard() {
               <Award className="w-3 h-3" /> Hampi Expert Dashboard
             </motion.div>
             <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">
-              Welcome back, <span className="text-gold-600 italic">{user?.name?.split(' ')[0] || "Guide"}</span>
+              Welcome back, <span className="text-gold-600 italic">{(user?.name || "Guide").split(' ')[0]}</span>
             </h1>
             <p className="text-navy-950/50 font-medium">Manage your tours, availability, and guest experiences.</p>
           </div>
