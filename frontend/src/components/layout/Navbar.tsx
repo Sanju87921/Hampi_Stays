@@ -48,16 +48,8 @@ export function Navbar() {
 
  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
 
- const navLinks = isDashboard 
- ? user?.role?.toUpperCase() === 'GUIDE'
- ? [
- { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
- { name: t("navbar.myTours", "My Tours"), path: "/dashboard?tab=tours" },
- { name: t("navbar.profile", "Profile"), path: "/dashboard?tab=profile" },
- 
- 
- ]
- : user?.role?.toUpperCase() === 'TRAVELLER'
+  const navLinks = isDashboard 
+  ? user?.role?.toUpperCase() === 'TRAVELLER'
  ? [
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
