@@ -1475,7 +1475,7 @@ export function GuideDashboard() {
             <p className="text-navy-950/50 font-medium">Manage your tours, availability, and guest experiences.</p>
           </div>
           <div className="flex flex-wrap gap-4">
-            <Link to="/guide">
+            <Link to={`/guides/${user?.id}`}>
               <Button variant="outline" className="rounded-xl border-sand-200 bg-white text-navy-950 hover:bg-sand-50 h-11 px-6 whitespace-nowrap">
                 <Globe className="w-4 h-4 mr-2" /> View Public Profile
               </Button>

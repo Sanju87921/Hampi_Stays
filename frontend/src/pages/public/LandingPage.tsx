@@ -13,8 +13,8 @@ import { useAuth } from "../../context/AuthContext";
 export function LandingPage() {
   const { user } = useAuth();
 
-  // Owners shouldn't see the public landing page, keep them in their dashboard
-  if (user?.role === "RESORT_OWNER") {
+  // Owners and Guides shouldn't see the public landing page, keep them in their dashboard
+  if (user?.role === "RESORT_OWNER" || user?.role === "GUIDE") {
     return <Navigate to="/dashboard" replace />;
   }
 
