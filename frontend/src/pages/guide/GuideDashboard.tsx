@@ -7,11 +7,12 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut
+  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { useSystem } from "../../context/SystemContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { ErrorBoundary } from "../../components/shared/ErrorBoundary";
 import { KycUploadSection } from "../../components/shared/KycUploadSection";
 import { apiClient } from "../../utils/apiClient";
@@ -61,6 +62,7 @@ export function GuideDashboard() {
   const { confirm, showModal } = useModal();
 
   const { user, logout, updateUser } = useAuth();
+  const { formatPrice } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -119,8 +121,10 @@ export function GuideDashboard() {
     inclusions: ["Expert Guiding", "Water Bottles"],
     exclusions: ["Entrance Fees", "Camera Fees"],
     imageUrl: "",
+    imageUrl: "",
     isActive: true,
   });
+  const [editingExpId, setEditingExpId] = useState<string | null>(null);
   const [isUploadingExpImage, setIsUploadingExpImage] = useState(false);
   const [uploadingExpId, setUploadingExpId] = useState<string | null>(null);
   const [isUploadingId, setIsUploadingId] = useState(false);
@@ -301,18 +305,30 @@ export function GuideDashboard() {
     }
   };
 
-  const handleCreateExperience = async (e: React.FormEvent) => {
+  const handleSaveExperience = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post(`/guides/${profile.id}/experiences`, { 
+      const payload = {
         ...newExp,
         price: parseFloat(newExp.price),
         durationHours: parseInt(newExp.durationHours, 10),
         maxGroupSize: parseInt(newExp.maxGroupSize, 10),
         images: newExp.imageUrl ? [newExp.imageUrl] : [] 
-      });
+      };
+
+      if (editingExpId) {
+        await apiClient.patch(`/experiences/${editingExpId}`, payload);
+        toast.success("Tour updated successfully!");
+      } else {
+        await apiClient.post(`/guides/${profile.id}/experiences`, payload);
+        toast.success("Tour created successfully!");
+      }
+      
       setIsAddingExperience(false);
+      setEditingExpId(null);
       fetchProfile();
+      
+      // Reset form
       setNewExp({
         title: "",
         description: "",
@@ -326,7 +342,8 @@ export function GuideDashboard() {
         isActive: true,
       });
     } catch (err) {
-      console.error("Failed to create experience", err);
+      console.error(err);
+      toast.error("Failed to save tour.");
     }
   };
 
@@ -344,7 +361,7 @@ export function GuideDashboard() {
     { label: "Total Bookings", value: bookings.filter(b => b.status !== 'CANCELLED').length, icon: Briefcase, color: "bg-blue-50 text-blue-600" },
     { label: "Upcoming Tours", value: bookings.filter(b => b.status === 'CONFIRMED').length, icon: Calendar, color: "bg-gold-50 text-gold-600" },
     { label: "Avg Rating", value: profile?.rating?.toFixed(1) || "0.0", icon: Star, color: "bg-green-50 text-green-600" },
-    { label: "Total Revenue", value: "₹" + (bookings.filter(b => b.status === 'COMPLETED').reduce((acc, b) => acc + (b.totalPrice * 0.9), 0)).toLocaleString(), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
+    { label: "Total Revenue", value: formatPrice(bookings.filter(b => b.status === 'COMPLETED').reduce((acc, b) => acc + (b.totalPrice * 0.9), 0)), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
   ];
 
   const renderOverview = () => {
@@ -416,7 +433,7 @@ export function GuideDashboard() {
                           className="w-full bg-sand-100 rounded-2xl group-hover:bg-gold-500 transition-colors relative"
                         >
                           <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
-                            ₹{d.inc.toLocaleString()}
+                            {formatPrice(d.inc)}
                           </div>
                         </motion.div>
                       </div>
@@ -693,8 +710,8 @@ export function GuideDashboard() {
                 </div>
               </div>
               <div className="flex justify-end gap-4 pt-6 border-t border-sand-100">
-                <Button type="button" variant="outline" onClick={() => setIsAddingExperience(false)} className="rounded-2xl px-8">Cancel</Button>
-                <Button type="submit" className="rounded-2xl px-12 bg-navy-950 text-white shadow-luxury">Launch Experience</Button>
+                <Button type="button" variant="outline" onClick={() => { setIsAddingExperience(false); setEditingExpId(null); }} className="rounded-2xl px-8">Cancel</Button>
+                <Button type="submit" className="rounded-2xl px-12 bg-navy-950 text-white shadow-luxury">{editingExpId ? "Save Changes" : "Create Tour"}</Button>
               </div>
             </form>
           </motion.div>
@@ -752,6 +769,28 @@ export function GuideDashboard() {
                   </>
                 )}
               </label>
+              {/* Edit button */}
+              <button 
+                onClick={() => {
+                  setEditingExpId(exp.id);
+                  setNewExp({
+                    title: exp.title,
+                    description: exp.description,
+                    price: exp.price.toString(),
+                    durationHours: exp.durationHours.toString(),
+                    maxGroupSize: (exp.maxGroupSize || 10).toString(),
+                    meetingPoint: exp.meetingPoint,
+                    inclusions: exp.inclusions || [],
+                    exclusions: exp.exclusions || [],
+                    imageUrl: exp.images?.[0] || "",
+                    isActive: exp.isActive,
+                  });
+                  setIsAddingExperience(true);
+                }}
+                className="absolute top-4 right-16 p-3 bg-white/90 backdrop-blur-md rounded-xl text-navy-950 opacity-0 group-hover:opacity-100 transition-all hover:bg-gold-50 hover:text-gold-700 z-20"
+              >
+                <Pencil className="w-5 h-5" />
+              </button>
               {/* Delete button */}
               <button 
                 onClick={() => handleDeleteExperience(exp.id)}
@@ -777,7 +816,7 @@ export function GuideDashboard() {
                   >
                     {exp.isActive ? 'Active' : 'Inactive'}
                   </button>
-                  <span className="font-bold text-navy-950">₹{exp.price}</span>
+                  <span className="font-bold text-navy-950">{formatPrice(exp.price)}</span>
                 </div>
               </div>
               <h3 className="text-xl font-serif font-bold text-navy-950 mb-3">{exp.title}</h3>
@@ -1110,7 +1149,7 @@ export function GuideDashboard() {
                   <div>
                     <h4 className="font-bold text-navy-950">{booking.user?.name || 'Unknown Traveler'}</h4>
                     <p className="text-xs text-navy-950/40 font-medium">
-                      {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • ₹{booking.totalPrice?.toLocaleString()}
+                      {new Date(booking.date).toLocaleDateString()} • {booking.durationHours} Hours • {formatPrice(booking.totalPrice)}
                     </p>
                   </div>
                 </div>
@@ -1166,21 +1205,46 @@ export function GuideDashboard() {
     );
   };
 
-  const renderSettings = () => (
-    <div className="max-w-2xl mx-auto bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
-      <h2 className="text-3xl font-serif font-bold text-navy-950 mb-10">Account Settings</h2>
-      <Button 
-        variant="outline" 
-        onClick={async () => {
-          await logout();
-          navigate("/login");
-        }}
-        className="w-full h-14 rounded-2xl border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 gap-2"
-      >
-        Sign Out of All Devices
-      </Button>
-    </div>
-  );
+  const renderSettings = () => {
+    const { currency, setCurrency } = useCurrency();
+    
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
+        <h2 className="text-3xl font-serif font-bold text-navy-950 mb-10">Account Settings</h2>
+        
+        <div className="space-y-8 mb-10">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Display Currency</label>
+            <div className="relative">
+              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/40" />
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD' | 'EUR' | 'GBP')}
+                className="w-full h-14 bg-sand-50 rounded-2xl border border-sand-100 pl-12 pr-4 font-bold text-navy-950 outline-none focus:border-gold-500 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="INR">₹ Indian Rupee (INR)</option>
+                <option value="USD">$ US Dollar (USD)</option>
+                <option value="EUR">€ Euro (EUR)</option>
+                <option value="GBP">£ British Pound (GBP)</option>
+              </select>
+            </div>
+            <p className="text-xs text-navy-950/40 ml-1">Choose how prices are displayed across your dashboard.</p>
+          </div>
+        </div>
+
+        <Button 
+          variant="outline" 
+          onClick={async () => {
+            await logout();
+            navigate("/login");
+          }}
+          className="w-full h-14 rounded-2xl border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 gap-2"
+        >
+          Sign Out of All Devices
+        </Button>
+      </div>
+    );
+  };
 
   const renderPayouts = () => {
     const totalEarnings = bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').reduce((acc, b) => acc + b.totalPrice, 0);
@@ -1195,15 +1259,15 @@ export function GuideDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
             <p className="text-sm font-medium text-navy-950/40 mb-1">Gross Earnings</p>
-            <p className="text-3xl font-serif font-bold text-navy-950">₹{totalEarnings.toLocaleString()}</p>
+            <p className="text-3xl font-serif font-bold text-navy-950">{formatPrice(totalEarnings)}</p>
           </div>
           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
             <p className="text-sm font-medium text-navy-950/40 mb-1">Platform Commission (10%)</p>
-            <p className="text-3xl font-serif font-bold text-red-500">-₹{platformCommission.toLocaleString()}</p>
+            <p className="text-3xl font-serif font-bold text-red-500">-{formatPrice(platformCommission)}</p>
           </div>
           <div className="bg-gold-50 p-8 rounded-[2.5rem] border border-gold-200 shadow-sm">
             <p className="text-sm font-medium text-gold-700 mb-1">Net Earnings</p>
-            <p className="text-3xl font-serif font-bold text-gold-700">₹{netEarnings.toLocaleString()}</p>
+            <p className="text-3xl font-serif font-bold text-gold-700">{formatPrice(netEarnings)}</p>
           </div>
         </div>
 
@@ -1221,7 +1285,7 @@ export function GuideDashboard() {
                       <p className="text-[10px] uppercase tracking-widest text-navy-950/40 font-bold mt-1">{new Date(p.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold ${p.status === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>+₹{p.amount.toLocaleString()}</p>
+                      <p className={`font-bold ${p.status === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>+{formatPrice(p.amount)}</p>
                       <p className={`text-[10px] uppercase tracking-widest font-bold mt-1 ${
                         p.status === 'PAID' ? 'text-green-600' : 
                         p.status === 'FAILED' ? 'text-red-600' : 'text-amber-600'
