@@ -1481,7 +1481,7 @@ export function GuideDashboard() {
               </Button>
             </Link>
             <Button 
-              onClick={() => navigate("/dashboard?tab=calendar")}
+              onClick={() => navigate("/dashboard/calendar")}
               className="rounded-xl shadow-luxury h-11 px-6 bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 border-none transition-all whitespace-nowrap"
             >
               <Calendar className="w-4 h-4 mr-2" /> Update Availability

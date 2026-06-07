@@ -110,7 +110,7 @@ export function ProfileIncompleteBanner() {
           </div>
 
           <div className="p-6 md:pr-12 relative z-10 w-full md:w-auto">
-            <Link to={user?.role === 'GUIDE' ? "/dashboard?tab=profile" : "/dashboard/profile"}>
+            <Link to={user?.role === 'GUIDE' ? "/dashboard/expert-profile" : "/dashboard/profile"}>
               <button className="w-full md:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950  px-8 py-4 rounded-2xl font-bold transition-all shadow-gold flex items-center justify-center gap-2 group">
                 Update Profile
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
