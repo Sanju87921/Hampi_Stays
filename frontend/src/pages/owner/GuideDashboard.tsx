@@ -7,7 +7,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2, Settings, Loader2
+  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
@@ -1365,77 +1365,107 @@ export function GuideDashboard() {
     );
   };
 
-  if (loading) return <div className="min-h-screen bg-sand-50 pt-28 flex items-center justify-center">Loading Expert Portal...</div>;
+  if (loading) return <div className="min-h-screen bg-sand-50/50 pt-28 flex items-center justify-center">Loading Expert Portal...</div>;
 
   return (
-    <div className="min-h-screen bg-sand-50 pt-28 pb-20 px-4 md:px-8">
-      <div className="container mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div className="flex items-center gap-6">
-            {/* Live Avatar — updates immediately on upload */}
-            <div className="w-20 h-20 rounded-3xl bg-white border-2 border-sand-200 overflow-hidden flex items-center justify-center shadow-sm shrink-0">
+    <div className="min-h-screen bg-sand-50/50 flex">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-sand-200 hidden md:flex flex-col sticky top-0 h-screen pt-24 pb-8">
+        <div className="px-6 mb-8">
+          <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-2xl border border-sand-100">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-navy-950 to-navy-800 flex items-center justify-center text-white overflow-hidden shadow-sm border border-sand-200/50">
               {avatarPreview ? (
-                <img src={avatarPreview} className="w-full h-full object-cover" alt="Profile" />
+                <img src={avatarPreview} alt={user?.name} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-serif font-bold text-navy-950">{user?.name.charAt(0)}</span>
+                <span className="text-[10px] font-bold tracking-tighter">
+                  {user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || "G"}
+                </span>
               )}
             </div>
             <div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-2 shadow-sm"
-              >
-                <Award className="w-3 h-3" /> Hampi Expert Dashboard
-              </motion.div>
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950">
-                Welcome back, <span className="text-gold-600">{user?.name.split(' ')[0]}</span>
-              </h1>
+              <p className="text-sm font-bold text-navy-950">{user?.name || "Guide"}</p>
+              <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">
+                Local Expert
+              </p>
             </div>
+          </div>
+        </div>
+
+        <nav className="flex-grow px-4 space-y-1">
+          {[
+            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "tours", label: "My Tours", icon: MapPin },
+            { id: "bookings", label: "Bookings", icon: Briefcase },
+            { id: "calendar", label: "Calendar", icon: Calendar },
+            { id: "profile", label: "Profile", icon: Users },
+            ...(isIdRequired ? [{ id: "kyc", label: "KYC Center", icon: ShieldCheck }] : []),
+            { id: "payouts", label: "Earnings", icon: IndianRupee },
+            { id: "settings", label: "Settings", icon: Settings },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 w-full text-left ${
+                  isActive 
+                    ? "bg-navy-950 text-white shadow-lg shadow-navy-950/20" 
+                    : "text-navy-950/60 hover:bg-sand-100 hover:text-navy-950"
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="px-4 pt-4 border-t border-sand-100">
+          <button 
+            onClick={() => {
+              logout();
+              navigate("/");
+            }}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 hover:text-red-700 transition-all w-full text-left"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 pt-28 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
+        <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-2 shadow-sm"
+            >
+              <Award className="w-3 h-3" /> Hampi Expert Dashboard
+            </motion.div>
+            <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">
+              Welcome back, <span className="text-gold-600 italic">{user?.name?.split(' ')[0] || "Guide"}</span>
+            </h1>
+            <p className="text-navy-950/50 font-medium">Manage your tours, availability, and guest experiences.</p>
           </div>
           <div className="flex flex-wrap gap-4">
             <Link to="/guide">
-              <Button variant="outline" className="rounded-2xl border-sand-200 bg-white text-navy-950 hover:bg-sand-50 h-12 px-8 whitespace-nowrap">
-                <Users className="w-4 h-4 mr-2" /> View Public Profile
+              <Button variant="outline" className="rounded-xl border-sand-200 bg-white text-navy-950 hover:bg-sand-50 h-11 px-6 whitespace-nowrap">
+                <Globe className="w-4 h-4 mr-2" /> View Public Profile
               </Button>
             </Link>
             <Button 
-              onClick={() => navigate("/dashboard?tab=profile")}
-              className="rounded-2xl shadow-luxury h-12 px-8 bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 border-none transition-all whitespace-nowrap"
+              onClick={() => navigate("/dashboard?tab=calendar")}
+              className="rounded-xl shadow-luxury h-11 px-6 bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 border-none transition-all whitespace-nowrap"
             >
               <Calendar className="w-4 h-4 mr-2" /> Update Availability
             </Button>
           </div>
-        </div>
+        </header>
 
         <ProfileIncompleteBanner />
-
-        <nav className="flex items-center bg-white p-1.5 rounded-2xl border border-sand-200 shadow-sm mb-12 w-fit overflow-x-auto">
-          {[
-            { id: "overview", label: "Overview", icon: Award },
-            { id: "tours", label: "Tours", icon: MapPin },
-            { id: "bookings", label: "Bookings", icon: Briefcase },
-            { id: "calendar", label: "Calendar", icon: Calendar },
-            { id: "profile", label: "Profile", icon: Users },
-            { id: "kyc", label: "KYC Center", icon: ShieldCheck },
-            { id: "payouts", label: "Earnings", icon: IndianRupee },
-            { id: "settings", label: "Settings", icon: Settings },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
-                activeTab === tab.id 
-                  ? "bg-navy-950 text-white shadow-lg" 
-                  : "text-navy-950/40 hover:text-navy-950 hover:bg-sand-50"
-              }`}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
 
         {/* SERVICE SHUTDOWN ALERT */}
         <AnimatePresence>
@@ -1443,23 +1473,23 @@ export function GuideDashboard() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mb-12 p-8 rounded-[3rem] bg-navy-950 text-white relative overflow-hidden border border-navy-800 shadow-2xl"
+              className="mb-12 p-8 rounded-[2rem] bg-gradient-to-r from-navy-950 to-navy-900 text-white relative overflow-hidden border border-gold-900/30 shadow-luxury"
             >
               {/* Background Decoration */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -ml-16 -mb-16" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 mix-blend-screen" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 mix-blend-screen" />
               
               <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 border border-white/20 flex items-center justify-center shrink-0 animate-pulse">
                   <ShieldCheck className="w-8 h-8 text-gold-400" />
                 </div>
                 <div className="flex-grow text-center md:text-left">
-                  <h3 className="text-2xl font-serif font-bold mb-2">Service Maintenance in Progress</h3>
-                  <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
+                  <h3 className="text-xl font-serif font-bold mb-2 text-white">Service Maintenance in Progress</h3>
+                  <p className="text-sand-200 text-sm leading-relaxed max-w-2xl font-medium">
                     The HampiStays expert network is currently undergoing administrative maintenance. During this period, your profile and experiences will be hidden from public discovery. Don't worry—your data is safe! We will notify you once the service is fully operational again.
                   </p>
                 </div>
-                <div className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+                <div className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 shrink-0">
                   Status: System Offline
                 </div>
               </div>
@@ -1476,7 +1506,7 @@ export function GuideDashboard() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <ErrorBoundary fallback={<div className="p-10 text-center text-red-500 bg-red-50 rounded-[3rem]">Failed to load this section. Please try again.</div>}>
+            <ErrorBoundary fallback={<div className="p-10 text-center text-red-500 bg-red-50 rounded-[2rem]">Failed to load this section. Please try again.</div>}>
               {activeTab === "overview" && renderOverview()}
               {activeTab === "tours" && renderTours()}
               {activeTab === "profile" && renderProfile()}
@@ -1490,7 +1520,7 @@ export function GuideDashboard() {
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
-      </div>
+      </main>
     </div>
   );
 }
