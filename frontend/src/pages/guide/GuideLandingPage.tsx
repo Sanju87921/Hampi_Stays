@@ -11,38 +11,43 @@ export function GuideLandingPage() {
     <main className="min-h-screen bg-sand-50">
       {/* Expert Hero Section */}
       <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-navy-950">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none z-0">
           <img 
             src="/images/hero.png" 
             alt="Hampi Heritage" 
-            className="w-full h-full object-cover opacity-30 mix-blend-luminosity"
+            className="absolute inset-0 w-full h-full object-cover opacity-85"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-navy-950/60 via-navy-950/20 to-transparent" />
+          
+          {/* Floating Ambient Orbs — warm gold tones */}
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-gold-400/5 rounded-full blur-[120px] animate-float pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/5 rounded-full blur-[150px] animate-float-slow pointer-events-none" />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center mt-20">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-500 text-xs font-bold uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
+            className="inline-flex items-center gap-2 py-1.5 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-white text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase mb-4 cursor-default select-none shadow-sm"
           >
-            <Award className="w-4 h-4" /> Official Hampi Expert
+            <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse flex-shrink-0" />
+            Official Hampi Expert
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-tight"
+            className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-[1.1] text-shadow-lg"
           >
-            Welcome to your <span className="text-gold-500 italic">Expert Command Center</span>
+            Welcome to your <span className="text-gold-400 italic">Command Center</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-sand-200 max-w-2xl mx-auto mb-10 font-medium"
+            className="text-sand-100/80 mb-8 sm:mb-10 px-2 text-shadow-md text-lg max-w-2xl mx-auto"
           >
             Hello {user?.name?.split(' ')[0] || 'Guide'}, your expertise brings Hampi's rich history to life. Manage your tours, review bookings, and track your impact directly from your dashboard.
           </motion.p>
@@ -51,11 +56,12 @@ export function GuideLandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            className="w-full flex justify-center"
           >
             <Link to="/dashboard">
-              <Button className="rounded-xl shadow-luxury h-14 px-8 bg-gold-500 text-navy-950 hover:bg-gold-400 border-none transition-all text-lg uppercase tracking-wider font-bold">
-                Enter Dashboard <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <button className="h-16 px-10 bg-gold-500 hover:bg-gold-400 text-navy-950 font-black rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-xl shadow-gold-500/30 group text-base tracking-wide">
+                Enter Dashboard <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+              </button>
             </Link>
           </motion.div>
         </div>
