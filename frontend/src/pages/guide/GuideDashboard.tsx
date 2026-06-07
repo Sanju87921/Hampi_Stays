@@ -7,7 +7,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil
+  CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil, ChevronLeft
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
@@ -1448,6 +1448,18 @@ export function GuideDashboard() {
     <div className="min-h-screen bg-sand-50/50 flex flex-col pt-28">
       {/* Main Content (No Sidebar) */}
       <main className="flex-1 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
+        {activeTab !== "overview" && (
+          <div className="mb-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/dashboard")}
+              className="text-navy-600 hover:text-navy-950 hover:bg-sand-100 -ml-4 px-4 py-2 h-auto"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back to Overview
+            </Button>
+          </div>
+        )}
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <motion.div
