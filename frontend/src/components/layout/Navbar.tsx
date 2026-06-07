@@ -78,9 +78,9 @@ export function Navbar() {
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  ]
   : user?.role?.toUpperCase() === 'ADMIN' ? [] 
-  : user?.role?.toUpperCase() === 'GUIDE' || user?.role?.toUpperCase() === 'RESORT_OWNER' ? [
-    { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }
-  ]
+  : user?.role?.toUpperCase() === 'GUIDE' || user?.role?.toUpperCase() === 'RESORT_OWNER' ? (
+    location.pathname === '/' ? [] : [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }]
+  )
   : [
    { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
    { name: t("navbar.discover", "Discover"), path: "/discovery" },

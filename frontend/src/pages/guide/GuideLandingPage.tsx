@@ -10,7 +10,7 @@ export function GuideLandingPage() {
   return (
     <main className="min-h-screen bg-sand-50">
       {/* Expert Hero Section */}
-      <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-navy-950">
+      <section className="relative min-h-[100svh] flex items-center justify-center bg-navy-950 z-30">
         <div className="absolute inset-0 pointer-events-none z-0">
           <img 
             src="/images/hero.png" 
@@ -24,7 +24,7 @@ export function GuideLandingPage() {
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/5 rounded-full blur-[150px] animate-float-slow pointer-events-none" />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        <div className="relative z-20 w-full max-w-5xl mx-auto px-6 flex flex-col items-center text-center pt-32 pb-12 sm:pt-40 sm:pb-16 md:pt-48 md:pb-20 -translate-y-4 sm:-translate-y-6 md:-translate-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
