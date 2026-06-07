@@ -68,27 +68,30 @@ export function GuideLandingPage() {
       </section>
 
       {/* Guide Quick Stats */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <section className="py-24 bg-sand-50 relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sand-300 to-transparent" />
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-4 text-center">
             {[
-              { icon: Compass, label: "Tours Hosted", value: "Premium" },
-              { icon: Users, label: "Global Travelers", value: "VIP Access" },
-              { icon: MapPin, label: "Heritage Sites", value: "Verified" }
+              { value: "50+", label: "Tours Hosted" },
+              { value: "4.9", label: "Average Rating" },
+              { value: "12", label: "Heritage Sites" },
+              { value: "100%", label: "Verified Expert" }
             ].map((stat, idx) => (
               <motion.div 
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-sand-50 rounded-[2rem] p-10 text-center border border-sand-100 hover:shadow-luxury transition-all duration-500 group"
+                transition={{ duration: 0.6, delay: idx * 0.15, ease: "easeOut" }}
+                className="flex flex-col items-center group"
               >
-                <div className="w-16 h-16 mx-auto bg-navy-950 rounded-2xl flex items-center justify-center mb-6 text-gold-500 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                  <stat.icon className="w-8 h-8" />
+                <div className="text-5xl md:text-6xl font-serif font-bold text-gold-600 mb-3 group-hover:scale-105 transition-transform duration-500">
+                  {stat.value}
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">{stat.value}</h3>
-                <p className="text-navy-950/60 uppercase tracking-widest text-xs font-bold">{stat.label}</p>
+                <div className="text-sm font-semibold text-navy-950 uppercase tracking-[0.2em]">
+                  {stat.label}
+                </div>
               </motion.div>
             ))}
           </div>
