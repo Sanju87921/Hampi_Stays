@@ -1110,9 +1110,41 @@ export function GuideDashboard() {
             </div>
           </div>
         </div>
+
+        {/* KYC Documents Card */}
+        <div className={`rounded-[3rem] border p-8 ${profile?.isVerified ? 'bg-green-50 border-green-100' : 'bg-navy-950 border-navy-900'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${profile?.isVerified ? 'bg-green-100' : 'bg-white/10'}`}>
+              <ShieldCheck className={`w-5 h-5 ${profile?.isVerified ? 'text-green-700' : 'text-gold-400'}`} />
+            </div>
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${profile?.isVerified ? 'text-green-700' : 'text-gold-400'}`}>Identity Verification</p>
+              <h4 className={`font-bold text-sm ${profile?.isVerified ? 'text-green-900' : 'text-white'}`}>
+                {profile?.isVerified ? 'Profile Verified ✓' : 'KYC Documents Required'}
+              </h4>
+            </div>
+          </div>
+          <p className={`text-xs leading-relaxed mb-6 ${profile?.isVerified ? 'text-green-700/80' : 'text-white/60'}`}>
+            {profile?.isVerified
+              ? 'Your identity has been verified by our admin team. You are approved to host travelers.'
+              : 'Upload your Aadhaar, PAN, or Voter ID to get your profile verified and start earning.'}
+          </p>
+          <Button
+            onClick={() => navigate('/dashboard/kyc')}
+            className={`w-full rounded-2xl h-11 font-bold text-sm border-none transition-all ${
+              profile?.isVerified
+                ? 'bg-green-700 text-white hover:bg-green-800'
+                : 'bg-gold-500 text-navy-950 hover:bg-gold-400'
+            }`}
+          >
+            {profile?.isVerified ? 'View KYC Status' : 'Upload KYC Documents'}
+          </Button>
+        </div>
       </div>
     </div>
   );
+
+
 
   const renderBookings = () => {
     const filteredBookings = bookings.filter(b => bookingFilter === 'ALL' || b.status === bookingFilter);

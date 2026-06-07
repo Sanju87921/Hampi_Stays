@@ -40,7 +40,7 @@ export function GuideLandingPage() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-[1.1] text-shadow-lg"
           >
-            Welcome to your <span className="text-gold-400 italic">Guide PlatForm </span>
+            Welcome to  <span className="text-gold-400 italic">Guide PlatForm </span>
           </motion.h1>
 
           <motion.p

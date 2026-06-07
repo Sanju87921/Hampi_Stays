@@ -57,6 +57,7 @@ export function Navbar() {
       { name: "Bookings", path: "/dashboard/bookings-expert" },
       { name: "Earnings", path: "/dashboard/earnings" },
       { name: t("navbar.profile", "Profile"), path: "/dashboard/expert-profile" },
+      { name: "KYC Docs", path: "/dashboard/kyc" },
     ]
   : user?.role?.toUpperCase() === 'TRAVELLER'
  ? [
