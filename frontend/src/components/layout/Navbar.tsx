@@ -78,7 +78,7 @@ export function Navbar() {
  { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" },
  ]
   : user?.role?.toUpperCase() === 'ADMIN' ? [] 
-  : user?.role?.toUpperCase() === 'RESORT_OWNER' ? [
+  : user?.role?.toUpperCase() === 'GUIDE' || user?.role?.toUpperCase() === 'RESORT_OWNER' ? [
     { name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }
   ]
   : [
