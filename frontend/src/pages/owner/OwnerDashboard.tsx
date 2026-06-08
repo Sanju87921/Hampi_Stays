@@ -117,22 +117,7 @@ export function OwnerDashboard() {
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState<string | null>(null);
 
-  const handleSubmitReply = async (reviewId: string) => {
-    if (!replyContent.trim()) return;
-    setIsSubmittingReply(reviewId);
-    try {
-      await apiClient.patch(`/reviews/${reviewId}/reply`, { ownerReply: replyContent });
-      toast.success("Reply submitted successfully.");
-      setReplyingToReviewId(null);
-      setReplyContent("");
-      fetchResorts();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to submit reply.");
-    } finally {
-      setIsSubmittingReply(null);
-    }
-  };
+
 
   const queryClient = useQueryClient();
 
