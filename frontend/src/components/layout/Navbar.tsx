@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, Bell } from "lucide-react";
+import { apiClient } from "../../utils/apiClient";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
@@ -175,6 +176,9 @@ export function Navbar() {
  <LanguageSwitcher useDarkText={useDarkText} />
  {isAuthenticated ? (
  <div className="flex items-center gap-6">
+  {user?.role?.toUpperCase() === 'GUIDE' && (
+   <NotificationBell useDarkText={useDarkText} />
+  )}
  <button
  onClick={logout}
  className={cn(
@@ -322,17 +326,41 @@ export function Navbar() {
  );
 }
 
+// ── Notification Bell ──────────────────────────────────────────────────────
+function NotificationBell({ useDarkText }: { useDarkText: boolean }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const data = await apiClient.get<any[]>('/users/notifications');
+        const arr = Array.isArray(data) ? data : [];
+        setUnreadCount(arr.filter((n: any) => !n.isRead).length);
+      } catch {
+        // silently fail — bell just shows with no badge
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-
-
-
-
-
-
-
-
-
-
-
-
+  return (
+    <button
+      onClick={() => navigate('/dashboard/notifications')}
+      className="relative p-2 rounded-full transition-all duration-300 hover:scale-110"
+      title="Notifications"
+    >
+      <Bell className={cn(
+        "w-5 h-5",
+        useDarkText ? "text-navy-950" : "text-white"
+      )} />
+      {unreadCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-gold-500 text-navy-950 text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md animate-pulse">
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </span>
+      )}
+    </button>
+  );
+}
