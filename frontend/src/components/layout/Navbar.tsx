@@ -89,8 +89,19 @@ export function Navbar() {
    ...(user ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
   ];
 
-  const isHeroPage = location.pathname === "/admin" || location.pathname === "/"; 
-  const useDarkText = !isHeroPage; 
+  const darkHeroPages = [
+    "/",
+    "/admin",
+    "/discovery",
+    "/gallery",
+    "/guides",
+    "/destination-guide",
+    "/contact",
+  ];
+  const isHeroPage = darkHeroPages.some(p => 
+    location.pathname === p || location.pathname.startsWith("/guides/")
+  );
+  const useDarkText = isScrolled ? true : !isHeroPage; 
   const isSolidBg = false;
 
  return (
