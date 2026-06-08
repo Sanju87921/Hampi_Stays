@@ -1777,7 +1777,7 @@ export function AdminDashboard() {
  <input 
  type="text" 
  placeholder="e.g. Discover the Secrets of Vijayanagara..."
- className="w-full bg-white border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors"
+ className="w-full bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 focus:outline-none focus:border-gold-500 transition-colors"
  />
  </div>
  <div>
@@ -1785,7 +1785,7 @@ export function AdminDashboard() {
  <textarea 
  rows={10}
  placeholder="Dear Luxury Traveler, experience Hampi like never before..."
- className="w-full bg-white border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors resize-none"
+ className="w-full bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 focus:outline-none focus:border-gold-500 transition-colors resize-none"
  />
  </div>
  <div className="flex items-center justify-between pt-4">
