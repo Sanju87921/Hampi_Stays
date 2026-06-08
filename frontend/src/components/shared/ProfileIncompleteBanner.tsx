@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { UserCircle, ArrowRight, Sparkles, X, Clock, CheckCircle2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { apiClient } from "../../utils/apiClient";
@@ -8,13 +8,16 @@ import { useSystem } from "../../context/SystemContext";
 
 type BannerState = 'HIDDEN' | 'NEEDS_DOCS' | 'UNDER_REVIEW';
 
+// Poll every 30 seconds to detect admin approval in real-time
+const POLL_INTERVAL_MS = 30_000;
+
 export function ProfileIncompleteBanner() {
   const { user } = useAuth();
   const { settings } = useSystem();
   const [bannerState, setBannerState] = useState<BannerState>('HIDDEN');
   const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
+  const evaluate = useCallback(async () => {
     if (!user || dismissed) {
       setBannerState('HIDDEN');
       return;
@@ -30,51 +33,34 @@ export function ProfileIncompleteBanner() {
       const reqs = vSettings?.guideRequirements || [];
       const needsIdDoc = reqs.some(r => !['EMAIL', 'PHONE'].includes(r));
 
-      // Basic profile checks first
       if (!hasFullName || !hasAvatar) { setBannerState('NEEDS_DOCS'); return; }
       if (reqs.includes('EMAIL') && !hasEmail) { setBannerState('NEEDS_DOCS'); return; }
       if (reqs.includes('PHONE') && !hasPhone) { setBannerState('NEEDS_DOCS'); return; }
 
-      // Fetch guide profile + KYC docs concurrently for a complete picture
-      const checkGuideStatus = async () => {
-        try {
-          const profileData = await apiClient.get<any>(`/guides/profile/${user.id}`);
-          if (!profileData) { setBannerState('NEEDS_DOCS'); return; }
+      try {
+        const profileData = await apiClient.get<any>(`/guides/profile/${user.id}`);
+        if (!profileData) { setBannerState('NEEDS_DOCS'); return; }
 
-          // If admin has fully approved the guide profile, hide banner
-          if (profileData.status === 'APPROVED') { setBannerState('HIDDEN'); return; }
-
-          if (needsIdDoc && profileData.id) {
-            // Fetch actual KYC documents from the GuideKYC table
-            try {
-              const kycDocs = await apiClient.get<any[]>(`/guides/${profileData.id}/kyc`);
-              const docs = Array.isArray(kycDocs) ? kycDocs : [];
-
-              if (docs.length > 0) {
-                // Has submitted at least one document — show "under review"
-                setBannerState('UNDER_REVIEW');
-              } else {
-                // No docs uploaded yet
-                setBannerState('NEEDS_DOCS');
-              }
-            } catch {
-              // Fallback: if KYC fetch fails, check idImage on profile
-              if (profileData.idImage) {
-                setBannerState('UNDER_REVIEW');
-              } else {
-                setBannerState('NEEDS_DOCS');
-              }
-            }
-          } else {
-            // No doc requirements but profile not approved
-            setBannerState('UNDER_REVIEW');
-          }
-        } catch {
-          setBannerState('NEEDS_DOCS');
+        // Admin approved — hide banner immediately
+        if (profileData.status === 'APPROVED') {
+          setBannerState('HIDDEN');
+          return;
         }
-      };
 
-      checkGuideStatus();
+        if (needsIdDoc && profileData.id) {
+          try {
+            const kycDocs = await apiClient.get<any[]>(`/guides/${profileData.id}/kyc`);
+            const docs = Array.isArray(kycDocs) ? kycDocs : [];
+            setBannerState(docs.length > 0 ? 'UNDER_REVIEW' : 'NEEDS_DOCS');
+          } catch {
+            setBannerState(profileData.idImage ? 'UNDER_REVIEW' : 'NEEDS_DOCS');
+          }
+        } else {
+          setBannerState('UNDER_REVIEW');
+        }
+      } catch {
+        setBannerState('NEEDS_DOCS');
+      }
       return;
     }
 
@@ -96,6 +82,13 @@ export function ProfileIncompleteBanner() {
     if (reqs.some(r => !['EMAIL', 'PHONE'].includes(r)) && !hasKYC) { setBannerState('NEEDS_DOCS'); return; }
     setBannerState(!(hasFullName && hasAvatar) ? 'NEEDS_DOCS' : 'HIDDEN');
   }, [user, dismissed, settings]);
+
+  // Run immediately, then poll every 30 seconds
+  useEffect(() => {
+    evaluate();
+    const interval = setInterval(evaluate, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [evaluate]);
 
   if (bannerState === 'HIDDEN') return null;
 
@@ -147,7 +140,7 @@ export function ProfileIncompleteBanner() {
               </h3>
               <p className="text-white/60 text-sm max-w-xl leading-relaxed">
                 {isUnderReview
-                  ? "Your identity documents have been uploaded successfully. Our admin team is currently reviewing your profile. You will receive a notification once your account is approved — usually within 24 hours."
+                  ? "Your identity documents have been uploaded. Our admin team is reviewing your profile — this page will update automatically once approved."
                   : user?.role === 'GUIDE'
                     ? "Please upload your identity documents (Aadhar, PAN, or Voter ID) to get your profile verified by our team and start hosting travelers."
                     : "Complete your profile details (Phone, Email, and Photo) to unlock exclusive, personalized experiences."
@@ -163,11 +156,7 @@ export function ProfileIncompleteBanner() {
                 Awaiting Approval
               </div>
             ) : (
-              <Link to={
-                user?.role === 'GUIDE' ? "/dashboard/kyc"
-                : user?.role === 'RESORT_OWNER' ? "/dashboard/kyc"
-                : "/dashboard/profile"
-              }>
+              <Link to={user?.role === 'GUIDE' || user?.role === 'RESORT_OWNER' ? "/dashboard/kyc" : "/dashboard/profile"}>
                 <button className="w-full md:w-auto bg-gold-500 hover:bg-gold-400 text-navy-950 px-8 py-4 rounded-2xl font-bold transition-all shadow-gold flex items-center justify-center gap-2 group">
                   {user?.role === 'GUIDE' ? 'Upload Documents' : 'Update Profile'}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

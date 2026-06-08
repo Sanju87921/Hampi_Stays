@@ -126,7 +126,6 @@ export function GuideDashboard() {
     inclusions: ["Expert Guiding", "Water Bottles"],
     exclusions: ["Entrance Fees", "Camera Fees"],
     imageUrl: "",
-    imageUrl: "",
     isActive: true,
   });
   const [editingExpId, setEditingExpId] = useState<string | null>(null);
