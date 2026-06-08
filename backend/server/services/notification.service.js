@@ -2,7 +2,13 @@ import { Resend } from 'resend';
 
 /**
  * Modular Notification Service for HampiStays
- * Supports In-App, Email, and prepares architecture for SMS/WhatsApp.
+ *
+ * Architecture:
+ *  - In-App (DB): Synchronous primary channel. Always attempted first.
+ *  - Email:       Background channel. Always queued via waitUntil — NEVER blocks response.
+ *  - Future:      Replace waitUntil with Cloudflare Queue binding for guaranteed delivery.
+ *
+ * Failure Isolation: Email failures NEVER affect in-app notification delivery.
  */
 
 // Premium Email Template wrapper
@@ -30,7 +36,42 @@ export const getEmailTemplate = (subject, contentHtml) => `
 `;
 
 /**
+ * Dispatch an email as a background task.
+ * Uses ctx.waitUntil for Cloudflare Workers (fire-and-forget, non-blocking).
+ * Falls back gracefully for local dev / non-CF environments.
+ *
+ * Future upgrade path: replace this with a Cloudflare Queue .send() call for
+ * guaranteed at-least-once delivery, retries, and dead-letter support.
+ */
+const dispatchEmail = ({ ctx, resend, payload }) => {
+  const emailPromise = resend.emails.send(payload).catch((err) => {
+    console.error('[NOTIFICATION_SERVICE] Email dispatch failed (non-critical):', err.message);
+  });
+
+  if (ctx?.waitUntil) {
+    // Cloudflare Workers: register as background task — response is NOT delayed
+    ctx.waitUntil(emailPromise);
+  } else {
+    // Local dev or fallback: fire-and-forget without blocking
+    emailPromise.catch(() => {});
+  }
+};
+
+/**
  * Main notification dispatcher
+ *
+ * @param {Object} prisma           - Prisma client instance
+ * @param {Object} opts
+ * @param {string}  opts.userId       - Recipient user ID (required for in-app)
+ * @param {string}  [opts.userEmail]  - Recipient email (required to send email)
+ * @param {string}  opts.title        - Notification title
+ * @param {string}  opts.message      - Notification body
+ * @param {string}  opts.type         - Notification type (e.g. 'booking', 'kyc', 'payment')
+ * @param {boolean} [opts.sendEmail]  - Whether to send an email notification
+ * @param {string}  [opts.emailSubject] - Email subject line override
+ * @param {string}  [opts.emailHtml]  - Email body HTML override
+ * @param {Object}  opts.env          - Cloudflare env bindings
+ * @param {Object}  [opts.ctx]        - Cloudflare execution context (for waitUntil)
  */
 export const sendNotification = async (prisma, {
   userId,
@@ -38,98 +79,81 @@ export const sendNotification = async (prisma, {
   title,
   message,
   type,
-  metadata = null,
   sendEmail = false,
   emailSubject = null,
   emailHtml = null,
   env,
-  ctx // Cloudflare execution context for background tasks
+  ctx
 }) => {
+  let notification = null;
+
+  // --- CHANNEL 1: In-App Notification (Primary, Synchronous) ---
+  // Most critical channel. Isolated so DB failures don't prevent email from being queued.
   try {
-    // 1. In-App Notification (Database)
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        title,
-        message,
-        type,
-        // If your schema doesn't have metadata yet, we might stringify it to message or ignore
-      }
+    notification = await prisma.notification.create({
+      data: { userId, title, message, type }
     });
+  } catch (dbErr) {
+    // Log but never rethrow — callers must not fail due to a notification write failure
+    console.error('[NOTIFICATION_SERVICE] In-app DB write failed:', dbErr.message, { userId, type });
+  }
 
-    // Audit Log for In-App Notification
-    await logAuditEvent(prisma, {
-      userId,
-      action: 'NOTIFICATION_SENT',
-      details: `Sent ${type} in-app notification: ${title}`,
-      ipAddress: 'system'
-    });
-
-    // 2. Email Notification
-    if (sendEmail && userEmail && env.RESEND_API_KEY) {
+  // --- CHANNEL 2: Email Notification (Background, Non-Blocking) ---
+  // Always dispatched via waitUntil — NEVER holds up the HTTP response.
+  if (sendEmail && userEmail && env?.RESEND_API_KEY) {
+    try {
       const resend = new Resend(env.RESEND_API_KEY);
       const emailFrom = env.EMAIL_FROM || 'onboarding@resend.dev';
       const finalSubject = emailSubject || title;
       const finalHtml = getEmailTemplate(finalSubject, emailHtml || `<p>${message}</p>`);
 
-      const emailPromise = resend.emails.send({
-        from: emailFrom,
-        to: userEmail,
-        subject: finalSubject,
-        html: finalHtml
-      }).then(async () => {
-        await logAuditEvent(prisma, {
-          userId,
-          action: 'EMAIL_SENT',
-          details: `Sent ${type} email to ${userEmail}`,
-          ipAddress: 'system'
-        });
-      }).catch(async (err) => {
-        console.error("Email send failed:", err);
-        await logAuditEvent(prisma, {
-          userId,
-          action: 'EMAIL_FAILED',
-          details: `Failed to send ${type} email to ${userEmail}. Error: ${err.message}`,
-          ipAddress: 'system'
-        });
+      dispatchEmail({
+        ctx,
+        resend,
+        payload: {
+          from: emailFrom,
+          to: userEmail,
+          subject: finalSubject,
+          html: finalHtml
+        }
       });
-
-      if (ctx && ctx.waitUntil) {
-        ctx.waitUntil(emailPromise);
-      } else {
-        await emailPromise;
-      }
+    } catch (emailErr) {
+      // Sync setup errors (e.g. bad API key format) must not propagate to caller
+      console.error('[NOTIFICATION_SERVICE] Email setup failed (non-critical):', emailErr.message);
     }
-
-    // 3. SMS/WhatsApp Hook (Future)
-    // if (sendWhatsapp) { dispatchWhatsappWorker(...) }
-
-    return notification;
-  } catch (err) {
-    console.error("sendNotification Error:", err);
-    throw err;
   }
+
+  return notification;
 };
 
-const logAuditEvent = async (prisma, { userId, action, details, ipAddress }) => {
-  try {
-    // Use VerificationAudit or a dedicated AuditLog model depending on schema
-    await prisma.verificationAudit.create({
-      data: {
-        adminId: 'system',
-        adminName: 'System Trigger',
-        targetUserId: userId,
-        targetName: 'User',
-        targetType: 'SYSTEM_EVENT',
-        action: action,
-        previousStatus: null,
-        newStatus: null,
-        rejectionReason: details,
-        ipAddress: ipAddress || 'system',
-        userAgent: 'HampiStays Backend Service'
-      }
-    });
-  } catch (err) {
-    console.error("Failed to write audit log:", err);
+/**
+ * Convenience helper: send the same notification to multiple users at once.
+ * Each dispatch is fully isolated — one failure does not abort the rest.
+ *
+ * @param {Object}   prisma      - Prisma client instance
+ * @param {Array}    recipients  - Array of { userId, userEmail } objects
+ * @param {Object}   opts        - Shared { title, message, type, env, ctx }
+ */
+export const sendBulkNotification = async (prisma, recipients, { title, message, type, env, ctx }) => {
+  const results = await Promise.allSettled(
+    recipients.map((r) =>
+      sendNotification(prisma, {
+        userId: r.userId,
+        userEmail: r.userEmail,
+        title,
+        message,
+        type,
+        sendEmail: !!r.userEmail,
+        env,
+        ctx
+      })
+    )
+  );
+
+  const failedCount = results.filter((r) => r.status === 'rejected').length;
+  if (failedCount > 0) {
+    console.error(`[NOTIFICATION_SERVICE] ${failedCount}/${recipients.length} bulk notifications failed.`);
   }
+
+  return results;
 };

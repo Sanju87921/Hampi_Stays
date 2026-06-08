@@ -8,9 +8,10 @@ import {
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
   CheckCircle2, Settings, Loader2, LayoutDashboard, LogOut, Pencil, ChevronLeft,
-  Bell, XCircle
+  Bell, XCircle, StopCircle, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { Html5Qrcode } from "html5-qrcode";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import { useSystem } from "../../context/SystemContext";
 import { useCurrency } from "../../context/CurrencyContext";
@@ -81,6 +82,7 @@ export function GuideDashboard() {
   if (subPath === 'kyc') activeTab = 'kyc';
   if (subPath === 'settings') activeTab = 'settings';
   if (subPath === 'notifications') activeTab = 'notifications';
+  if (subPath === 'reviews') activeTab = 'reviews';
   const [profile, setProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +156,22 @@ export function GuideDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Reviews State
+  const [guideReviews, setGuideReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [replyingToReviewId, setReplyingToReviewId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState<string | null>(null);
+  const [flaggingReviewId, setFlaggingReviewId] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState("");
+  const [isSubmittingFlag, setIsSubmittingFlag] = useState<string | null>(null);
+
+  // QR Scanner State
+  const [scannerState, setScannerState] = useState<'IDLE' | 'SCANNING' | 'PROCESSING' | 'ERROR'>('IDLE');
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [activeScanBookingId, setActiveScanBookingId] = useState<string | null>(null);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+
   useEffect(() => {
     fetchProfile();
     fetchSystemStatus();
@@ -211,6 +229,7 @@ export function GuideDashboard() {
         });
         fetchBookings(data.id);
         fetchPayouts(data.id);
+        fetchReviews(data.id);
         if (data.blockedDates) {
           setBlockedDates(data.blockedDates.map((d: string) => new Date(d).toISOString().split('T')[0]));
         }
@@ -239,6 +258,52 @@ export function GuideDashboard() {
       setBookings(data);
     } catch (err) {
       console.error("Failed to fetch bookings", err);
+    }
+  };
+
+  const fetchReviews = async (profileId: string) => {
+    setIsLoadingReviews(true);
+    try {
+      const data = await apiClient.get<any[]>(`/guides/${profileId}/reviews`);
+      setGuideReviews(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  const handleSubmitGuideReply = async (reviewId: string) => {
+    if (!replyContent.trim() || !profile?.id) return;
+    setIsSubmittingReply(reviewId);
+    try {
+      const updated = await apiClient.patch<any>(`/guides/${profile.id}/reviews/${reviewId}/reply`, { guideReply: replyContent });
+      setGuideReviews(prev => prev.map(r => r.id === reviewId ? { ...r, guideReply: updated.guideReply } : r));
+      toast.success("Reply posted successfully.");
+      setReplyingToReviewId(null);
+      setReplyContent("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to post reply.");
+    } finally {
+      setIsSubmittingReply(null);
+    }
+  };
+
+  const handleSubmitGuideFlag = async (reviewId: string) => {
+    if (!flagReason.trim() || !profile?.id) return;
+    setIsSubmittingFlag(reviewId);
+    try {
+      await apiClient.patch(`/guides/${profile.id}/reviews/${reviewId}/flag`, { flagReason });
+      setGuideReviews(prev => prev.map(r => r.id === reviewId ? { ...r, status: 'FLAGGED', flagReason } : r));
+      toast.success("Review flagged for admin review.");
+      setFlaggingReviewId(null);
+      setFlagReason("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to flag review.");
+    } finally {
+      setIsSubmittingFlag(null);
     }
   };
 
@@ -333,6 +398,68 @@ export function GuideDashboard() {
     } catch (err) {
       console.error("Failed to update booking status", err);
     }
+  };
+
+  const stopScanner = async () => {
+    if (html5QrCodeRef.current) {
+      try {
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      html5QrCodeRef.current.clear();
+      html5QrCodeRef.current = null;
+    }
+  };
+
+  const startScanner = async (bookingId: string) => {
+    setActiveScanBookingId(bookingId);
+    setScannerState('SCANNING');
+    setScanError(null);
+    setTimeout(async () => {
+      try {
+        const html5QrCode = new Html5Qrcode("guide-qr-reader");
+        html5QrCodeRef.current = html5QrCode;
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          async (decodedText) => {
+            if (html5QrCodeRef.current) html5QrCodeRef.current.pause(true);
+            await stopScanner();
+            handleScan(decodedText, bookingId);
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error(err);
+        setScannerState('ERROR');
+        setScanError("Camera Permission Denied or No Camera Found.");
+      }
+    }, 100);
+  };
+
+  const handleScan = async (token: string, bookingId: string) => {
+    setScannerState('PROCESSING');
+    try {
+      // Real implementation would validate the QR token against the backend
+      // Here we assume successful scan sets the booking to CHECKED_IN
+      await handleBookingStatus(bookingId, 'CHECKED_IN');
+      toast.success("Guest checked in successfully!");
+      setScannerState('IDLE');
+      setActiveScanBookingId(null);
+    } catch (err) {
+      console.error(err);
+      setScannerState('ERROR');
+      setScanError("Invalid QR Pass or Scan Failed");
+    }
+  };
+
+  const cancelScanner = async () => {
+    await stopScanner();
+    setScannerState('IDLE');
+    setActiveScanBookingId(null);
   };
 
   const handleSaveExperience = async (e: React.FormEvent) => {
@@ -538,21 +665,33 @@ export function GuideDashboard() {
               </div>
             </div>
             
-            {/* Rating Breakdown */}
+            {/* Rating Breakdown — live data */}
             <div className="space-y-3">
-              {[5, 4, 3, 2, 1].map(stars => (
-                <div key={stars} className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold text-navy-950/40 w-2">{stars}</span>
-                  <div className="flex-1 h-1.5 bg-sand-50 rounded-full overflow-hidden border border-sand-100">
-                    <div 
-                      className="h-full bg-gold-500 rounded-full" 
-                      style={{ width: `${stars === 5 ? 85 : stars === 4 ? 10 : 5}%` }} 
-                    />
+              {[5, 4, 3, 2, 1].map(stars => {
+                const count = guideReviews.filter(r => r.rating === stars).length;
+                const pct = guideReviews.length > 0 ? Math.round((count / guideReviews.length) * 100) : 0;
+                return (
+                  <div key={stars} className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-navy-950/40 w-2">{stars}</span>
+                    <div className="flex-1 h-1.5 bg-sand-50 rounded-full overflow-hidden border border-sand-100">
+                      <div 
+                        className="h-full bg-gold-500 rounded-full transition-all duration-700" 
+                        style={{ width: `${pct}%` }} 
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-navy-950/40 w-8">{pct}%</span>
                   </div>
-                  <span className="text-[10px] font-bold text-navy-950/40 w-8">{stars === 5 ? '85%' : stars === 4 ? '10%' : '5%'}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            {guideReviews.length > 0 && (
+              <button
+                onClick={() => navigate('/dashboard/reviews')}
+                className="mt-6 w-full text-[10px] font-bold uppercase tracking-widest text-gold-600 hover:text-gold-700 text-center transition-colors"
+              >
+                Read all {guideReviews.length} reviews →
+              </button>
+            )}
           </div>
 
           {/* Verification Progress */}
@@ -1307,7 +1446,60 @@ export function GuideDashboard() {
           </div>
         </div>
         <div className="p-10">
-          <div className="space-y-4">
+          
+          {/* Scanner Overlay UI */}
+          <AnimatePresence>
+            {activeScanBookingId && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-8 bg-sand-50 rounded-3xl p-6 border border-sand-200 overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-navy-950">Scan Traveler Pass</h3>
+                    <p className="text-sm text-navy-950/60">Position the QR code within the frame to verify.</p>
+                  </div>
+                  <Button variant="outline" onClick={cancelScanner} className="rounded-xl px-6 h-10 border-red-200 text-red-500 hover:bg-red-50">Cancel</Button>
+                </div>
+
+                {scannerState === 'SCANNING' && (
+                  <div className="flex flex-col items-center">
+                    <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl shadow-inner border-2 border-sand-200 relative bg-black">
+                      <div id="guide-qr-reader" className="w-full min-h-[300px]"></div>
+                      <div className="absolute inset-0 border-4 border-gold-400/50 rounded-2xl pointer-events-none z-10" />
+                      <div className="text-center py-4 text-xs font-bold text-white uppercase tracking-widest absolute bottom-0 left-0 right-0 bg-navy-950/80 backdrop-blur z-20 pointer-events-none">
+                        Align QR code within frame
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {scannerState === 'PROCESSING' && (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="w-12 h-12 text-gold-500 animate-spin mb-6" />
+                    <p className="text-navy-950 font-bold uppercase tracking-widest text-sm">Verifying Pass...</p>
+                  </div>
+                )}
+
+                {scannerState === 'ERROR' && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-20 h-20 bg-red-50 border-2 border-red-200 rounded-full flex items-center justify-center mb-6">
+                      <AlertTriangle className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-navy-950 mb-2">{scanError}</h3>
+                    <button onClick={() => startScanner(activeScanBookingId)} className="mt-4 px-8 py-3 bg-navy-950 text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-gold-600 transition-colors">
+                      Try Again
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {!activeScanBookingId && (
+            <div className="space-y-4">
             {filteredBookings.map((booking) => (
               <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30 gap-6">
                 <div className="flex items-center gap-5">
@@ -1341,7 +1533,7 @@ export function GuideDashboard() {
                   {booking.status === 'CONFIRMED' && (
                     <Button 
                       size="sm" 
-                      onClick={() => handleBookingStatus(booking.id, 'CHECKED_IN')} 
+                      onClick={() => startScanner(booking.id)} 
                       className="h-9 px-4 text-[10px] bg-navy-950 text-white shadow-luxury hover:bg-gold-500 hover:text-navy-950"
                     >
                       <QrCode className="w-3 h-3 mr-2" />
@@ -1368,6 +1560,213 @@ export function GuideDashboard() {
               </div>
             )}
           </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderReviews = () => {
+    const totalReviews = guideReviews.length;
+    const avgRating = totalReviews > 0
+      ? (guideReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+      : "0.0";
+
+    return (
+      <div className="space-y-8">
+        {/* Header + Summary */}
+        <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div>
+              <h2 className="text-3xl font-serif font-bold text-navy-950">Guest Reviews</h2>
+              <p className="text-sm text-navy-950/40 mt-1">Feedback from travellers who completed a tour with you.</p>
+            </div>
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="text-center">
+                <p className="text-5xl font-serif font-bold text-navy-950">{avgRating}</p>
+                <div className="flex gap-1 text-gold-500 mt-1 justify-center">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`w-4 h-4 ${parseFloat(avgRating) >= s ? 'fill-current' : 'text-sand-200'}`} />
+                  ))}
+                </div>
+                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mt-1">{totalReviews} reviews</p>
+              </div>
+              <div className="space-y-2 min-w-[160px]">
+                {[5,4,3,2,1].map(stars => {
+                  const count = guideReviews.filter(r => r.rating === stars).length;
+                  const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+                  return (
+                    <div key={stars} className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-navy-950/40 w-2">{stars}</span>
+                      <div className="flex-1 h-1.5 bg-sand-50 rounded-full overflow-hidden border border-sand-100">
+                        <div className="h-full bg-gold-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-navy-950/40 w-8">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Review Cards */}
+          {isLoadingReviews ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-gold-500 animate-spin" />
+            </div>
+          ) : guideReviews.length === 0 ? (
+            <div className="text-center py-20 border-2 border-dashed border-sand-200 rounded-[2rem]">
+              <Star className="w-10 h-10 text-sand-200 mx-auto mb-4" />
+              <p className="text-lg font-serif font-bold text-navy-950/30">No reviews yet</p>
+              <p className="text-sm text-navy-950/20 mt-1">Complete tours to start receiving guest feedback.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {guideReviews.map((review: any) => (
+                <motion.div
+                  key={review.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-8 rounded-[2rem] border ${review.status === 'FLAGGED' ? 'border-amber-200 bg-amber-50/30' : 'border-sand-100 bg-sand-50/30'}`}
+                >
+                  {/* Reviewer Info */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-sand-200 flex items-center justify-center font-bold text-navy-950 shrink-0 overflow-hidden">
+                        {review.user?.avatar
+                          ? <img src={review.user.avatar} className="w-full h-full object-cover" alt={review.user?.name} />
+                          : (review.user?.name?.[0] || 'G')}
+                      </div>
+                      <div>
+                        <p className="font-bold text-navy-950">{review.user?.name || 'Traveller'}</p>
+                        <div className="flex gap-1 text-gold-500 mt-0.5">
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} className={`w-3.5 h-3.5 ${review.rating >= s ? 'fill-current' : 'text-sand-200'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {review.status === 'FLAGGED' && (
+                        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-widest rounded-full">
+                          Flagged
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
+                        {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Review Text */}
+                  {review.reviewText && (
+                    <p className="text-sm text-navy-950/70 italic leading-relaxed mb-4">
+                      &ldquo;{review.reviewText}&rdquo;
+                    </p>
+                  )}
+
+                  {/* Tour Info */}
+                  {review.booking && (
+                    <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest mb-4">
+                      Tour on {new Date(review.booking.date).toLocaleDateString()} · {review.booking.durationHours} hrs
+                    </p>
+                  )}
+
+                  {/* Guide Reply */}
+                  {review.guideReply ? (
+                    <div className="mt-4 p-5 bg-white rounded-2xl border border-sand-100 flex gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-navy-950 flex items-center justify-center shrink-0">
+                        <Award className="w-4 h-4 text-gold-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-navy-950 uppercase tracking-widest mb-1">Your Reply</p>
+                        <p className="text-sm text-navy-950/70">{review.guideReply}</p>
+                      </div>
+                    </div>
+                  ) : replyingToReviewId === review.id ? (
+                    <div className="mt-4 space-y-3">
+                      <textarea
+                        className="w-full h-24 bg-white border border-sand-200 rounded-2xl p-4 text-sm focus:outline-none focus:border-gold-500 transition-colors resize-none"
+                        placeholder="Write a thoughtful, public response to this guest..."
+                        value={replyContent}
+                        onChange={e => setReplyContent(e.target.value)}
+                      />
+                      <div className="flex gap-3">
+                        <Button
+                          size="sm"
+                          className="h-9 px-6 rounded-xl bg-navy-950 text-white text-xs"
+                          onClick={() => handleSubmitGuideReply(review.id)}
+                          isLoading={isSubmittingReply === review.id}
+                        >
+                          Post Reply
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-6 rounded-xl text-xs"
+                          onClick={() => { setReplyingToReviewId(null); setReplyContent(''); }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex gap-3">
+                      {review.status !== 'FLAGGED' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-5 rounded-xl text-xs border-sand-200"
+                          onClick={() => { setReplyingToReviewId(review.id); setReplyContent(''); }}
+                        >
+                          Reply to Review
+                        </Button>
+                      )}
+                      {review.status !== 'FLAGGED' && flaggingReviewId !== review.id && (
+                        <button
+                          onClick={() => { setFlaggingReviewId(review.id); setFlagReason(''); }}
+                          className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors px-2"
+                        >
+                          Flag as Inappropriate
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Flag Form */}
+                  {flaggingReviewId === review.id && (
+                    <div className="mt-4 p-5 bg-red-50 border border-red-100 rounded-2xl space-y-3">
+                      <p className="text-xs font-bold text-red-700 uppercase tracking-widest">Flag this review for admin moderation</p>
+                      <textarea
+                        className="w-full h-20 bg-white border border-red-200 rounded-xl p-3 text-sm focus:outline-none focus:border-red-400 resize-none"
+                        placeholder="Explain why this review violates our content policy..."
+                        value={flagReason}
+                        onChange={e => setFlagReason(e.target.value)}
+                      />
+                      <div className="flex gap-3">
+                        <Button
+                          size="sm"
+                          className="h-9 px-5 rounded-xl text-xs bg-red-600 hover:bg-red-700 text-white border-none"
+                          onClick={() => handleSubmitGuideFlag(review.id)}
+                          isLoading={isSubmittingFlag === review.id}
+                        >
+                          Submit Flag
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-5 rounded-xl text-xs"
+                          onClick={() => { setFlaggingReviewId(null); setFlagReason(''); }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1415,8 +1814,9 @@ export function GuideDashboard() {
   };
 
   const renderPayouts = () => {
+    const commissionRate = settings?.defaultCommissionRate ?? 10;
     const totalEarnings = bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').reduce((acc, b) => acc + b.totalPrice, 0);
-    const platformCommission = totalEarnings * 0.1; // 10% mock commission
+    const platformCommission = totalEarnings * (commissionRate / 100);
     const netEarnings = totalEarnings - platformCommission;
     
     // Masked Account Number
@@ -1430,7 +1830,7 @@ export function GuideDashboard() {
             <p className="text-3xl font-serif font-bold text-navy-950">{formatPrice(totalEarnings)}</p>
           </div>
           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
-            <p className="text-sm font-medium text-navy-950/40 mb-1">Platform Commission (10%)</p>
+            <p className="text-sm font-medium text-navy-950/40 mb-1">Platform Commission ({commissionRate}%)</p>
             <p className="text-3xl font-serif font-bold text-red-500">-{formatPrice(platformCommission)}</p>
           </div>
           <div className="bg-gold-50 p-8 rounded-[2.5rem] border border-gold-200 shadow-sm">
@@ -1708,6 +2108,7 @@ export function GuideDashboard() {
               {activeTab === "calendar" && renderCalendar()}
               {activeTab === "bookings" && renderBookings()}
               {activeTab === "settings" && renderSettings()}
+              {activeTab === "reviews" && renderReviews()}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>

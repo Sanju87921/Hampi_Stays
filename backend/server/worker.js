@@ -1312,17 +1312,22 @@ app.post('/reviews', authMiddleware, async (c) => {
       return c.json({ error: 'You cannot review your own property.' }, 403);
     }
     
-    // Verify user actually stayed here
+    // Verify user is a verified traveller and actually completed a stay here
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || (!user.isVerified && user.role !== 'ADMIN')) {
+      return c.json({ error: 'Only verified travellers can leave reviews.' }, 403);
+    }
+
     const validBookings = await prisma.booking.findMany({
       where: {
         userId,
         resortId,
-        status: { in: ['CHECKED_IN', 'COMPLETED'] }
+        status: 'COMPLETED'
       }
     });
     
     if (validBookings.length === 0) {
-      return c.json({ error: 'You can only leave a review for resorts you have checked into or completed a stay with' }, 403);
+      return c.json({ error: 'You can only leave a review for resorts you have completed a stay with' }, 403);
     }
 
     let bookingToReview = null;
@@ -1338,30 +1343,34 @@ app.post('/reviews', authMiddleware, async (c) => {
        return c.json({ error: 'You have already reviewed all your stays at this resort.' }, 403);
     }
     
-    const review = await prisma.review.create({
-      data: {
-        resortId,
-        userId,
-        bookingId: bookingToReview.id,
-        rating: ratingVal,
-        comment: comment.trim(),
-        status: 'APPROVED'
-      },
-      include: { user: { select: { name: true, email: true } } }
-    });
-    
-    const aggregates = await prisma.review.aggregate({
-      where: { resortId, status: 'APPROVED' },
-      _avg: { rating: true },
-      _count: { id: true }
-    });
-    
-    const averageRating = parseFloat((aggregates._avg.rating || ratingVal).toFixed(1));
-    const totalReviews = aggregates._count.id || 1;
-    
-    await prisma.resort.update({
-      where: { id: resortId },
-      data: { rating: averageRating, reviewCount: totalReviews }
+    const { review } = await prisma.$transaction(async (tx) => {
+      const review = await tx.review.create({
+        data: {
+          resortId,
+          userId,
+          bookingId: bookingToReview.id,
+          rating: ratingVal,
+          comment: comment.trim(),
+          status: 'APPROVED'
+        },
+        include: { user: { select: { name: true, email: true } } }
+      });
+      
+      const aggregates = await tx.review.aggregate({
+        where: { resortId, status: 'APPROVED' },
+        _avg: { rating: true },
+        _count: { id: true }
+      });
+      
+      const averageRating = parseFloat((aggregates._avg.rating || ratingVal).toFixed(1));
+      const totalReviews = aggregates._count.id || 1;
+      
+      await tx.resort.update({
+        where: { id: resortId },
+        data: { rating: averageRating, reviewCount: totalReviews }
+      });
+
+      return { review };
     });
 
     // Notify Owner
@@ -1443,33 +1452,37 @@ app.patch('/admin/reviews/:id/status', authMiddleware, async (c) => {
   }
 
   try {
-    const updatedReview = await prisma.review.update({
-      where: { id },
-      data: { status }
-    });
+    const { updatedReview } = await prisma.$transaction(async (tx) => {
+      const updatedReview = await tx.review.update({
+        where: { id },
+        data: { status }
+      });
 
-    // Audit log
-    await prisma.auditLog.create({
-      data: {
-        adminId: payload.userId,
-        action: 'REVIEW_STATUS_UPDATED',
-        details: { reviewId: id, status }
-      }
-    });
+      // Audit log
+      await tx.auditLog.create({
+        data: {
+          adminId: payload.userId,
+          action: 'REVIEW_STATUS_UPDATED',
+          details: { reviewId: id, status }
+        }
+      });
 
-    // Recalculate rating based on APPROVED reviews only
-    const aggregates = await prisma.review.aggregate({
-      where: { resortId: updatedReview.resortId, status: 'APPROVED' },
-      _avg: { rating: true },
-      _count: { id: true }
-    });
-    
-    await prisma.resort.update({
-      where: { id: updatedReview.resortId },
-      data: { 
-        rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
-        reviewCount: aggregates._count.id || 0 
-      }
+      // Recalculate rating based on APPROVED reviews only
+      const aggregates = await tx.review.aggregate({
+        where: { resortId: updatedReview.resortId, status: 'APPROVED' },
+        _avg: { rating: true },
+        _count: { id: true }
+      });
+      
+      await tx.resort.update({
+        where: { id: updatedReview.resortId },
+        data: { 
+          rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
+          reviewCount: aggregates._count.id || 0 
+        }
+      });
+
+      return { updatedReview };
     });
 
     return c.json(updatedReview);
@@ -1486,29 +1499,31 @@ app.delete('/admin/reviews/:id', authMiddleware, async (c) => {
   }
 
   try {
-    const review = await prisma.review.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      const review = await tx.review.delete({ where: { id } });
 
-    await prisma.auditLog.create({
-      data: {
-        adminId: payload.userId,
-        action: 'REVIEW_DELETED',
-        details: { reviewId: id }
-      }
-    });
+      await tx.auditLog.create({
+        data: {
+          adminId: payload.userId,
+          action: 'REVIEW_DELETED',
+          details: { reviewId: id }
+        }
+      });
 
-    // Recalculate rating based on APPROVED reviews only
-    const aggregates = await prisma.review.aggregate({
-      where: { resortId: review.resortId, status: 'APPROVED' },
-      _avg: { rating: true },
-      _count: { id: true }
-    });
-    
-    await prisma.resort.update({
-      where: { id: review.resortId },
-      data: { 
-        rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
-        reviewCount: aggregates._count.id || 0 
-      }
+      // Recalculate rating based on APPROVED reviews only
+      const aggregates = await tx.review.aggregate({
+        where: { resortId: review.resortId, status: 'APPROVED' },
+        _avg: { rating: true },
+        _count: { id: true }
+      });
+      
+      await tx.resort.update({
+        where: { id: review.resortId },
+        data: { 
+          rating: parseFloat((aggregates._avg.rating || 5.0).toFixed(1)), 
+          reviewCount: aggregates._count.id || 0 
+        }
+      });
     });
 
     return c.json({ success: true });
@@ -2790,7 +2805,9 @@ app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {
     });
 
     if (status === 'COMPLETED' && existingBooking.status !== 'COMPLETED') {
-      const commission = booking.totalPrice * 0.1;
+      const sysSettings = await prisma.systemSettings.findFirst();
+      const commissionRate = sysSettings?.defaultCommissionRate ? (sysSettings.defaultCommissionRate / 100) : 0.1;
+      const commission = booking.totalPrice * commissionRate;
       const netAmount = booking.totalPrice - commission;
       
       const payoutData = {
@@ -2988,6 +3005,11 @@ app.post('/guides/:guideId/reviews', authMiddleware, async (c) => {
   if (rating < 1 || rating > 5) return c.json({ error: 'Rating must be between 1 and 5' }, 400);
 
   try {
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user || (!user.isVerified && user.role !== 'ADMIN')) {
+      return c.json({ error: 'Only verified travellers can leave reviews.' }, 403);
+    }
+
     // Check if booking belongs to user and is COMPLETED
     const booking = await prisma.guideBooking.findUnique({ where: { id: bookingId } });
     if (!booking || booking.userId !== payload.userId || booking.guideId !== guideId) {
@@ -2997,28 +3019,37 @@ app.post('/guides/:guideId/reviews', authMiddleware, async (c) => {
       return c.json({ error: 'Can only review completed tours' }, 400);
     }
 
-    // Create review
-    const review = await prisma.guideReview.create({
-      data: {
-        guideProfileId: guideId,
-        userId: payload.userId,
-        bookingId,
-        rating,
-        reviewText
-      }
-    });
+    // Create review and update stats inside an atomic transaction
+    const { review } = await prisma.$transaction(async (tx) => {
+      const review = await tx.guideReview.create({
+        data: {
+          guideProfileId: guideId,
+          userId: payload.userId,
+          bookingId,
+          rating,
+          reviewText
+        }
+      });
 
-    // Update guide's overall rating
-    const allReviews = await prisma.guideReview.findMany({ where: { guideProfileId: guideId } });
-    const totalRating = allReviews.reduce((acc, r) => acc + r.rating, 0);
-    const newAverage = totalRating / allReviews.length;
+      // Update guide's overall rating using DB aggregation
+      const aggregates = await tx.guideReview.aggregate({
+        where: { guideProfileId: guideId },
+        _avg: { rating: true },
+        _count: { id: true }
+      });
 
-    await prisma.guideProfile.update({
-      where: { id: guideId },
-      data: {
-        rating: newAverage,
-        reviewCount: allReviews.length
-      }
+      const newAverage = parseFloat((aggregates._avg.rating || rating).toFixed(1));
+      const totalReviews = aggregates._count.id || 1;
+
+      await tx.guideProfile.update({
+        where: { id: guideId },
+        data: {
+          rating: newAverage,
+          reviewCount: totalReviews
+        }
+      });
+
+      return { review };
     });
 
     return c.json(review, 201);
@@ -3044,8 +3075,137 @@ app.get('/guides/:guideId/reviews', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+// Guide replies to a review
+app.patch('/guides/:guideId/reviews/:reviewId/reply', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const { guideId, reviewId } = c.req.param();
+  const { guideReply } = await c.req.json();
+  const payload = c.get('user');
+
+  try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide || guide.userId !== payload.userId) {
+      return c.json({ error: 'Only the guide can reply to their own reviews' }, 403);
+    }
+    const updated = await prisma.guideReview.update({
+      where: { id: reviewId },
+      data: { guideReply: guideReply?.trim() || null }
+    });
+    return c.json(updated);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Guide flags a review as inappropriate
+app.patch('/guides/:guideId/reviews/:reviewId/flag', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const { guideId, reviewId } = c.req.param();
+  const { flagReason } = await c.req.json();
+  const payload = c.get('user');
+
+  try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide || guide.userId !== payload.userId) {
+      return c.json({ error: 'Only the guide can flag their reviews' }, 403);
+    }
+    const updated = await prisma.guideReview.update({
+      where: { id: reviewId },
+      data: { status: 'FLAGGED', flagReason: flagReason?.trim() }
+    });
+    return c.json(updated);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Public endpoint: get blocked dates for a guide (used by traveler booking widget)
+app.get('/guides/:guideId/blocked-dates', async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  try {
+    const guide = await prisma.guideProfile.findUnique({
+      where: { id: guideId },
+      select: { blockedDates: true }
+    });
+    if (!guide) return c.json({ error: 'Guide not found' }, 404);
+
+    // Also fetch dates with confirmed/pending bookings
+    const bookedDates = await prisma.guideBooking.findMany({
+      where: { guideId, status: { in: ['PENDING', 'CONFIRMED'] } },
+      select: { date: true }
+    });
+
+    const allUnavailable = [
+      ...guide.blockedDates.map(d => new Date(d).toISOString().split('T')[0]),
+      ...bookedDates.map(b => new Date(b.date).toISOString().split('T')[0])
+    ];
+
+    return c.json({ unavailableDates: [...new Set(allUnavailable)] });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 
 app.post('/guides/:guideId/calendar/block', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const { date } = await c.req.json(); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: { push: new Date(date) } } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } }); app.delete('/guides/:guideId/calendar/block/:date', async (c) => { const prisma = getPrisma(c.env); const guideId = c.req.param('guideId'); const dateStr = c.req.param('date'); try { const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } }); if (!guide) return c.json({ error: 'Guide not found' }, 404); const dateToRemove = new Date(dateStr).toISOString(); const newBlocked = guide.blockedDates.filter(d => d.toISOString() !== dateToRemove); const updated = await prisma.guideProfile.update({ where: { id: guideId }, data: { blockedDates: newBlocked } }); return c.json(updated); } catch (err) { return c.json({ error: err.message }, 500); } });
+// --- ADMIN REVIEW MODERATION ---
+app.get('/admin/reviews/flagged', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  if (payload.role !== 'ADMIN') return c.json({ error: 'Unauthorized' }, 403);
+  try {
+    const reviews = await prisma.guideReview.findMany({
+      where: { status: 'FLAGGED' },
+      include: {
+        user: { select: { name: true, avatar: true } },
+        guideProfile: { include: { user: { select: { name: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return c.json(reviews);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/reviews/:id/status', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  if (payload.role !== 'ADMIN') return c.json({ error: 'Unauthorized' }, 403);
+  const { id } = c.req.param();
+  const { status } = await c.req.json();
+  try {
+    const updated = await prisma.guideReview.update({
+      where: { id },
+      data: { status, flagReason: status === 'APPROVED' ? null : undefined }
+    });
+    return c.json(updated);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.delete('/admin/reviews/:id', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  if (payload.role !== 'ADMIN') return c.json({ error: 'Unauthorized' }, 403);
+  const { id } = c.req.param();
+  try {
+    const review = await prisma.guideReview.findUnique({ where: { id } });
+    if (!review) return c.json({ error: 'Not found' }, 404);
+    
+    await prisma.$transaction(async (tx) => {
+      await tx.guideReview.delete({ where: { id } });
+      
+      const stats = await tx.guideReview.aggregate({
+        where: { guideProfileId: review.guideProfileId },
+        _avg: { rating: true },
+        _count: { id: true }
+      });
+      await tx.guideProfile.update({
+        where: { id: review.guideProfileId },
+        data: {
+          rating: stats._avg.rating || 0,
+          reviewCount: stats._count.id
+        }
+      });
+    });
+    
+    return c.json({ success: true });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 // Experiences
 app.get('/experiences', async (c) => {
   const prisma = getPrisma(c.env);

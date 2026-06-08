@@ -8,11 +8,64 @@ export const createRateLimiter = (options = {}) => {
   const maxRequests = options.maxRequests || 100;
   
   return async (c, next) => {
-    // Skip OPTIONS preflight requests so they never count against limits
+    // Skip OPTIONS preflight requests
     if (c.req.method === 'OPTIONS') return next();
 
     const ip = getClientIp(c);
-    const key = `${ip}:${options.name || 'global'}`;
+    const key = `ratelimit:${options.name || 'global'}:${ip}`;
+    
+    // Upstash Redis implementation for Edge synchronization
+    if (c.env && c.env.UPSTASH_REDIS_REST_URL && c.env.UPSTASH_REDIS_REST_TOKEN) {
+      try {
+        const url = `${c.env.UPSTASH_REDIS_REST_URL}/pipeline`;
+        
+        // Multi-command pipeline: Increment and then get TTL
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${c.env.UPSTASH_REDIS_REST_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([
+            ['INCR', key],
+            ['PTTL', key]
+          ])
+        });
+
+        if (response.ok) {
+          const results = await response.json();
+          // Pipeline returns array of objects with {result: ...}
+          const count = results[0].result;
+          const ttl = results[1].result;
+
+          // If this was the first request (TTL is -1 or no TTL), set expiry
+          if (count === 1 || ttl < 0) {
+            await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${c.env.UPSTASH_REDIS_REST_TOKEN}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify([['PEXPIRE', key, windowMs]])
+            });
+          }
+
+          if (count > maxRequests) {
+            console.warn(`[ABUSE DETECTED] Redis Rate limit exceeded for IP: ${ip} on limiter: ${options.name}`);
+            return c.json({ 
+              error: options.message || "Too many requests detected. Please wait a moment before trying again." 
+            }, 429);
+          }
+          
+          return await next();
+        }
+      } catch (err) {
+        console.error("Upstash Redis Rate Limiting Failed, falling back to memory:", err);
+        // Fallback to memory if redis fetch fails
+      }
+    }
+
+    // Memory Fallback (Local Dev / Redis Failure)
     const now = Date.now();
     let record = rateLimitCache.get(key);
     
@@ -29,7 +82,7 @@ export const createRateLimiter = (options = {}) => {
     }
 
     if (record.count > maxRequests) {
-      console.warn(`[ABUSE DETECTED] Rate limit exceeded for IP: ${ip} on limiter: ${options.name}`);
+      console.warn(`[ABUSE DETECTED] Memory Rate limit exceeded for IP: ${ip} on limiter: ${options.name}`);
       return c.json({ 
         error: options.message || "Too many requests detected. Please wait a moment before trying again." 
       }, 429);

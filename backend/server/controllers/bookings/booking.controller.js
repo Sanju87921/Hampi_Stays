@@ -142,59 +142,45 @@ export const createBooking = async (c) => {
       const startDate = parseDate(checkIn);
       const endDate = parseDate(checkOut);
       
-      // 2. CONCURRENCY CHECK: OVERLAP VALIDATION
+      // 2. CONCURRENCY CHECK: Single raw SQL query replaces 2 findMany + JS date loop.
+      //    Executes entirely in PostgreSQL engine — one round-trip, no Worker CPU for iteration.
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
-      const overlappingBookings = await tx.booking.findMany({
-        where: {
-          roomId: roomId,
-          checkIn: { lt: endDate },
-          checkOut: { gt: startDate },
-          OR: [
-            { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] } },
-            { status: 'PENDING', createdAt: { gt: fifteenMinsAgo } }
-          ]
-        },
-        select: { checkIn: true, checkOut: true }
-      });
+      const availableCount = room.availableCount;
 
-      const overlappingBlockings = await tx.roomBlocking.findMany({
-        where: {
-          roomId: roomId,
-          date: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        select: { date: true }
-      });
+      const overlapResult = await tx.$queryRaw`
+        SELECT EXISTS (
+          SELECT 1
+          FROM generate_series(
+            ${startDate}::timestamptz,
+            ${endDate}::timestamptz - INTERVAL '1 day',
+            INTERVAL '1 day'
+          ) AS d
+          WHERE (
+            (
+              SELECT COUNT(*)
+              FROM bookings
+              WHERE room_id = ${roomId}
+                AND check_in  < d + INTERVAL '1 day'
+                AND check_out > d
+                AND (
+                  status IN ('PAID', 'CONFIRMED', 'CHECKED_IN')
+                  OR (status = 'PENDING' AND created_at > ${fifteenMinsAgo})
+                )
+            ) + (
+              SELECT COUNT(*)
+              FROM room_blockings
+              WHERE room_id = ${roomId}
+                AND date >= d
+                AND date  < d + INTERVAL '1 day'
+            )
+          ) >= ${availableCount}
+        ) AS is_overbooked
+      `;
 
-      // Calculate max daily usage correctly instead of blindly summing totals
-      let maxDailyUsage = 0;
-      let currDate = new Date(startDate);
-      while (currDate < endDate) {
-        let dailyUsage = 0;
-        
-        for (const b of overlappingBookings) {
-          if (new Date(b.checkIn) <= currDate && new Date(b.checkOut) > currDate) {
-            dailyUsage++;
-          }
-        }
-        
-        for (const blk of overlappingBlockings) {
-          if (new Date(blk.date).getTime() === currDate.getTime()) {
-            dailyUsage++;
-          }
-        }
-        
-        if (dailyUsage > maxDailyUsage) maxDailyUsage = dailyUsage;
-        
-        // Move to next day
-        currDate.setDate(currDate.getDate() + 1);
-      }
-
-      if (maxDailyUsage >= room.availableCount) {
+      if (overlapResult[0]?.is_overbooked) {
         throw new Error('ROOM_UNAVAILABLE');
       }
+
 
       // 3. PRICE CALCULATION
       const nights = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));

@@ -55,6 +55,8 @@ export function LocalExpertsPage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [promoSettings, setPromoSettings] = useState<any>(null);
   const [hasUpcomingStay, setHasUpcomingStay] = useState(false);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [isFetchingAvailability, setIsFetchingAvailability] = useState(false);
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
@@ -106,9 +108,13 @@ export function LocalExpertsPage() {
 
   const handleBookGuide = async () => {
     if (!selectedGuide || !bookingDate || !bookingMeetingPoint) return;
-    if (!requireAuth()) {
-      return;
+    if (!requireAuth()) return;
+
+    // Enforce blocked date check client-side before hitting the API
+    if (unavailableDates.includes(bookingDate)) {
+      return; // date input will show the warning; button is disabled anyway
     }
+
     setIsBooking(true);
     try {
       const totalPrice = selectedGuide.pricePerDay * (bookingHours / 8);
@@ -132,6 +138,23 @@ export function LocalExpertsPage() {
       console.error("Booking failed", err);
     } finally {
       setIsBooking(false);
+    }
+  };
+
+  const handleSelectGuide = async (guide: Guide) => {
+    if (!requireAuth()) return;
+    setSelectedGuide(guide);
+    setBookingSuccess(false);
+    setBookingDate("");
+    setUnavailableDates([]);
+    setIsFetchingAvailability(true);
+    try {
+      const data = await apiClient.get<{ unavailableDates: string[] }>(`/guides/${guide.id}/blocked-dates`);
+      setUnavailableDates(data.unavailableDates || []);
+    } catch (err) {
+      console.error("Failed to fetch guide availability", err);
+    } finally {
+      setIsFetchingAvailability(false);
     }
   };
 
@@ -287,12 +310,7 @@ export function LocalExpertsPage() {
                 {/* Footer Action */}
                 <div className="p-8 pt-0 flex gap-4">
                   <Button 
-                    onClick={() => { 
-                      if (requireAuth()) {
-                        setSelectedGuide(guide); 
-                        setBookingSuccess(false); 
-                      }
-                    }}
+                    onClick={() => handleSelectGuide(guide)}
                     className="flex-1 rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
                   >
                     Book Expert
@@ -363,7 +381,10 @@ export function LocalExpertsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                       <div className="space-y-6">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Select Date</label>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">
+                            Select Date
+                            {isFetchingAvailability && <span className="ml-2 text-gold-500 normal-case">Loading availability...</span>}
+                          </label>
                           <div className="relative">
                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/20" />
                             <input 
@@ -371,9 +392,25 @@ export function LocalExpertsPage() {
                               value={bookingDate}
                               min={new Date().toISOString().split('T')[0]}
                               onChange={(e) => setBookingDate(e.target.value)}
-                              className="w-full bg-sand-50 border border-sand-200 rounded-2xl pl-12 pr-6 py-4 text-sm focus:outline-none focus:border-gold-500"
+                              className={`w-full bg-sand-50 border rounded-2xl pl-12 pr-6 py-4 text-sm focus:outline-none transition-colors ${
+                                bookingDate && unavailableDates.includes(bookingDate)
+                                  ? 'border-red-400 bg-red-50 focus:border-red-500'
+                                  : 'border-sand-200 focus:border-gold-500'
+                              }`}
                             />
                           </div>
+                          {bookingDate && unavailableDates.includes(bookingDate) && (
+                            <p className="text-xs font-bold text-red-500 mt-2 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 bg-red-500 rounded-full inline-block" />
+                              Guide is unavailable on this date. Please select another.
+                            </p>
+                          )}
+                          {bookingDate && !unavailableDates.includes(bookingDate) && !isFetchingAvailability && (
+                            <p className="text-xs font-bold text-green-600 mt-2 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
+                              Available
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Duration (Hours)</label>
@@ -433,8 +470,8 @@ export function LocalExpertsPage() {
 
                     <Button 
                       onClick={handleBookGuide}
-                      disabled={isBooking || !bookingDate || !bookingMeetingPoint}
-                      className="w-full h-16 rounded-[2rem] bg-navy-950 text-white text-lg font-bold shadow-luxury group overflow-hidden relative"
+                      disabled={isBooking || !bookingDate || !bookingMeetingPoint || unavailableDates.includes(bookingDate)}
+                      className="w-full h-16 rounded-[2rem] bg-navy-950 text-white text-lg font-bold shadow-luxury group overflow-hidden relative disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-3">
                         {isBooking ? "Processing Request..." : "Confirm Booking Request"}

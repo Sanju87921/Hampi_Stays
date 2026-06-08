@@ -2060,11 +2060,11 @@ export function AdminDashboard() {
  </div>
  </div>
  </div>
- <p className="text-sm text-navy-950 italic leading-relaxed mb-4">"{review.comment}"</p>
+ <p className="text-sm text-navy-950 italic leading-relaxed mb-4">"{review.reviewText}"</p>
  <div className="flex items-center gap-4 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
  <span>Flagged for: {review.flagReason || 'Inappropriate Content'}</span>
  <span>•</span>
- <span>Posted on {review.resort?.name}</span>
+ <span>Posted on {review.guideProfile?.user?.name || 'Guide Profile'}</span>
  </div>
  </div>
  <div className="flex gap-3">

@@ -74,13 +74,39 @@ export const verifyPayment = async (c) => {
       return c.json({ error: 'Payment received but room lock expired. Contact support for refund or reallocation.' }, 400);
     }
 
-    const updatedBooking = await prisma.booking.update({
-      where: { referenceNumber: ref },
-      data: { status: 'PAID', paymentStatus: 'PAID' }
-    });
+    // ATOMIC: Update booking to PAID and create payout record in a single transaction
+    // This guarantees: no PAID booking can exist without a corresponding payout record.
+    const commissionRate = booking.commissionRate || booking.resort?.commissionRate || 15;
+    const grossAmount = booking.totalPrice;
+    const platformCommission = Math.round(grossAmount * (commissionRate / 100));
+    const netAmount = grossAmount - platformCommission;
 
-    // ✅ SAFE: Deduct reward credits ONLY now — after signature is verified and booking is PAID.
-    // This prevents credits being lost if the gateway fails before this point.
+    const [updatedBooking] = await prisma.$transaction([
+      prisma.booking.update({
+        where: { referenceNumber: ref },
+        data: { status: 'PAID', paymentStatus: 'PAID' }
+      }),
+      ...(booking.resort?.ownerId ? [prisma.resortOwnerPayout.upsert({
+        where: { bookingId: booking.id },
+        update: { status: 'PENDING' },
+        create: {
+          bookingId: booking.id,
+          resortId: booking.resort.id,
+          ownerId: booking.resort.ownerId,
+          grossAmount,
+          commissionRate,
+          platformCommission,
+          netAmount,
+          status: 'PENDING'
+        }
+      })] : [])
+    ]);
+
+    // NOTE: Promotion usageCount is already incremented atomically inside createBooking's
+    // Serializable transaction. Do NOT increment again here — that caused double-counting.
+
+    // ✅ SAFE: Deduct reward credits ONLY after the atomic booking+payout transaction succeeds.
+    // Kept outside the transaction intentionally — credits reconcile manually on failure.
     const creditsAmount = Number(creditsToDeduct) || 0;
     if (creditsAmount > 0 && booking.userId) {
       try {
@@ -93,47 +119,11 @@ export const verifyPayment = async (c) => {
         });
         logSecureInfo('CREDITS_DEDUCTED', `Deducted ₹${creditsAmount} credits for booking ${ref}`, { ref });
       } catch (creditErr) {
-        // Log but don't fail — booking is already confirmed; credits can be reconciled manually
         logSecureError('CREDITS_DEDUCTION_FAILED', 'Failed to deduct credits post-payment', { ref, error: creditErr.message });
       }
     }
 
-    const commissionRate = booking.commissionRate || booking.resort?.commissionRate || 15;
-    const grossAmount = booking.totalPrice;
-    const platformCommission = Math.round(grossAmount * (commissionRate / 100));
-    const netAmount = grossAmount - platformCommission;
 
-    if (booking.resort && booking.resort.ownerId) {
-      await prisma.resortOwnerPayout.upsert({
-        where: { bookingId: booking.id },
-        update: {
-          status: 'PENDING',
-        },
-        create: {
-          bookingId: booking.id,
-          resortId: booking.resort.id,
-          ownerId: booking.resort.ownerId,
-          grossAmount,
-          commissionRate,
-          platformCommission,
-          netAmount,
-          status: 'PENDING'
-        }
-      });
-    }
-
-    if (booking.promotionId) {
-      try {
-        await prisma.promotion.update({
-          where: { id: booking.promotionId },
-          data: { usageCount: { increment: 1 } }
-        });
-      } catch (e) {
-        logSecureError('PROMOTION_UPDATE_FAILED', 'Failed to increment promotion usage', { error: e.message, ref });
-      }
-    }
-
-    logSecureInfo('PAYMENT_VERIFIED', 'Payment successfully verified', { ref, razorpay_order_id });
     
     // Async Notifications
     if (c.env.RESEND_API_KEY && booking.user.email) {
@@ -243,17 +233,9 @@ export const handleWebhook = async (c) => {
              data: { status: 'PAID', paymentStatus: 'PAID' }
            });
            
-           if (booking.promotionId) {
-             try {
-               await prisma.promotion.update({
-                 where: { id: booking.promotionId },
-                 data: { usageCount: { increment: 1 } }
-               });
-             } catch (e) {
-               logSecureError('PROMOTION_UPDATE_FAILED', 'Failed to increment promotion usage via webhook', { error: e.message, ref });
-             }
-           }
-
+           // NOTE: Do NOT re-increment promotion usage here.
+           // usageCount is already incremented atomically in createBooking's Serializable transaction.
+           // Re-incrementing here would cause double-counting.
            logSecureInfo('WEBHOOK_RECONCILED', 'Booking automatically reconciled via webhook to PAID', { ref });
          }
       }

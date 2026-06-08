@@ -154,6 +154,7 @@ model Room {
   housekeepingTasks HousekeepingTask[]
   resort           Resort              @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
+  @@index([resortId])
   @@map("rooms")
 }
 
@@ -166,6 +167,7 @@ model RoomPhoto {
   createdAt DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
+  @@index([roomId])
   @@map("room_photos")
 }
 
@@ -363,6 +365,7 @@ model Notification {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("notifications")
 }
 
@@ -421,6 +424,7 @@ model KycDocument {
   updatedAt      DateTime    @updatedAt
   owner          ResortOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  @@index([ownerId])
   @@map("kyc_documents")
 }
 
@@ -451,6 +455,7 @@ model TravellerKYC {
   updatedAt      DateTime @updatedAt
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("traveller_kyc_documents")
 }
 
@@ -555,6 +560,7 @@ model GuideKYC {
   updatedAt       DateTime     @updatedAt
   guideProfile    GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
 
+  @@index([guideProfileId])
   @@map("guide_kyc_documents")
 }
 
@@ -593,6 +599,7 @@ model Message {
 
   @@index([bookingId])
   @@index([guideBookingId])
+  @@index([senderId])
   @@map("messages")
 }
 
@@ -609,6 +616,7 @@ model StaffMember {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   housekeepingTasks HousekeepingTask[]
 
+  @@index([resortId])
   @@map("staff_members")
 }
 
@@ -622,6 +630,7 @@ model Invitation {
   createdAt DateTime @default(now())
   resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
+  @@index([resortId])
   @@map("invitations")
 }
 
@@ -686,6 +695,9 @@ model VerificationAudit {
   userAgent       String?
   createdAt       DateTime @default(now())
 
+  @@index([targetUserId])
+  @@index([adminId])
+  @@index([createdAt])
   @@map("verification_audits")
 }
 
@@ -717,6 +729,7 @@ model ResortAmenity {
   createdAt   DateTime @default(now())
   resort      Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
 
+  @@index([resortId])
   @@map("resort_amenities")
 }
 
@@ -792,6 +805,7 @@ model RewardCredit {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("reward_credits")
 }
 
@@ -1021,6 +1035,10 @@ model HousekeepingTask {
   roomType    Room         @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   staff       StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
 
+  @@index([resortId])
+  @@index([roomTypeId])
+  @@index([staffId])
+  @@index([status])
   @@map("housekeeping_tasks")
 }
 
@@ -1057,6 +1075,8 @@ model SupportTicket {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([userId])
+  @@index([status])
   @@map("support_tickets")
 }
 
@@ -1099,6 +1119,9 @@ model GuideReview {
   bookingId      String       @unique
   rating         Int
   reviewText     String?
+  guideReply     String?
+  status         String       @default("APPROVED") // APPROVED, FLAGGED
+  flagReason     String?
   createdAt      DateTime     @default(now())
 
   guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)

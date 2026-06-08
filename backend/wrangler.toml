@@ -10,8 +10,17 @@ FRONTEND_URL = "https://hampi-stays.pages.dev"
 VITE_GOOGLE_CLIENT_ID = "389686748462-nh36uj8ht8go4unb9607sclhgl1plb7r.apps.googleusercontent.com"
 CLOUDINARY_CLOUD_NAME = "dfs6lmdns"
 RAZORPAY_KEY_ID = "rzp_test_Snxno5G3tcQKcs"
+
+# Upstash Redis — required for edge-synchronized rate limiting across all CF isolates.
+# Set these via CLI (NEVER commit secrets to source control):
+#   npx wrangler secret put UPSTASH_REDIS_REST_URL
+#   npx wrangler secret put UPSTASH_REDIS_REST_TOKEN
+# Get values from: https://console.upstash.com → your Redis DB → REST API tab.
+# Without these, rate limiting falls back to per-isolate memory (unsafe for production).
+
 [dev]
 port = 5000
 
 [triggers]
 crons = ["*/5 * * * *"]
+
