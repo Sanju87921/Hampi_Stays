@@ -188,11 +188,18 @@ export function AdminDashboard() {
    setIsSendingNewsletter(true);
    const toastId = toast.loading("Broadcasting newsletter...");
    try {
-     // Simulate API call to send broadcast (placeholder until backend endpoint is built)
-     await new Promise(resolve => setTimeout(resolve, 2000));
-     toast.success(`Broadcast successfully sent to ${stats?.userCount || 0} registered guests!`, { id: toastId });
-     setNewsletterSubject("");
-     setNewsletterContent("");
+     const res = await apiClient.post<{ success: boolean; count: number }>('/admin/newsletter/broadcast', {
+       subject: newsletterSubject,
+       content: newsletterContent
+     });
+     
+     if (res.success) {
+       toast.success(`Broadcast successfully sent to ${res.count || stats?.userCount || 0} registered users!`, { id: toastId });
+       setNewsletterSubject("");
+       setNewsletterContent("");
+     } else {
+       toast.error("Failed to send broadcast from server response.", { id: toastId });
+     }
    } catch (err) {
      toast.error("Failed to send broadcast.", { id: toastId });
    } finally {

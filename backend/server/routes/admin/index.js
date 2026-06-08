@@ -2851,4 +2851,37 @@ app.get('/admin/ws/live', async (c) => {
   });
 });
 
+  app.post('/admin/newsletter/broadcast', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const { subject, content } = await c.req.json();
+    
+    if (!subject || !content) {
+      return c.json({ error: 'Subject and content are required' }, 400);
+    }
+    
+    try {
+      const { sendBulkNotification } = await import('../../services/notification.service.js').catch(() => import('../../services/notification.service.js'));
+      
+      const users = await prisma.user.findMany({
+        where: { deletedAt: null },
+        select: { id: true, email: true }
+      });
+      
+      const recipients = users.map(u => ({ userId: u.id, userEmail: u.email }));
+      
+      await sendBulkNotification(prisma, recipients, {
+        title: subject,
+        message: content,
+        type: 'SYSTEM_BROADCAST',
+        env: c.env,
+        ctx: c.executionCtx
+      });
+      
+      return c.json({ success: true, count: users.length });
+    } catch (err) {
+      console.error('[AdminBroadcast] Error:', err);
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
 };
