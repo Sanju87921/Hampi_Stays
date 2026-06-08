@@ -176,9 +176,7 @@ export function Navbar() {
  <LanguageSwitcher useDarkText={useDarkText} />
  {isAuthenticated ? (
  <div className="flex items-center gap-6">
-  {user?.role?.toUpperCase() === 'GUIDE' && (
-   <NotificationBell useDarkText={useDarkText} />
-  )}
+  <NotificationBell useDarkText={useDarkText} />
  <button
  onClick={logout}
  className={cn(
