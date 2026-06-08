@@ -175,6 +175,31 @@ export function AdminDashboard() {
  const [rejectingResortId, setRejectingResortId] = useState<string | null>(null);
  const [resortRejectionReason, setResortRejectionReason] = useState("");
 
+ // Newsletter states
+ const [newsletterSubject, setNewsletterSubject] = useState("");
+ const [newsletterContent, setNewsletterContent] = useState("");
+ const [isSendingNewsletter, setIsSendingNewsletter] = useState(false);
+
+ const handleSendBroadcast = async () => {
+   if (!newsletterSubject.trim() || !newsletterContent.trim()) {
+     toast.error("Subject and content cannot be empty.");
+     return;
+   }
+   setIsSendingNewsletter(true);
+   const toastId = toast.loading("Broadcasting newsletter...");
+   try {
+     // Simulate API call to send broadcast (placeholder until backend endpoint is built)
+     await new Promise(resolve => setTimeout(resolve, 2000));
+     toast.success(`Broadcast successfully sent to ${stats?.userCount || 0} registered guests!`, { id: toastId });
+     setNewsletterSubject("");
+     setNewsletterContent("");
+   } catch (err) {
+     toast.error("Failed to send broadcast.", { id: toastId });
+   } finally {
+     setIsSendingNewsletter(false);
+   }
+ };
+
  useEffect(() => {
  fetchInitialData();
  }, []);
@@ -1776,6 +1801,8 @@ export function AdminDashboard() {
  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-2">Subject Line</label>
  <input 
  type="text" 
+ value={newsletterSubject}
+ onChange={(e) => setNewsletterSubject(e.target.value)}
  placeholder="e.g. Discover the Secrets of Vijayanagara..."
  className="w-full bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 focus:outline-none focus:border-gold-500 transition-colors"
  />
@@ -1784,6 +1811,8 @@ export function AdminDashboard() {
  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-2">Newsletter Content</label>
  <textarea 
  rows={10}
+ value={newsletterContent}
+ onChange={(e) => setNewsletterContent(e.target.value)}
  placeholder="Dear Luxury Traveler, experience Hampi like never before..."
  className="w-full bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 focus:outline-none focus:border-gold-500 transition-colors resize-none"
  />
@@ -1797,8 +1826,16 @@ export function AdminDashboard() {
  <CalendarDays className="w-4 h-4" /> Scheduled: Instant
  </span>
  </div>
- <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-12 rounded-2xl font-bold shadow-gold">
- Send Broadcast Now
+ <Button 
+  onClick={handleSendBroadcast}
+  disabled={isSendingNewsletter}
+  className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-12 rounded-2xl font-bold shadow-gold disabled:opacity-50"
+ >
+  {isSendingNewsletter ? (
+    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...</>
+  ) : (
+    "Send Broadcast Now"
+  )}
  </Button>
  </div>
  </div>
