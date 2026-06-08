@@ -2870,7 +2870,7 @@ app.get('/admin/ws/live', async (c) => {
       const recipients = users.map(u => ({ userId: u.id, userEmail: u.email }));
       
       await sendBulkNotification(prisma, recipients, {
-        title: subject,
+        title: `HampiStays: ${subject}`,
         message: content,
         type: 'SYSTEM_BROADCAST',
         env: c.env,

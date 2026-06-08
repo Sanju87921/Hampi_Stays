@@ -60,6 +60,9 @@ export function NotificationsPage() {
 
   const getIconAndStyle = (type: string = "") => {
     const safeType = type || "";
+    if (safeType.includes("SYSTEM_BROADCAST")) {
+      return { icon: Info, color: "text-purple-600", bg: "bg-purple-50" };
+    }
     if (safeType.includes("UPCOMING_STAY")) {
       return { icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" };
     }
