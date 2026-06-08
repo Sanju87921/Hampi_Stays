@@ -149,18 +149,8 @@ export function Hero() {
             {isAdmin ? "Administrator Session" : t("hero.badge")}
           </motion.span>
 
-          {!isAdmin && (
-            <motion.div
-              variants={textVariant}
-              className="flex items-center justify-center gap-6 text-sand-200/60 text-[10px] font-bold tracking-[0.4em] uppercase mb-8"
-            >
-              <span className="hover:text-gold-400 transition-colors cursor-default">Stay</span>
-              <span className="w-1 h-1 bg-gold-500/40 rounded-full" />
-              <span className="hover:text-gold-400 transition-colors cursor-default">Experience</span>
-              <span className="w-1 h-1 bg-gold-500/40 rounded-full" />
-              <span className="hover:text-gold-400 transition-colors cursor-default">Remember</span>
-            </motion.div>
-          )}
+
+
 
           <motion.h1
             variants={textVariant}
