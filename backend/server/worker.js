@@ -3207,6 +3207,36 @@ app.delete('/admin/reviews/:id', authMiddleware, async (c) => {
 });
 
 // Experiences
+app.post('/guides/:guideId/experiences', authMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const guideId = c.req.param('guideId');
+  const payload = c.get('user');
+  const data = await c.req.json();
+  try {
+    const guide = await prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide || guide.userId !== payload.userId) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+    const experience = await prisma.experience.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        durationHours: data.durationHours,
+        maxGroupSize: data.maxGroupSize,
+        images: data.images || [],
+        meetingPoint: data.meetingPoint,
+        inclusions: data.inclusions || [],
+        exclusions: data.exclusions || [],
+        isActive: data.isActive ?? true,
+        guideId: guideId
+      }
+    });
+    return c.json(experience, 201);
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
 app.get('/experiences', async (c) => {
   const prisma = getPrisma(c.env);
   try {
