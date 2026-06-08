@@ -110,7 +110,7 @@ export function ResortDetailPage() {
       refetchReviews();
       queryClient.invalidateQueries({ queryKey: ['resort', slug] });
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Failed to submit review");
+      toast.error(err.data?.error || err.message || "Failed to submit review");
     } finally {
       setIsSubmitting(false);
     }
