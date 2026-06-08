@@ -90,6 +90,30 @@ export function ResortDetailPage() {
     enabled: !!resort?.id
   });
 
+  // Check if logged-in user has a completed booking at this resort
+  const { data: eligibility } = useQuery({
+    queryKey: ['reviewEligibility', resort?.id, user?.id],
+    queryFn: async () => {
+      if (!resort?.id || !user) return null;
+      try {
+        const bookings = await apiClient.get<any[]>(`/users/bookings`);
+        const completed = (bookings || []).filter(
+          (b: any) => (b.resort?.id === resort.id || b.resortId === resort.id) && b.status === 'COMPLETED'
+        );
+        const alreadyReviewed = (reviews || []).some((r: any) => r.userId === user.id);
+        return {
+          hasCompletedStay: completed.length > 0,
+          alreadyReviewed,
+          isVerified: (user as any).isVerified,
+        };
+      } catch {
+        // If bookings can't be fetched, fall through and let backend validate on submit
+        return null;
+      }
+    },
+    enabled: !!resort?.id && !!user,
+  });
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
@@ -453,7 +477,64 @@ export function ResortDetailPage() {
               {/* Submission Form */}
               <div className="bg-sand-50/50 rounded-3xl border border-sand-100 p-8">
                 <h3 className="text-xl font-serif font-bold text-navy-950 mb-4">Write a Review</h3>
-                {user ? (
+
+                {!user ? (
+                  /* Not logged in */
+                  <div className="flex flex-col items-center text-center py-6 gap-4">
+                    <div className="w-14 h-14 rounded-full bg-navy-950/5 flex items-center justify-center">
+                      <Star className="w-7 h-7 text-gold-500" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-navy-950 mb-1">Share your experience</p>
+                      <p className="text-navy-950/60 text-sm">Please log in to submit a review for this resort.</p>
+                    </div>
+                    <Button onClick={() => setShowAuthModal(true)} variant="outline" className="rounded-2xl px-8">
+                      Log In or Register
+                    </Button>
+                  </div>
+
+                ) : eligibility && !eligibility.isVerified ? (
+                  /* Logged in but not a verified traveller */
+                  <div className="flex items-start gap-4 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-amber-900 mb-1">KYC Verification Required</p>
+                      <p className="text-amber-800 text-sm leading-relaxed">
+                        Only verified travellers can leave reviews. Please complete your KYC verification from your dashboard to unlock this feature.
+                      </p>
+                    </div>
+                  </div>
+
+                ) : eligibility && eligibility.alreadyReviewed ? (
+                  /* Already reviewed */
+                  <div className="flex items-start gap-4 p-5 bg-green-50 border border-green-200 rounded-2xl">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-green-900 mb-1">Review Submitted</p>
+                      <p className="text-green-800 text-sm">You have already shared your experience for this resort. Thank you for your feedback!</p>
+                    </div>
+                  </div>
+
+                ) : eligibility && !eligibility.hasCompletedStay ? (
+                  /* No completed stay */
+                  <div className="flex items-start gap-4 p-5 bg-blue-50 border border-blue-200 rounded-2xl">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Star className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-blue-900 mb-1">Stay First, Review Later</p>
+                      <p className="text-blue-800 text-sm leading-relaxed">
+                        Reviews are only available to guests who have completed a stay at this resort. Book your experience and come back after your trip!
+                      </p>
+                    </div>
+                  </div>
+
+                ) : (
+                  /* Eligible — show the form */
                   <form onSubmit={handleReviewSubmit} className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-navy-950 mb-2">Rating</label>
@@ -495,25 +576,10 @@ export function ResortDetailPage() {
                       />
                     </div>
 
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="rounded-2xl px-10 shadow-gold"
-                    >
+                    <Button type="submit" disabled={isSubmitting} className="rounded-2xl px-10 shadow-gold">
                       {isSubmitting ? "Submitting..." : "Submit Review"}
                     </Button>
                   </form>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-navy-950/60 mb-4">Please log in to submit a review for this resort.</p>
-                    <Button
-                      onClick={() => setShowAuthModal(true)}
-                      variant="outline"
-                      className="rounded-2xl px-8"
-                    >
-                      Log In or Register
-                    </Button>
-                  </div>
                 )}
               </div>
             </section>
