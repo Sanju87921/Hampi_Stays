@@ -102,19 +102,15 @@ export function ProfileIncompleteBanner() {
         exit={{ opacity: 0, y: -20 }}
         className="mb-10"
       >
-        <div className={`rounded-[2.5rem] p-1 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-2xl border ${
-          isUnderReview
-            ? 'bg-gradient-to-r from-amber-900 to-amber-800 border-amber-700/30'
-            : 'bg-gradient-to-r from-navy-950 to-navy-900 border-white/10'
-        }`}>
+        <div className="bg-gradient-to-r from-navy-950 to-navy-900 rounded-[2.5rem] p-1 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden shadow-2xl border border-white/10">
           {/* Background Decor */}
-          <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -mr-32 -mt-32 animate-pulse ${isUnderReview ? 'bg-amber-400/10' : 'bg-gold-500/10'}`} />
-          <div className={`absolute bottom-0 left-0 w-32 h-32 rounded-full blur-[50px] -ml-16 -mb-16 ${isUnderReview ? 'bg-amber-400/5' : 'bg-gold-500/5'}`} />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-[80px] -mr-32 -mt-32 animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gold-500/5 rounded-full blur-[50px] -ml-16 -mb-16" />
 
           <div className="flex-grow flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative z-10">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border ${isUnderReview ? 'bg-amber-400/20 border-amber-400/30' : 'bg-white border-white/10'}`}>
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 border border-white/10">
               {isUnderReview
-                ? <Clock className="w-8 h-8 text-amber-300" />
+                ? <Clock className="w-8 h-8 text-gold-400" />
                 : <UserCircle className="w-8 h-8 text-gold-400" />
               }
             </div>
@@ -122,16 +118,16 @@ export function ProfileIncompleteBanner() {
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                 {isUnderReview
-                  ? <CheckCircle2 className="w-4 h-4 text-amber-300" />
+                  ? <CheckCircle2 className="w-4 h-4 text-gold-400" />
                   : <Sparkles className="w-4 h-4 text-gold-400" />
                 }
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${isUnderReview ? 'text-amber-300' : 'text-gold-400'}`}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gold-400">
                   {isUnderReview ? 'Under Admin Review' : 'Complete Your Journey'}
                 </span>
               </div>
               <h3 className="text-xl font-serif font-bold text-white mb-2">
                 {isUnderReview ? (
-                  <>Documents <span className="text-amber-300 italic">Submitted & Pending Approval</span></>
+                  <>Documents <span className="text-gold-400 italic">Submitted & Pending Approval</span></>
                 ) : user?.role === 'GUIDE' ? (
                   <>Verify Your <span className="text-gold-400 italic">Expert Profile</span></>
                 ) : (
@@ -151,8 +147,8 @@ export function ProfileIncompleteBanner() {
 
           <div className="p-6 md:pr-12 relative z-10 w-full md:w-auto">
             {isUnderReview ? (
-              <div className="w-full md:w-auto bg-amber-400/20 border border-amber-400/30 text-amber-200 px-8 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4 animate-pulse" />
+              <div className="w-full md:w-auto bg-white/10 border border-white/20 text-white/70 px-8 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4 animate-pulse text-gold-400" />
                 Awaiting Approval
               </div>
             ) : (
