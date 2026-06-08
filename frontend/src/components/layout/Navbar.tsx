@@ -101,8 +101,9 @@ export function Navbar() {
   const isHeroPage = darkHeroPages.some(p => 
     location.pathname === p || location.pathname.startsWith("/guides/")
   );
-  const useDarkText = isScrolled ? true : !isHeroPage; 
-  const isSolidBg = false;
+  // Scrolled → frosted glass bg + dark text on ALL pages for legibility
+  const isSolidBg = isScrolled;
+  const useDarkText = isScrolled ? true : !isHeroPage;
 
  return (
  <motion.nav 
@@ -111,7 +112,9 @@ export function Navbar() {
    transition={{ duration: 0.3, ease: "easeInOut" }} 
    className={cn(
      "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[0.16,1,0.3,1]", 
-     isSolidBg ? "bg-sand-50 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" : "bg-transparent py-4 md:py-[1.15rem]"
+     isSolidBg 
+       ? "bg-white/90 backdrop-blur-2xl border-b border-sand-200 shadow-sm py-2 md:py-1.5" 
+       : "bg-transparent py-4 md:py-[1.15rem]"
    )}
  >
  <div className="container mx-auto px-4 md:px-6">
