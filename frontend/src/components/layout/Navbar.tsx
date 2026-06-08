@@ -104,74 +104,74 @@ export function Navbar() {
    )}
  >
  <div className="container mx-auto px-4 md:px-6">
- <div className="flex items-center justify-between">
- {/* Mobile Left Spacer (to help center logo) */}
- <div className="flex-1 md:hidden" />
+  <div className="flex items-center justify-between w-full">
+  {/* Mobile Left Spacer (to help center logo) */}
+  <div className="flex-1 lg:hidden" />
 
- {/* Logo & Admin Badge */}
- <div className="flex items-center gap-4 flex-1 md:flex-none z-10">
- <Link 
-  to={user?.role?.toUpperCase() === 'ADMIN' ? "/admin" : user?.role?.toUpperCase() === 'RESORT_OWNER' ? "/dashboard" : "/"} 
- className="flex items-center justify-center md:justify-start"
- >
- <img 
- src="/logo.png" 
- alt="HampiStays" 
- onError={(e) => {
- const target = e.target as HTMLImageElement;
- target.src = "/favicon.svg";
- target.className = "h-8 w-auto opacity-50";
- }}
- className={cn(
- "h-20 w-auto object-contain transition-all duration-500",
- !useDarkText ? "brightness-0 invert opacity-90 hover:opacity-100" : "opacity-90 hover:opacity-100"
- )}
- />
- </Link>
- {user?.role?.toUpperCase() === 'ADMIN' && (
- <div className={cn(
- "hidden md:flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border transition-all duration-300",
- useDarkText ? "bg-navy-950 text-white border-navy-950/20 shadow-md" : "bg-white/15 text-white border-white/30 backdrop-blur-md shadow-sm"
- )}>
- <div className="relative flex h-2 w-2 mr-2">
- <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
- <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
- </div>
- <Shield className="w-3 h-3 mr-1.5" />
- {t("navbar.administrator", "Administrator")}
- </div>
- )}
- </div>
+  {/* Logo & Admin Badge */}
+  <div className="flex items-center gap-4 z-10">
+  <Link 
+   to={user?.role?.toUpperCase() === 'ADMIN' ? "/admin" : user?.role?.toUpperCase() === 'RESORT_OWNER' ? "/dashboard" : "/"} 
+  className="flex items-center justify-center lg:justify-start"
+  >
+  <img 
+  src="/logo.png" 
+  alt="HampiStays" 
+  onError={(e) => {
+  const target = e.target as HTMLImageElement;
+  target.src = "/favicon.svg";
+  target.className = "h-8 w-auto opacity-50";
+  }}
+  className={cn(
+  "h-20 w-auto object-contain transition-all duration-500",
+  !useDarkText ? "brightness-0 invert opacity-90 hover:opacity-100" : "opacity-90 hover:opacity-100"
+  )}
+  />
+  </Link>
+  {user?.role?.toUpperCase() === 'ADMIN' && (
+  <div className={cn(
+  "hidden lg:flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border transition-all duration-300",
+  useDarkText ? "bg-navy-950 text-white border-navy-950/20 shadow-md" : "bg-white/15 text-white border-white/30 backdrop-blur-md shadow-sm"
+  )}>
+  <div className="relative flex h-2 w-2 mr-2">
+  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+  </div>
+  <Shield className="w-3 h-3 mr-1.5" />
+  {t("navbar.administrator", "Administrator")}
+  </div>
+  )}
+  </div>
 
- {/* Desktop Nav (Center) */}
- <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 z-20">
- {navLinks.map((link) => {
- const isActive = location.pathname === link.path;
- return (
- <Link
- key={link.name}
- to={link.path}
- className={cn(
- "relative text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2",
- useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-300"
- )}
- >
- <span className="relative z-10">{link.name}</span>
- <span 
- className={cn(
- "absolute -bottom-1 left-0 w-full h-[2px] rounded-full transform origin-right transition-transform duration-500 ease-out",
- isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left bg-gold-500/50"
- )}
- />
- </Link>
- );
- })}
- </div>
+  {/* Desktop Nav (Center) */}
+  <div className="hidden lg:flex flex-1 justify-center items-center gap-4 xl:gap-8 px-4 z-20">
+  {navLinks.map((link) => {
+  const isActive = location.pathname === link.path;
+  return (
+  <Link
+  key={link.name}
+  to={link.path}
+  className={cn(
+  "relative text-[11px] xl:text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2 whitespace-nowrap",
+  useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-300"
+  )}
+  >
+  <span className="relative z-10">{link.name}</span>
+  <span 
+  className={cn(
+  "absolute -bottom-1 left-0 w-full h-[2px] rounded-full transform origin-right transition-transform duration-500 ease-out",
+  isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left bg-gold-500/50"
+  )}
+  />
+  </Link>
+  );
+  })}
+  </div>
 
- {/* Right Side (Desktop Actions & Mobile Toggle) */}
- <div className="flex-1 flex justify-end items-center gap-5 z-10">
- {/* Desktop Actions */}
- <div className="hidden md:flex items-center gap-6">
+  {/* Right Side (Desktop Actions & Mobile Toggle) */}
+  <div className="flex justify-end items-center gap-4 xl:gap-5 z-10">
+  {/* Desktop Actions */}
+  <div className="hidden lg:flex items-center gap-4 xl:gap-6">
  <CurrencySwitcher useDarkText={useDarkText} />
  <LanguageSwitcher useDarkText={useDarkText} />
  {isAuthenticated ? (
