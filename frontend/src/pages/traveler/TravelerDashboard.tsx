@@ -326,7 +326,6 @@ export function TravelerDashboard() {
             { name: "My Bookings", icon: ShoppingBag, path: "/dashboard/bookings" },
             { name: "Guest Inbox", icon: Mail, id: "inbox" },
             ...(hasKycRequirements ? [{ name: "KYC & Verification", icon: Shield, id: "kyc" }] : []),
-            { name: "Notifications", icon: Bell, path: "/dashboard/notifications", badge: unreadCount },
             { name: "Profile", icon: User, path: "/dashboard/profile" },
           ].map((item) => {
             const isActive = item.id ? activeTab === item.id : location.pathname === item.path;
