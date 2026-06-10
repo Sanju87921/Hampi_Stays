@@ -133,7 +133,7 @@ export function Navbar() {
   target.className = "h-8 w-auto opacity-50";
   }}
   className={cn(
-  "h-20 w-auto object-contain transition-all duration-500",
+  "h-14 md:h-16 w-auto object-contain transition-all duration-500 pb-1",
   !useDarkText ? "brightness-0 invert opacity-90 hover:opacity-100" : "opacity-90 hover:opacity-100"
   )}
   />
