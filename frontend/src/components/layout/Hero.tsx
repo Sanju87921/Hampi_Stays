@@ -159,13 +159,38 @@ export function Hero() {
           animate="show"
           className="max-w-5xl w-full flex flex-col items-center"
         >
-          <motion.span
+          <motion.div
             variants={textVariant}
-            className="inline-flex items-center gap-2 py-1.5 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-white text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase mb-4 cursor-default select-none shadow-sm"
+            className="inline-flex items-center py-1.5 px-6 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-white text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase mb-4 sm:mb-6 cursor-default select-none shadow-sm"
           >
-            <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse flex-shrink-0" />
-            {isAdmin ? "Administrator Session" : t("hero.badge")}
-          </motion.span>
+            {isAdmin ? (
+              <div className="flex items-center gap-3">
+                <motion.span 
+                  animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }} 
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} 
+                  className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gold-400 flex-shrink-0 shadow-[0_0_8px_rgba(212,176,106,0.6)]" 
+                />
+                <span>Administrator Session</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-5 sm:gap-8">
+                {[
+                  t("hero.badge_stay", "STAY"), 
+                  t("hero.badge_experience", "EXPERIENCE"), 
+                  t("hero.badge_remember", "REMEMBER")
+                ].map((text, i) => (
+                  <div key={text} className="flex items-center gap-2 sm:gap-3">
+                    <motion.span 
+                      animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }} 
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }} 
+                      className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gold-400 flex-shrink-0 shadow-[0_0_8px_rgba(212,176,106,0.6)]" 
+                    />
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
 
 
 
