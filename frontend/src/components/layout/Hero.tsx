@@ -175,7 +175,7 @@ export function Hero() {
             className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white leading-[1.1] mb-4 sm:mb-6 text-shadow-lg w-full"
           >
             {isAdmin ? (
-              <h1 className="text-center">
+              <h1 className="text-center text-white">
                 Curate the <span className="text-gold-400 italic">Legacy</span>
               </h1>
             ) : (
@@ -187,7 +187,7 @@ export function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -30 }}
                     transition={{ duration: 0.6, ease: "easeInOut" }}
-                    className="[grid-area:stack] text-center w-full"
+                    className="[grid-area:stack] text-center w-full text-white"
                   >
                     {headlines[headlineIndex].top} <br className="hidden sm:block" />
                     <span className="text-gold-400 italic">{headlines[headlineIndex].bottom}</span>
