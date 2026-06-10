@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Shield, Bell } from "lucide-react";
 import { apiClient } from "../../utils/apiClient";
@@ -66,7 +66,6 @@ export function Navbar() {
  { name: t("navbar.bookStays", "Book Stays"), path: "/resorts" },
  { name: t("navbar.wishlist", "Wishlist"), path: "/dashboard/wishlist" },
  { name: t("navbar.bookings", "Bookings"), path: "/dashboard/bookings" },
- { name: t("navbar.notifications", "Notifications"), path: "/dashboard/notifications" },
  { name: t("navbar.profile", "Profile"), path: "/dashboard/profile" },
  ]
  : user?.role?.toUpperCase() === 'ADMIN'
@@ -118,15 +117,12 @@ export function Navbar() {
    )}
  >
  <div className="container mx-auto px-4 md:px-6">
-  <div className="flex items-center justify-between w-full">
-  {/* Mobile Left Spacer (to help center logo) */}
-  <div className="flex-1 lg:hidden" />
-
-  {/* Logo & Admin Badge */}
-  <div className="flex items-center gap-4 z-10">
+  <div className="flex lg:grid lg:grid-cols-[1fr_auto_1fr] items-center justify-between w-full">
+  {/* Left Section: Logo & Admin Badge */}
+  <div className="flex items-center justify-start gap-4 z-10">
   <Link 
    to={user?.role?.toUpperCase() === 'ADMIN' ? "/admin" : user?.role?.toUpperCase() === 'RESORT_OWNER' ? "/dashboard" : "/"} 
-  className="flex items-center justify-center lg:justify-start"
+  className="flex items-center justify-start"
   >
   <img 
   src="/logo.png" 
@@ -157,32 +153,34 @@ export function Navbar() {
   )}
   </div>
 
-  {/* Desktop Nav (Center) */}
-  <div className="hidden lg:flex flex-1 justify-center items-center gap-4 xl:gap-8 px-4 z-20">
-  {navLinks.map((link) => {
-  const isActive = location.pathname === link.path;
-  return (
-  <Link
-  key={link.name}
-  to={link.path}
-  className={cn(
-  "relative text-[11px] xl:text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2 whitespace-nowrap",
-  useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-300"
-  )}
-  >
-  <span className="relative z-10">{link.name}</span>
-  <span 
-  className={cn(
-  "absolute -bottom-1 left-0 w-full h-[2px] rounded-full transform origin-right transition-transform duration-500 ease-out",
-  isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left bg-gold-500/50"
-  )}
-  />
-  </Link>
-  );
-  })}
+  {/* Center Section: Navigation Links */}
+  <div className="hidden lg:flex justify-center items-center z-20">
+    <div className="flex items-center gap-6 xl:gap-10 px-4">
+    {navLinks.map((link) => {
+    const isActive = location.pathname === link.path;
+    return (
+    <Link
+    key={link.name}
+    to={link.path}
+    className={cn(
+    "relative text-[11px] xl:text-[12px] uppercase tracking-[0.2em] font-bold transition-all duration-500 group py-2 whitespace-nowrap",
+    useDarkText ? "text-navy-950 hover:text-gold-600" : "text-white hover:text-gold-300"
+    )}
+    >
+    <span className="relative z-10">{link.name}</span>
+    <span 
+    className={cn(
+    "absolute -bottom-1 left-0 w-full h-[2px] rounded-full transform origin-right transition-transform duration-500 ease-out",
+    isActive ? "scale-x-100 origin-left bg-gold-500" : "scale-x-0 group-hover:scale-x-100 group-hover:origin-left bg-gold-500/50"
+    )}
+    />
+    </Link>
+    );
+    })}
+    </div>
   </div>
 
-  {/* Right Side (Desktop Actions & Mobile Toggle) */}
+  {/* Right Section: Actions & Mobile Toggle */}
   <div className="flex justify-end items-center gap-4 xl:gap-5 z-10">
   {/* Desktop Actions */}
   <div className="hidden lg:flex items-center gap-4 xl:gap-6">
@@ -233,8 +231,9 @@ export function Navbar() {
 
  {/* Mobile Menu Toggle */}
  <button
- className="md:hidden p-2 -mr-2"
+ className="lg:hidden p-2"
  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+ aria-label="Toggle navigation menu"
  >
  {isMobileMenuOpen ? (
  <X className={cn("w-6 h-6", useDarkText ? "text-navy-950 " : "text-white")} />
@@ -339,18 +338,26 @@ export function Navbar() {
 }
 
 // ── Notification Bell ──────────────────────────────────────────────────────
+// ── Notification Bell ──────────────────────────────────────────────────────
 function NotificationBell({ useDarkText }: { useDarkText: boolean }) {
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUnread = async () => {
       try {
         const data = await apiClient.get<any[]>('/users/notifications');
         const arr = Array.isArray(data) ? data : [];
-        setUnreadCount(arr.filter((n: any) => !n.isRead).length);
+        // Sort notifications so unread are first, then newest
+        arr.sort((a, b) => {
+          if (a.isRead === b.isRead) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return a.isRead ? 1 : -1;
+        });
+        setNotifications(arr);
       } catch {
-        // silently fail — bell just shows with no badge
+        // silently fail
       }
     };
     fetchUnread();
@@ -358,21 +365,123 @@ function NotificationBell({ useDarkText }: { useDarkText: boolean }) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleNotificationClick = async (notif: any) => {
+    setIsOpen(false);
+    
+    if (!notif.isRead) {
+      try {
+        await apiClient.put(`/users/notifications/${notif.id}/read`, {});
+        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+      } catch (err) {
+        console.error("Failed to mark as read", err);
+      }
+    }
+
+    const type = notif.type?.toLowerCase() || '';
+    if (type.includes('booking')) navigate('/dashboard/bookings');
+    else if (type.includes('kyc') || type.includes('verification')) navigate('/dashboard/profile');
+    else if (type.includes('review')) navigate('/dashboard/reviews');
+    else if (type.includes('promotion') || type.includes('offer')) navigate('/resorts');
+    else navigate('/dashboard/notifications');
+  };
+
   return (
-    <button
-      onClick={() => navigate('/dashboard/notifications')}
-      className="relative p-2 rounded-full transition-all duration-300 hover:scale-110"
-      title="Notifications"
-    >
-      <Bell className={cn(
-        "w-5 h-5",
-        useDarkText ? "text-navy-950" : "text-white"
-      )} />
-      {unreadCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-gold-500 text-navy-950 text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md animate-pulse">
-          {unreadCount > 9 ? '9+' : unreadCount}
-        </span>
-      )}
-    </button>
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 rounded-full transition-all duration-300 hover:scale-110"
+        title="Notifications"
+        aria-label="Toggle notifications"
+      >
+        <Bell className={cn(
+          "w-5 h-5",
+          useDarkText ? "text-navy-950" : "text-white"
+        )} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-gold-500 text-navy-950 text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md animate-pulse">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-sand-200 overflow-hidden z-50 origin-top-right"
+          >
+            <div className="p-4 border-b border-sand-100 flex justify-between items-center bg-sand-50/50">
+              <h3 className="font-bold text-navy-950 text-sm tracking-wide uppercase">Notifications</h3>
+              {unreadCount > 0 && (
+                <span className="text-[10px] font-black uppercase text-gold-600 bg-gold-500/10 px-2 py-1 rounded-full">
+                  {unreadCount} New
+                </span>
+              )}
+            </div>
+            
+            <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center flex flex-col items-center">
+                  <div className="w-12 h-12 bg-sand-100 rounded-full flex items-center justify-center mb-3">
+                    <Bell className="w-5 h-5 text-sand-400" />
+                  </div>
+                  <p className="text-sm font-medium text-navy-800">No notifications yet</p>
+                  <p className="text-xs text-navy-500 mt-1">We'll let you know when something arrives.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {notifications.slice(0, 5).map(n => (
+                    <button
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n)}
+                      className={cn(
+                        "p-4 text-left border-b border-sand-100 hover:bg-sand-50 transition-colors relative group",
+                        !n.isRead && "bg-sand-50/30"
+                      )}
+                    >
+                      {!n.isRead && <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gold-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" />}
+                      <div className={cn("pl-3 transition-transform duration-200 group-hover:translate-x-1", !n.isRead ? "" : "pl-3")}>
+                        <p className={cn("text-xs font-bold mb-1", !n.isRead ? "text-navy-950" : "text-navy-700")}>{n.title}</p>
+                        <p className="text-xs text-navy-600 line-clamp-2 leading-relaxed">{n.message}</p>
+                        <p className="text-[10px] text-navy-400 mt-2 font-medium uppercase tracking-wider">
+                          {new Date(n.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {notifications.length > 0 && (
+              <div className="p-3 border-t border-sand-100 bg-sand-50/50 text-center hover:bg-sand-100 transition-colors">
+                <Link
+                  to="/dashboard/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs font-bold text-gold-600 hover:text-gold-700 uppercase tracking-widest block w-full"
+                >
+                  View All Notifications
+                </Link>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
