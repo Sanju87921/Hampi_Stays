@@ -142,42 +142,62 @@ export const createBooking = async (c) => {
       const startDate = parseDate(checkIn);
       const endDate = parseDate(checkOut);
       
-      // 2. CONCURRENCY CHECK: Single raw SQL query replaces 2 findMany + JS date loop.
-      //    Executes entirely in PostgreSQL engine — one round-trip, no Worker CPU for iteration.
+      // 2. CONCURRENCY CHECK: Using Prisma ORM instead of raw SQL
+      // Replaced raw SQL to prevent schema mismatch errors (e.g., column "roomId" does not exist)
+      // and to ensure type safety through the centralized database access layer.
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
       const availableCount = room.availableCount;
 
-      const overlapResult = await tx.$queryRaw`
-        SELECT EXISTS (
-          SELECT 1
-          FROM generate_series(
-            ${startDate}::timestamptz,
-            ${endDate}::timestamptz - INTERVAL '1 day',
-            INTERVAL '1 day'
-          ) AS d
-          WHERE (
-            (
-              SELECT COUNT(*)
-              FROM bookings
-              WHERE room_id = ${roomId}
-                AND check_in  < d + INTERVAL '1 day'
-                AND check_out > d
-                AND (
-                  status IN ('PAID', 'CONFIRMED', 'CHECKED_IN')
-                  OR (status = 'PENDING' AND created_at > ${fifteenMinsAgo})
-                )
-            ) + (
-              SELECT COUNT(*)
-              FROM room_blockings
-              WHERE room_id = ${roomId}
-                AND date >= d
-                AND date  < d + INTERVAL '1 day'
-            )
-          ) >= ${availableCount}
-        ) AS is_overbooked
-      `;
+      const conflictingBookings = await tx.booking.findMany({
+        where: {
+          roomId: roomId,
+          checkIn: { lt: endDate },
+          checkOut: { gt: startDate },
+          OR: [
+            { status: { in: ['PAID', 'CONFIRMED', 'CHECKED_IN'] } },
+            { status: 'PENDING', createdAt: { gt: fifteenMinsAgo } }
+          ]
+        },
+        select: { checkIn: true, checkOut: true }
+      });
 
-      if (overlapResult[0]?.is_overbooked) {
+      const blockings = await tx.roomBlocking.findMany({
+        where: {
+          roomId: roomId,
+          date: {
+            gte: startDate,
+            lt: endDate
+          }
+        },
+        select: { date: true }
+      });
+
+      let isOverbooked = false;
+      let currentDate = new Date(startDate);
+      while (currentDate < endDate) {
+        let dailyCount = 0;
+        
+        for (const b of conflictingBookings) {
+          if (b.checkIn <= currentDate && b.checkOut > currentDate) {
+            dailyCount++;
+          }
+        }
+        
+        for (const blk of blockings) {
+          if (blk.date.getTime() === currentDate.getTime()) {
+            dailyCount++;
+          }
+        }
+        
+        if (dailyCount >= availableCount) {
+          isOverbooked = true;
+          break;
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      if (isOverbooked) {
         throw new Error('ROOM_UNAVAILABLE');
       }
 
