@@ -161,8 +161,11 @@ export function AdminDashboard() {
  const [bookingTab, setBookingTab] = useState<"all" | "reviews">("all");
  const [reviewReason, setReviewReason] = useState("");
 
- const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(7.0);
- const [isSavingGlobalCommission, setIsSavingGlobalCommission] = useState(false);
+  const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(7.0);
+  const [isSavingGlobalCommission, setIsSavingGlobalCommission] = useState(false);
+  const [selectedResortIds, setSelectedResortIds] = useState<string[]>([]);
+  const [commissionFilter, setCommissionFilter] = useState<'ALL' | 'GLOBAL' | 'CUSTOM'>('ALL');
+  const [isApplyingBulkCommission, setIsApplyingBulkCommission] = useState(false);
 
  // Identity verification lightbox & rejection states
  const [selectedIdImage, setSelectedIdImage] = useState<string | null>(null);
@@ -525,8 +528,8 @@ export function AdminDashboard() {
  const handleUpdateCommission = async (resortId: string) => {
  setIsSavingCommission(true);
  try {
- await apiClient.patch(`/admin/resorts/${resortId}/commission`, { commissionRate: newCommissionRate });
- setActiveResorts(prev => prev.map(r => r.id === resortId ? { ...r, commissionRate: newCommissionRate } : r));
+ await apiClient.patch(`/admin/resorts/${resortId}/commission`, { commissionRate: newCommissionRate, commissionType: 'CUSTOM' });
+ setActiveResorts(prev => prev.map(r => r.id === resortId ? { ...r, commissionRate: newCommissionRate, commissionType: 'CUSTOM' } : r));
  setEditingCommissionId(null);
  } catch (err) {
  console.error(err);
@@ -534,6 +537,38 @@ export function AdminDashboard() {
  } finally {
  setIsSavingCommission(false);
  }
+ };
+
+ const handleBulkCommissionUpdate = async (action: 'GLOBAL' | 'CUSTOM') => {
+   if (selectedResortIds.length === 0) return toast.error("No resorts selected");
+   setIsApplyingBulkCommission(true);
+   try {
+     const promises = selectedResortIds.map(id => 
+       apiClient.patch(`/admin/resorts/${id}/commission`, 
+         action === 'GLOBAL' ? { commissionType: 'GLOBAL', commissionRate: defaultCommissionRate } : { commissionType: 'CUSTOM', commissionRate: newCommissionRate }
+       )
+     );
+     await Promise.all(promises);
+     toast.success(`Successfully updated ${selectedResortIds.length} resorts to ${action} commission`);
+     setActiveResorts(prev => prev.map(r => selectedResortIds.includes(r.id) ? { ...r, commissionType: action, commissionRate: action === 'GLOBAL' ? defaultCommissionRate : newCommissionRate } : r));
+     setSelectedResortIds([]);
+   } catch (err) {
+     toast.error("Failed to apply bulk commission updates");
+   } finally {
+     setIsApplyingBulkCommission(false);
+   }
+ };
+
+ const confirmUpdateGlobalCommission = () => {
+   const globalResorts = activeResorts.filter(r => !r.commissionType || r.commissionType === 'GLOBAL').length;
+   setModalData({
+     title: "Confirm Global Commission Update",
+     message: `You are about to change the platform-wide commission to ${defaultCommissionRate}%. This will automatically apply to ${globalResorts} active resort(s) using the GLOBAL commission tier. Do you wish to proceed?`,
+     onConfirm: () => {
+       setModalData(null);
+       handleUpdateGlobalCommission();
+     }
+   });
  };
 
  const handleUpdateGlobalCommission = async () => {
@@ -735,7 +770,18 @@ export function AdminDashboard() {
  <MapPin className="w-3.5 h-3.5" />
  {resort.locationArea}
  </div>
- <h3 className="text-2xl font-bold text-navy-950 mb-2">{resort.name}</h3>
+ <div className="flex items-center gap-3 mb-2">
+  <input 
+    type="checkbox" 
+    checked={selectedResortIds.includes(resort.id)}
+    onChange={(e) => {
+      if (e.target.checked) setSelectedResortIds(prev => [...prev, resort.id]);
+      else setSelectedResortIds(prev => prev.filter(id => id !== resort.id));
+    }}
+    className="w-5 h-5 rounded border-sand-300 text-gold-500 focus:ring-gold-500 cursor-pointer"
+  />
+  <h3 className="text-2xl font-bold text-navy-950">{resort.name}</h3>
+ </div>
  <p className="text-sm text-navy-950 mb-6 line-clamp-2 max-w-2xl">{resort.description}</p>
  
  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -779,7 +825,12 @@ export function AdminDashboard() {
  </div>
  ) : (
  <div className="flex items-center justify-between w-full">
- <p className="text-sm font-bold text-white">{resort.commissionRate || 7.0}%</p>
+ <p className="text-sm font-bold text-white flex items-center gap-1">
+  {resort.commissionRate || 7.0}% 
+  <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-widest ${resort.commissionType === 'CUSTOM' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+    ({resort.commissionType || 'GLOBAL'})
+  </span>
+ </p>
  <button 
  onClick={() => {
  setEditingCommissionId(resort.id);
@@ -896,7 +947,20 @@ export function AdminDashboard() {
  <p className="text-xl font-bold text-amber-500">{pendingResorts.length}</p>
  </div>
  </div>
- <div className="flex flex-wrap gap-4">
+ <div className="flex flex-wrap gap-4 items-center">
+ {selectedResortIds.length > 0 && (
+ <div className="flex items-center gap-3 bg-gold-50 px-4 py-2 rounded-xl border border-gold-200 shadow-sm">
+ <span className="text-sm font-bold text-gold-800">{selectedResortIds.length} Selected</span>
+ <div className="w-px h-4 bg-gold-200" />
+ <button onClick={() => handleBulkCommissionUpdate('GLOBAL')} disabled={isApplyingBulkCommission} className="text-xs font-bold text-navy-950 hover:text-gold-600 uppercase tracking-widest disabled:opacity-50 transition-colors">
+ Apply Global
+ </button>
+ <div className="w-px h-4 bg-gold-200" />
+ <button onClick={() => handleBulkCommissionUpdate('CUSTOM')} disabled={isApplyingBulkCommission} className="text-xs font-bold text-navy-950 hover:text-gold-600 uppercase tracking-widest disabled:opacity-50 transition-colors">
+ Apply Custom
+ </button>
+ </div>
+ )}
  <div className="relative">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 " />
  <input 
@@ -905,23 +969,30 @@ export function AdminDashboard() {
  className="pl-10 pr-4 py-2 bg-white border border-sand-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20"
  />
  </div>
- <Button variant="outline" className="gap-2 rounded-xl whitespace-nowrap">
- <Filter className="w-4 h-4" />
- Filters
- </Button>
+ <select 
+ value={commissionFilter}
+ onChange={(e) => setCommissionFilter(e.target.value as any)}
+ className="bg-white border border-sand-200 rounded-xl px-4 py-2 text-sm font-bold text-navy-950 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+ >
+ <option value="ALL">All Commissions</option>
+ <option value="GLOBAL">Global Commission</option>
+ <option value="CUSTOM">Custom Commission</option>
+ </select>
  </div>
  </div>
  </div>
 
  <AnimatePresence mode="wait">
- {(propertySubTab === "pending" ? pendingResorts : activeResorts).length > 0 ? (
+ {(()=>{
+   const filteredResorts = (propertySubTab === "pending" ? pendingResorts : activeResorts).filter(r => commissionFilter === 'ALL' || r.commissionType === commissionFilter || (commissionFilter === 'GLOBAL' && !r.commissionType));
+   return filteredResorts.length > 0 ? (
  <motion.div
  key={propertySubTab}
  initial={{ opacity: 0, x: 20 }}
  animate={{ opacity: 1, x: 0 }}
  exit={{ opacity: 0, x: -20 }}
  >
- {(propertySubTab === "pending" ? pendingResorts : activeResorts).map(resort => 
+ {filteredResorts.map(resort => 
  renderResortCard(resort, propertySubTab)
  )}
  </motion.div>
@@ -937,7 +1008,8 @@ export function AdminDashboard() {
  <h2 className="text-2xl font-bold font-serif text-navy-950 mb-4">No {propertySubTab} resorts</h2>
  <p className="text-navy-950 ">Everything is up to date.</p>
  </motion.div>
- )}
+ );
+ })()}
  </AnimatePresence>
  </div>
  );
@@ -2147,7 +2219,7 @@ export function AdminDashboard() {
  </div>
  </div>
  <Button 
- onClick={handleUpdateGlobalCommission}
+ onClick={confirmUpdateGlobalCommission}
  isLoading={isSavingGlobalCommission}
  className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-6 rounded-2xl font-bold shadow-lg"
  >

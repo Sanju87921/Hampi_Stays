@@ -36,6 +36,24 @@ export function Hero() {
   const [imageLabels, setImageLabels] = useState(imageLabelsFallback);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasSlides, setHasSlides] = useState<boolean | null>(null);
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+
+  const headlines = [
+    { top: "Welcome to", bottom: "Hampi" },
+    { top: "Discover the Magic of", bottom: "Hampi" },
+    { top: "Experience Ancient", bottom: "Hampi" },
+    { top: "Stay in Luxury, Explore", bottom: "Hampi" },
+    { top: "Where Heritage Meets", bottom: "Luxury" },
+    { top: "Create Unforgettable", bottom: "Memories" },
+    { top: "Your Journey Begins in", bottom: "Hampi" }
+  ];
+
+  useEffect(() => {
+    const textInterval = setInterval(() => {
+      setHeadlineIndex((prev) => (prev + 1) % headlines.length);
+    }, 5000);
+    return () => clearInterval(textInterval);
+  }, []);
 
   useEffect(() => {
     // Fetch dynamic hero slides
@@ -152,21 +170,32 @@ export function Hero() {
 
 
 
-          <motion.h1
+          <motion.div
             variants={textVariant}
-            className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white leading-[1.1] mb-4 sm:mb-6 text-shadow-lg"
+            className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white leading-[1.1] mb-4 sm:mb-6 text-shadow-lg w-full"
           >
             {isAdmin ? (
-              <>
+              <h1 className="text-center">
                 Curate the <span className="text-gold-400 italic">Legacy</span>
-              </>
+              </h1>
             ) : (
-              <>
-                {t("hero.title1")} <br className="hidden sm:block" />
-                <span className="text-gold-400 italic">{t("hero.title2")}</span>
-              </>
+              <div className="grid [grid-template-areas:'stack'] place-items-center w-full min-h-[96px] sm:min-h-[120px] md:min-h-[160px]">
+                <AnimatePresence>
+                  <motion.h1
+                    key={headlineIndex}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -30 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="[grid-area:stack] text-center w-full"
+                  >
+                    {headlines[headlineIndex].top} <br className="hidden sm:block" />
+                    <span className="text-gold-400 italic">{headlines[headlineIndex].bottom}</span>
+                  </motion.h1>
+                </AnimatePresence>
+              </div>
             )}
-          </motion.h1>
+          </motion.div>
 
           <motion.p
             variants={textVariant}

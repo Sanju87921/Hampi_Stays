@@ -230,6 +230,14 @@ app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, as
       });
     }
 
+    // Cascade global commission changes
+    if (data.defaultCommissionRate !== undefined && (!previousSettings || previousSettings.defaultCommissionRate !== data.defaultCommissionRate)) {
+      await prisma.resort.updateMany({
+        where: { commissionType: 'GLOBAL' },
+        data: { commissionRate: data.defaultCommissionRate }
+      });
+    }
+
     console.log(`[AUDIT] System Settings updated by Admin: ${adminEmail}. ` + 
       `Changes: ${JSON.stringify(data)}. ` + 
       `Previous: ${JSON.stringify(previousSettings)}`);
@@ -2771,6 +2779,19 @@ app.get('/admin/payouts/ledgers', authMiddleware, adminMiddleware, async (c) => 
       orderBy: { createdAt: 'desc' }
     });
     return c.json(ledgers);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.patch('/admin/resorts/:id/commission', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = c.get('getPrisma')(c.env);
+  const id = c.req.param('id');
+  const { commissionRate, commissionType } = await c.req.json();
+  try {
+    const data = {};
+    if (commissionRate !== undefined) data.commissionRate = commissionRate;
+    if (commissionType !== undefined) data.commissionType = commissionType;
+    const resort = await prisma.resort.update({ where: { id }, data });
+    return c.json(resort);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 

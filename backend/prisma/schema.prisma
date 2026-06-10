@@ -110,6 +110,7 @@ model Resort {
   verificationDocs Json?
   status           ResortStatus    @default(PENDING)
   deletedAt        DateTime?
+  commissionType   CommissionType  @default(GLOBAL)
   commissionRate   Float           @default(7.0)
   boostScore       Int             @default(0)
   bookings         Booking[]
@@ -640,6 +641,11 @@ enum Role {
   ADMIN
   GUIDE
   STAFF
+}
+
+enum CommissionType {
+  GLOBAL
+  CUSTOM
 }
 
 enum BookingStatus {
