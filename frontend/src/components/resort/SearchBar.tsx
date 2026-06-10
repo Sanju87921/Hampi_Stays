@@ -101,13 +101,13 @@ export function SearchBar() {
  return (
  <div ref={wrapperRef} className="relative">
  {/* Main Bar */}
- <div className="bg-white backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-luxury p-3 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-3 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white ">
+ <div className="bg-white backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-luxury p-2 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-2 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white ">
 
  {/* Location */}
  <button
  type="button"
  className={cn(
- "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
+ "flex-1 w-full md:w-auto px-5 md:px-8 py-3 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
  activePanel === "location" ? "bg-white shadow-md z-10" : "hover:bg-sand-100 :bg-sand-200/50"
  )}
  onClick={() => togglePanel("location")}
@@ -128,7 +128,7 @@ export function SearchBar() {
  <button
  type="button"
  className={cn(
- "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
+ "flex-1 w-full md:w-auto px-5 md:px-8 py-3 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
  activePanel === "dates" ? "bg-white shadow-md z-10" : "hover:bg-sand-100 :bg-sand-200/50"
  )}
  onClick={() => togglePanel("dates")}
@@ -148,13 +148,13 @@ export function SearchBar() {
  {/* Guests + Search */}
  <div
  className={cn(
- "flex-[1.2] w-full md:w-auto pl-8 pr-3 py-4 md:py-[6px] rounded-full transition-all duration-300 flex justify-between items-center",
+ "flex-[1.2] w-full md:w-auto pl-5 md:pl-8 pr-3 py-3 md:py-[6px] rounded-[2rem] md:rounded-full transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0",
  activePanel === "guests" ? "bg-white shadow-md z-10" : "hover:bg-sand-100 :bg-sand-200/50"
  )}
  >
  <button
  type="button"
- className="text-left flex-1"
+ className="text-left w-full md:flex-1"
  onClick={() => togglePanel("guests")}
  >
  <span className="block text-[11px] font-bold text-navy-950 uppercase tracking-widest mb-1.5">
@@ -170,10 +170,12 @@ export function SearchBar() {
  type="button"
  size="lg"
  onClick={handleSearch}
- className="w-14 h-14 md:w-auto md:h-[54px] p-0 md:px-8 rounded-full ml-4 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-navy-950 hover:bg-gold-600 border-none"
+ className="w-full md:w-auto h-12 md:h-[54px] p-0 md:px-8 rounded-full md:ml-4 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-navy-950 hover:bg-gold-600 border-none"
  >
- <Search className="w-5 h-5 text-white" />
- <span className="hidden md:inline font-bold text-white text-base">{t("common.search")}</span>
+ <Search className="w-4 h-4 md:w-5 md:h-5 text-white" />
+ <span className="font-bold text-white text-sm md:text-base">
+ {t("hero.search", "Search Luxury Resorts")}
+ </span>
  </Button>
  </div>
  </div>

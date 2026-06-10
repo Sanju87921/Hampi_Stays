@@ -93,7 +93,7 @@ export function Hero() {
   };
 
   return (
-    <div className="relative min-h-[100svh] flex items-center justify-center bg-navy-950 z-30">
+    <div className="relative min-h-[70svh] md:min-h-[100svh] flex items-center justify-center bg-navy-950 z-30">
       {/* Background Elements Container - clipped to prevent overflow */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
@@ -152,7 +152,7 @@ export function Hero() {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/5 rounded-full blur-[150px] animate-float-slow pointer-events-none" />
       </div>
 
-      <div className="relative z-20 w-full container mx-auto px-4 sm:px-6 flex flex-col items-center text-center pt-32 pb-12 sm:pt-40 sm:pb-16 md:pt-48 md:pb-20 -translate-y-4 sm:-translate-y-6 md:-translate-y-8">
+      <div className="relative z-20 w-full container mx-auto px-4 sm:px-6 flex flex-col items-center text-center pt-24 pb-8 sm:pt-40 sm:pb-16 md:pt-48 md:pb-20 -translate-y-4 sm:-translate-y-6 md:-translate-y-8">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -179,7 +179,7 @@ export function Hero() {
                   t("hero.badge_experience", "EXPERIENCE"), 
                   t("hero.badge_remember", "REMEMBER")
                 ].map((text, i) => (
-                  <div key={text} className="flex items-center gap-2 sm:gap-3">
+                  <div key={text} className="hidden sm:flex items-center gap-2 sm:gap-3">
                     <motion.span 
                       animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }} 
                       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }} 
@@ -188,6 +188,14 @@ export function Hero() {
                     <span>{text}</span>
                   </div>
                 ))}
+                <div className="sm:hidden flex items-center gap-2">
+                  <motion.span 
+                    animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }} 
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} 
+                    className="w-2 h-2 rounded-full bg-gold-400 flex-shrink-0 shadow-[0_0_8px_rgba(212,176,106,0.6)]" 
+                  />
+                  <span>KARNATAKA'S PREMIER LUXURY</span>
+                </div>
               </div>
             )}
           </motion.div>
@@ -197,7 +205,7 @@ export function Hero() {
 
           <motion.div
             variants={textVariant}
-            className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold text-white leading-[1.1] mb-4 sm:mb-6 text-shadow-lg w-full"
+            className="text-[42px] sm:text-5xl md:text-7xl font-serif font-bold text-white leading-[1.1] mb-4 sm:mb-6 text-shadow-lg w-full"
           >
             {isAdmin ? (
               <h1 className="text-center text-white">
