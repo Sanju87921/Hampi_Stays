@@ -8,6 +8,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useSearchParams as useRouterSearchParams } from "react-router-dom";
 import { SlidersHorizontal, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useResorts } from "../../hooks/useResorts";
 import { ResortCard } from "../../components/resort/ResortCard";
 import { ResortFilters } from "../../components/resort/ResortFilters";
@@ -28,6 +29,7 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 export function ResortsPage() {
+  const { t } = useTranslation();
   const [searchParams] = useRouterSearchParams();
   const location = searchParams.get("location") ?? "";
   const adults = Number(searchParams.get("adults") ?? 1);
@@ -150,17 +152,17 @@ export function ResortsPage() {
                         >
                           <div className="text-6xl mb-4">🏨</div>
                           <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">
-                            No resorts found
+                            {t("resorts.noResortsTitle", "No resorts found")}
                           </h3>
                           <p className="text-navy-950/60 mb-6 max-w-sm">
-                            Try adjusting your filters or searching a different location.
+                            {t("resorts.noResortsDesc", "Try adjusting your filters or searching a different location.")}
                           </p>
                           <button
                             type="button"
                             onClick={() => setFilters(DEFAULT_FILTERS)}
                             className="flex items-center gap-2 text-gold-600 font-bold hover:underline"
                           >
-                            <X className="w-4 h-4" /> Clear all filters
+                            <X className="w-4 h-4" /> {t("resorts.clearFilters", "Clear all filters")}
                           </button>
                         </motion.div>
                       ) : (
