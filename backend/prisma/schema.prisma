@@ -301,8 +301,10 @@ model Booking {
   resortId        String
   roomId          String?
   commissionRate  Float         @default(7.0)
-  paymentStatus   String        @default("PENDING")
-  payoutStatus    String        @default("PENDING")
+  paymentStatus     String        @default("PENDING")
+  payoutStatus      String        @default("PENDING")
+  razorpayPaymentId String?
+  razorpayOrderId   String?
 
   promotionId    String?
   promotionName  String?

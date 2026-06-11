@@ -485,38 +485,59 @@ export const cancelBooking = async (c) => {
       return c.json({ error: "Booking is already cancelled" }, 400);
     }
 
-    // Automated Refund Calculation based on Cancellation Policy
+    // Automated Refund Calculation based on 48-Hour Cancellation Policy
     let refundAmount = 0;
     const hoursToStay = (new Date(currentBooking.checkIn).getTime() - new Date().getTime()) / (1000 * 60 * 60);
     
-    if (hoursToStay >= 168) { // 7 days
+    if (hoursToStay >= 48) { // 48 hours free cancellation
       refundAmount = currentBooking.totalPrice; // 100% refund
-    } else if (hoursToStay >= 48) { // 48 hours
-      refundAmount = currentBooking.totalPrice * 0.5; // 50% refund
     } else {
-      refundAmount = 0; // 0% refund
+      refundAmount = 0; // 0% refund (within 48 hours)
     }
 
     // Trigger Razorpay Refund API
     let refundId = null;
+    let refundStatus = 'PENDING';
     if (refundAmount > 0 && currentBooking.razorpayPaymentId) {
       try {
         const { processRefund } = await import('../../services/payments/refund.service.js');
         const refundResult = await processRefund(c, currentBooking.razorpayPaymentId, refundAmount);
         refundId = refundResult.id;
+        refundStatus = 'PROCESSED';
         console.log(`[Refund] Auto-processed Razorpay refund ${refundId} for booking ${id}. Amount: ${refundAmount}`);
       } catch (err) {
         console.error("[Refund] Auto-refund failed:", err);
+        refundStatus = 'FAILED';
       }
+    } else if (refundAmount > 0 && !currentBooking.razorpayPaymentId) {
+      refundStatus = 'MANUAL_REVIEW_REQUIRED';
     }
+
+    const updateData = { status: 'CANCELLED' };
+    if (refundAmount > 0 && refundStatus === 'PROCESSED') updateData.paymentStatus = 'REFUNDED';
 
     const booking = await prisma.booking.update({
       where: { id },
-      data: { status: 'CANCELLED' },
-      // Invalidate Availability Cache
-      // await invalidateAvailabilityCache(currentBooking.roomId);
+      data: updateData,
       include: { resort: { include: { owner: { include: { user: true } } } }, user: true }
     });
+
+    if (refundAmount > 0) {
+      await prisma.refundRequest.upsert({
+        where: { bookingId: booking.id },
+        update: {
+          status: refundStatus,
+          adminNotes: refundId ? `Auto-refunded via Razorpay (Refund ID: ${refundId})` : 'Refund attempt failed or missing payment ID.'
+        },
+        create: {
+          bookingId: booking.id,
+          amount: refundAmount,
+          reason: 'User cancelled booking within 48-hour free cancellation window',
+          status: refundStatus,
+          adminNotes: refundId ? `Auto-refunded via Razorpay (Refund ID: ${refundId})` : 'Razorpay payment ID missing or API failed. Needs manual refund.'
+        }
+      });
+    }
 
     await invalidateAvailabilityCache(booking.roomId);
 

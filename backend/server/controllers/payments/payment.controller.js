@@ -84,7 +84,12 @@ export const verifyPayment = async (c) => {
     const [updatedBooking] = await prisma.$transaction([
       prisma.booking.update({
         where: { referenceNumber: ref },
-        data: { status: 'PAID', paymentStatus: 'PAID' }
+        data: { 
+          status: 'PAID', 
+          paymentStatus: 'PAID',
+          razorpayPaymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id
+        }
       }),
       ...(booking.resort?.ownerId ? [prisma.resortOwnerPayout.upsert({
         where: { bookingId: booking.id },
@@ -230,7 +235,12 @@ export const handleWebhook = async (c) => {
          } else {
            const updatedBooking = await prisma.booking.update({
              where: { referenceNumber: ref },
-             data: { status: 'PAID', paymentStatus: 'PAID' }
+             data: { 
+               status: 'PAID', 
+               paymentStatus: 'PAID',
+               razorpayPaymentId: paymentEntity?.id || null,
+               razorpayOrderId: orderEntity?.id || paymentEntity?.order_id || null
+             }
            });
            
            // NOTE: Do NOT re-increment promotion usage here.
@@ -296,7 +306,12 @@ export const verifyPaymentCallback = async (c) => {
     if (booking.status === 'PENDING') {
       await prisma.booking.update({
         where: { referenceNumber: ref },
-        data: { status: 'PAID', paymentStatus: 'PAID' }
+        data: { 
+          status: 'PAID', 
+          paymentStatus: 'PAID',
+          razorpayPaymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id
+        }
       });
       // Webhook will handle the rest (commissions, emails, etc) for simplicity, or we can trigger them here.
       // Since webhook is reliable, we can just update status and redirect.
