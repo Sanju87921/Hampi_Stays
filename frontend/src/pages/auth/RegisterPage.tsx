@@ -22,8 +22,9 @@ type UserRole = "guest" | "owner" | "guide" | null;
 export function RegisterPage() {
   const [searchParams] = useSearchParams();
   const emailParam = searchParams.get("email");
-  const [role, setRole] = useState<UserRole>(emailParam ? "guest" : null);
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const urlRole = searchParams.get("role") as UserRole;
+  const [role, setRole] = useState<UserRole>(urlRole || (emailParam ? "guest" : null));
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(urlRole ? 2 : 1);
   const [error, setError] = useState("");
   const { settings, isLoading: isSettingsLoading } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;

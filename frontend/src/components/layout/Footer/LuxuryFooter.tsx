@@ -124,15 +124,19 @@ export function LuxuryFooter() {
             </ul>
           </div>
           <div>
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Company</h5>
+            <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-navy-950   mb-10">Partner Network</h5>
             <ul className="space-y-5">
-              <li><Link to="/contact" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+              <li><Link to="/register?role=owner" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
-                Contact
+                List Your Resort
+              </Link></li>
+              <li><Link to="/register?role=guide" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
+                <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
+                Become a Guide
               </Link></li>
               <li><a href="#" className="text-navy-950  font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
-                Careers
+                Affiliate Program
               </a></li>
             </ul>
           </div>
