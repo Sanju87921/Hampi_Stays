@@ -292,7 +292,7 @@ export function LoginPage() {
               </span>
             </div>
 
-            <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
+            <h2 className="text-5xl font-serif font-bold mb-4 leading-tight text-white">
               Return to your <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold-300 via-gold-100 to-gold-500 italic drop-shadow-sm">Sanctuary</span>
             </h2>
