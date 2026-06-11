@@ -546,30 +546,31 @@ export function GuideDashboard() {
     }));
 
     return (
-      <div className="space-y-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="space-y-6 md:space-y-12">
+        {/* Mobile stats — compact horizontal scroll */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm"
+              className="bg-white p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-sand-100 shadow-sm"
             >
-              <div className={`${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-6`}>
-                <stat.icon className="w-6 h-6" />
+              <div className={`${stat.color} w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center mb-3 md:mb-6`}>
+                <stat.icon className="w-4 h-4 md:w-6 md:h-6" />
               </div>
-              <p className="text-sm font-medium text-navy-950/40 mb-1">{stat.label}</p>
-              <p className="text-3xl font-serif font-bold text-navy-950">{stat.value}</p>
+              <p className="text-xs font-medium text-navy-950/40 mb-0.5">{stat.label}</p>
+              <p className="text-xl md:text-3xl font-serif font-bold text-navy-950">{stat.value}</p>
             </motion.div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-10">
           <div className="lg:col-span-8 space-y-10">
             {/* Earnings Analytics */}
-            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+            <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+              <div className="p-5 md:p-8 border-b border-sand-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-serif font-bold text-navy-950">Earnings Analytics</h2>
                   <p className="text-sm text-navy-950/40 mt-1">Monthly performance and revenue growth.</p>
@@ -578,7 +579,7 @@ export function GuideDashboard() {
                   Last 6 Months <TrendingUp className="w-3 h-3 text-green-600" />
                 </div>
               </div>
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <div className="flex items-end justify-between h-48 gap-4 px-4">
                   {chartData.map((d, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-4 group cursor-help">
@@ -1775,8 +1776,8 @@ export function GuideDashboard() {
     const { currency, setCurrency } = useCurrency();
     
     return (
-      <div className="max-w-2xl mx-auto bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
-        <h2 className="text-3xl font-serif font-bold text-navy-950 mb-10">Account Settings</h2>
+      <div className="max-w-2xl mx-auto bg-white rounded-[2rem] md:rounded-[3rem] border border-sand-100 shadow-sm p-5 md:p-10">
+        <h2 className="text-2xl md:text-3xl font-serif font-bold text-navy-950 mb-6 md:mb-10">Account Settings</h2>
         
         <div className="space-y-8 mb-10">
           <div className="space-y-2">
@@ -1822,19 +1823,19 @@ export function GuideDashboard() {
     const maskedAccount = bankForm.accountNumber ? `XXXX-XXXX-${bankForm.accountNumber.slice(-4)}` : "";
 
     return (
-      <div className="space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
-            <p className="text-sm font-medium text-navy-950/40 mb-1">Gross Earnings</p>
-            <p className="text-3xl font-serif font-bold text-navy-950">{formatPrice(totalEarnings)}</p>
+      <div className="space-y-6 md:space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-sand-100 shadow-sm">
+            <p className="text-xs font-medium text-navy-950/40 mb-1">Gross Earnings</p>
+            <p className="text-2xl md:text-3xl font-serif font-bold text-navy-950">{formatPrice(totalEarnings)}</p>
           </div>
-          <div className="bg-white p-8 rounded-[2.5rem] border border-sand-100 shadow-sm">
-            <p className="text-sm font-medium text-navy-950/40 mb-1">Platform Commission ({commissionRate}%)</p>
-            <p className="text-3xl font-serif font-bold text-red-500">-{formatPrice(platformCommission)}</p>
+          <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-sand-100 shadow-sm">
+            <p className="text-xs font-medium text-navy-950/40 mb-1">Commission ({commissionRate}%)</p>
+            <p className="text-2xl md:text-3xl font-serif font-bold text-red-500">-{formatPrice(platformCommission)}</p>
           </div>
-          <div className="bg-gold-50 p-8 rounded-[2.5rem] border border-gold-200 shadow-sm">
-            <p className="text-sm font-medium text-gold-700 mb-1">Net Earnings</p>
-            <p className="text-3xl font-serif font-bold text-gold-700">{formatPrice(netEarnings)}</p>
+          <div className="bg-gold-50 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-gold-200 shadow-sm">
+            <p className="text-xs font-medium text-gold-700 mb-1">Net Earnings</p>
+            <p className="text-2xl md:text-3xl font-serif font-bold text-gold-700">{formatPrice(netEarnings)}</p>
           </div>
         </div>
 
@@ -1934,37 +1935,35 @@ export function GuideDashboard() {
     }
 
     return (
-      <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10">
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-sand-100 shadow-sm p-4 md:p-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 md:mb-8 gap-4">
           <div>
-            <h2 className="text-3xl font-serif font-bold text-navy-950 mb-2">Availability Calendar</h2>
-            <p className="text-sm text-navy-950/40">Manage your working days. Block dates you are unavailable.</p>
+            <h2 className="text-xl md:text-3xl font-serif font-bold text-navy-950 mb-1">Availability Calendar</h2>
+            <p className="text-xs md:text-sm text-navy-950/40">Tap a date to block/unblock it.</p>
           </div>
-          <div className="flex gap-4">
-            <Button 
-              variant="outline" 
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button 
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-              className="rounded-xl"
+              className="w-9 h-9 rounded-xl border border-sand-200 flex items-center justify-center text-navy-950 font-bold active:bg-sand-100"
             >
-              Previous
-            </Button>
-            <span className="text-lg font-bold text-navy-950 py-2">{monthName}</span>
-            <Button 
-              variant="outline" 
+              ‹
+            </button>
+            <span className="text-sm md:text-lg font-bold text-navy-950 px-2">{monthName}</span>
+            <button 
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-              className="rounded-xl"
+              className="w-9 h-9 rounded-xl border border-sand-200 flex items-center justify-center text-navy-950 font-bold active:bg-sand-100"
             >
-              Next
-            </Button>
+              ›
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-4 mb-4">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="text-center font-bold text-navy-950/40 text-[10px] uppercase tracking-widest">{day}</div>
+        <div className="grid grid-cols-7 gap-1 md:gap-4 mb-2 md:mb-4">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="text-center font-bold text-navy-950/40 text-[9px] md:text-[10px] uppercase tracking-widest">{day}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-1 md:gap-4">
           {days.map((date, i) => {
             if (!date) return <div key={i} className="aspect-square bg-sand-50/30 rounded-2xl" />;
             
@@ -1979,19 +1978,19 @@ export function GuideDashboard() {
                 key={i}
                 disabled={isPast}
                 onClick={() => toggleDateBlock(dateStr)}
-                className={`aspect-square p-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all relative group
-                  ${isPast ? 'opacity-50 cursor-not-allowed bg-sand-50' : 
-                    isBlocked ? 'bg-red-50 hover:bg-red-100 border border-red-200' : 
-                    dayBookings.length > 0 ? 'bg-navy-900 text-white hover:bg-navy-950' : 'bg-sand-50 hover:bg-sand-100 border border-sand-200'}
+                className={`aspect-square p-1 md:p-2 rounded-xl md:rounded-2xl flex flex-col items-center justify-center gap-0.5 md:gap-1 transition-all relative group active:scale-95
+                  ${isPast ? 'opacity-40 cursor-not-allowed bg-sand-50' : 
+                    isBlocked ? 'bg-red-50 border border-red-200' : 
+                    dayBookings.length > 0 ? 'bg-navy-900 text-white' : 'bg-sand-50 border border-sand-200'}
                 `}
               >
-                <span className={`font-bold ${dayBookings.length > 0 && !isBlocked ? 'text-white' : 'text-navy-950'}`}>
+                <span className={`text-xs md:text-sm font-bold ${dayBookings.length > 0 && !isBlocked ? 'text-white' : 'text-navy-950'}`}>
                   {date.getDate()}
                 </span>
                 
-                {isBlocked && <span className="text-[10px] font-bold text-red-500">BLOCKED</span>}
+                {isBlocked && <span className="text-[8px] md:text-[10px] font-bold text-red-400">✗</span>}
                 {!isBlocked && dayBookings.length > 0 && (
-                  <span className="text-[10px] font-bold text-gold-400">{dayBookings.length} Tour{dayBookings.length > 1 ? 's' : ''}</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-gold-400">{dayBookings.length}✓</span>
                 )}
                 
                 {/* Hover state for available dates */}
@@ -2011,47 +2010,52 @@ export function GuideDashboard() {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="min-h-screen bg-sand-50/50 flex flex-col pt-28">
+    <div className="min-h-screen bg-sand-50/50 flex flex-col pt-20 md:pt-28">
       {/* Main Content (No Sidebar) */}
-      <main className="flex-1 pb-12 px-4 md:px-10 max-w-6xl mx-auto w-full">
+      <main className="flex-1 pb-28 md:pb-12 px-3 md:px-10 max-w-6xl mx-auto w-full">
         {activeTab !== "overview" && (
-          <div className="mb-4">
+          <div className="mb-3">
             <Button 
               variant="ghost" 
               onClick={() => navigate("/dashboard")}
-              className="text-navy-600 hover:text-navy-950 hover:bg-sand-100 -ml-4 px-4 py-2 h-auto"
+              className="text-navy-600 hover:text-navy-950 hover:bg-sand-100 -ml-2 px-3 py-2 h-auto text-sm"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Back to Overview
+              Overview
             </Button>
           </div>
         )}
-        <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-2 shadow-sm"
-            >
-              <Award className="w-3 h-3" /> Hampi Expert Dashboard
-            </motion.div>
-            <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">
-              Welcome back, <span className="text-gold-600 italic">{(user?.name || "Guide").split(' ')[0]}</span>
-            </h1>
-            <p className="text-navy-950/50 font-medium">Manage your tours, availability, and guest experiences.</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Link to={`/guides/${user?.id}`}>
-              <Button variant="outline" className="rounded-xl border-sand-200 bg-white text-navy-950 hover:bg-sand-50 h-11 px-6 whitespace-nowrap">
-                <Globe className="w-4 h-4 mr-2" /> View Public Profile
-              </Button>
-            </Link>
-            <Button 
-              onClick={() => navigate("/dashboard/calendar")}
-              className="rounded-xl shadow-luxury h-11 px-6 bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 border-none transition-all whitespace-nowrap"
-            >
-              <Calendar className="w-4 h-4 mr-2" /> Update Availability
-            </Button>
+        <header className="mb-6 md:mb-10">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy-100 text-navy-600 text-[9px] font-bold uppercase tracking-widest mb-2 shadow-sm"
+              >
+                <Award className="w-3 h-3" /> Hampi Expert
+              </motion.div>
+              <h1 className="text-2xl md:text-4xl font-serif font-bold text-navy-950 mb-1">
+                Welcome, <span className="text-gold-600 italic">{(user?.name || "Guide").split(' ')[0]}</span>
+              </h1>
+              <p className="text-navy-950/50 text-sm font-medium hidden md:block">Manage your tours, availability, and guest experiences.</p>
+            </div>
+            {/* Mobile quick-action buttons */}
+            <div className="flex gap-2 shrink-0">
+              <Link to={`/guides/${user?.id}`}>
+                <button className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl bg-white border border-sand-200 shadow-sm active:scale-95 transition-all">
+                  <Globe className="w-5 h-5 text-navy-950" />
+                  <span className="text-[9px] font-bold text-navy-950/50 uppercase tracking-wide">Profile</span>
+                </button>
+              </Link>
+              <button 
+                onClick={() => navigate("/dashboard/calendar")}
+                className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl bg-navy-950 shadow-luxury active:scale-95 transition-all"
+              >
+                <Calendar className="w-5 h-5 text-white" />
+                <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">Avail.</span>
+              </button>
+            </div>
           </div>
         </header>
 

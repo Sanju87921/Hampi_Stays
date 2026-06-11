@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, Calendar, User, Search, Heart } from "lucide-react";
+import { Home, Compass, Calendar, User, Search, Heart, BookOpen, MapPin, Bell, Star } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -10,12 +10,21 @@ export function MobileDock() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   
-  // Only show for Travelers or Unauthenticated users (public)
   const isOwner = user?.role === "RESORT_OWNER";
   const isAdmin = user?.role === "ADMIN";
+  const isGuide = user?.role === "GUIDE";
   if (isOwner || isAdmin) return null;
 
-  const items = isAuthenticated ? [
+  // Guide-specific bottom navigation
+  const guideItems = [
+    { icon: Home, label: "Overview", path: "/dashboard", exact: true },
+    { icon: BookOpen, label: "Bookings", path: "/dashboard/bookings-expert" },
+    { icon: Calendar, label: "Calendar", path: "/dashboard/calendar" },
+    { icon: MapPin, label: "My Tours", path: "/dashboard/tours" },
+    { icon: User, label: "Profile", path: "/dashboard/expert-profile" },
+  ];
+
+  const travelerItems = isAuthenticated ? [
     { icon: Compass, label: "Explore", path: "/resorts" },
     { icon: Home, label: "Dashboard", path: "/dashboard", exact: true },
     { icon: Calendar, label: "Bookings", path: "/dashboard/bookings" },
@@ -26,6 +35,8 @@ export function MobileDock() {
     { icon: Heart, label: "Wishlist", path: "/login" },
     { icon: User, label: "Profile", path: "/login" },
   ];
+
+  const items = isGuide ? guideItems : travelerItems;
 
   return (
     <div className="md:hidden fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none">
