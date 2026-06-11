@@ -211,6 +211,48 @@ export function AdminSettingsPage() {
                   <Loader2 className="w-4 h-4 animate-spin text-navy-950 absolute top-10 right-3" />
                 )}
               </div>
+
+              <div className="space-y-3 relative">
+                <label className="text-sm font-bold text-navy-950 flex items-center">
+                  <Sliders className="w-4 h-4 mr-2 text-navy-950 " />
+                  Default Platform Commission (%)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={settings?.defaultCommissionRate ?? 7.0}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        defaultCommissionRate: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-4 py-3 bg-white border border-sand-200 rounded-xl focus:outline-none focus:border-gold-500 transition-colors"
+                  />
+                  <button
+                    disabled={updatingToggle === "defaultCommissionRate"}
+                    onClick={() =>
+                      updateSetting(
+                        "defaultCommissionRate",
+                        settings.defaultCommissionRate
+                      )
+                    }
+                    className="px-4 py-3 bg-navy-950 text-white rounded-xl text-sm font-bold transition-colors hover:bg-navy-900"
+                  >
+                    {updatingToggle === "defaultCommissionRate" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-navy-950/60 mt-1">
+                  Global commission rate applied to all new resort bookings.
+                </p>
+              </div>
             </div>
           </motion.div>
 
@@ -765,6 +807,39 @@ export function AdminSettingsPage() {
                   ) : null}
                   {settings?.detailedAuditLogging ? "Active" : "Inactive"}
                 </button>
+              </div>
+
+              {/* High-Value Booking KYC Threshold */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-sand-50 rounded-xl border border-sand-200 gap-4">
+                <div>
+                  <h4 className="font-bold text-navy-950 mb-1">
+                    High-Value KYC Threshold (₹)
+                  </h4>
+                  <p className="text-xs text-navy-950/60">
+                    Bookings above this amount require traveller KYC verification.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <input
+                    type="number"
+                    step="1000"
+                    min="0"
+                    value={settings?.highValueKycThreshold ?? 50000}
+                    onChange={(e) =>
+                      setSettings({ ...settings, highValueKycThreshold: Number(e.target.value) })
+                    }
+                    className="w-32 px-3 py-2 border border-sand-200 rounded-xl text-sm focus:outline-none focus:border-gold-500 bg-white"
+                  />
+                  <button
+                    disabled={!settings || updatingToggle === "highValueKycThreshold"}
+                    onClick={() => updateSetting("highValueKycThreshold", settings.highValueKycThreshold)}
+                    className="px-4 py-2 bg-navy-950 text-white rounded-xl text-xs font-bold hover:bg-navy-900 transition-colors"
+                  >
+                    {updatingToggle === "highValueKycThreshold" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : "Save"}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

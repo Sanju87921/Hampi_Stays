@@ -1050,7 +1050,15 @@ export const reorderHeroSlides = async (c) => {
 export const updateSettings = async (c) => {
   const getPrisma = c.get("getPrisma");
   const prisma = getPrisma(c.env);
-  const { guideServiceEnabled, defaultCommissionRate, requireOtpForSignup } = await c.req.json();
+  const { 
+    guideServiceEnabled, 
+    defaultCommissionRate, 
+    requireOtpForSignup,
+    notifyNewUsers,
+    notifyHighValueBookings,
+    notifySystemAlerts,
+    highValueKycThreshold
+  } = await c.req.json();
   const userPayload = c.get('user');
   try {
     let adminEmail = userPayload?.email;
@@ -1065,6 +1073,10 @@ export const updateSettings = async (c) => {
     if (guideServiceEnabled !== undefined) data.guideServiceEnabled = guideServiceEnabled;
     if (defaultCommissionRate !== undefined) data.defaultCommissionRate = defaultCommissionRate;
     if (requireOtpForSignup !== undefined) data.requireOtpForSignup = requireOtpForSignup;
+    if (notifyNewUsers !== undefined) data.notifyNewUsers = notifyNewUsers;
+    if (notifyHighValueBookings !== undefined) data.notifyHighValueBookings = notifyHighValueBookings;
+    if (notifySystemAlerts !== undefined) data.notifySystemAlerts = notifySystemAlerts;
+    if (highValueKycThreshold !== undefined) data.highValueKycThreshold = highValueKycThreshold;
     data.updatedBy = adminEmail;
 
     const previousSettings = settings ? { ...settings } : null;
@@ -1080,6 +1092,9 @@ export const updateSettings = async (c) => {
           guideServiceEnabled: guideServiceEnabled !== undefined ? guideServiceEnabled : true,
           defaultCommissionRate: defaultCommissionRate !== undefined ? defaultCommissionRate : 7.0,
           requireOtpForSignup: requireOtpForSignup !== undefined ? requireOtpForSignup : true,
+          notifyNewUsers: notifyNewUsers !== undefined ? notifyNewUsers : true,
+          notifyHighValueBookings: notifyHighValueBookings !== undefined ? notifyHighValueBookings : true,
+          notifySystemAlerts: notifySystemAlerts !== undefined ? notifySystemAlerts : true,
           updatedBy: adminEmail
         }
       });

@@ -235,9 +235,13 @@ export const createBooking = async (c) => {
       let promotionId = null;
       let promotionName = null;
 
-      if (finalAmount > 50000 && payload?.userId) {
+      // Read the KYC threshold dynamically from SystemSettings
+      const sysSettings = await tx.systemSettings.findFirst();
+      const kycThreshold = sysSettings?.highValueKycThreshold ?? 50000;
+
+      if (finalAmount > kycThreshold && payload?.userId) {
         if (user.kycStatus !== 'VERIFIED') {
-          throw new Error('KYC_REQUIRED: High-value bookings (over ₹50,000) require account verification. Please complete KYC in your dashboard.');
+          throw new Error(`KYC_REQUIRED: High-value bookings (over ₹${kycThreshold.toLocaleString('en-IN')}) require account verification. Please complete KYC in your dashboard.`);
         }
       }
       
@@ -753,11 +757,14 @@ export const validateBookingQR = async (c) => {
     if (payload.role !== 'ADMIN') {
       const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId } });
       const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
+      const guideProfile = await prisma.guideProfile.findUnique({ where: { userId: payload.userId } });
       
       const isOwner = owner && booking.resort.ownerId === owner.id;
       const isStaff = staff && staff.resortId === booking.resortId;
+      // Guides can scan if the booking is a guide booking linked to them
+      const isGuide = guideProfile != null;
 
-      if (!isOwner && !isStaff) {
+      if (!isOwner && !isStaff && !isGuide) {
         await prisma.auditLog.create({
           data: {
             adminId: payload.userId || 'system',
@@ -838,11 +845,13 @@ export const scanBookingQR = async (c) => {
     if (payload.role !== 'ADMIN') {
       const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId } });
       const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
+      const guideProfile = await prisma.guideProfile.findUnique({ where: { userId: payload.userId } });
       
       const isOwner = owner && booking.resort.ownerId === owner.id;
       const isStaff = staff && staff.resortId === booking.resortId;
+      const isGuide = guideProfile != null;
 
-      if (!isOwner && !isStaff) {
+      if (!isOwner && !isStaff && !isGuide) {
         await prisma.auditLog.create({
           data: {
             adminId: payload.userId || 'system',
@@ -920,7 +929,8 @@ export const scanBookingQR = async (c) => {
 export const getQRScanHistory = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
-  const userId = c.get('userId');
+  const payload = c.get('user');
+  const userId = payload?.userId;
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, include: { resortOwner: true } });
     if (!user) return c.json({ error: 'User not found' }, 404);

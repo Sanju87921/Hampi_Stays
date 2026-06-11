@@ -441,17 +441,27 @@ export function GuideDashboard() {
 
   const handleScan = async (token: string, bookingId: string) => {
     setScannerState('PROCESSING');
+    setScanError(null);
     try {
-      // Real implementation would validate the QR token against the backend
-      // Here we assume successful scan sets the booking to CHECKED_IN
-      await handleBookingStatus(bookingId, 'CHECKED_IN');
-      toast.success("Guest checked in successfully!");
+      // Step 1: Validate the scanned QR token against the backend
+      const validation = await apiClient.post<any>('/bookings/qr/validate', { token });
+
+      // Step 2: If valid, confirm check-in
+      await apiClient.post('/bookings/qr/scan', { token });
+
+      toast.success(`✓ ${validation.guestName} checked in successfully!`);
       setScannerState('IDLE');
       setActiveScanBookingId(null);
-    } catch (err) {
+      // Refresh bookings list to reflect CHECKED_IN status
+      if (profile?.id) fetchBookings(profile.id);
+    } catch (err: any) {
       console.error(err);
+      let errorMsg = 'Invalid Stay Pass or Scan Failed';
+      if (err?.message?.includes('already checked in')) errorMsg = 'Guest is already checked in.';
+      if (err?.message?.includes('not yet available')) errorMsg = 'Check-In window not yet open.';
+      if (err?.message?.includes('Unauthorized')) errorMsg = 'This booking is not for your resort.';
       setScannerState('ERROR');
-      setScanError("Invalid QR Pass or Scan Failed");
+      setScanError(errorMsg);
     }
   };
 
