@@ -19,6 +19,7 @@ const DiscoveryPage = lazyWithRetry(() => import("./pages/public/DiscoveryPage")
 const ContactPage = lazyWithRetry(() => import("./pages/public/ContactPage").then(m => ({ default: m.ContactPage })));
 const TermsOfServicePage = lazyWithRetry(() => import("./pages/public/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
 const PrivacyPolicyPage = lazyWithRetry(() => import("./pages/public/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
+const RefundPolicyPage = lazyWithRetry(() => import("./pages/public/RefundPolicyPage").then(m => ({ default: m.RefundPolicyPage })));
 const CookiesPage = lazyWithRetry(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
 const NotFoundPage = lazyWithRetry(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const LocalExpertsPage = lazyWithRetry(() => import("./pages/public/LocalExpertsPage").then(m => ({ default: m.LocalExpertsPage })));
@@ -283,6 +284,7 @@ function AnimatedRoutes() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
               <Route path="/cookies" element={<CookiesPage />} />
               <Route path="/guides" element={<LocalExpertsPage />} />
               <Route path="/guides/:id" element={<GuideProfilePage />} />

@@ -7,6 +7,7 @@ export function MinimalFooter() {
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-6">
           <Link to="/privacy" className="text-xs font-bold uppercase tracking-widest text-navy-950   hover:text-navy-950  transition-colors">Privacy</Link>
           <Link to="/terms" className="text-xs font-bold uppercase tracking-widest text-navy-950   hover:text-navy-950  transition-colors">Terms</Link>
+          <Link to="/refund-policy" className="text-xs font-bold uppercase tracking-widest text-navy-950   hover:text-navy-950  transition-colors">Refunds</Link>
           <Link to="/cookies" className="text-xs font-bold uppercase tracking-widest text-navy-950   hover:text-navy-950  transition-colors">Cookies</Link>
           <Link to="/contact" className="text-xs font-bold uppercase tracking-widest text-navy-950   hover:text-navy-950  transition-colors">Support</Link>
         </div>
