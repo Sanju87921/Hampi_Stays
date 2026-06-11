@@ -2252,7 +2252,7 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
         const { processRefund } = await import('./services/payments/refund.service.js');
         const refundResult = await processRefund(c, currentBooking.razorpayPaymentId, refundAmount);
         refundId = refundResult.id;
-        console.log(\`[Refund] Auto-processed Razorpay refund \${refundId} for booking \${id}. Amount: \${refundAmount}\`);
+        console.log(`[Refund] Auto-processed Razorpay refund ${refundId} for booking ${id}. Amount: ${refundAmount}`);
       } catch (err) {
         console.error("[Refund] Auto-refund failed:", err);
       }
@@ -2272,7 +2272,7 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
         data: {
           userId: booking.userId,
           title: 'Booking Cancelled 😔',
-          message: \`Your booking at \${booking.resort.name} has been cancelled successfully. Refund initiated: ₹\${refundAmount}\`,
+          message: `Your booking at ${booking.resort.name} has been cancelled successfully. Refund initiated: ₹${refundAmount}`,
           type: 'booking'
         }
       }).catch(err => console.error("Async cancel notification failed:", err))
@@ -2283,25 +2283,25 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       const ownerUser = booking.resort.owner.user;
       const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
       
-      const htmlContent = \`
+      const htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2>⚠ Booking Cancelled</h2>
-          <p><strong>Guest Name:</strong> \${booking.user.name}</p>
-          <p><strong>Booking ID:</strong> \${booking.referenceNumber}</p>
-          <p><strong>Refund Status:</strong> Auto-processed ₹\${refundAmount}</p>
+          <p><strong>Guest Name:</strong> ${booking.user.name}</p>
+          <p><strong>Booking ID:</strong> ${booking.referenceNumber}</p>
+          <p><strong>Refund Status:</strong> Auto-processed ₹${refundAmount}</p>
           <p>Room inventory has been automatically released.</p>
         </div>
-      \`;
+      `;
 
       c.executionCtx.waitUntil(
         sendNotification(prisma, {
           userId: ownerUser.id,
           userEmail: ownerUser.email,
-          title: \`⚠ Booking Cancelled - \${booking.referenceNumber}\`,
-          message: \`\${booking.user.name} has cancelled their booking. Room inventory has been released.\`,
+          title: `⚠ Booking Cancelled - ${booking.referenceNumber}`,
+          message: `${booking.user.name} has cancelled their booking. Room inventory has been released.`,
           type: 'BOOKING_CANCELLED',
           sendEmail: true,
-          emailSubject: \`Booking Cancelled - \${booking.referenceNumber}\`,
+          emailSubject: `Booking Cancelled - ${booking.referenceNumber}`,
           emailHtml: htmlContent,
           env: c.env,
           ctx: c.executionCtx
