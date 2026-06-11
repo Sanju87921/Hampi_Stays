@@ -5,6 +5,7 @@ import { authMiddleware } from './middleware/auth.middleware.js';
 import { adminMiddleware } from './middleware/admin.middleware.js';
 import { globalLimiter, authLimiter, otpLimiter, bookingLimiter, uploadLimiter } from './middleware/rateLimiter.middleware.js';
 import { Hono } from 'hono';
+import { invalidateAvailabilityCache } from './services/bookings/availabilityCache.js';
 import { cors } from 'hono/cors';
 import { loggingMiddleware } from './middleware/logging.middleware.js';
 import { globalErrorHandler } from './middleware/errorHandler.middleware.js';
@@ -766,7 +767,22 @@ app.post('/users/kyc', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const userId = c.get('userId');
   try {
-    const { type, documentUrl, extractedText } = await c.req.json();
+    const { type, documentUrl, extractedText: frontendExtractedText } = await c.req.json();
+    
+    // Auto-verify with OCR
+    let ocrResult = { isVerified: false, extractedText: frontendExtractedText };
+    try {
+      if (['AADHAAR', 'PAN', 'PASSPORT', 'DRIVERS_LICENSE'].includes(type)) {
+        const { processIDDocument } = await import('./utils/ocrService.js');
+        ocrResult = await processIDDocument(documentUrl, type);
+      }
+    } catch (e) {
+      console.error("OCR Error:", e);
+    }
+    
+    const status = ocrResult.isVerified ? 'APPROVED' : 'PENDING';
+    const text = ocrResult.extractedText || frontendExtractedText;
+
     const existing = await prisma.travellerKYC.findFirst({
       where: { userId, type }
     });
@@ -775,21 +791,33 @@ app.post('/users/kyc', authMiddleware, async (c) => {
     if (existing) {
       kyc = await prisma.travellerKYC.update({
         where: { id: existing.id },
-        data: { documentUrl, extractedText, status: 'PENDING', rejectedReason: null }
+        data: { documentUrl, extractedText: text, status, rejectedReason: null }
       });
     } else {
       kyc = await prisma.travellerKYC.create({
-        data: { userId, type, documentUrl, extractedText, status: 'PENDING' }
+        data: { userId, type, documentUrl, extractedText: text, status }
       });
     }
 
-    // Update user kycStatus to PENDING if not verified
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user && user.kycStatus !== 'VERIFIED') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { kycStatus: 'PENDING' }
-      });
+      if (status === 'APPROVED') {
+        const vSettings = await prisma.verificationSettings.findFirst() || {};
+        const { evaluateTravellerKyc } = await import('./utils/kycEngine.js');
+        const isNowVerified = await evaluateTravellerKyc(prisma, user, vSettings);
+        await prisma.user.update({
+          where: { id: userId },
+          data: { 
+            kycStatus: isNowVerified ? 'VERIFIED' : 'PENDING',
+            isVerified: isNowVerified ? true : user.isVerified
+          }
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { kycStatus: 'PENDING' }
+        });
+      }
     }
 
     return c.json(kyc, 201);
@@ -2189,6 +2217,47 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
   try {
+    const currentBooking = await prisma.booking.findUnique({
+      where: { id },
+      include: { 
+        resort: { include: { owner: { include: { user: true } } } }, 
+        user: true 
+      }
+    });
+
+    if (!currentBooking) {
+      return c.json({ error: "Booking not found" }, 404);
+    }
+
+    if (currentBooking.status === 'CANCELLED') {
+      return c.json({ error: "Booking is already cancelled" }, 400);
+    }
+
+    // Automated Refund Calculation based on Cancellation Policy
+    let refundAmount = 0;
+    const hoursToStay = (new Date(currentBooking.checkIn).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+    
+    if (hoursToStay >= 168) { // 7 days
+      refundAmount = currentBooking.totalPrice; // 100% refund
+    } else if (hoursToStay >= 48) { // 48 hours
+      refundAmount = currentBooking.totalPrice * 0.5; // 50% refund
+    } else {
+      refundAmount = 0; // 0% refund
+    }
+
+    // Trigger Razorpay Refund API
+    let refundId = null;
+    if (refundAmount > 0 && currentBooking.razorpayPaymentId) {
+      try {
+        const { processRefund } = await import('./services/payments/refund.service.js');
+        const refundResult = await processRefund(c, currentBooking.razorpayPaymentId, refundAmount);
+        refundId = refundResult.id;
+        console.log(\`[Refund] Auto-processed Razorpay refund \${refundId} for booking \${id}. Amount: \${refundAmount}\`);
+      } catch (err) {
+        console.error("[Refund] Auto-refund failed:", err);
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id },
       data: { status: 'CANCELLED' },
@@ -2203,7 +2272,7 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
         data: {
           userId: booking.userId,
           title: 'Booking Cancelled 😔',
-          message: `Your booking at ${booking.resort.name} has been cancelled successfully.`,
+          message: \`Your booking at \${booking.resort.name} has been cancelled successfully. Refund initiated: ₹\${refundAmount}\`,
           type: 'booking'
         }
       }).catch(err => console.error("Async cancel notification failed:", err))
@@ -2214,25 +2283,25 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       const ownerUser = booking.resort.owner.user;
       const { sendNotification } = await import('./controllers/services/notification.service.js').catch(() => import('./services/notification.service.js'));
       
-      const htmlContent = `
+      const htmlContent = \`
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2>⚠ Booking Cancelled</h2>
-          <p><strong>Guest Name:</strong> ${booking.user.name}</p>
-          <p><strong>Booking ID:</strong> ${booking.referenceNumber}</p>
-          <p><strong>Refund Status:</strong> Initiated (if applicable)</p>
+          <p><strong>Guest Name:</strong> \${booking.user.name}</p>
+          <p><strong>Booking ID:</strong> \${booking.referenceNumber}</p>
+          <p><strong>Refund Status:</strong> Auto-processed ₹\${refundAmount}</p>
           <p>Room inventory has been automatically released.</p>
         </div>
-      `;
+      \`;
 
       c.executionCtx.waitUntil(
         sendNotification(prisma, {
           userId: ownerUser.id,
           userEmail: ownerUser.email,
-          title: `⚠ Booking Cancelled - ${booking.referenceNumber}`,
-          message: `${booking.user.name} has cancelled their booking. Room inventory has been released.`,
+          title: \`⚠ Booking Cancelled - \${booking.referenceNumber}\`,
+          message: \`\${booking.user.name} has cancelled their booking. Room inventory has been released.\`,
           type: 'BOOKING_CANCELLED',
           sendEmail: true,
-          emailSubject: `Booking Cancelled - ${booking.referenceNumber}`,
+          emailSubject: \`Booking Cancelled - \${booking.referenceNumber}\`,
           emailHtml: htmlContent,
           env: c.env,
           ctx: c.executionCtx
@@ -2240,7 +2309,7 @@ app.patch('/bookings/:id/cancel', authMiddleware, async (c) => {
       );
     }
 
-    return c.json(booking);
+    return c.json({ ...booking, refundAmount, refundId });
   } catch (err) { 
     return c.json({ error: err.message }, 500); 
   }

@@ -194,6 +194,7 @@ model SystemSettings {
   notifyNewUsers          Boolean  @default(true)
   notifyHighValueBookings Boolean  @default(true)
   notifySystemAlerts      Boolean  @default(true)
+  highValueKycThreshold   Float    @default(50000.0)
   updatedBy               String?
   updatedAt               DateTime @updatedAt
 }

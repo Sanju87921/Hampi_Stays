@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
   Star, XCircle, ChevronRight, Sparkles,
-  Navigation, CheckCircle2, History, QrCode, Loader2, ChevronLeft
+  Navigation, CheckCircle2, History, QrCode, Loader2, ChevronLeft, Camera, Image as ImageIcon, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -14,6 +14,7 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
 import { applyPdfWatermark } from "../../utils/pdfWatermark";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 import { GuideChat } from "../../components/guide/GuideChat";
 import { GuideReviewModal } from "../../components/guide/GuideReviewModal";
 

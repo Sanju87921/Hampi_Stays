@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
 import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
+import { invalidateAvailabilityCache } from '../../services/bookings/availabilityCache.js';
 
 export const getUserBookings = async (c) => {
   const getPrisma = c.get('getPrisma');
@@ -233,6 +234,12 @@ export const createBooking = async (c) => {
       let finalAmount = computedTotal;
       let promotionId = null;
       let promotionName = null;
+
+      if (finalAmount > 50000 && payload?.userId) {
+        if (user.kycStatus !== 'VERIFIED') {
+          throw new Error('KYC_REQUIRED: High-value bookings (over ₹50,000) require account verification. Please complete KYC in your dashboard.');
+        }
+      }
       
       if (couponCode) {
         const promotion = await tx.promotion.findFirst({
@@ -372,6 +379,7 @@ export const createBooking = async (c) => {
           where: { id: booking.id },
           data: { status: 'CONFIRMED' }
         });
+        await invalidateAvailabilityCache(roomId);
         return c.json({ ...booking, orderId: null, paidByCredits: true, referenceNumber });
       }
 
@@ -396,6 +404,7 @@ export const createBooking = async (c) => {
 
       // Return orderId AND creditsToDeduct so the verify-payment endpoint
       // can safely deduct credits ONLY after payment signature is confirmed.
+      await invalidateAvailabilityCache(roomId);
       return c.json({ ...booking, orderId: order.id, creditsToDeduct, referenceNumber });
     } catch (rzpErr) {
       // If Razorpay fails, release the held room reservation — credits are NOT touched
@@ -409,6 +418,9 @@ export const createBooking = async (c) => {
   } catch (err) { 
     if (err.message === 'ROOM_UNAVAILABLE') {
       return c.json({ error: 'This sanctuary was just reserved by another traveler. Please select different dates or another room.' }, 409);
+    }
+    if (err.message.startsWith('KYC_REQUIRED:')) {
+      return c.json({ error: err.message.split(':')[1].trim() }, 403);
     }
     return c.json({ error: err.message }, 500); 
   }
@@ -457,24 +469,102 @@ export const cancelBooking = async (c) => {
   const prisma = getPrisma(c.env);
   const id = c.req.param('id');
   try {
+    const currentBooking = await prisma.booking.findUnique({
+      where: { id },
+      include: { 
+        resort: { include: { owner: { include: { user: true } } } }, 
+        user: true 
+      }
+    });
+
+    if (!currentBooking) {
+      return c.json({ error: "Booking not found" }, 404);
+    }
+
+    if (currentBooking.status === 'CANCELLED') {
+      return c.json({ error: "Booking is already cancelled" }, 400);
+    }
+
+    // Automated Refund Calculation based on Cancellation Policy
+    let refundAmount = 0;
+    const hoursToStay = (new Date(currentBooking.checkIn).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+    
+    if (hoursToStay >= 168) { // 7 days
+      refundAmount = currentBooking.totalPrice; // 100% refund
+    } else if (hoursToStay >= 48) { // 48 hours
+      refundAmount = currentBooking.totalPrice * 0.5; // 50% refund
+    } else {
+      refundAmount = 0; // 0% refund
+    }
+
+    // Trigger Razorpay Refund API
+    let refundId = null;
+    if (refundAmount > 0 && currentBooking.razorpayPaymentId) {
+      try {
+        const { processRefund } = await import('../../services/payments/refund.service.js');
+        const refundResult = await processRefund(c, currentBooking.razorpayPaymentId, refundAmount);
+        refundId = refundResult.id;
+        console.log(`[Refund] Auto-processed Razorpay refund ${refundId} for booking ${id}. Amount: ${refundAmount}`);
+      } catch (err) {
+        console.error("[Refund] Auto-refund failed:", err);
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id },
       data: { status: 'CANCELLED' },
-      include: { resort: true }
+      // Invalidate Availability Cache
+      // await invalidateAvailabilityCache(currentBooking.roomId);
+      include: { resort: { include: { owner: { include: { user: true } } } }, user: true }
     });
+
+    await invalidateAvailabilityCache(booking.roomId);
 
     c.executionCtx.waitUntil(
       prisma.notification.create({
         data: {
           userId: booking.userId,
-          title: 'Booking Cancelled 😔',
-          message: `Your booking at ${booking.resort.name} has been cancelled successfully.`,
+          title: 'Booking Cancelled',
+          message: `Your booking at ${booking.resort.name} has been cancelled successfully. Refund initiated: ₹${refundAmount}`,
           type: 'booking'
         }
       }).catch(err => console.error("Async cancel notification failed:", err))
     );
 
-    return c.json(booking);
+    // Notify Owner of Cancellation
+    if (booking.resort?.owner?.user) {
+      const ownerUser = booking.resort.owner.user;
+      const { sendNotification } = await import('../../services/notification.service.js').catch(() => null) || {};
+      
+      if (sendNotification) {
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>⚠ Booking Cancelled</h2>
+            <p><strong>Guest Name:</strong> ${booking.user.name}</p>
+            <p><strong>Booking ID:</strong> ${booking.referenceNumber}</p>
+            <p><strong>Refund Status:</strong> Auto-processed ₹${refundAmount}</p>
+            <p>Room inventory has been automatically released.</p>
+          </div>
+        `;
+
+        c.executionCtx.waitUntil(
+          sendNotification(prisma, {
+            userId: ownerUser.id,
+            userEmail: ownerUser.email,
+            title: `⚠ Booking Cancelled - ${booking.referenceNumber}`,
+            message: `${booking.user.name} has cancelled their booking. Room inventory has been released.`,
+            type: 'BOOKING_CANCELLED',
+            sendEmail: true,
+            emailSubject: `Booking Cancelled - ${booking.referenceNumber}`,
+            emailHtml: htmlContent,
+            env: c.env,
+            ctx: c.executionCtx
+          }).catch(err => console.error("Owner cancel notification failed:", err))
+        );
+      }
+    }
+
+    return c.json({ ...booking, refundAmount, refundId });
   } catch (err) { 
     return c.json({ error: err.message }, 500); 
   }
@@ -855,3 +945,152 @@ export const getQRScanHistory = async (c) => {
   }
 };
 
+
+
+export const getBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const bookingId = c.req.param('id');
+  
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { id: bookingId, userId: payload.userId }
+    });
+
+    if (!booking) return c.json({ error: "Booking not found" }, 404);
+    if (booking.status !== 'CONFIRMED' && booking.status !== 'CHECKED_IN') {
+      return c.json({ error: "Booking must be confirmed to generate QR" }, 400);
+    }
+
+    const token = jwt.sign(
+      { bookingId: booking.id, purpose: 'STAY_PASS' }, 
+      c.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+
+    return c.json({ token, bookingId });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+};
+
+export const getQRScanHistory = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+
+  try {
+    const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId }});
+    if(!owner) return c.json({ error: "Unauthorized" }, 403);
+
+    const recentCheckins = await prisma.booking.findMany({
+      where: {
+        resort: { ownerId: owner.id },
+        status: 'CHECKED_IN'
+      },
+      include: {
+        user: { select: { name: true } }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 20
+    });
+
+    const history = recentCheckins.map(b => ({
+      guestName: b.user?.name || 'Unknown',
+      bookingId: b.referenceNumber || b.id,
+      time: b.updatedAt,
+      status: 'Checked In'
+    }));
+
+    return c.json({ history });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+};
+
+export const validateBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const { token } = await c.req.json();
+
+  try {
+    const decoded = jwt.verify(token, c.env.JWT_SECRET);
+    if (decoded.purpose !== 'STAY_PASS') throw new Error("Invalid token purpose");
+
+    const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId }});
+    if(!owner) return c.json({ error: "Unauthorized" }, 403);
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: decoded.bookingId },
+      include: {
+        user: { select: { name: true } },
+        resort: { select: { ownerId: true, name: true } },
+        room: { select: { name: true } }
+      }
+    });
+
+    if (!booking) return c.json({ error: "Booking not found" }, 404);
+    if (booking.resort.ownerId !== owner.id) return c.json({ error: "Unauthorized Resort Access" }, 403);
+    
+    if (booking.status === 'CHECKED_IN') return c.json({ error: "Already Checked In" }, 409);
+    if (booking.status !== 'CONFIRMED') return c.json({ error: "Booking is not confirmed" }, 400);
+
+    return c.json({
+      token,
+      guestName: booking.user?.name,
+      bookingId: booking.referenceNumber || booking.id,
+      resortName: booking.resort.name,
+      roomType: booking.room?.name,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      guests: booking.guests,
+      status: booking.status
+    });
+  } catch (err) {
+    return c.json({ error: "Invalid Stay Pass" }, 400);
+  }
+};
+
+export const scanBookingQR = async (c) => {
+  const getPrisma = c.get('getPrisma');
+  const prisma = getPrisma(c.env);
+  const payload = c.get('user');
+  const { token } = await c.req.json();
+
+  try {
+    const decoded = jwt.verify(token, c.env.JWT_SECRET);
+    
+    const owner = await prisma.resortOwner.findUnique({ where: { userId: payload.userId }});
+    if(!owner) return c.json({ error: "Unauthorized" }, 403);
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: decoded.bookingId },
+      include: { resort: { select: { ownerId: true } } }
+    });
+
+    if (!booking) return c.json({ error: "Booking not found" }, 404);
+    if (booking.resort.ownerId !== owner.id) return c.json({ error: "Unauthorized Resort Access" }, 403);
+    if (booking.status === 'CHECKED_IN') return c.json({ error: "Already Checked In" }, 409);
+
+    const updated = await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: 'CHECKED_IN' }
+    });
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          adminId: payload.userId,
+          action: 'QR_CHECK_IN',
+          details: { bookingId: booking.id, ownerId: owner.id }
+        }
+      });
+    } catch(e) {}
+
+    return c.json({ success: true, bookingId: updated.referenceNumber || updated.id });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+};

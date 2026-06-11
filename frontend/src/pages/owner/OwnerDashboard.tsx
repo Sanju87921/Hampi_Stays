@@ -220,8 +220,9 @@ export function OwnerDashboard() {
       // Use the FAST summary endpoint — no heavy JOINs, target < 400ms
       finalData = await apiClient.get<any[]>(`/owners/${user.id}/resorts/summary?_t=${Date.now()}`);
       success = true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Summary fetch error:", error);
+      if (showLoading) toast.error(error.message || "Failed to load dashboard overview. Please refresh.");
     }
 
     // Got data on first try — clear flag, render immediately
@@ -268,8 +269,9 @@ export function OwnerDashboard() {
         setResorts(fullData);
         setDetailLoaded(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Full resort data fetch error:", error);
+      toast.error(error.message || "Failed to load complete resort details.");
     }
   };
 
