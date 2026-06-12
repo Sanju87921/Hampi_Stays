@@ -192,7 +192,10 @@ export function LocalExpertsPage() {
         <ImmersiveBackground images={EXPERT_IMAGES} interval={3000} />
         <div className="container mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <PremiumIcon icon={Award} variant="gold" size="sm" className="mr-2" /> Hampi Expert Network
+            <div className="flex items-center justify-center mb-4 text-navy-900 font-medium tracking-widest uppercase text-sm">
+              <PremiumIcon icon={Award} variant="gold" size="sm" className="mr-3" /> 
+              Hampi Expert Network
+            </div>
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-navy-950 mb-6">
               Meet the <span className="text-gold-600 italic">Storytellers</span>
             </h1>
