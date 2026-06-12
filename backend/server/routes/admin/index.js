@@ -2905,4 +2905,250 @@ app.get('/admin/ws/live', async (c) => {
     }
   });
 
+  // ==========================================
+  // ⚖️ Dispute Management (SupportTickets)
+  // ==========================================
+  app.get('/admin/disputes', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    try {
+      const tickets = await prisma.supportTicket.findMany({
+        where: { category: { in: ['Guide Dispute', 'Dispute'] } },
+        include: { messages: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      return c.json(tickets);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post('/admin/disputes/:id/message', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const id = c.req.param('id');
+    const { content } = await c.req.json();
+    const adminUser = c.get('user');
+    
+    try {
+      const message = await prisma.supportMessage.create({
+        data: {
+          ticketId: id,
+          sender: 'ADMIN',
+          senderName: adminUser?.name || 'Admin',
+          content
+        }
+      });
+      return c.json(message, 201);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.patch('/admin/disputes/:id/resolve', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const id = c.req.param('id');
+    const { resolution } = await c.req.json(); 
+    try {
+      const ticket = await prisma.supportTicket.update({
+        where: { id },
+        data: { status: 'RESOLVED' }
+      });
+      return c.json(ticket);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // ==========================================
+  // 🌐 Dynamic Localization (i18n) Manager
+  // ==========================================
+  app.get('/admin/translations', authMiddleware, adminMiddleware, async (c) => {
+    try {
+      const fs = await import('fs/promises').catch(() => null);
+      if (!fs) return c.json({ error: 'File system not accessible' }, 500);
+      
+      const path = await import('path');
+      // Resolve frontend locales path from backend process cwd
+      const localesPath = path.resolve(process.cwd(), '../frontend/public/locales');
+      const languages = ['en', 'kn', 'hi'];
+      const translations = {};
+      
+      for (const lang of languages) {
+        const filePath = path.join(localesPath, lang, 'translation.json');
+        try {
+          const content = await fs.readFile(filePath, 'utf-8');
+          translations[lang] = JSON.parse(content);
+        } catch(e) {
+           translations[lang] = {};
+        }
+      }
+      return c.json(translations);
+    } catch(err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post('/admin/translations', authMiddleware, adminMiddleware, async (c) => {
+    try {
+      const { lang, key, value } = await c.req.json();
+      const fs = await import('fs/promises').catch(() => null);
+      if (!fs) return c.json({ error: 'File system not accessible' }, 500);
+      
+      const path = await import('path');
+      const filePath = path.resolve(process.cwd(), `../frontend/public/locales/${lang}/translation.json`);
+      
+      let content = {};
+      try {
+        content = JSON.parse(await fs.readFile(filePath, 'utf-8'));
+      } catch(e) {}
+      
+      // Support nested keys like "hero.headline"
+      const keys = key.split('.');
+      let current = content;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = value;
+      
+      await fs.writeFile(filePath, JSON.stringify(content, null, 2));
+      return c.json({ success: true, message: 'Translation updated' });
+    } catch(err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // ==========================================
+  // 🛒 Abandoned Booking / CRM Engine
+  // ==========================================
+  app.get('/admin/bookings/abandoned', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    try {
+      // Find bookings that are PENDING and older than 30 minutes
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60000);
+      const abandonedBookings = await prisma.booking.findMany({
+        where: { 
+          status: 'PENDING',
+          createdAt: { lt: thirtyMinsAgo }
+        },
+        include: { user: true, resort: true },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      return c.json(abandonedBookings);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post('/admin/crm/send-coupon', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const { bookingId, discountPercentage } = await c.req.json();
+    try {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: { user: true, resort: true }
+      });
+      if (!booking || !booking.user) return c.json({ error: 'Booking or user not found' }, 404);
+
+      // Generate a unique DiscountCode for this specific resort
+      const code = `COMEBACK${discountPercentage}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      await prisma.discountCode.create({
+        data: {
+          code,
+          percentage: discountPercentage,
+          validFrom: new Date(),
+          validUntil: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
+          maxUses: 1,
+          resortId: booking.resort.id
+        }
+      });
+      
+      try {
+        const { sendBulkNotification } = await import('../../services/notification.service.js').catch(() => ({}));
+        if (sendBulkNotification) {
+          await sendBulkNotification(prisma, [{ userId: booking.user.id, userEmail: booking.user.email }], {
+             title: `Complete Your Stay at ${booking.resort.name} 🌴`,
+             message: `Hey ${booking.user.name}, we noticed you left your booking pending! Use code ${code} to get ${discountPercentage}% off if you book in the next 48 hours.`,
+             type: 'PROMOTIONAL',
+             env: c.env,
+             ctx: c.executionCtx
+          });
+        }
+      } catch(e) {
+        console.error('[CRM Engine] Notification failed:', e);
+      }
+
+      return c.json({ success: true, message: `Coupon ${code} generated and sent to ${booking.user.email}` });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // ==========================================
+  // 💰 Financial Health & Payouts (History & Settlement)
+  // ==========================================
+  app.get('/admin/payouts/history', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    try {
+      const ledgers = await prisma.settlementLedger.findMany({
+        include: {
+          owner: { include: { user: true } },
+          payouts: { include: { resort: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      // Transform into the PayoutRecord shape expected by PayoutHistoryModule
+      const formattedPayouts = ledgers.map(l => ({
+        id: l.id,
+        ownerId: l.ownerId,
+        ownerName: l.owner?.user?.name || 'Unknown',
+        ownerEmail: l.owner?.user?.email || 'Unknown',
+        resortName: l.payouts[0]?.resort?.name || 'Multiple Resorts',
+        bookingCount: l.payouts.length,
+        grossAmount: l.totalGross,
+        platformFee: l.totalCommission,
+        taxDeducted: 0, // Not explicitly tracked in DB right now
+        netAmount: l.totalNet,
+        status: l.status, // PENDING, PAID
+        periodStart: l.createdAt.toISOString(),
+        periodEnd: l.createdAt.toISOString(),
+        paidAt: l.settlementDate ? l.settlementDate.toISOString() : null,
+        referenceId: l.transactionRef
+      }));
+      
+      return c.json(formattedPayouts);
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post('/admin/payouts/:id/mark-paid', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const id = c.req.param('id');
+    try {
+      const ledger = await prisma.settlementLedger.findUnique({ where: { id } });
+      if (!ledger) return c.json({ error: 'Ledger not found' }, 404);
+      
+      const transactionRef = 'TXN_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+      await prisma.settlementLedger.update({
+        where: { id },
+        data: { 
+          status: 'PAID', 
+          settlementDate: new Date(), 
+          transactionRef 
+        }
+      });
+      await prisma.resortOwnerPayout.updateMany({
+        where: { settlementId: id },
+        data: { status: 'PAID' }
+      });
+      
+      return c.json({ success: true, transactionRef });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
 };

@@ -34,6 +34,9 @@ const RefundManagementModule = lazy(() => import("./components/RefundManagementM
 const SupportHelpDeskModule = lazy(() => import("./components/SupportHelpDeskModule").then(m => ({ default: m.SupportHelpDeskModule })));
 const EmailCampaignsModule = lazy(() => import("./components/EmailCampaignsModule").then(m => ({ default: m.EmailCampaignsModule })));
 const PayoutHistoryModule = lazy(() => import("./components/PayoutHistoryModule").then(m => ({ default: m.PayoutHistoryModule })));
+const DisputeManagementModule = lazy(() => import("./components/DisputeManagementModule").then(m => ({ default: m.DisputeManagementModule })));
+const LocalizationModule = lazy(() => import("./components/LocalizationModule").then(m => ({ default: m.LocalizationModule })));
+const AbandonedBookingsModule = lazy(() => import("./components/AbandonedBookingsModule").then(m => ({ default: m.AbandonedBookingsModule })));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-24">
@@ -44,7 +47,7 @@ const TabLoader = () => (
   </div>
 );
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market" | "refunds" | "support" | "campaigns" | "payout-history";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions" | "audit-logs" | "content" | "promotions" | "kyc" | "ota-market" | "refunds" | "support" | "campaigns" | "payout-history" | "disputes" | "localization" | "crm";
 
 const getKycImageUrl = (idImage: string, transform: string) => {
  if (!idImage) return "";
@@ -2337,6 +2340,9 @@ export function AdminDashboard() {
   { id: "support", label: "Help Desk", icon: Headphones },
   { id: "campaigns", label: "Campaigns", icon: Megaphone },
   { id: "payout-history", label: "Payout History", icon: Banknote },
+  { id: "disputes", label: "Disputes", icon: ShieldAlert },
+  { id: "localization", label: "Localization", icon: Globe },
+  { id: "crm", label: "CRM / Carts", icon: ShoppingCart },
  ].map((tab) => (
  <button
  key={tab.id}
@@ -2425,6 +2431,9 @@ export function AdminDashboard() {
   {activeTab === "support" && <Suspense fallback={<TabLoader />}><SupportHelpDeskModule /></Suspense>}
   {activeTab === "campaigns" && <Suspense fallback={<TabLoader />}><EmailCampaignsModule /></Suspense>}
   {activeTab === "payout-history" && <Suspense fallback={<TabLoader />}><PayoutHistoryModule /></Suspense>}
+  {activeTab === "disputes" && <Suspense fallback={<TabLoader />}><DisputeManagementModule /></Suspense>}
+  {activeTab === "localization" && <Suspense fallback={<TabLoader />}><LocalizationModule /></Suspense>}
+  {activeTab === "crm" && <Suspense fallback={<TabLoader />}><AbandonedBookingsModule /></Suspense>}
  </ErrorBoundary>
  </motion.div>
  )}
