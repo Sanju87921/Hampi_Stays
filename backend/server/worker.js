@@ -2780,14 +2780,18 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
       }
     });
     
-    const hasOverlap = existingBookings.some(b => {
-      const existingStart = new Date(b.date);
-      const existingEnd = new Date(existingStart.getTime() + b.durationHours * 60 * 60 * 1000);
-      return (bookingDate < existingEnd && bookingEnd > existingStart);
-    });
+    const totalBookedHours = existingBookings.reduce((sum, b) => {
+      const bDate = new Date(b.date);
+      if (bDate.getFullYear() === bookingDate.getFullYear() && 
+          bDate.getMonth() === bookingDate.getMonth() && 
+          bDate.getDate() === bookingDate.getDate()) {
+        return sum + b.durationHours;
+      }
+      return sum;
+    }, 0);
     
-    if (hasOverlap) {
-      return c.json({ error: 'Time slot overlaps with an existing booking' }, 400);
+    if (totalBookedHours + durationHours > 8) {
+      return c.json({ error: 'Guide does not have enough hours available on this date' }, 400);
     }
 
     // 3. Bundle Intelligence & Security
@@ -2822,7 +2826,7 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
         durationHours,
         meetingPoint,
         totalPrice: Math.max(0, finalPrice),
-        specialRequests,
+        specialRequests: specialRequests || null,
         status: 'PENDING'
       }
     });
@@ -4320,6 +4324,9 @@ async function processOwnerPayouts(env, ctx) {
     console.error("Owner payouts processing error:", error);
   }
 }
+
+
+
 
 
 
