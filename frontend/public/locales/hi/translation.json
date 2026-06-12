@@ -1,30 +1,63 @@
 {
   "navbar": {
-    "discover": "Discover",
-    "resorts": "Resorts",
-    "experiences": "Experiences",
-    "wishlist": "Wishlist",
-    "signIn": "Sign In",
-    "signOut": "Sign Out",
-    "dashboard": "Dashboard",
-    "bookings": "My Bookings",
-    "profile": "Profile"
+    "discover": "खोजें",
+    "resorts": "रिसॉर्ट्स",
+    "experiences": "अनुभव",
+    "wishlist": "विशलिस्ट",
+    "signIn": "साइन इन करें",
+    "signOut": "साइन आउट करें",
+    "dashboard": "डैशबोर्ड",
+    "bookings": "मेरी बुकिंग्स",
+    "profile": "प्रोफ़ाइल"
   },
   "hero": {
     "badge": "Stay · Experience · Remember",
-    "title1": "Rediscover",
-    "title2": "Hampi",
-    "subtitle": "Experience the imperial glory of the Vijayanagara Empire through curated luxury stays and expert local guides.",
-    "checkIn": "Check In",
-    "checkOut": "Check Out",
-    "guests": "Guests",
-    "guestCount": "{{count}} Guest",
-    "guestCount_plural": "{{count}} Guests",
-    "search": "Search Resorts",
-    "searchPlaceholder": "Where do you want to stay?"
+    "title1": "फिर से खोजें",
+    "title2": "हम्पी",
+    "subtitle": "चुनिंदा लक्ज़री ठहरने के स्थानों और विशेषज्ञ स्थानीय गाइडों के माध्यम से विजयनगर साम्राज्य की शाही महिमा का अनुभव करें।",
+    "checkIn": "चेक इन",
+    "checkOut": "चेक आउट",
+    "guests": "अतिथि",
+    "guestCount": "{{count}} अतिथि",
+    "guestCount_plural": "{{count}} अतिथि",
+    "search": "रिसॉर्ट्स खोजें",
+    "searchPlaceholder": "आप कहाँ रुकना चाहते हैं?",
+    "badge_stay": "रुकें",
+    "badge_experience": "अनुभव करें",
+    "badge_remember": "याद रखें",
+    "headlines": [
+      {
+        "top": "स्वागत है",
+        "bottom": "हम्पी में"
+      },
+      {
+        "top": "जादू खोजें",
+        "bottom": "हम्पी का"
+      },
+      {
+        "top": "प्राचीनता का अनुभव करें",
+        "bottom": "हम्पी में"
+      },
+      {
+        "top": "लक्ज़री में रुकें, खोजें",
+        "bottom": "हम्पी"
+      },
+      {
+        "top": "जहाँ विरासत मिलती है",
+        "bottom": "लक्ज़री से"
+      },
+      {
+        "top": "अविस्मरणीय बनाएँ",
+        "bottom": "यादें"
+      },
+      {
+        "top": "आपकी यात्रा यहाँ शुरू होती है",
+        "bottom": "हम्पी"
+      }
+    ]
   },
   "common": {
-    "bookNow": "Book Now",
+    "bookNow": "अभी बुक करें",
     "loading": "Loading...",
     "save": "Save Changes",
     "cancel": "Cancel",

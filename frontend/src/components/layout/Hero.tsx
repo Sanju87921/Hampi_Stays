@@ -39,13 +39,13 @@ export function Hero() {
   const [headlineIndex, setHeadlineIndex] = useState(0);
 
   const headlines = [
-    { top: "Welcome to", bottom: "Hampi" },
-    { top: "Discover the Magic of", bottom: "Hampi" },
-    { top: "Experience Ancient", bottom: "Hampi" },
-    { top: "Stay in Luxury, Explore", bottom: "Hampi" },
-    { top: "Where Heritage Meets", bottom: "Luxury" },
-    { top: "Create Unforgettable", bottom: "Memories" },
-    { top: "Your Journey Begins in", bottom: "Hampi" }
+    { top: t("hero.headlines.0.top", "Welcome to"), bottom: t("hero.headlines.0.bottom", "Hampi") },
+    { top: t("hero.headlines.1.top", "Discover the Magic of"), bottom: t("hero.headlines.1.bottom", "Hampi") },
+    { top: t("hero.headlines.2.top", "Experience Ancient"), bottom: t("hero.headlines.2.bottom", "Hampi") },
+    { top: t("hero.headlines.3.top", "Stay in Luxury, Explore"), bottom: t("hero.headlines.3.bottom", "Hampi") },
+    { top: t("hero.headlines.4.top", "Where Heritage Meets"), bottom: t("hero.headlines.4.bottom", "Luxury") },
+    { top: t("hero.headlines.5.top", "Create Unforgettable"), bottom: t("hero.headlines.5.bottom", "Memories") },
+    { top: t("hero.headlines.6.top", "Your Journey Begins in"), bottom: t("hero.headlines.6.bottom", "Hampi") }
   ];
 
   useEffect(() => {

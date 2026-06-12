@@ -1,30 +1,63 @@
 {
   "navbar": {
-    "discover": "Discover",
-    "resorts": "Resorts",
-    "experiences": "Experiences",
-    "wishlist": "Wishlist",
-    "signIn": "Sign In",
-    "signOut": "Sign Out",
-    "dashboard": "Dashboard",
-    "bookings": "My Bookings",
-    "profile": "Profile"
+    "discover": "ಅನ್ವೇಷಿಸಿ",
+    "resorts": "ರೆಸಾರ್ಟ್‌ಗಳು",
+    "experiences": "ಅನುಭವಗಳು",
+    "wishlist": "ಮೆಚ್ಚಿನವುಗಳು",
+    "signIn": "ಸೈನ್ ಇನ್",
+    "signOut": "ಸೈನ್ ಔಟ್",
+    "dashboard": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    "bookings": "ನನ್ನ ಬುಕಿಂಗ್‌ಗಳು",
+    "profile": "ಪ್ರೊಫೈಲ್"
   },
   "hero": {
     "badge": "Stay · Experience · Remember",
-    "title1": "Rediscover",
-    "title2": "Hampi",
-    "subtitle": "Experience the imperial glory of the Vijayanagara Empire through curated luxury stays and expert local guides.",
-    "checkIn": "Check In",
-    "checkOut": "Check Out",
-    "guests": "Guests",
-    "guestCount": "{{count}} Guest",
-    "guestCount_plural": "{{count}} Guests",
-    "search": "Search Resorts",
-    "searchPlaceholder": "Where do you want to stay?"
+    "title1": "ಮತ್ತೆ ಅನ್ವೇಷಿಸಿ",
+    "title2": "ಹಂಪಿ",
+    "subtitle": "ಆಯ್ಕೆಮಾಡಿದ ಐಷಾರಾಮಿ ತಂಗುವಿಕೆಗಳು ಮತ್ತು ಪರಿಣಿತ ಸ್ಥಳೀಯ ಮಾರ್ಗದರ್ಶಿಗಳ ಮೂಲಕ ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯದ ಸಾಮ್ರಾಜ್ಯಶಾಹಿ ವೈಭವವನ್ನು ಅನುಭವಿಸಿ.",
+    "checkIn": "ಚೆಕ್ ಇನ್",
+    "checkOut": "ಚೆಕ್ ಔಟ್",
+    "guests": "ಅತಿಥಿಗಳು",
+    "guestCount": "{{count}} ಅತಿಥಿ",
+    "guestCount_plural": "{{count}} ಅತಿಥಿಗಳು",
+    "search": "ರೆಸಾರ್ಟ್‌ಗಳನ್ನು ಹುಡುಕಿ",
+    "searchPlaceholder": "ನೀವು ಎಲ್ಲಿ ಉಳಿಯಲು ಬಯಸುತ್ತೀರಿ?",
+    "badge_stay": "ಉಳಿಯಿರಿ",
+    "badge_experience": "ಅನುಭವಿಸಿ",
+    "badge_remember": "ನೆನಪಿಡಿ",
+    "headlines": [
+      {
+        "top": "ಸುಸ್ವಾಗತ",
+        "bottom": "ಹಂಪಿಗೆ"
+      },
+      {
+        "top": "ಮ್ಯಾಜಿಕ್ ಅನ್ನು ಅನ್ವೇಷಿಸಿ",
+        "bottom": "ಹಂಪಿ"
+      },
+      {
+        "top": "ಪ್ರಾಚೀನತೆಯನ್ನು ಅನುಭವಿಸಿ",
+        "bottom": "ಹಂಪಿ"
+      },
+      {
+        "top": "ಐಷಾರಾಮಿಯಾಗಿ ಉಳಿಯಿರಿ, ಅನ್ವೇಷಿಸಿ",
+        "bottom": "ಹಂಪಿ"
+      },
+      {
+        "top": "ಪರಂಪರೆ ಎಲ್ಲಿ ಸಂಧಿಸುತ್ತದೆ",
+        "bottom": "ಐಷಾರಾಮಿ"
+      },
+      {
+        "top": "ಮರೆಯಲಾಗದದ್ದನ್ನು ರಚಿಸಿ",
+        "bottom": "ನೆನಪುಗಳು"
+      },
+      {
+        "top": "ನಿಮ್ಮ ಪ್ರಯಾಣವು ಇಲ್ಲಿ ಪ್ರಾರಂಭವಾಗುತ್ತದೆ",
+        "bottom": "ಹಂಪಿ"
+      }
+    ]
   },
   "common": {
-    "bookNow": "Book Now",
+    "bookNow": "ಈಗ ಕಾಯ್ದಿರಿಸಿ",
     "loading": "Loading...",
     "save": "Save Changes",
     "cancel": "Cancel",
