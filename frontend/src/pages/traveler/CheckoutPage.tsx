@@ -350,8 +350,10 @@ export function CheckoutPage() {
 
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
-          const baseUrl =
-            import.meta.env.VITE_API_URL || window.location.origin + "/api";
+          // Import API_BASE_URL at the top of the file ideally, or construct it correctly here:
+          const baseUrl = import.meta.env.VITE_API_URL 
+            ? import.meta.env.VITE_API_URL.replace(/\/$/, '') + '/api'
+            : window.location.origin + "/api";
           (options as any).callback_url =
             `${baseUrl}/bookings/${booking.referenceNumber}/verify-payment-callback`;
           (options as any).redirect = true;
