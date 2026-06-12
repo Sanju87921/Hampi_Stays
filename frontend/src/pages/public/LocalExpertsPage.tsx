@@ -189,17 +189,17 @@ export function LocalExpertsPage() {
     <div className="min-h-screen bg-sand-50">
       {/* Header Section */}
       <section className="relative pt-40 pb-20 overflow-hidden min-h-[70vh] flex items-center">
-        <ImmersiveBackground images={EXPERT_IMAGES} interval={3000} />
-        <div className="container mx-auto px-4 text-center">
+        <ImmersiveBackground images={EXPERT_IMAGES} interval={3000} overlayColor="from-navy-950/95 via-navy-950/80 to-sand-50" />
+        <div className="container mx-auto px-4 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center justify-center mb-4 text-navy-900 font-medium tracking-widest uppercase text-sm">
+            <div className="flex items-center justify-center mb-4 text-sand-50 font-medium tracking-widest uppercase text-sm drop-shadow-md">
               <PremiumIcon icon={Award} variant="gold" size="sm" className="mr-3" /> 
               Hampi Expert Network
             </div>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold text-navy-950 mb-6">
-              Meet the <span className="text-gold-600 italic">Storytellers</span>
+            <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 drop-shadow-lg">
+              Meet the <span className="text-gold-400 italic">Storytellers</span>
             </h1>
-            <p className="text-lg text-navy-950/60 max-w-2xl mx-auto leading-relaxed mb-12">
+            <p className="text-lg text-sand-200/90 max-w-2xl mx-auto leading-relaxed mb-12 drop-shadow-md">
               Our certified local experts are more than just guides—they are historians, 
               archaeologists, and guardians of Hampi's ancient legacy.
             </p>
