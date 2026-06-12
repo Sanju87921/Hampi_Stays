@@ -195,7 +195,7 @@ export function Hero() {
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} 
                     className="w-2 h-2 rounded-full bg-gold-400 flex-shrink-0 shadow-[0_0_8px_rgba(212,176,106,0.6)]" 
                   />
-                  <span>KARNATAKA'S PREMIER LUXURY</span>
+                  <span>STAY · EXPERIENCE · REMEMBER</span>
                 </div>
               </div>
             )}
