@@ -271,16 +271,28 @@ export const verifyPaymentCallback = async (c) => {
   const getPrisma = c.get('getPrisma');
   const prisma = getPrisma(c.env);
   const ref = c.req.param('ref');
+  const frontendUrl = c.env.FRONTEND_URL || 'https://hampistays.com'; // or use origin if possible
   
-  let body;
+  let razorpay_payment_id, razorpay_order_id, razorpay_signature;
+  
   try {
-    body = await c.req.parseBody(); // parse form data
+    if (c.req.method === 'POST') {
+      const body = await c.req.parseBody(); // parse form data
+      razorpay_payment_id = body.razorpay_payment_id;
+      razorpay_order_id = body.razorpay_order_id;
+      razorpay_signature = body.razorpay_signature;
+    } else {
+      razorpay_payment_id = c.req.query('razorpay_payment_id');
+      razorpay_order_id = c.req.query('razorpay_order_id');
+      razorpay_signature = c.req.query('razorpay_signature');
+    }
   } catch {
-    return c.text('Invalid request body', 400);
+    return c.redirect(`${frontendUrl}/checkout?error=invalid_request`);
   }
   
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
-  const frontendUrl = c.env.FRONTEND_URL || 'https://hampistays.com'; // or use origin if possible
+  if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    return c.redirect(`${frontendUrl}/checkout?error=payment_cancelled`);
+  }
   
   try {
     const isValid = await verifyPaymentSignature(

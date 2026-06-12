@@ -6,6 +6,7 @@ const paymentRoutes = new Hono();
 export const setupPaymentRoutes = (app, authMiddleware) => {
   app.post('/bookings/:ref/verify-payment', authMiddleware, paymentController.verifyPayment);
   app.post('/bookings/:ref/verify-payment-callback', paymentController.verifyPaymentCallback);
+  app.get('/bookings/:ref/verify-payment-callback', paymentController.verifyPaymentCallback);
   app.post('/payments/webhook', paymentController.handleWebhook);
 };
 
