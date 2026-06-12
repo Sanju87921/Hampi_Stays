@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ShieldCheck, ArrowRight, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { API_BASE_URL } from "../../config/api";
 
 export function Hero() {
   const { scrollY } = useScroll();
@@ -57,7 +58,7 @@ export function Hero() {
 
   useEffect(() => {
     // Fetch dynamic hero slides
-    fetch(import.meta.env.VITE_API_URL + '/hero-slides')
+    fetch(`${API_BASE_URL}/hero-slides`)
       .then(res => res.json())
       .then((data) => {
         if (data && data.length > 0) {

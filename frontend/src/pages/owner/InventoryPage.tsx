@@ -13,6 +13,7 @@ import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { PageLoader } from "../../components/shared/PageLoader";
+import { API_BASE_URL } from "../../config/api";
 
 export function InventoryPage() {
   const { user } = useAuth();
@@ -365,11 +366,11 @@ export function InventoryPage() {
                   <div className="flex gap-2">
                     <input 
                       readOnly 
-                      value={`${window.location.origin}/api/ical/export/room/${room?.id}`} 
+                      value={`${API_BASE_URL}/ical/export/room/${room?.id}`} 
                       className="w-full px-4 py-3 bg-sand-50 rounded-xl text-sm border border-sand-100 text-navy-950 focus:outline-none" 
                     />
                     <Button onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/api/ical/export/room/${room?.id}`);
+                      navigator.clipboard.writeText(`${API_BASE_URL}/ical/export/room/${room?.id}`);
                       toast.success("Export URL copied!");
                     }} className="rounded-xl shrink-0">Copy</Button>
                   </div>

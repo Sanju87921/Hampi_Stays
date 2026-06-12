@@ -33,6 +33,7 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { sanitizePhoneNumber } from "../../utils/phone";
 import { useCurrency } from "../../context/CurrencyContext";
+import { API_BASE_URL } from "../../config/api";
 
 const SPECIAL_REQUEST_OPTIONS = [
   { id: "early_checkin", label: "Early Check-in (before 12pm)", icon: Clock },
@@ -350,12 +351,8 @@ export function CheckoutPage() {
 
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
-          // Import API_BASE_URL at the top of the file ideally, or construct it correctly here:
-          const baseUrl = import.meta.env.VITE_API_URL 
-            ? import.meta.env.VITE_API_URL.replace(/\/$/, '') + '/api'
-            : window.location.origin + "/api";
           (options as any).callback_url =
-            `${baseUrl}/bookings/${booking.referenceNumber}/verify-payment-callback`;
+            `${API_BASE_URL}/bookings/${booking.referenceNumber}/verify-payment-callback`;
           (options as any).redirect = true;
         }
 
