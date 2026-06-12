@@ -2,7 +2,7 @@ import { useModal } from "../../components/shared/ModalProvider";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Plus, Search, Edit3, Trash2, Eye, CheckCircle, XCircle, LayoutDashboard, Globe, Calendar } from "lucide-react";
+import { FileText, Plus, Search, Edit3, Trash2, Eye, CheckCircle, XCircle, LayoutDashboard, Globe, Calendar, Bold, Italic, Link2, Heading2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { apiClient } from "../../utils/apiClient";
 import { cn } from "../../utils/cn";
@@ -237,13 +237,60 @@ export function BlogModule() {
 
  <div>
  <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950 ml-1 mb-2 block">Content (HTML/Markdown) *</label>
- <textarea 
- required
- value={content}
- onChange={e => setContent(e.target.value)}
- className="w-full h-[500px] bg-sand-50 border border-sand-200 rounded-xl p-4 text-navy-950 outline-none focus:border-gold-500 font-mono text-sm resize-y"
- placeholder="Write your article content here..."
- />
+ <div className="border border-sand-200 rounded-xl overflow-hidden focus-within:border-gold-500 transition-colors shadow-sm">
+   <div className="bg-sand-100 px-4 py-2 flex gap-2 border-b border-sand-200">
+     <button type="button" onClick={() => {
+       const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+       if (!textarea) return;
+       const start = textarea.selectionStart;
+       const end = textarea.selectionEnd;
+       const text = textarea.value;
+       setContent(text.substring(0, start) + '<strong>' + text.substring(start, end) + '</strong>' + text.substring(end));
+     }} className="p-1.5 hover:bg-white rounded-lg text-navy-950/70 hover:text-navy-950 transition-colors" title="Bold">
+       <Bold className="w-4 h-4" />
+     </button>
+     <button type="button" onClick={() => {
+       const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+       if (!textarea) return;
+       const start = textarea.selectionStart;
+       const end = textarea.selectionEnd;
+       const text = textarea.value;
+       setContent(text.substring(0, start) + '<em>' + text.substring(start, end) + '</em>' + text.substring(end));
+     }} className="p-1.5 hover:bg-white rounded-lg text-navy-950/70 hover:text-navy-950 transition-colors" title="Italic">
+       <Italic className="w-4 h-4" />
+     </button>
+     <div className="w-px h-6 bg-sand-300 my-auto mx-1" />
+     <button type="button" onClick={() => {
+       const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+       if (!textarea) return;
+       const start = textarea.selectionStart;
+       const end = textarea.selectionEnd;
+       const text = textarea.value;
+       setContent(text.substring(0, start) + '<h2>' + text.substring(start, end) + '</h2>' + text.substring(end));
+     }} className="p-1.5 hover:bg-white rounded-lg text-navy-950/70 hover:text-navy-950 transition-colors" title="Heading 2">
+       <Heading2 className="w-4 h-4" />
+     </button>
+     <button type="button" onClick={() => {
+       const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+       if (!textarea) return;
+       const start = textarea.selectionStart;
+       const end = textarea.selectionEnd;
+       const text = textarea.value;
+       const url = prompt("Enter link URL:");
+       if (url) setContent(text.substring(0, start) + `<a href="${url}">` + text.substring(start, end) + '</a>' + text.substring(end));
+     }} className="p-1.5 hover:bg-white rounded-lg text-navy-950/70 hover:text-navy-950 transition-colors" title="Link">
+       <Link2 className="w-4 h-4" />
+     </button>
+   </div>
+   <textarea 
+   id="content-editor"
+   required
+   value={content}
+   onChange={e => setContent(e.target.value)}
+   className="w-full h-[450px] bg-sand-50 p-4 text-navy-950 outline-none font-mono text-sm resize-y block"
+   placeholder="Write your article content here..."
+   />
+ </div>
  </div>
 
  <div>

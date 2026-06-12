@@ -1,9 +1,34 @@
-import { motion } from "framer-motion";
+import React from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Map, ArrowRight, Compass, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
+import { MediaImage } from "../ui/MediaImage";
 
 export function DestinationDiscovery() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { currentTarget, clientX, clientY } = e;
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    mouseX.set((clientX - left - width / 2) / width);
+    mouseY.set((clientY - top - height / 2) / height);
+  };
+
+  const springConfig = { damping: 30, stiffness: 100, mass: 1 };
+  const springX = useSpring(mouseX, springConfig);
+  const springY = useSpring(mouseY, springConfig);
+
+  const bgX = useTransform(springX, [-0.5, 0.5], ["-5%", "5%"]);
+  const bgY = useTransform(springY, [-0.5, 0.5], ["-5%", "5%"]);
+  
+  const card1X = useTransform(springX, [-0.5, 0.5], ["-20px", "20px"]);
+  const card1Y = useTransform(springY, [-0.5, 0.5], ["-20px", "20px"]);
+  
+  const card2X = useTransform(springX, [-0.5, 0.5], ["20px", "-20px"]);
+  const card2Y = useTransform(springY, [-0.5, 0.5], ["20px", "-20px"]);
+
   return (
     <section className="py-24 md:py-32 bg-navy-950 text-white relative overflow-hidden">
       {/* Background Decor */}
@@ -69,18 +94,27 @@ export function DestinationDiscovery() {
             transition={{ duration: 1 }}
             className="relative"
           >
-            <div className="relative rounded-[2.5rem] overflow-hidden border border-gold-500/20 shadow-2xl group">
-              <img 
-                src="/hampi-temple.png" 
-                alt="Interactive Map Preview" 
-                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000 opacity-60"
-              />
+            <div 
+              className="relative rounded-[2.5rem] overflow-hidden border border-gold-500/20 shadow-2xl group h-[500px]"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
+            >
+              <motion.div 
+                style={{ x: bgX, y: bgY, scale: 1.15 }}
+                className="absolute inset-0 w-full h-full"
+              >
+                <MediaImage 
+                  src="/hampi-temple.png" 
+                  alt="Interactive Map Preview" 
+                  className="w-full h-full object-cover opacity-60"
+                />
+              </motion.div>
               
               {/* Fake UI Overlay */}
-              <div className="absolute inset-0 bg-navy-950/40" />
+              <div className="absolute inset-0 bg-navy-950/20 pointer-events-none" />
               
               {/* Center Map Element */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                 <div className="relative flex items-center justify-center">
                   <div className="absolute -inset-8 bg-gold-500/20 rounded-full animate-ping opacity-60 duration-[3000ms]" />
                   <div className="w-20 h-20 rounded-full bg-navy-950/90 border border-gold-500/50 shadow-gold backdrop-blur-md flex items-center justify-center z-10 text-gold-400">
@@ -91,9 +125,8 @@ export function DestinationDiscovery() {
 
               {/* Floating Cards */}
               <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-8 left-8 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block"
+                style={{ x: card1X, y: card1Y }}
+                className="absolute top-12 left-12 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block pointer-events-none"
               >
                 <div className="w-32 h-20 bg-sand-200/20 rounded-lg mb-3" />
                 <div className="h-2 w-24 bg-white/40 rounded-full mb-2" />
@@ -101,9 +134,8 @@ export function DestinationDiscovery() {
               </motion.div>
 
               <motion.div 
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute bottom-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block"
+                style={{ x: card2X, y: card2Y }}
+                className="absolute bottom-12 right-12 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block pointer-events-none"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center">

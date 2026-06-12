@@ -17,12 +17,20 @@ export function HampiSurvivalWidget({ checkInDate }: HampiSurvivalWidgetProps) {
     return diffDays >= 0 && diffDays <= 3;
   };
 
-  const [items, setItems] = useState([
-    { id: 'shoes', text: 'Grip shoes for Matanga Hill boulders', checked: false, icon: Backpack },
-    { id: 'sun', text: 'Wide-brim hat & 50+ SPF sunscreen', checked: false, icon: Sun },
-    { id: 'clothes', text: 'Light cottons & temple-appropriate wear', checked: false, icon: Compass },
-    { id: 'cash', text: 'Cash (UPI fails in some heritage areas)', checked: false, icon: Backpack },
-  ]);
+  const [items, setItems] = useState(() => {
+    const saved = localStorage.getItem('hampi-survival-checklist');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'shoes', text: 'Grip shoes for Matanga Hill boulders', checked: false, icon: Backpack },
+      { id: 'sun', text: 'Wide-brim hat & 50+ SPF sunscreen', checked: false, icon: Sun },
+      { id: 'clothes', text: 'Light cottons & temple-appropriate wear', checked: false, icon: Compass },
+      { id: 'cash', text: 'Cash (UPI fails in some heritage areas)', checked: false, icon: Backpack },
+    ];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('hampi-survival-checklist', JSON.stringify(items));
+  }, [items]);
 
   const toggleItem = (id: string) => {
     setItems(items.map(item => 
@@ -33,6 +41,14 @@ export function HampiSurvivalWidget({ checkInDate }: HampiSurvivalWidgetProps) {
   if (!isUpcoming()) return null;
 
   const progress = Math.round((items.filter(i => i.checked).length / items.length) * 100);
+
+  const getWeather = () => {
+    const month = new Date().getMonth();
+    if (month >= 2 && month <= 4) return { temp: 38, desc: "Scorching Heat", icon: "☀️", tip: "Extreme heat. Hydrate constantly!" };
+    if (month >= 5 && month <= 8) return { temp: 28, desc: "Monsoon Showers", icon: "🌧️", tip: "Rain expected. Bring an umbrella." };
+    return { temp: 24, desc: "Pleasant & Breezy", icon: "🌤️", tip: "Perfect weather for boulder trekking." };
+  };
+  const weather = getWeather();
 
   return (
     <motion.div 
@@ -49,6 +65,18 @@ export function HampiSurvivalWidget({ checkInDate }: HampiSurvivalWidgetProps) {
         </div>
         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 shadow-sm backdrop-blur-sm">
           <Backpack className="w-6 h-6 text-gold-500" />
+        </div>
+      </div>
+
+      {/* Dynamic Weather Integration */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 relative z-10 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-1">Local Forecast</p>
+          <p className="text-sm font-medium text-white">{weather.desc} — {weather.tip}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center ml-4 shrink-0">
+          <span className="text-2xl">{weather.icon}</span>
+          <span className="text-gold-400 font-bold text-sm">{weather.temp}°C</span>
         </div>
       </div>
 

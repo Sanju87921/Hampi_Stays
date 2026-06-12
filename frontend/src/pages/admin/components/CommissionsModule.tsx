@@ -1,8 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IndianRupee, FileText, CheckCircle2, Clock, Calculator, ArrowRight, Zap, History } from 'lucide-react';
+import { IndianRupee, FileText, CheckCircle2, Clock, Calculator, ArrowRight, Zap, History, TrendingUp } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
 import toast from 'react-hot-toast';
+
+const RevenueChart = ({ ledgers }: { ledgers: any[] }) => {
+  if (!ledgers || ledgers.length === 0) return null;
+  
+  // Get up to 14 most recent ledgers for the chart, reversed for chronological order (assuming latest first)
+  const chartData = [...ledgers].slice(0, 14).reverse();
+  const maxNet = Math.max(...chartData.map(l => l.totalNet), 1);
+  const maxComm = Math.max(...chartData.map(l => l.totalCommission), 1);
+  const maxGross = Math.max(...chartData.map(l => l.totalGross), 1);
+
+  return (
+    <div className="mt-8 bg-sand-50/50 rounded-2xl p-6 border border-sand-200">
+      <div className="flex items-center gap-2 mb-6">
+        <TrendingUp className="w-5 h-5 text-navy-400" />
+        <h4 className="text-sm font-bold text-navy-400 tracking-widest uppercase">Platform Volume Trends</h4>
+      </div>
+      <div className="h-48 flex items-end gap-3 px-2">
+        {chartData.map((d, i) => (
+          <div key={d.id || i} className="flex-1 flex flex-col justify-end group relative h-full">
+            <motion.div 
+              initial={{ height: 0 }}
+              animate={{ height: `${(d.totalGross / maxGross) * 100}%` }}
+              transition={{ duration: 0.8, delay: i * 0.05 }}
+              className="bg-navy-950/10 hover:bg-navy-950/20 rounded-t-lg w-full relative transition-colors cursor-pointer"
+            >
+              {/* Overlay commission block inside gross block */}
+              <motion.div 
+                initial={{ height: 0 }}
+                animate={{ height: `${(d.totalCommission / d.totalGross) * 100}%` }}
+                transition={{ duration: 0.8, delay: 0.5 + i * 0.05 }}
+                className="absolute bottom-0 left-0 right-0 bg-gold-400/80 rounded-t-sm"
+              />
+            </motion.div>
+            
+            {/* Tooltip */}
+            <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-xs p-3 rounded-xl whitespace-nowrap pointer-events-none transition-all duration-200 shadow-xl z-20 translate-y-2 group-hover:translate-y-0">
+              <p className="font-bold border-b border-white/10 pb-1 mb-1">ID: {d.id?.substring(0,6)}</p>
+              <p className="text-white/70">Gross: <span className="text-white">₹{d.totalGross.toLocaleString()}</span></p>
+              <p className="text-gold-400">Platform: <span className="text-gold-400">₹{d.totalCommission.toLocaleString()}</span></p>
+              <p className="text-green-400">Payout: <span className="text-green-400">₹{d.totalNet.toLocaleString()}</span></p>
+              
+              {/* Arrow */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-navy-950" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between items-center mt-4 text-[10px] font-bold text-navy-400 uppercase tracking-widest px-2 border-t border-sand-200 pt-4">
+        <span>Older</span>
+        <div className="flex gap-4">
+          <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-navy-950/20"/> Gross Volume</span>
+          <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-gold-400"/> Platform Commission</span>
+        </div>
+        <span>Recent</span>
+      </div>
+    </div>
+  );
+};
 
 export function CommissionsModule() {
   const [ledgers, setLedgers] = useState<any[]>([]);
@@ -103,6 +161,9 @@ export function CommissionsModule() {
             <p className="text-4xl font-bold text-green-900 mt-2">{ledgers.length}</p>
           </div>
         </div>
+
+        {/* Data Visualization */}
+        <RevenueChart ledgers={ledgers} />
       </div>
 
       {/* Ledgers List */}

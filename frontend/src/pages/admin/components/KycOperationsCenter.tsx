@@ -1,10 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, FileText, CheckCircle, XCircle, Eye, ExternalLink, Loader2, Search, Filter, ZoomIn, ZoomOut, RotateCw, Download, CheckSquare, Square, History, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
 import { Button } from '../../../components/ui/Button';
 import { Select } from '../../../components/ui/Select';
 import toast from 'react-hot-toast';
+
+// --- Debounce Hook ---
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+// --- Error Boundary ---
+class KycErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("KYC Error:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return <div className="p-8 m-8 text-center text-red-600 bg-red-50 border border-red-200 rounded-2xl font-medium shadow-sm">Something went wrong in the KYC Operations Center. Please refresh the page.</div>;
+    }
+    return this.props.children;
+  }
+}
+
+// --- Skeleton Component ---
+const KycSkeleton = () => (
+  <div className="space-y-4 animate-pulse w-full">
+    <div className="h-12 bg-sand-100/50 rounded-xl w-full" />
+    <div className="h-16 bg-sand-100/50 rounded-xl w-full" />
+    <div className="h-16 bg-sand-100/50 rounded-xl w-full" />
+    <div className="h-16 bg-sand-100/50 rounded-xl w-full" />
+  </div>
+);
 
 export function KycOperationsCenter() {
   const [guideDocs, setGuideDocs] = useState<any[]>([]);
@@ -29,7 +64,18 @@ export function KycOperationsCenter() {
 
   // Filtering and Search
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "VERIFIED" | "REJECTED">("ALL");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setHistoryPage(1);
+  }, [activeTab, filterStatus, debouncedSearch]);
 
   useEffect(() => {
     fetchDocs();
@@ -121,9 +167,9 @@ export function KycOperationsCenter() {
 
   const filteredDocs = currentDocs.filter(doc => {
     if (filterStatus !== "ALL" && doc.status !== filterStatus) return false;
-    if (searchQuery) {
+    if (debouncedSearch) {
       const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
-      const q = searchQuery.toLowerCase();
+      const q = debouncedSearch.toLowerCase();
       if (!user?.name?.toLowerCase().includes(q) && !user?.email?.toLowerCase().includes(q)) {
         return false;
       }
@@ -133,6 +179,13 @@ export function KycOperationsCenter() {
 
   const pendingDocs = filteredDocs.filter(d => d.status === 'PENDING');
   const historyDocs = filteredDocs.filter(d => d.status !== 'PENDING');
+
+  // Apply Pagination
+  const totalPendingPages = Math.ceil(pendingDocs.length / itemsPerPage);
+  const paginatedPendingDocs = pendingDocs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const totalHistoryPages = Math.ceil(historyDocs.length / itemsPerPage);
+  const paginatedHistoryDocs = historyDocs.slice((historyPage - 1) * itemsPerPage, historyPage * itemsPerPage);
 
   const toggleDocSelection = (id: string) => {
     const next = new Set(selectedDocs);
@@ -158,6 +211,7 @@ export function KycOperationsCenter() {
   };
 
   return (
+    <KycErrorBoundary>
     <div className="space-y-8">
       {/* Analytics KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -258,15 +312,15 @@ export function KycOperationsCenter() {
         </div>
 
         {loading ? (
-          <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-gold-500" /></div>
+          <div className="py-8"><KycSkeleton /></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-sand-100 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
                   <th className="px-6 py-4 w-12">
-                    <button onClick={() => handleSelectAll(pendingDocs)}>
-                      {selectedDocs.size === pendingDocs.length && pendingDocs.length > 0 ? <CheckSquare className="w-5 h-5 text-gold-600" /> : <Square className="w-5 h-5 text-navy-950/40" />}
+                    <button onClick={() => handleSelectAll(paginatedPendingDocs)}>
+                      {selectedDocs.size === paginatedPendingDocs.length && paginatedPendingDocs.length > 0 ? <CheckSquare className="w-5 h-5 text-gold-600" /> : <Square className="w-5 h-5 text-navy-950/40" />}
                     </button>
                   </th>
                   <th className="px-6 py-4">User</th>
@@ -277,7 +331,7 @@ export function KycOperationsCenter() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-sand-100">
-                {pendingDocs.map(doc => {
+                {paginatedPendingDocs.map(doc => {
                   const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
                   const isSelected = selectedDocs.has(doc.id);
                   return (
@@ -326,11 +380,38 @@ export function KycOperationsCenter() {
                     </tr>
                   );
                 })}
-                {pendingDocs.length === 0 && (
+                {paginatedPendingDocs.length === 0 && (
                   <tr><td colSpan={6} className="px-6 py-12 text-center text-navy-950 italic">No pending documents to review.</td></tr>
                 )}
               </tbody>
             </table>
+            
+            {/* Pagination Controls */}
+            {totalPendingPages > 1 && (
+              <div className="flex justify-between items-center mt-6 px-4 pb-2">
+                <span className="text-xs text-navy-950/60 font-medium">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, pendingDocs.length)} of {pendingDocs.length} entries
+                </span>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 px-3 text-xs border-sand-200"
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPendingPages))}
+                    disabled={currentPage === totalPendingPages}
+                    className="h-8 px-3 text-xs border-sand-200"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -344,7 +425,7 @@ export function KycOperationsCenter() {
           </div>
         </div>
         {loading ? (
-          <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-gold-500" /></div>
+          <div className="py-8"><KycSkeleton /></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -358,7 +439,7 @@ export function KycOperationsCenter() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-sand-100">
-                {historyDocs.map(doc => {
+                {paginatedHistoryDocs.map(doc => {
                   const user = activeTab === 'guides' ? doc.guideProfile?.user : activeTab === 'travellers' ? doc.user : doc.owner?.user;
                   return (
                     <tr key={doc.id} className="hover:bg-sand-50 transition-colors">
@@ -396,11 +477,38 @@ export function KycOperationsCenter() {
                     </tr>
                   );
                 })}
-                {historyDocs.length === 0 && (
+                {paginatedHistoryDocs.length === 0 && (
                   <tr><td colSpan={5} className="px-6 py-12 text-center text-navy-950 italic">No verification history found.</td></tr>
                 )}
               </tbody>
             </table>
+            
+            {/* History Pagination */}
+            {totalHistoryPages > 1 && (
+              <div className="flex justify-between items-center mt-6 px-4 pb-2">
+                <span className="text-xs text-navy-950/60 font-medium">
+                  Showing {(historyPage - 1) * itemsPerPage + 1} to {Math.min(historyPage * itemsPerPage, historyDocs.length)} of {historyDocs.length} entries
+                </span>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setHistoryPage(prev => Math.max(prev - 1, 1))}
+                    disabled={historyPage === 1}
+                    className="h-8 px-3 text-xs border-sand-200"
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setHistoryPage(prev => Math.min(prev + 1, totalHistoryPages))}
+                    disabled={historyPage === totalHistoryPages}
+                    className="h-8 px-3 text-xs border-sand-200"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -599,9 +707,12 @@ export function KycOperationsCenter() {
                   <textarea 
                     value={rejectionReason}
                     onChange={e => setRejectionReason(e.target.value)}
-                    placeholder="e.g. Document is blurry, expired, or invalid."
+                    placeholder="e.g. Document is blurry, expired, or invalid. Please provide details."
                     className="w-full h-32 bg-sand-50 border-2 border-sand-200 rounded-xl p-4 font-medium text-navy-950 outline-none focus:border-red-500 transition-all text-sm resize-none"
                   />
+                  <p className={`text-xs mt-2 font-medium ${rejectionReason.trim().length > 0 && rejectionReason.trim().length < 10 ? 'text-red-500' : 'text-navy-950/40'}`}>
+                    {rejectionReason.trim().length < 10 ? `Minimum 10 characters required (${rejectionReason.trim().length}/10)` : 'Reason meets length requirements'}
+                  </p>
                 </div>
                 <div className="flex gap-4">
                   <Button 
@@ -613,10 +724,10 @@ export function KycOperationsCenter() {
                   </Button>
                   <Button 
                     variant="custom"
-                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-red-600/10 animate-pulse-slow"
+                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-red-600/10 animate-pulse-slow disabled:opacity-50 disabled:animate-none"
                     onClick={() => handleUpdateStatus(rejectingDocId, activeTab, 'REJECTED', rejectionReason)}
                     isLoading={processingId === rejectingDocId}
-                    disabled={!rejectionReason.trim()}
+                    disabled={rejectionReason.trim().length < 10}
                   >
                     Submit Rejection
                   </Button>
@@ -627,5 +738,6 @@ export function KycOperationsCenter() {
         )}
       </AnimatePresence>
     </div>
+    </KycErrorBoundary>
   );
 }
