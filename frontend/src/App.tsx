@@ -138,6 +138,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Layout with Navbar and Footer
 const MainLayout = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard/resort-setup');
+
   return (
     <div className="flex flex-col min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
       <Navbar />
@@ -146,7 +149,7 @@ const MainLayout = () => {
           <Outlet />
         </ErrorBoundary>
       </main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
       <MobileDock />
     </div>
   );
