@@ -3151,4 +3151,125 @@ app.get('/admin/ws/live', async (c) => {
     }
   });
 
+  // ==========================================
+  // 🚨 Fraud & Risk Management Center
+  // ==========================================
+  app.get('/admin/fraud-center', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    try {
+      // Find flagged users
+      const flaggedUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { fraudScore: { gt: 0 } },
+            { fraudFlags: { isEmpty: false } }
+          ]
+        },
+        select: { id: true, name: true, email: true, role: true, fraudScore: true, fraudFlags: true, createdAt: true, deletedAt: true }
+      });
+
+      // Find flagged guides
+      const flaggedGuides = await prisma.guideProfile.findMany({
+        where: {
+          OR: [
+            { fraudScore: { gt: 0 } },
+            { fraudFlags: { isEmpty: false } }
+          ]
+        },
+        include: { user: { select: { name: true, email: true } } }
+      });
+
+      return c.json({ users: flaggedUsers, guides: flaggedGuides });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.post('/admin/fraud-center/:type/:id/action', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const { type, id } = c.req.param(); // type is 'user' or 'guide'
+    const { action } = await c.req.json(); // action is 'SUSPEND' or 'CLEAR'
+
+    try {
+      if (type === 'user') {
+        if (action === 'SUSPEND') {
+          await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }); // Soft delete / suspend
+        } else if (action === 'CLEAR') {
+          await prisma.user.update({ where: { id }, data: { fraudScore: 0, fraudFlags: [] } });
+        }
+      } else if (type === 'guide') {
+        if (action === 'SUSPEND') {
+          await prisma.guideProfile.update({ where: { id }, data: { status: 'REJECTED', isActive: false } });
+        } else if (action === 'CLEAR') {
+          await prisma.guideProfile.update({ where: { id }, data: { fraudScore: 0, fraudFlags: [] } });
+        }
+      } else {
+        return c.json({ error: 'Invalid entity type' }, 400);
+      }
+
+      return c.json({ success: true, message: `Action ${action} performed on ${type}` });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  // ==========================================
+  // 📈 Dynamic Surge Pricing & Yield Management
+  // ==========================================
+  app.get('/admin/yield-management', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    try {
+      // Calculate occupancy rate for the next 30 days
+      const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+
+      const totalRoomsResult = await prisma.room.aggregate({ _sum: { capacity: true } });
+      const totalRooms = totalRoomsResult._sum.capacity || 100; // fallback
+
+      const upcomingBookings = await prisma.booking.findMany({
+        where: {
+          status: { in: ['CONFIRMED', 'PENDING'] },
+          checkIn: { lte: thirtyDaysFromNow },
+          checkOut: { gte: now }
+        }
+      });
+      
+      const bookedRooms = upcomingBookings.reduce((acc, b) => acc + b.guests, 0); // Simplified heuristic
+      const occupancyRate = Math.min(100, (bookedRooms / (totalRooms * 30)) * 100);
+
+      // Get global surge multiplier from system settings
+      const settings = await prisma.systemSettings.findFirst();
+
+      return c.json({
+        totalRooms: totalRooms * 30, // capacity * 30 days
+        bookedRooms,
+        occupancyRate,
+        globalSurgeMultiplier: settings?.globalSurgeMultiplier || 1.0
+      });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
+  app.patch('/admin/yield-management', authMiddleware, adminMiddleware, async (c) => {
+    const prisma = c.get('getPrisma')(c.env);
+    const { globalSurgeMultiplier } = await c.req.json();
+    try {
+      const settings = await prisma.systemSettings.findFirst();
+      if (settings) {
+        await prisma.systemSettings.update({
+          where: { id: settings.id },
+          data: { globalSurgeMultiplier }
+        });
+      } else {
+        await prisma.systemSettings.create({
+          data: { globalSurgeMultiplier }
+        });
+      }
+      return c.json({ success: true });
+    } catch (err) {
+      return c.json({ error: err.message }, 500);
+    }
+  });
+
 };
