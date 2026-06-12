@@ -1,11 +1,12 @@
-import React from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Map, ArrowRight, Compass, Sparkles } from "lucide-react";
+import React, { useState } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { Map, ArrowRight, Compass, Sparkles, Play, Pause, Headphones, Volume2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { MediaImage } from "../ui/MediaImage";
 
 export function DestinationDiscovery() {
+  const [isPlaying, setIsPlaying] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -123,19 +124,52 @@ export function DestinationDiscovery() {
                 </div>
               </div>
 
-              {/* Floating Cards */}
+              {/* Audio Snippet Floating Card */}
               <motion.div 
                 style={{ x: card1X, y: card1Y }}
-                className="absolute top-12 left-12 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block pointer-events-none"
+                className="absolute top-12 left-12 bg-navy-950/80 backdrop-blur-md border border-gold-500/30 p-4 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] hidden sm:block w-64 z-20 pointer-events-auto"
               >
-                <div className="w-32 h-20 bg-sand-200/20 rounded-lg mb-3" />
-                <div className="h-2 w-24 bg-white/40 rounded-full mb-2" />
-                <div className="h-2 w-16 bg-gold-400/60 rounded-full" />
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gold-500/20">
+                    <MediaImage src="/stone-chariot.jpg" alt="Stone Chariot" className="w-full h-full object-cover opacity-80" />
+                    <div className="absolute inset-0 bg-navy-950/20" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Headphones className="w-3 h-3 text-gold-400" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-gold-400">Audio Guide</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-white leading-tight">The Stone Chariot</h4>
+                    <p className="text-[10px] text-white/50 mt-1">Vijaya Vittala Temple</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
+                  <button 
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="w-10 h-10 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center hover:bg-gold-400 transition-colors shadow-gold shrink-0"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                  </button>
+                  <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                    <AnimatePresence>
+                      {isPlaying && (
+                        <motion.div 
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 30, ease: "linear", repeat: Infinity }}
+                          className="absolute top-0 left-0 h-full bg-gold-500"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <Volume2 className="w-3 h-3 text-white/40 shrink-0" />
+                </div>
               </motion.div>
 
               <motion.div 
                 style={{ x: card2X, y: card2Y }}
-                className="absolute bottom-12 right-12 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block pointer-events-none"
+                className="absolute bottom-12 right-12 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-xl hidden sm:block pointer-events-none z-10"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center">
