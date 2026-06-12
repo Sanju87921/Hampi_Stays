@@ -6,12 +6,12 @@ import { useModal } from '../../components/shared/ModalProvider';
 import { useState, useEffect, lazy, Suspense } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
- ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
- User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
- TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
- Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode, RotateCcw, Headphones, Megaphone, Banknote
-} from "lucide-react";
+ import { 
+  ShieldCheck, ShieldOff, CheckCircle, XCircle, ExternalLink, MapPin, 
+  User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
+  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award, Globe,
+  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck, ShieldAlert, History, UserX, FileText, Tag, QrCode, RotateCcw, Headphones, Megaphone, Banknote, ShoppingCart
+ } from "lucide-react";
 import { CinematicLogo } from "../../components/ui/CinematicLogo";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Select";
