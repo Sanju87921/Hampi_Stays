@@ -109,6 +109,7 @@ export function Navbar() {
   const isKnownLightPage = 
     location.pathname.startsWith("/resorts") || 
     location.pathname.startsWith("/dashboard") || 
+    location.pathname.startsWith("/admin/") ||
     location.pathname.startsWith("/checkout") ||
     location.pathname.startsWith("/booking") ||
     location.pathname.startsWith("/terms") ||
