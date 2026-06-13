@@ -133,15 +133,18 @@ export function LocalExpertsPage() {
           script.src = "https://checkout.razorpay.com/v1/checkout.js";
           script.async = true;
           document.body.appendChild(script);
-          await new Promise(resolve => script.onload = resolve);
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+          });
         }
 
         const options = {
           key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_Snxno5G3tcQKcs',
-          amount: Math.round(booking.totalPrice * 100),
+          amount: Math.round(Number(booking.totalPrice) * 100),
           currency: "INR",
           name: "HampiStays Local Expert",
-          description: `Booking for Guide: ${selectedGuide.user.name}`,
+          description: `Booking for Guide: ${selectedGuide.user?.name || 'Guide'}`,
           order_id: booking.orderId,
           handler: async function (response: any) {
             try {
@@ -178,6 +181,10 @@ export function LocalExpertsPage() {
         };
 
         const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          console.error("Razorpay payment failed", response.error);
+          setIsBooking(false);
+        });
         rzp.open();
       } else {
         // Free/Credit Booking
