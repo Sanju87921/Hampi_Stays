@@ -139,9 +139,8 @@ export const verifyPayment = async (c) => {
       const travelerHtmlContent = `
         <div style="background:#f7f3ec;padding:20px 0;">
           <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(197,160,89,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.07);">
-            <!-- Header -->
-            <div style="background:#0A1128;padding:32px 40px;text-align:center;">
-              <h1 style="font-family:Georgia,serif;color:#C5A059;font-size:28px;margin:0;letter-spacing:2px;">HAMPISTAYS</h1>
+              <div style="background:#0A1128;padding:32px 40px;text-align:center;">
+              <h1 style="font-family:Georgia,serif;color:#C5A059;font-size:22px;margin:0;letter-spacing:4px;white-space:nowrap;">HAMPISTAYS</h1>
               <p style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:6px 0 0;">Luxury Sanctuary Stays</p>
             </div>
             <!-- Green success banner -->
