@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
+import { sign, verify } from 'hono/jwt';
 import { Resend } from 'resend';
 import { logSecureError, logSecureWarn, logSecureInfo } from '../../logging/logger.js';
 import { invalidateAvailabilityCache } from '../../services/bookings/availabilityCache.js';
@@ -707,7 +707,7 @@ export const getBookingQR = async (c) => {
       exp: Math.floor(checkOutDate.getTime() / 1000)
     };
 
-    const token = jwt.sign(qrPayload, JWT_SECRET);
+    const token = await sign(qrPayload, JWT_SECRET);
 
     await prisma.auditLog.create({
       data: {
@@ -742,15 +742,24 @@ export const validateBookingQR = async (c) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = await verify(token, JWT_SECRET);
     } catch (err) {
       return c.json({ error: 'This Stay Pass is no longer valid or has been tampered with.' }, 400);
     }
 
-    const booking = await prisma.booking.findUnique({
+    let isGuideBooking = false;
+    let booking = await prisma.booking.findUnique({
       where: { id: decoded.bookingId },
       include: { resort: true, user: true }
     });
+
+    if (!booking) {
+      booking = await prisma.guideBooking.findUnique({
+        where: { id: decoded.bookingId },
+        include: { guide: true, user: true }
+      });
+      if (booking) isGuideBooking = true;
+    }
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
 
@@ -759,17 +768,16 @@ export const validateBookingQR = async (c) => {
       const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
       const guideProfile = await prisma.guideProfile.findUnique({ where: { userId: payload.userId } });
       
-      const isOwner = owner && booking.resort.ownerId === owner.id;
-      const isStaff = staff && staff.resortId === booking.resortId;
-      // Guides can scan if the booking is a guide booking linked to them
-      const isGuide = guideProfile != null;
+      const isOwner = !isGuideBooking && owner && booking.resort.ownerId === owner.id;
+      const isStaff = !isGuideBooking && staff && staff.resortId === booking.resortId;
+      const isGuide = isGuideBooking && guideProfile && booking.guideId === guideProfile.id;
 
       if (!isOwner && !isStaff && !isGuide) {
         await prisma.auditLog.create({
           data: {
             adminId: payload.userId || 'system',
             action: 'UNAUTHORIZED_RESORT_SCAN',
-            details: { bookingId: booking.id, resortId: booking.resortId, error: 'User attempted to scan QR for a resort they do not own' }
+            details: { bookingId: booking.id, error: 'User attempted to scan QR for an unauthorized booking' }
           }
         });
         return c.json({ error: 'Unauthorized check-in attempt.' }, 403);
@@ -781,11 +789,21 @@ export const validateBookingQR = async (c) => {
     }
 
     const now = new Date();
-    const checkInDate = new Date(booking.checkIn);
-    checkInDate.setHours(14, 0, 0, 0);
-    const validFrom = new Date(checkInDate.getTime() - 24 * 60 * 60 * 1000);
-    const checkOutDate = new Date(booking.checkOut);
-    checkOutDate.setHours(11, 0, 0, 0);
+    const checkInDate = new Date(isGuideBooking ? booking.date : booking.checkIn);
+    if (!isGuideBooking) {
+      checkInDate.setHours(14, 0, 0, 0);
+    }
+    
+    // Guide tours unlock check-in 2 hours before. Resorts unlock 24 hours before.
+    const validFrom = new Date(checkInDate.getTime() - (isGuideBooking ? 2 : 24) * 60 * 60 * 1000);
+    
+    let checkOutDate;
+    if (isGuideBooking) {
+      checkOutDate = new Date(checkInDate.getTime() + booking.durationHours * 60 * 60 * 1000);
+    } else {
+      checkOutDate = new Date(booking.checkOut);
+      checkOutDate.setHours(11, 0, 0, 0);
+    }
 
     if (now > checkOutDate) {
       return c.json({ error: 'This Stay Pass is no longer valid.' }, 400);
@@ -806,10 +824,11 @@ export const validateBookingQR = async (c) => {
       token,
       guestName: booking.user.name,
       bookingId: booking.id,
-      resortName: booking.resort.name,
-      checkIn: booking.checkIn,
-      checkOut: booking.checkOut,
-      guests: booking.guests,
+      resortName: isGuideBooking ? 'Guided Tour' : booking.resort.name,
+      roomType: isGuideBooking ? 'Tour Reservation' : (booking.roomType || 'Standard'),
+      checkIn: checkInDate.toISOString(),
+      checkOut: checkOutDate.toISOString(),
+      guests: isGuideBooking ? 1 : booking.guests, // guideBooking currently doesn't track guests count easily, default to 1 or track it
       status: booking.status
     });
   } catch (err) {
@@ -830,15 +849,24 @@ export const scanBookingQR = async (c) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = await verify(token, JWT_SECRET);
     } catch (err) {
       return c.json({ error: 'This Stay Pass is no longer valid or has been tampered with.' }, 400);
     }
 
-    const booking = await prisma.booking.findUnique({
+    let isGuideBooking = false;
+    let booking = await prisma.booking.findUnique({
       where: { id: decoded.bookingId },
       include: { resort: true, user: true }
     });
+
+    if (!booking) {
+      booking = await prisma.guideBooking.findUnique({
+        where: { id: decoded.bookingId },
+        include: { guide: true, user: true }
+      });
+      if (booking) isGuideBooking = true;
+    }
 
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
 
@@ -847,16 +875,16 @@ export const scanBookingQR = async (c) => {
       const staff = await prisma.staffMember.findUnique({ where: { userId: payload.userId } });
       const guideProfile = await prisma.guideProfile.findUnique({ where: { userId: payload.userId } });
       
-      const isOwner = owner && booking.resort.ownerId === owner.id;
-      const isStaff = staff && staff.resortId === booking.resortId;
-      const isGuide = guideProfile != null;
+      const isOwner = !isGuideBooking && owner && booking.resort.ownerId === owner.id;
+      const isStaff = !isGuideBooking && staff && staff.resortId === booking.resortId;
+      const isGuide = isGuideBooking && guideProfile && booking.guideId === guideProfile.id;
 
       if (!isOwner && !isStaff && !isGuide) {
         await prisma.auditLog.create({
           data: {
             adminId: payload.userId || 'system',
             action: 'UNAUTHORIZED_RESORT_SCAN',
-            details: { bookingId: booking.id, resortId: booking.resortId, error: 'User attempted to scan QR for a resort they do not own' }
+            details: { bookingId: booking.id, error: 'User attempted to scan QR for an unauthorized booking' }
           }
         });
         return c.json({ error: 'Unauthorized check-in attempt.' }, 403);
@@ -871,11 +899,21 @@ export const scanBookingQR = async (c) => {
     }
 
     const now = new Date();
-    const checkInDate = new Date(booking.checkIn);
-    checkInDate.setHours(14, 0, 0, 0);
-    const validFrom = new Date(checkInDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours before
-    const checkOutDate = new Date(booking.checkOut);
-    checkOutDate.setHours(11, 0, 0, 0);
+    const checkInDate = new Date(isGuideBooking ? booking.date : booking.checkIn);
+    if (!isGuideBooking) {
+      checkInDate.setHours(14, 0, 0, 0);
+    }
+    
+    // Guide tours unlock check-in 2 hours before. Resorts unlock 24 hours before.
+    const validFrom = new Date(checkInDate.getTime() - (isGuideBooking ? 2 : 24) * 60 * 60 * 1000);
+    
+    let checkOutDate;
+    if (isGuideBooking) {
+      checkOutDate = new Date(checkInDate.getTime() + booking.durationHours * 60 * 60 * 1000);
+    } else {
+      checkOutDate = new Date(booking.checkOut);
+      checkOutDate.setHours(11, 0, 0, 0);
+    }
 
     if (now > checkOutDate) {
       await prisma.auditLog.create({
@@ -902,10 +940,17 @@ export const scanBookingQR = async (c) => {
     }
 
     // Mark as checked in
-    await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: 'CHECKED_IN' }
-    });
+    if (isGuideBooking) {
+      await prisma.guideBooking.update({
+        where: { id: booking.id },
+        data: { status: 'CHECKED_IN' }
+      });
+    } else {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: 'CHECKED_IN' }
+      });
+    }
 
     await prisma.auditLog.create({
       data: { adminId: payload.userId || 'system', action: 'CHECK_IN_COMPLETED', details: { entityType: 'BOOKING', entityId: booking.id, info: 'QR Check-In successful' } }

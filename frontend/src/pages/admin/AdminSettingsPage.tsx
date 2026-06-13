@@ -809,6 +809,36 @@ export function AdminSettingsPage() {
                 </button>
               </div>
 
+              {/* Guide Signups / Service Enable */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-sand-50 rounded-xl border border-sand-200 transition-colors">
+                <div className="mb-4 sm:mb-0">
+                  <h4 className="font-bold text-navy-950 mb-1">
+                    Guide Services & Signups
+                  </h4>
+                  <p className="text-xs text-navy-950/60">
+                    Enable or pause new guide signups and discovery.
+                  </p>
+                </div>
+                <button
+                  disabled={
+                    !settings || updatingToggle === "guideServiceEnabled"
+                  }
+                  onClick={() => toggleSetting("guideServiceEnabled")}
+                  className={`flex items-center px-4 py-2 text-sm font-bold rounded-lg transition-colors disabled:opacity-50 ${
+                    settings?.guideServiceEnabled
+                      ? "bg-navy-950 text-white hover:bg-navy-800 :bg-sand-100 "
+                      : "bg-sand-200 text-navy-950 hover:bg-sand-300 :bg-sand-200"
+                  }`}
+                >
+                  {updatingToggle === "guideServiceEnabled" ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : settings?.guideServiceEnabled ? (
+                    <Check className="w-4 h-4 mr-2 text-gold-500" />
+                  ) : null}
+                  {settings?.guideServiceEnabled ? "Enabled" : "Paused"}
+                </button>
+              </div>
+
               {/* High-Value Booking KYC Threshold */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-sand-50 rounded-xl border border-sand-200 gap-4">
                 <div>
