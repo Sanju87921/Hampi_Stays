@@ -132,30 +132,67 @@ export const verifyPayment = async (c) => {
     
     // Traveler Notification
     if (booking.user?.email) {
+      const checkInFormatted = new Date(booking.checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const checkOutFormatted = new Date(booking.checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const nights = Math.round((new Date(booking.checkOut) - new Date(booking.checkIn)) / (1000 * 60 * 60 * 24));
+
       const travelerHtmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>✅ Booking Confirmed!</h2>
-          <p>Dear ${booking.user.name}, your stay at <strong>${booking.resort?.name || 'HampiStays'}</strong> is confirmed.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Booking ID:</strong> ${ref}</p>
-            <p><strong>Room Type:</strong> ${booking.room?.name || 'Standard'}</p>
-            <p><strong>Check-In Date:</strong> ${new Date(booking.checkIn).toLocaleDateString()}</p>
-            <p><strong>Check-Out Date:</strong> ${new Date(booking.checkOut).toLocaleDateString()}</p>
-            <p><strong>Guests:</strong> ${booking.guests}</p>
-            <p><strong>Total Paid:</strong> ₹${booking.totalPrice}</p>
+        <div style="background:#f7f3ec;padding:20px 0;">
+          <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(197,160,89,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.07);">
+            <!-- Header -->
+            <div style="background:#0A1128;padding:32px 40px;text-align:center;">
+              <h1 style="font-family:Georgia,serif;color:#C5A059;font-size:28px;margin:0;letter-spacing:2px;">HAMPISTAYS</h1>
+              <p style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:6px 0 0;">Luxury Sanctuary Stays</p>
+            </div>
+            <!-- Green success banner -->
+            <div style="background:#16a34a;padding:14px 40px;text-align:center;">
+              <p style="color:#fff;font-size:14px;font-weight:700;margin:0;">✅ Booking Confirmed!</p>
+            </div>
+            <!-- Body -->
+            <div style="padding:36px 40px;">
+              <p style="font-family:Arial,sans-serif;font-size:15px;color:#0A1128;margin:0 0 24px;">Dear <strong>${booking.user.name}</strong>,</p>
+              <p style="font-family:Arial,sans-serif;font-size:14px;color:#555;line-height:1.6;margin:0 0 28px;">Your stay at <strong>${booking.resort?.name || 'HampiStays'}</strong> is confirmed and we're thrilled to host you. Please find your itinerary below.</p>
+              
+              <!-- Booking Card -->
+              <div style="background:#f7f3ec;border:1px solid rgba(197,160,89,0.3);border-radius:12px;padding:24px;margin-bottom:28px;">
+                <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
+                  <tr><td style="padding:8px 0;color:#888;width:40%;">Booking Reference</td><td style="padding:8px 0;color:#0A1128;font-weight:700;">${ref}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Resort</td><td style="padding:8px 0;color:#0A1128;font-weight:600;">${booking.resort?.name || 'N/A'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Room Type</td><td style="padding:8px 0;color:#0A1128;">${booking.room?.name || 'Standard'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Check-In</td><td style="padding:8px 0;color:#0A1128;">${checkInFormatted} &nbsp;·&nbsp; 2:00 PM</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Check-Out</td><td style="padding:8px 0;color:#0A1128;">${checkOutFormatted} &nbsp;·&nbsp; 11:00 AM</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Duration</td><td style="padding:8px 0;color:#0A1128;">${nights} Night${nights !== 1 ? 's' : ''}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;">Guests</td><td style="padding:8px 0;color:#0A1128;">${booking.guests}</td></tr>
+                  <tr style="border-top:1px solid rgba(197,160,89,0.3);">
+                    <td style="padding:12px 0 0;color:#0A1128;font-weight:700;font-size:14px;">Total Paid</td>
+                    <td style="padding:12px 0 0;color:#C5A059;font-weight:700;font-size:16px;">₹${booking.totalPrice?.toLocaleString('en-IN')}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA -->
+              <div style="text-align:center;margin-bottom:28px;">
+                <a href="https://hampistays.com/dashboard/bookings" style="display:inline-block;background:#0A1128;color:#C5A059;padding:14px 32px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:1px;">VIEW YOUR QR PASS →</a>
+              </div>
+
+              <p style="font-family:Arial,sans-serif;font-size:13px;color:#888;text-align:center;">Your digital check-in QR code is available in your dashboard. Present it at the resort for a seamless check-in experience.</p>
+            </div>
+            <!-- Footer -->
+            <div style="background:#f7f3ec;padding:20px 40px;text-align:center;border-top:1px solid rgba(197,160,89,0.2);">
+              <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin:0;">This is an automated confirmation from HampiStays &nbsp;·&nbsp; <a href="https://hampistays.com" style="color:#C5A059;text-decoration:none;">hampistays.com</a></p>
+            </div>
           </div>
-          <p>You can view your itinerary and check-in QR code in your dashboard.</p>
         </div>
       `;
 
       await sendNotification(prisma, {
         userId: booking.user.id,
         userEmail: booking.user.email,
-        title: `✅ Booking Confirmed - ${booking.resort?.name || 'HampiStays'}`,
-        message: `Your booking for ${booking.room?.name || 'Standard'} is confirmed.`,
+        title: `✅ Booking Confirmed — ${booking.resort?.name || 'HampiStays'}`,
+        message: `Your booking for ${booking.room?.name || 'Standard'} is confirmed. Check-in: ${checkInFormatted}.`,
         type: 'BOOKING_CONFIRMED',
         sendEmail: true,
-        emailSubject: `Booking Confirmed - ${ref}`,
+        emailSubject: `🏨 Booking Confirmed — ${ref} | HampiStays`,
         emailHtml: travelerHtmlContent,
         env: c.env,
         ctx: c.executionCtx

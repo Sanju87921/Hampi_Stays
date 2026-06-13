@@ -2946,8 +2946,85 @@ app.post('/guides/:ref/verify-payment', async (c) => {
         status: 'CONFIRMED',
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature
-      }
+      },
+      include: { user: true, guide: { include: { user: true } } }
     });
+
+    // Send confirmation email to traveler
+    if (booking.user?.email) {
+      const { sendNotification } = await import('../services/notification.service.js').catch(() => ({}));
+      if (sendNotification) {
+        const tourDate = new Date(booking.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const guideName = booking.guide?.user?.name || 'Your Guide';
+
+        const travelerHtml = `
+          <div style="background:#f7f3ec;padding:20px 0;">
+            <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(197,160,89,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.07);">
+              <div style="background:#0A1128;padding:32px 40px;text-align:center;">
+                <h1 style="font-family:Georgia,serif;color:#C5A059;font-size:28px;margin:0;letter-spacing:2px;">HAMPISTAYS</h1>
+                <p style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:6px 0 0;">Local Expert Network</p>
+              </div>
+              <div style="background:#16a34a;padding:14px 40px;text-align:center;">
+                <p style="color:#fff;font-size:14px;font-weight:700;margin:0;">✅ Tour Booking Confirmed!</p>
+              </div>
+              <div style="padding:36px 40px;">
+                <p style="font-family:Arial,sans-serif;font-size:15px;color:#0A1128;margin:0 0 24px;">Dear <strong>${booking.user.name}</strong>,</p>
+                <p style="font-family:Arial,sans-serif;font-size:14px;color:#555;line-height:1.6;margin:0 0 28px;">Your guided Hampi experience with <strong>${guideName}</strong> is confirmed. Get ready for an unforgettable journey through the ruins!</p>
+                <div style="background:#f7f3ec;border:1px solid rgba(197,160,89,0.3);border-radius:12px;padding:24px;margin-bottom:28px;">
+                  <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
+                    <tr><td style="padding:8px 0;color:#888;width:40%;">Booking Reference</td><td style="padding:8px 0;color:#0A1128;font-weight:700;">${ref}</td></tr>
+                    <tr><td style="padding:8px 0;color:#888;">Guide</td><td style="padding:8px 0;color:#0A1128;font-weight:600;">${guideName}</td></tr>
+                    <tr><td style="padding:8px 0;color:#888;">Tour Date</td><td style="padding:8px 0;color:#0A1128;">${tourDate}</td></tr>
+                    <tr><td style="padding:8px 0;color:#888;">Duration</td><td style="padding:8px 0;color:#0A1128;">${booking.durationHours} Hour${booking.durationHours !== 1 ? 's' : ''}</td></tr>
+                    <tr><td style="padding:8px 0;color:#888;">Meeting Point</td><td style="padding:8px 0;color:#0A1128;">${booking.meetingPoint || 'To be confirmed'}</td></tr>
+                    <tr style="border-top:1px solid rgba(197,160,89,0.3);">
+                      <td style="padding:12px 0 0;color:#0A1128;font-weight:700;font-size:14px;">Total Paid</td>
+                      <td style="padding:12px 0 0;color:#C5A059;font-weight:700;font-size:16px;">₹${booking.totalPrice?.toLocaleString('en-IN')}</td>
+                    </tr>
+                  </table>
+                </div>
+                <div style="text-align:center;margin-bottom:28px;">
+                  <a href="https://hampistays.com/dashboard/bookings" style="display:inline-block;background:#0A1128;color:#C5A059;padding:14px 32px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:1px;">VIEW TOUR PASS →</a>
+                </div>
+                <p style="font-family:Arial,sans-serif;font-size:13px;color:#888;text-align:center;">Your digital tour QR code is available in your bookings dashboard.</p>
+              </div>
+              <div style="background:#f7f3ec;padding:20px 40px;text-align:center;border-top:1px solid rgba(197,160,89,0.2);">
+                <p style="font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin:0;">HampiStays &nbsp;·&nbsp; <a href="https://hampistays.com" style="color:#C5A059;text-decoration:none;">hampistays.com</a></p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        await sendNotification(prisma, {
+          userId: booking.user.id,
+          userEmail: booking.user.email,
+          title: `✅ Tour Confirmed — ${guideName}`,
+          message: `Your ${booking.durationHours}-hour guided tour on ${tourDate} is confirmed.`,
+          type: 'BOOKING_CONFIRMED',
+          sendEmail: true,
+          emailSubject: `🗺️ Tour Booking Confirmed — ${ref} | HampiStays`,
+          emailHtml: travelerHtml,
+          env: c.env,
+          ctx: c.executionCtx
+        });
+
+        // Also notify the guide
+        if (booking.guide?.user) {
+          await sendNotification(prisma, {
+            userId: booking.guide.user.id,
+            userEmail: booking.guide.user.email,
+            title: `🗺️ New Tour Booking — ${ref}`,
+            message: `${booking.user.name} has confirmed a ${booking.durationHours}-hour tour on ${tourDate}.`,
+            type: 'NEW_BOOKING',
+            sendEmail: true,
+            emailSubject: `New Tour Booking — ${ref} | HampiStays`,
+            emailHtml: `<div style="padding:20px;font-family:Arial,sans-serif;"><h2>New Tour Booking!</h2><p><strong>${booking.user.name}</strong> has booked a <strong>${booking.durationHours}-hour</strong> guided tour on <strong>${tourDate}</strong>.</p><p>Meeting Point: ${booking.meetingPoint || 'N/A'}</p><p>Total: <strong>₹${booking.totalPrice?.toLocaleString('en-IN')}</strong></p><p>Reference: <strong>${ref}</strong></p></div>`,
+            env: c.env,
+            ctx: c.executionCtx
+          });
+        }
+      }
+    }
 
     return c.json(booking);
   } catch (err) {
