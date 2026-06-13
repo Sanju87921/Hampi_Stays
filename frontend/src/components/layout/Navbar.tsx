@@ -85,6 +85,7 @@ export function Navbar() {
   : [
    { name: t("navbar.resorts", "Resorts"), path: "/resorts" },
    { name: t("navbar.explore", "Explore"), path: "/experiences" },
+   { name: t("navbar.discover", "Discover"), path: "/discovery" },
    ...(user ? [{ name: t("navbar.dashboard", "Dashboard"), path: "/dashboard" }] : []),
   ];
 
