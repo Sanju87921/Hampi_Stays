@@ -130,17 +130,36 @@ export const verifyPayment = async (c) => {
 
 
     
-    // Async Notifications
-    if (c.env.RESEND_API_KEY && booking.user.email) {
-      const resend = new Resend(c.env.RESEND_API_KEY);
-      c.executionCtx.waitUntil(
-        resend.emails.send({
-          from: c.env.EMAIL_FROM || 'noreply@hampistays.com',
-          to: booking.user.email,
-          subject: `Booking Confirmed - ${booking.resort.name}`,
-          html: `<h1>Your booking is confirmed!</h1><p>Reference: ${ref}</p>`
-        }).catch(console.error)
-      );
+    // Traveler Notification
+    if (booking.user?.email) {
+      const travelerHtmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>✅ Booking Confirmed!</h2>
+          <p>Dear ${booking.user.name}, your stay at <strong>${booking.resort?.name || 'HampiStays'}</strong> is confirmed.</p>
+          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Booking ID:</strong> ${ref}</p>
+            <p><strong>Room Type:</strong> ${booking.room?.name || 'Standard'}</p>
+            <p><strong>Check-In Date:</strong> ${new Date(booking.checkIn).toLocaleDateString()}</p>
+            <p><strong>Check-Out Date:</strong> ${new Date(booking.checkOut).toLocaleDateString()}</p>
+            <p><strong>Guests:</strong> ${booking.guests}</p>
+            <p><strong>Total Paid:</strong> ₹${booking.totalPrice}</p>
+          </div>
+          <p>You can view your itinerary and check-in QR code in your dashboard.</p>
+        </div>
+      `;
+
+      await sendNotification(prisma, {
+        userId: booking.user.id,
+        userEmail: booking.user.email,
+        title: `✅ Booking Confirmed - ${booking.resort?.name || 'HampiStays'}`,
+        message: `Your booking for ${booking.room?.name || 'Standard'} is confirmed.`,
+        type: 'BOOKING_CONFIRMED',
+        sendEmail: true,
+        emailSubject: `Booking Confirmed - ${ref}`,
+        emailHtml: travelerHtmlContent,
+        env: c.env,
+        ctx: c.executionCtx
+      });
     }
 
     // Owner Notification
