@@ -97,13 +97,34 @@ export function Navbar() {
     "/guides",
     "/destination-guide",
     "/contact",
+    "/experiences",
   ];
   const isHeroPage = darkHeroPages.some(p => 
-    location.pathname === p || location.pathname.startsWith("/guides/")
+    location.pathname === p || 
+    location.pathname.startsWith("/guides/") || 
+    location.pathname.startsWith("/experiences/")
   );
+  
+  // Add catch-all logic for 404 Not Found pages (since they have a dark bg)
+  const isKnownLightPage = 
+    location.pathname.startsWith("/resorts") || 
+    location.pathname.startsWith("/dashboard") || 
+    location.pathname.startsWith("/checkout") ||
+    location.pathname.startsWith("/booking") ||
+    location.pathname.startsWith("/terms") ||
+    location.pathname.startsWith("/privacy") ||
+    location.pathname.startsWith("/refund-policy") ||
+    location.pathname.startsWith("/cookies") ||
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/register") ||
+    location.pathname.startsWith("/forgot-password") ||
+    location.pathname.startsWith("/reset-password");
+
+  const isDarkBgRoute = isHeroPage || !isKnownLightPage;
+
   // Scrolled → frosted glass bg + dark text on ALL pages for legibility
   const isSolidBg = isScrolled;
-  const useDarkText = isScrolled ? true : !isHeroPage;
+  const useDarkText = isScrolled ? true : !isDarkBgRoute;
 
  return (
  <motion.nav 
