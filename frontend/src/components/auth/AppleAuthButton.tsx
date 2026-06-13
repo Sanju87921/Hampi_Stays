@@ -49,7 +49,7 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Slide to Continu
   };
 
   const handleDragEnd = async (_: any, info: any) => {
-    const threshold = dragRange * 0.92;
+    const threshold = dragRange * 0.70;
     if (info.offset.x >= threshold) {
       setIsSuccess(true);
       await controls.start({ x: dragRange, transition: { type: "spring", stiffness: 600, damping: 40 } });
@@ -67,7 +67,7 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Slide to Continu
   return (
     <div 
       ref={containerRef}
-      className="relative w-full max-w-[320px] mx-auto group select-none"
+      className="relative w-[85%] sm:w-full max-w-[320px] mx-auto group select-none"
     >
       {/* Main Track (Silver/Navy Theme) */}
       <div className={cn(
