@@ -621,10 +621,10 @@ export function GuideDashboard() {
                 <div key={booking.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30 gap-6">
                   <div className="flex items-center gap-5">
                     <div className="w-16 h-16 rounded-2xl bg-white border border-sand-200 flex items-center justify-center text-navy-950 font-bold text-xl shadow-sm overflow-hidden">
-                      {booking.user.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user.name.charAt(0)}
+                      {booking.user?.avatar ? <img src={booking.user.avatar} className="w-full h-full object-cover" /> : booking.user?.name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-navy-950">{booking.user.name}</h4>
+                      <h4 className="text-lg font-bold text-navy-950">{booking.user?.name || 'Unknown Traveler'}</h4>
                       <div className="flex items-center gap-4 mt-1 text-sm text-navy-950/40 font-medium">
                         <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-gold-500" /> {new Date(booking.date).toLocaleDateString()}</span>
                         <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-gold-500" /> {booking.durationHours} hrs</span>
@@ -1035,7 +1035,7 @@ export function GuideDashboard() {
           <GuideChat 
             bookingId={activeChatBooking.id}
             guideName={profile?.user?.name || "Me"}
-            travellerName={activeChatBooking.user.name}
+            travellerName={activeChatBooking.user?.name || 'Traveler'}
             onClose={() => setActiveChatBooking(null)}
           />
         )}

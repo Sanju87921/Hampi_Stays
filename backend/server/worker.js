@@ -2756,7 +2756,7 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
     // 1. Validate blockedDates
     const guide = await prisma.guideProfile.findUnique({
       where: { id: guideId },
-      select: { blockedDates: true, pricePerDay: true }
+      select: { blockedDates: true, pricePerDay: true, userId: true }
     });
     
     if (!guide) return c.json({ error: 'Guide not found' }, 404);
@@ -2830,6 +2830,18 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
         status: 'PENDING'
       }
     });
+
+    // Notify the Guide
+    if (guide.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: guide.userId,
+          title: "New Tour Request",
+          message: `You have received a new ${durationHours}-hour tour request.`,
+          type: "NEW_BOOKING"
+        }
+      });
+    }
 
     try {
       const analytics = await prisma.guidePromotionAnalytics.findFirst();
