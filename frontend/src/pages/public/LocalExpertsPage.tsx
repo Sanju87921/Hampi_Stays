@@ -11,6 +11,7 @@ import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { apiClient } from "../../utils/apiClient";
 import { useSystem } from "../../context/SystemContext";
+import { cn } from "../../utils/cn";
 
 const EXPERT_IMAGES = [
   "/hampi-heritage-hero.png",
