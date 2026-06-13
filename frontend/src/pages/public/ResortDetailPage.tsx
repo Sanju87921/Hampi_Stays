@@ -508,7 +508,7 @@ export function ResortDetailPage() {
                       <p className="font-bold text-navy-950 mb-1">Share your experience</p>
                       <p className="text-navy-950/60 text-sm">Please log in to submit a review for this resort.</p>
                     </div>
-                    <Button onClick={() => setShowAuthModal(true)} variant="outline" className="rounded-2xl px-8">
+                    <Button onClick={() => window.location.href = '/register'} variant="outline" className="rounded-2xl px-8">
                       Log In or Register
                     </Button>
                   </div>

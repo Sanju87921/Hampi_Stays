@@ -353,7 +353,6 @@ function App() {
       <MaintenanceWrapper>
         <AnimatedRoutes />
       </MaintenanceWrapper>
-      <AuthModal />
       <CookieConsent />
     </Router>
     </ErrorBoundary>

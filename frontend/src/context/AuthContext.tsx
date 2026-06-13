@@ -293,7 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const requireAuth = () => {
     if (!user) {
-      setShowAuthModal(true, { view: "register", message: "Please sign up to continue" });
+      window.location.href = "/register";
       return false;
     }
     return true;

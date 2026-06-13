@@ -1,4 +1,5 @@
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface ProtectOptions {
   message?: string;
@@ -13,14 +14,13 @@ interface ProtectOptions {
 export function useProtectedAction() {
   const { isAuthenticated, setShowAuthModal } = useAuth();
 
+  const navigate = useNavigate();
+
   const protect = (action: () => void, options: ProtectOptions = {}) => {
     if (isAuthenticated) {
       action();
     } else {
-      setShowAuthModal(true, { 
-        view: options.view || "register", 
-        message: options.message 
-      });
+      navigate("/register");
     }
   };
 
