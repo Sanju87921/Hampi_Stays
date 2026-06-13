@@ -274,7 +274,7 @@ export function Navbar() {
  initial={{ opacity: 0, height: 0 }}
  animate={{ opacity: 1, height: "auto" }}
  exit={{ opacity: 0, height: 0 }}
- className="absolute top-full left-0 right-0 bg-sand-50 backdrop-blur-2xl shadow-luxury border-t border-sand-200 flex flex-col md:hidden overflow-hidden"
+ className="absolute top-full left-0 right-0 bg-sand-50 backdrop-blur-2xl shadow-luxury border-t border-sand-200 flex flex-col lg:hidden overflow-hidden"
  >
  <div className="py-8 px-6 flex flex-col gap-6">
  <Link 
