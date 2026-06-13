@@ -143,12 +143,12 @@ export function Experiences() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-[0.16,1,0.3,1]">
-                    <Link to={`/experiences/${exp.id}`} className="block">
+                    <Link to={`/guides/${exp.guideId || exp.guide?.id}`} className="block">
                       <Button size="sm" variant="outline" className="w-full rounded-xl border-white/20 text-white hover:bg-white/10 h-10 px-0">
                         Details
                       </Button>
                     </Link>
-                    <Link to={`/checkout?experience=${exp.id}`} className="block">
+                    <Link to={`/guides/${exp.guideId || exp.guide?.id}`} className="block">
                       <Button size="sm" className="w-full rounded-xl bg-gold-500 text-navy-950 hover:bg-gold-400 border-none h-10 px-0">
                         Book Now
                       </Button>

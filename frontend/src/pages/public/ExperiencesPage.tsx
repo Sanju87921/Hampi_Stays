@@ -29,6 +29,7 @@ interface Experience {
   durationHours: number;
   meetingPoint: string;
   images?: string[];
+  guideId: string;
   guide: {
     user: { 
       name: string;
@@ -272,13 +273,14 @@ export function ExperiencesPage() {
                       </div>
                     </div>
 
-                    <Button 
-                      onClick={() => requireAuth()}
-                      className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
-                    >
-                      Book This Experience
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                    </Button>
+                    <Link to={`/guides/${exp.guideId || (exp.guide as any)?.id}`} className="block w-full">
+                      <Button 
+                        className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
+                      >
+                        Book This Experience
+                        <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>
