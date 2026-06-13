@@ -2818,6 +2818,8 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
       }
     }
 
+    const refNum = `GD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
     const booking = await prisma.guideBooking.create({
       data: {
         guideId,
@@ -2827,9 +2829,50 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
         meetingPoint,
         totalPrice: Math.max(0, finalPrice),
         specialRequests: specialRequests || null,
-        status: 'PENDING'
+        status: 'PENDING',
+        referenceNumber: refNum
       }
     });
+
+    let orderId = null;
+    if (finalPrice > 0) {
+      try {
+        const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`)}`
+          },
+          body: JSON.stringify({
+            amount: Math.round(finalPrice * 100),
+            currency: 'INR',
+            receipt: refNum
+          })
+        });
+        const order = await rzpResponse.json();
+        if (order.id) {
+          orderId = order.id;
+          await prisma.guideBooking.update({
+            where: { id: booking.id },
+            data: { razorpayOrderId: orderId }
+          });
+        } else {
+          throw new Error(order.error?.description || 'Failed to create Razorpay order');
+        }
+      } catch (err) {
+        console.error("Razorpay Error for Guide Booking:", err);
+        await prisma.guideBooking.update({
+          where: { id: booking.id },
+          data: { status: 'FAILED' }
+        });
+        throw err;
+      }
+    } else {
+      await prisma.guideBooking.update({
+        where: { id: booking.id },
+        data: { status: 'CONFIRMED' }
+      });
+    }
 
     // Notify the Guide
     if (guide.userId) {
@@ -2859,8 +2902,58 @@ app.post('/guides/:guideId/book', authMiddleware, async (c) => {
       // ignore
     }
 
-    return c.json(booking, 201);
+    return c.json({ 
+      ...booking, 
+      orderId, 
+      referenceNumber: refNum,
+      paidByCredits: finalPrice <= 0 
+    }, 201);
   } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/guides/:ref/verify-payment', async (c) => {
+  const prisma = getPrisma(c.env);
+  const ref = c.req.param('ref');
+  const body = await c.req.json();
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(c.env.RAZORPAY_KEY_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const data = encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, data);
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const generatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    if (generatedSignature !== razorpay_signature) {
+      await prisma.guideBooking.update({
+        where: { referenceNumber: ref },
+        data: { status: 'FAILED' }
+      });
+      return c.json({ error: 'Invalid payment signature' }, 400);
+    }
+
+    const booking = await prisma.guideBooking.update({
+      where: { referenceNumber: ref },
+      data: {
+        status: 'CONFIRMED',
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature
+      }
+    });
+
+    return c.json(booking);
+  } catch (err) {
+    console.error('Guide payment verify error:', err);
+    return c.json({ error: 'Payment verification failed' }, 500);
+  }
 });
 
 app.patch('/guide-bookings/:bookingId/status', authMiddleware, async (c) => {

@@ -26,13 +26,14 @@ export function MobileDock() {
 
   const travelerItems = isAuthenticated ? [
     { icon: Compass, label: "Explore", path: "/resorts" },
+    { icon: MapPin, label: "Guides", path: "/guides" },
     { icon: Home, label: "Dashboard", path: "/dashboard", exact: true },
     { icon: Calendar, label: "Bookings", path: "/dashboard/bookings" },
     { icon: User, label: "Profile", path: "/dashboard/profile", hasBadge: user?.kycStatus === 'PENDING' || user?.kycStatus === 'REJECTED' },
   ] : [
     { icon: Home, label: "Home", path: "/", exact: true },
     { icon: Compass, label: "Explore", path: "/resorts" },
-    { icon: Heart, label: "Wishlist", path: "/login" },
+    { icon: MapPin, label: "Guides", path: "/guides" },
     { icon: User, label: "Profile", path: "/login" },
   ];
 

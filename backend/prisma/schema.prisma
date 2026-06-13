@@ -516,8 +516,12 @@ model GuideBooking {
   status          BookingStatus @default(PENDING)
   meetingPoint    String
   specialRequests String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  referenceNumber   String?       @unique
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
   userId          String
   guideId         String
   guide           GuideProfile  @relation(fields: [guideId], references: [id])

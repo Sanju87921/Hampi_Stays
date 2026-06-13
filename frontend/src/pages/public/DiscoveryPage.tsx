@@ -522,6 +522,11 @@ export function DiscoveryPage() {
                           </div>
                         ))}
                       </div>
+                      <Link to="/guides" className="block mt-4">
+                        <Button className="w-full h-12 rounded-2xl bg-gold-500 text-navy-950 hover:bg-gold-400 border-none font-bold text-xs uppercase tracking-wider shadow-md">
+                          Find a Local Guide for this location
+                        </Button>
+                      </Link>
                     </div>
 
                     {/* Nearby Resort recommendation */}

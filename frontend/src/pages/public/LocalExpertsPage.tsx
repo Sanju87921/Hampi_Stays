@@ -57,6 +57,8 @@ export function LocalExpertsPage() {
   const [hasUpcomingStay, setHasUpcomingStay] = useState(false);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [isFetchingAvailability, setIsFetchingAvailability] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("All Languages");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
@@ -110,15 +112,12 @@ export function LocalExpertsPage() {
     if (!selectedGuide || !bookingDate || !bookingMeetingPoint) return;
     if (!requireAuth()) return;
 
-    // Enforce blocked date check client-side before hitting the API
-    if (unavailableDates.includes(bookingDate)) {
-      return; // date input will show the warning; button is disabled anyway
-    }
+    if (unavailableDates.includes(bookingDate)) return;
 
     setIsBooking(true);
     try {
       const totalPrice = selectedGuide.pricePerDay * (bookingHours / 8);
-      await apiClient.post(`/guides/${selectedGuide.id}/book`, {
+      const booking = await apiClient.post<any>(`/guides/${selectedGuide.id}/book`, {
         userId: user.id,
         guideId: selectedGuide.id,
         date: bookingDate,
@@ -126,17 +125,73 @@ export function LocalExpertsPage() {
         meetingPoint: bookingMeetingPoint,
         totalPrice,
       });
-      setBookingSuccess(true);
-      setBookingDate("");
-      setBookingMeetingPoint("");
-      setBookingHours(4);
-      setTimeout(() => {
-        setBookingSuccess(false);
-        setSelectedGuide(null);
-      }, 2500);
+
+      if (booking.orderId) {
+        if (!(window as any).Razorpay) {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.async = true;
+          document.body.appendChild(script);
+          await new Promise(resolve => script.onload = resolve);
+        }
+
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_Snxno5G3tcQKcs',
+          amount: Math.round(booking.totalPrice * 100),
+          currency: "INR",
+          name: "HampiStays Local Expert",
+          description: `Booking for Guide: ${selectedGuide.user.name}`,
+          order_id: booking.orderId,
+          handler: async function (response: any) {
+            try {
+              await apiClient.post(`/guides/${booking.referenceNumber}/verify-payment`, {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              setBookingSuccess(true);
+              setTimeout(() => {
+                setBookingSuccess(false);
+                setSelectedGuide(null);
+                setBookingDate("");
+                setBookingMeetingPoint("");
+                setBookingHours(4);
+              }, 2500);
+            } catch (err: any) {
+              console.error("Verification failed", err);
+              // Handle verification error visually or via toast
+            } finally {
+              setIsBooking(false);
+            }
+          },
+          prefill: {
+            name: user.name,
+            email: user.email,
+          },
+          theme: { color: "#0c0a09" },
+          modal: {
+            ondismiss: function () {
+              setIsBooking(false);
+            }
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        // Free/Credit Booking
+        setBookingSuccess(true);
+        setTimeout(() => {
+          setBookingSuccess(false);
+          setSelectedGuide(null);
+          setBookingDate("");
+          setBookingMeetingPoint("");
+          setBookingHours(4);
+        }, 2500);
+        setIsBooking(false);
+      }
     } catch (err) {
       console.error("Booking failed", err);
-    } finally {
       setIsBooking(false);
     }
   };
@@ -158,10 +213,16 @@ export function LocalExpertsPage() {
     }
   };
 
-  const filteredGuides = guides.filter(guide => 
-    guide.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    guide.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredGuides = guides.filter(guide => {
+    const matchesSearch = guide.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          guide.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesLanguage = selectedLanguage === "All Languages" || guide.languages.some(l => l.toLowerCase() === selectedLanguage.toLowerCase());
+    const matchesSpecialty = selectedSpecialty === "All Specialties" || guide.specialties.some(s => s.toLowerCase() === selectedSpecialty.toLowerCase());
+    return matchesSearch && matchesLanguage && matchesSpecialty;
+  });
+
+  const languageOptions = ["All Languages", "English", "Hindi", "Kannada", "French", "German"];
+  const specialtyOptions = ["All Specialties", "Heritage Tours", "Temple Tours", "Photography Tours", "Adventure Tours", "Family Friendly", "Foreign Traveller Support"];
 
   if (!guideServiceEnabled) {
     return (
@@ -204,19 +265,49 @@ export function LocalExpertsPage() {
               archaeologists, and guardians of Hampi's ancient legacy.
             </p>
 
-            {/* Search */}
-            <div className="max-w-xl mx-auto relative group">
-              <div className="absolute inset-0 bg-gold-500/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative flex items-center bg-white rounded-2xl shadow-luxury p-2 border border-sand-200">
-                <Search className="w-5 h-5 text-navy-950/20 ml-4" />
-                <input 
-                  type="text" 
-                  placeholder="Search by name or specialty (e.g. Architecture)"
-                  className="flex-1 h-12 px-4 bg-transparent outline-none text-navy-950 font-medium"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Button className="rounded-xl px-8 bg-navy-950 text-white h-12">Search</Button>
+            {/* Search and Filters */}
+            <div className="max-w-4xl mx-auto relative group">
+              <div className="absolute inset-0 bg-gold-500/10 rounded-3xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-4 md:p-6 border border-white/20">
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <div className="flex-1 relative flex items-center bg-white rounded-2xl shadow-luxury p-2 border border-sand-200">
+                    <Search className="w-5 h-5 text-navy-950/20 ml-4" />
+                    <input 
+                      type="text" 
+                      placeholder="Search by name..."
+                      className="flex-1 h-12 px-4 bg-transparent outline-none text-navy-950 font-medium"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <select 
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="h-16 px-4 bg-white rounded-2xl shadow-luxury border border-sand-200 text-navy-950 font-medium outline-none cursor-pointer min-w-[160px]"
+                    >
+                      {languageOptions.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Filter Chips */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {specialtyOptions.map(spec => (
+                    <button
+                      key={spec}
+                      onClick={() => setSelectedSpecialty(spec)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 backdrop-blur-md border shadow-sm",
+                        selectedSpecialty === spec 
+                          ? "bg-gold-500 text-navy-950 border-gold-400"
+                          : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                      )}
+                    >
+                      {spec}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -496,6 +587,33 @@ export function LocalExpertsPage() {
             <Button onClick={() => setSearchQuery("")} variant="outline" className="rounded-2xl">Clear Search</Button>
           </div>
         )}
+      </section>
+
+      {/* Resort Cross-selling */}
+      <section className="container mx-auto px-4 pb-24">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-navy-950 rounded-[3rem] p-12 md:p-16 relative overflow-hidden group shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6"
+        >
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000 pointer-events-none" />
+          <div className="relative z-10 md:w-2/3">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-4">
+              Need a place to stay in Hampi?
+            </h2>
+            <p className="text-sand-200/80 text-lg leading-relaxed max-w-xl">
+              Complete your Hampi experience. Book a luxury resort or heritage stay to rest and recharge after exploring the ruins with your expert guide.
+            </p>
+          </div>
+          <div className="relative z-10">
+            <Link to="/resorts">
+              <Button className="px-10 h-16 rounded-[2rem] bg-gold-500 text-navy-950 font-bold uppercase tracking-wider hover:bg-gold-400">
+                Explore Resorts
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
       </section>
 
       {/* Join the Network CTA */}

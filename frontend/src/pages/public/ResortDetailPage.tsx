@@ -424,6 +424,26 @@ export function ResortDetailPage() {
 
             <AttractionsGuide attractions={resort.nearbyAttractions} />
 
+            {/* Cross-selling Guides */}
+            <section className="mb-10 mt-10">
+              <div className="bg-navy-950 rounded-3xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-white mb-2">Enhance Your Experience</h2>
+                    <p className="text-sand-200/80 max-w-lg">
+                      Explore Hampi's ancient ruins with a certified local expert. Book a personal guide to uncover hidden stories and secret trails near {resort.name}.
+                    </p>
+                  </div>
+                  <Link to="/guides">
+                    <Button className="shrink-0 rounded-2xl px-8 h-12 bg-gold-500 text-navy-950 font-bold uppercase tracking-wider hover:bg-gold-400">
+                      Explore Local Guides
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </section>
+
             <section className="mb-10 border-t border-sand-200 pt-10">
               <div className="flex items-center justify-between gap-4 mb-6">
                 <h2 className="text-2xl font-bold font-serif text-navy-950">Guest Reviews</h2>

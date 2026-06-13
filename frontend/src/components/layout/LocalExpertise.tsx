@@ -95,6 +95,13 @@ export function LocalExpertise() {
             <div className="absolute -inset-4 border border-gold-500/20 rounded-[3rem] -z-10 hidden md:block"></div>
           </motion.div>
 
+          {/* CTA Row */}
+          <div className="lg:col-span-2 flex justify-center mt-8">
+             <a href="/guides" className="inline-flex items-center justify-center gap-2 bg-gold-500 text-navy-950 px-8 py-4 rounded-full font-bold uppercase tracking-wider hover:bg-gold-400 transition-colors shadow-lg shadow-gold-500/20">
+               Explore Local Guides <Compass className="w-5 h-5" />
+             </a>
+          </div>
+
         </div>
       </div>
     </section>
