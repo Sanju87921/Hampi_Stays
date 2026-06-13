@@ -6,7 +6,7 @@ compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
 NODE_ENV = "production"
-FRONTEND_URL = "https://hampi-stays.pages.dev"
+FRONTEND_URL = "https://hampistays.com"
 VITE_GOOGLE_CLIENT_ID = "389686748462-nh36uj8ht8go4unb9607sclhgl1plb7r.apps.googleusercontent.com"
 CLOUDINARY_CLOUD_NAME = "dfs6lmdns"
 RAZORPAY_KEY_ID = "rzp_test_Snxno5G3tcQKcs"
