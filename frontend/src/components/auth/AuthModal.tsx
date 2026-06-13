@@ -65,15 +65,15 @@ export function AuthModal() {
  animate={{ y: 0, opacity: 1 }}
  exit={{ y: "100%", opacity: 0 }}
  transition={{ type: "spring", damping: 30, stiffness: 300 }}
- className="relative bg-white backdrop-blur-md w-full md:max-w-md rounded-t-[3rem] md:rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden pointer-events-auto border border-white/20"
+ className="relative bg-white backdrop-blur-md w-full md:max-w-sm rounded-t-[2rem] md:rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden pointer-events-auto border border-white/20"
  >
  {/* Top Handle for Mobile */}
- <div className="md:hidden flex justify-center pt-4 pb-2">
+ <div className="md:hidden flex justify-center pt-3 pb-1">
  <div className="w-12 h-1.5 bg-navy-950/10 rounded-full" />
  </div>
 
  {/* Header */}
- <div className="p-8 pb-4 flex items-start justify-between">
+ <div className="p-6 pb-2 flex items-start justify-between">
  <div className="flex-grow">
  {authMessage ? (
  <motion.div
@@ -103,12 +103,12 @@ export function AuthModal() {
  </div>
 
  {/* Form Content */}
- <div className="px-8 pb-8">
+ <div className="px-6 pb-6">
  {/* Social Login Section */}
- <div className="mb-8">
+ <div className="mb-6">
  <GoogleAuthButton onSuccess={handleGoogleSuccess} isLoading={isLoading} />
  
- <div className="relative mt-8 mb-4">
+ <div className="relative mt-6 mb-4">
  <div className="absolute inset-0 flex items-center">
  <div className="w-full border-t border-sand-200 " />
  </div>
@@ -131,15 +131,15 @@ export function AuthModal() {
 
  {authModalView === "register" && (
  <div className="group">
- <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Full Name</label>
+ <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1 block">Full Name</label>
  <div className="relative">
- <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
+ <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 transition-colors group-focus-within:text-gold-500" />
  <input
  type="text"
  required
  value={name}
  onChange={(e) => setName(e.target.value)}
- className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
+ className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
  placeholder="John Doe"
  />
  </div>
@@ -147,15 +147,15 @@ export function AuthModal() {
  )}
 
  <div className="group">
- <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Email Address</label>
+ <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1 block">Email Address</label>
  <div className="relative">
- <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
+ <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 transition-colors group-focus-within:text-gold-500" />
  <input
  type="email"
  required
  value={email}
  onChange={(e) => setEmail(e.target.value)}
- className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
+ className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
  placeholder="traveler@hampistays.com"
  />
  </div>
@@ -178,7 +178,7 @@ export function AuthModal() {
      <div className="group">
        <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Phone Number</label>
        <div className="flex gap-2">
-         <div className="w-[110px] shrink-0">
+         <div className="w-[100px] shrink-0">
            <Select
              value={currentCode}
              onChange={(val) => setPhone(val + " " + currentNumber)}
@@ -194,13 +194,13 @@ export function AuthModal() {
            />
          </div>
          <div className="relative flex-1">
-           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
+           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 transition-colors group-focus-within:text-gold-500" />
            <input
              type="tel"
              required
              value={currentNumber}
              onChange={(e) => setPhone(currentCode + " " + e.target.value.replace(/[^0-9\s]/g, ""))}
-             className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
+             className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
              placeholder="98765 43210"
            />
          </div>
@@ -210,31 +210,31 @@ export function AuthModal() {
  })()}
 
  <div className="group">
- <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1.5 block">Password</label>
+ <label className="text-[10px] font-black text-navy-950 uppercase tracking-[0.2em] ml-1 mb-1 block">Password</label>
  <div className="relative">
- <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-950 transition-colors group-focus-within:text-gold-500" />
+ <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950 transition-colors group-focus-within:text-gold-500" />
  <input
  type="password"
  required
  value={password}
  onChange={(e) => setPassword(e.target.value)}
- className="w-full pl-12 pr-6 py-4 rounded-2xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
+ className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-sand-50 border border-sand-100 focus:border-gold-400 focus:bg-white focus:ring-4 focus:ring-gold-500/5 outline-none transition-all font-medium text-navy-950 "
  placeholder="••••••••"
  />
  </div>
  </div>
 
- <div className="pt-4">
+ <div className="pt-2">
  <Button
  type="submit"
- className="w-full h-16 rounded-[2rem] text-lg shadow-gold border-none font-bold tracking-tight"
+ className="w-full h-12 rounded-xl text-base shadow-gold border-none font-bold tracking-tight"
  isLoading={isLoading}
  >
  {authModalView === "login" ? "Enter the Sanctuary" : "Create Account"}
  </Button>
  </div>
 
- <div className="pt-6 text-center">
+ <div className="pt-4 text-center">
  <button
  type="button"
  onClick={() => setShowAuthModal(true, { view: authModalView === "login" ? "register" : "login", message: authMessage || undefined })}
@@ -250,3 +250,4 @@ export function AuthModal() {
  </AnimatePresence>
  );
 }
+
